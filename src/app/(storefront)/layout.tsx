@@ -1,0 +1,14 @@
+import type { ReactNode } from "react";
+
+import { AppFooter } from "@/components/layout/app-footer";
+import { AppHeader } from "@/components/layout/app-header";
+
+export default function StorefrontLayout({ children }: { children: ReactNode }) {
+  return (
+    <div className="flex min-h-screen flex-col">
+      <AppHeader />
+      <div className="flex flex-1 flex-col">{children}</div>
+      <AppFooter />
+    </div>
+  );
+}
