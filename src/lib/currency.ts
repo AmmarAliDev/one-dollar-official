@@ -13,13 +13,18 @@ export function formatPrice(
   }: FormatPriceOptions = {},
 ) {
   const amount = typeof value === "string" ? Number(value) : value;
+  const normalizedMinimumFractionDigits = Math.max(0, minimumFractionDigits);
+  const normalizedMaximumFractionDigits = Math.max(
+    maximumFractionDigits,
+    normalizedMinimumFractionDigits,
+  );
 
   if (!Number.isFinite(amount)) {
-    return `${currency} 0`;
+    return "--";
   }
 
   return `${currency} ${amount.toLocaleString("en-PK", {
-    minimumFractionDigits,
-    maximumFractionDigits,
+    minimumFractionDigits: normalizedMinimumFractionDigits,
+    maximumFractionDigits: normalizedMaximumFractionDigits,
   })}`;
 }

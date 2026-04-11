@@ -24,4 +24,8 @@ describe("ui foundation", () => {
   it("formats PKR values for reusable price display components", () => {
     expect(formatPrice(1299)).toBe("PKR 1,299");
   });
+
+  it("returns a detectable placeholder for invalid amounts", () => {
+    expect(formatPrice("not-a-number")).toBe("--");
+  });
 });

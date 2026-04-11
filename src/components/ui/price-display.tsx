@@ -23,7 +23,7 @@ export function PriceDisplay({
   size = "md",
 }: PriceDisplayProps) {
   const hasDiscount = typeof compareAt === "number" && compareAt > amount;
-  const savings = hasDiscount ? Math.round(((compareAt - amount) / compareAt) * 100) : 0;
+  const savingsPercent = hasDiscount ? Math.ceil(((compareAt - amount) / compareAt) * 100) : 0;
 
   return (
     <div className={cn("flex flex-wrap items-center gap-2", className)}>
@@ -31,7 +31,7 @@ export function PriceDisplay({
       {hasDiscount ? (
         <>
           <span className="text-muted-foreground text-sm line-through">{formatPrice(compareAt)}</span>
-          <Badge variant="success">Save {savings}%</Badge>
+          {savingsPercent > 0 ? <Badge variant="success">Save {savingsPercent}%</Badge> : null}
         </>
       ) : null}
     </div>

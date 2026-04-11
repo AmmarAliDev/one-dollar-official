@@ -106,3 +106,8 @@ body {
   background: color-mix(in srgb, var(--primary) 24%, white);
   color: var(--foreground);
 }
+
+.dark ::selection {
+  background: color-mix(in srgb, var(--primary) 68%, black);
+  color: var(--primary-foreground);
+}

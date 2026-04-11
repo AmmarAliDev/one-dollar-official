@@ -14,7 +14,7 @@ export function AppHeader() {
     <header className="sticky top-0 z-40 border-b border-border/70 bg-background/90 backdrop-blur">
       <a
         href="#main-content"
-        className="bg-background focus-visible:ring-ring sr-only left-4 top-4 rounded-md px-3 py-2 focus:not-sr-only focus-visible:outline-none focus-visible:ring-2"
+        className="bg-background focus-visible:ring-ring sr-only absolute left-4 top-4 rounded-md px-3 py-2 focus:not-sr-only focus-visible:outline-none focus-visible:ring-2"
       >
         Skip to content
       </a>

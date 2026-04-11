@@ -34,10 +34,12 @@ export default function SignInPage() {
             Email/password, Google SSO, and protected session utilities will land later.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-2 text-sm">
-          <p className="text-muted-foreground">• Typed validators and friendly form errors</p>
-          <p className="text-muted-foreground">• Secure session strategy for App Router</p>
-          <p className="text-muted-foreground">• Role-aware protection for admin routes</p>
+        <CardContent className="text-sm">
+          <ul className="space-y-2 list-inside list-disc text-muted-foreground">
+            <li>Typed validators and friendly form errors</li>
+            <li>Secure session strategy for App Router</li>
+            <li>Role-aware protection for admin routes</li>
+          </ul>
         </CardContent>
       </Card>
 
