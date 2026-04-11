@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-**Phase 2 / Prompt 2.3 — Auth setup with email/password and Google SSO**
+**Phase 2 / Prompt 2.4 — RBAC and route protection foundations**
 
 ## Completed
 
@@ -33,19 +33,24 @@
 - [x] **Prisma schema updated** with `User.password`, `User.emailVerified`, `User.image` (migration 20260411_auth)
 - [x] **Zod validators** for sign-in, sign-up, and forgot-password (Zod v4 compatible)
 - [x] **Rate-limit foundation** (in-memory sliding window; Redis-ready abstraction in `src/lib/rate-limit`)
-- [x] **Session utilities** for server (`getSession`, `requireSession`, `getCurrentUserId`, `hasRole`) and client (`useSession`)
+- [x] **Session utilities** for server (`getSession`, `requireSession`, `getCurrentUserId`, `hasRole`, `hasPermission`) and client (`useSession`)
 - [x] **Auth pages** at `/auth/sign-in`, `/auth/sign-up`, `/auth/error`, `/auth/forgot-password`
-- [x] **JWT type augmentation** adds `id` and `role` to `Session.user` and `JWT`
-- [x] **Middleware** exports `auth` for session parsing on all matched routes (route protection deferred to 2.4)
+- [x] **JWT type augmentation** adds `id` and typed `role` to `Session.user` and `JWT`
+- [x] **Typed RBAC model** added in `src/lib/auth/rbac.ts` with `super admin`, `product manager`, and `order manager` admin roles
+- [x] **Permission helpers** now centralize `admin:access`, catalog, order, and user-read grants for future modules
+- [x] **Route guards** added for server components and route handlers via `src/lib/auth/guards.ts`
+- [x] **Admin route group** now blocks unauthenticated users and signed-in non-admin roles through `src/proxy.ts` + `(admin)/layout.tsx`
+- [x] **Unauthorized and forbidden pages** added at `/unauthorized` and `/forbidden`
+- [x] **Admin audit foundation** added in `src/lib/audit/admin-actions.ts` for future `AuditLog` persistence
 - [x] **`AuthProvider`** (SessionProvider wrapper) added to root layout
 - [x] **Input and Label** UI primitives added to `src/components/ui`
-- [x] **23 new tests**: 14 validator tests, 5 password utility tests, 4 rate-limit tests (49 total)
+- [x] **5 new RBAC tests** cover non-admin blocking, valid admin-role access, forbidden API responses, audit payload generation, and forbidden-page rendering (54 total tests)
+- [x] Verification re-confirmed with `pnpm typecheck`, `pnpm lint`, `pnpm test`, and `pnpm build`
 - [x] Developer docs at `docs/dev/auth.md`
 
 ## Deferred by design
 
 - [ ] Email-based password reset (requires email provider — deferred to Prompt 4.4)
-- [ ] Admin route protection and RBAC (Prompt 2.4)
 - [ ] Redis-backed rate limiting (Prompt 2.5)
 - [ ] Email verification for credentials accounts
 - [ ] Product catalog and PDP implementation
@@ -54,4 +59,4 @@
 
 ## Recommended Next Prompt
 
-Proceed with **Prompt 2.4 — RBAC and route protection** to add typed roles, permission-check helpers, and admin route guards on top of the auth foundation.
+Proceed with **Prompt 2.5 — Redis-backed rate limiting** to replace the current in-memory limiter before any production deployment.

@@ -12,6 +12,10 @@ export const routes = {
     error: "/auth/error",
     forgotPassword: "/auth/forgot-password",
   },
+  system: {
+    unauthorized: "/unauthorized",
+    forbidden: "/forbidden",
+  },
   docs: {
     architecture: "/docs/architecture",
   },

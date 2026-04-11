@@ -20,6 +20,7 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
+import { RoleKey } from "@prisma/client";
 
 import { getPrismaClient } from "@/server/db";
 
@@ -73,7 +74,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           name: user.name,
           image: user.image,
           // Extra field: picked up in the jwt callback below.
-          role: user.role?.key ?? "CUSTOMER",
+          role: user.role?.key ?? RoleKey.CUSTOMER,
         };
       },
     }),
@@ -92,23 +93,23 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        const roleFromUser = (user as { role?: string | null }).role;
-        if (roleFromUser != null) {
+
+        const roleFromUser = (user as { role?: RoleKey | null }).role;
+        if (roleFromUser) {
           // Credentials path — role already resolved by authorize().
           token.role = roleFromUser;
-        } else {
+        } else if (user.id) {
           // OAuth path — look up the role relation for this user.
-        if (user.id) {
           const dbUser = await db.user.findUnique({
             where: { id: user.id },
             include: { role: true },
           });
-          token.role = dbUser?.role?.key ?? "CUSTOMER";
+          token.role = dbUser?.role?.key ?? RoleKey.CUSTOMER;
         } else {
-          token.role = "CUSTOMER";
-        }
+          token.role = RoleKey.CUSTOMER;
         }
       }
+
       return token;
     },
 
@@ -122,7 +123,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         user: {
           ...session.user,
           id: (token.id as string | undefined) ?? "",
-          role: (token.role as string | null | undefined) ?? null,
+          role: (token.role as RoleKey | null | undefined) ?? null,
         },
       };
     },

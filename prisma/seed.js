@@ -5,27 +5,58 @@ async function main() {
   console.log('Running minimal seed: roles + default category');
 
   const roles = [
-    'SUPER_ADMIN',
-    'PRODUCT_MANAGER',
-    'ORDER_MANAGER',
-    'CUSTOMER',
-    'GUEST',
+    {
+      key: 'SUPER_ADMIN',
+      name: 'Super admin',
+      permissions: [
+        'admin:access',
+        'catalog:read',
+        'catalog:write',
+        'orders:read',
+        'orders:write',
+        'users:read',
+        'settings:manage',
+      ],
+    },
+    {
+      key: 'PRODUCT_MANAGER',
+      name: 'Product manager',
+      permissions: ['admin:access', 'catalog:read', 'catalog:write', 'orders:read'],
+    },
+    {
+      key: 'ORDER_MANAGER',
+      name: 'Order manager',
+      permissions: ['admin:access', 'orders:read', 'orders:write', 'users:read'],
+    },
+    {
+      key: 'CUSTOMER',
+      name: 'Customer',
+      permissions: [],
+    },
+    {
+      key: 'GUEST',
+      name: 'Guest',
+      permissions: [],
+    },
   ];
 
-  for (const key of roles) {
+  for (const role of roles) {
     try {
       await prisma.role.upsert({
-        where: { key },
-        update: {},
+        where: { key: role.key },
+        update: {
+          name: role.name,
+          permissions: role.permissions,
+        },
         create: {
-          key,
-          name: key,
-          permissions: {},
+          key: role.key,
+          name: role.name,
+          permissions: role.permissions,
         },
       });
-      console.log(`Ensured role: ${key}`);
+      console.log(`Ensured role: ${role.key}`);
     } catch (err) {
-      console.error('Failed to upsert role', key, err);
+      console.error('Failed to upsert role', role.key, err);
       throw err;
     }
   }

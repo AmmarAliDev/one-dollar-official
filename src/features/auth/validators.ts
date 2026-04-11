@@ -22,9 +22,10 @@ const MAX_PASSWORD_LENGTH = 72; // bcrypt truncates at 72 bytes
 
 export const signInValidator = z.object({
   email: z
-    .email("Please enter a valid email address.")
+    .string()
     .trim()
-    .min(1, "Email address is required."),
+    .min(1, "Email address is required.")
+    .email("Please enter a valid email address."),
 
   password: z
     .string()
@@ -47,10 +48,11 @@ export const signUpValidator = z
       .or(z.literal("")),
 
     email: z
-      .email("Please enter a valid email address.")
+      .string()
       .trim()
-      .min(1, "Email address is required."),
-      
+      .min(1, "Email address is required.")
+      .email("Please enter a valid email address."),
+
     password: z
       .string()
       .min(MIN_PASSWORD_LENGTH, `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`)
@@ -69,9 +71,10 @@ export type SignUpInput = z.infer<typeof signUpValidator>;
 
 export const forgotPasswordValidator = z.object({
   email: z
-    .email("Please enter a valid email address.")
+    .string()
     .trim()
-    .min(1, "Email address is required."),
+    .min(1, "Email address is required.")
+    .email("Please enter a valid email address."),
 });
 
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordValidator>;

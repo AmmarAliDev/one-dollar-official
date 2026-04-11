@@ -38,7 +38,7 @@ export default function AdminPage() {
       <SectionHeader
         eyebrow="Admin foundation"
         title="Operations dashboard placeholder"
-        description="The sidebar and topbar structure are now in place for future role-aware catalog, order, and content workflows."
+        description="The admin shell is now protected by the RBAC foundation and ready for future catalog, order, and content workflows."
       />
 
       <div className="grid gap-4 md:grid-cols-3">

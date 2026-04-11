@@ -5,6 +5,8 @@ This file provides a compact reference of the Prisma data model for AI tooling, 
 Models (summary)
 - `User`: { id, email?, phone?, name?, roleId?, createdAt, updatedAt }
 - `Role`: { id, key, name, permissions: JSON }
+  - RBAC foundation roles: `SUPER_ADMIN`, `PRODUCT_MANAGER`, `ORDER_MANAGER`, `CUSTOMER`, `GUEST`
+  - Current admin matrix: `SUPER_ADMIN` = full admin access, `PRODUCT_MANAGER` = catalog-focused admin access, `ORDER_MANAGER` = order-focused admin access
 - `Category`: { id, name, slug, parentId?, seoTitle?, seoDescription? }
 -- `Product`: { id, masterSku?, name, slug, shortDescription?, description?, status, categoryId?, metadata?: JSON, seoTitle?, seoDescription?, seoImageUrl? }
 	- Note: `masterSku` is a parent/master product code (optional). The actual SKU used for inventory, pricing, and fulfillment lives on `ProductVariant.sku`.

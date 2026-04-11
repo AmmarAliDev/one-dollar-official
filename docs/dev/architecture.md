@@ -24,7 +24,7 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 ## Route Groups
 
 - `(storefront)` now uses a polished shared shell via `AppHeader` + `AppFooter`
-- `(admin)` now uses `AdminShell` with a responsive sidebar and topbar placeholder
+- `(admin)` now uses `AdminShell` with a responsive sidebar and topbar placeholder, protected by the RBAC proxy/layout guards
 - `(auth)` reserves sign-in and account entry points
 
 ## UI Foundation Strategy
@@ -41,6 +41,14 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `src/config/feature-flags.ts` derives preview flags from validated env values instead of raw `process.env` access.
 - `getRequiredServerEnv()` should be used when a future integration needs a non-public secret at runtime.
 - `DATABASE_URL` must be available anywhere Prisma queries or CLI workflows run.
+
+## RBAC Foundation Strategy
+
+- `src/lib/auth/rbac.ts` is the single source of truth for admin roles and permission grants.
+- `src/lib/auth/guards.ts` keeps server-component and route-handler authorization checks consistent.
+- `src/proxy.ts` performs an optimistic pre-render redirect, while the `(admin)` layout remains the authoritative server-side guard.
+- `src/app/unauthorized/page.tsx` and `src/app/forbidden/page.tsx` provide explicit recovery screens instead of raw auth errors.
+- `src/lib/audit/admin-actions.ts` prepares structured admin action records for future `AuditLog` persistence.
 
 ## Error Handling Strategy
 
