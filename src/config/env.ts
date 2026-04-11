@@ -52,6 +52,18 @@ export const publicEnvSchema = z.object({
 
 export const serverEnvSchema = z.object({
   APP_SECRET: z.string().trim().min(1, "APP_SECRET cannot be empty.").optional(),
+
+  // Auth.js v5 secret — required in any non-development environment.
+  // Generate with: openssl rand -base64 32
+  AUTH_SECRET: z
+    .string()
+    .trim()
+    .min(32, "AUTH_SECRET must be at least 32 characters for security.")
+    .optional(),
+
+  // Google OAuth credentials — required when Google SSO is enabled.
+  AUTH_GOOGLE_ID: z.string().trim().min(1, "AUTH_GOOGLE_ID cannot be empty.").optional(),
+  AUTH_GOOGLE_SECRET: z.string().trim().min(1, "AUTH_GOOGLE_SECRET cannot be empty.").optional(),
 });
 
 type PublicEnvValues = z.infer<typeof publicEnvSchema>;

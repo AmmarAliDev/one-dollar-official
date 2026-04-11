@@ -77,21 +77,25 @@ model Role {
 }
 
 model User {
-  id        String     @id @default(uuid())
-  email     String?    @unique
-  phone     String?    @unique
-  name      String?
-  role      Role?      @relation(fields: [roleId], references: [id])
-  roleId    String?
-  accounts  Account[]
-  sessions  Session[]
-  addresses Address[]
-  reviews   Review[]
-  wishlists Wishlist[]
-  carts     Cart[]
-  orders    Order[]
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  id            String     @id @default(uuid())
+  // email is nullable so OAuth providers that don't expose email still work
+  email         String?    @unique
+  emailVerified DateTime?  // set by NextAuth adapter after email verification
+  image         String?    // profile picture URL (from OAuth provider)
+  password      String?    // bcrypt hash; null for OAuth-only accounts
+  phone         String?    @unique
+  name          String?
+  role          Role?      @relation(fields: [roleId], references: [id])
+  roleId        String?
+  accounts      Account[]
+  sessions      Session[]
+  addresses     Address[]
+  reviews       Review[]
+  wishlists     Wishlist[]
+  carts         Cart[]
+  orders        Order[]
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
 }
 
 // NextAuth compatible Account + Session models (optional for NextAuth)

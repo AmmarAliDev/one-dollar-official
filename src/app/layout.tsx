@@ -2,6 +2,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import type { ReactNode } from "react";
 
 import { AppToaster } from "@/components/providers/app-toaster";
+import { AuthProvider } from "@/components/providers/auth-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { buildMetadata } from "@/config/metadata";
 
@@ -28,10 +29,12 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body suppressHydrationWarning className="bg-background text-foreground min-h-full font-sans antialiased">
-        <ThemeProvider>
-          {children}
-          <AppToaster />
-        </ThemeProvider>
+        <AuthProvider>
+          <ThemeProvider>
+            {children}
+            <AppToaster />
+          </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   );

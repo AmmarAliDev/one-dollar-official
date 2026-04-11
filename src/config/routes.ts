@@ -8,6 +8,9 @@ export const routes = {
   },
   auth: {
     signIn: "/auth/sign-in",
+    signUp: "/auth/sign-up",
+    error: "/auth/error",
+    forgotPassword: "/auth/forgot-password",
   },
   docs: {
     architecture: "/docs/architecture",

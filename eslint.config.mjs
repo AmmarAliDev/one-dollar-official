@@ -43,7 +43,7 @@ const eslintConfig = defineConfig([
     },
   },
   eslintConfigPrettier,
-  globalIgnores([".next/**", "coverage/**", "out/**", "build/**", "next-env.d.ts"]),
+  globalIgnores([".next/**", "coverage/**", "out/**", "build/**", "next-env.d.ts", "prisma/seed.js"]),
 ]);
 
 export default eslintConfig;
