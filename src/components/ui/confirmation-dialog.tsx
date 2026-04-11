@@ -1,7 +1,7 @@
 "use client";
 
+import { type ReactNode,useCallback, useEffect, useId, useRef, useState } from "react";
 import { TriangleAlert } from "lucide-react";
-import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -165,6 +165,7 @@ export function ConfirmationDialog({
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
 
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       const restoreTarget = triggerRef.current ?? restoreFocusRef.current;
       restoreTarget?.focus();
     };
