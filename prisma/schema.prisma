@@ -1,0 +1,418 @@
+// Prisma schema for One Dollar single-vendor e-commerce
+// Design goals:
+// - Single vendor, Pakistan-only (Karachi initially)
+// - Inventory tracked per ProductVariant
+// - Guest checkout supported (Order.userId nullable + address snapshots)
+// - Admin role types: super admin, product manager, order manager
+// - SEO fields included on key content models
+// - Designed for incremental migration: payments/referrals/loyalty/localization later
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Region and currency enums (small scoped for initial launch)
+enum Country { PAK }
+enum City { KARACHI }
+
+// Role and permission model keys
+enum RoleKey {
+  SUPER_ADMIN
+  PRODUCT_MANAGER
+  ORDER_MANAGER
+  CUSTOMER
+  GUEST
+}
+
+// Product / Order / Cart statuses
+enum ProductStatus { DRAFT PUBLISHED ARCHIVED }
+enum OrderStatus { PENDING CONFIRMED PAID FULFILLED CANCELLED REFUNDED }
+enum CartStatus { ACTIVE COMPLETED ABANDONED }
+
+// Currency (Pakistan Rupee only for now)
+enum Currency { PKR }
+
+// --------------------
+// Core models
+// --------------------
+
+model Role {
+  id          String   @id @default(uuid())
+  key         RoleKey  @unique
+  name        String
+  // permissions JSON allows fine-grained flags per role (feature-forward)
+  permissions Json     @default("{}")
+  users       User[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model User {
+  id        String    @id @default(uuid())
+  email     String?   @unique
+  phone     String?   @unique
+  name      String?
+  role      Role?     @relation(fields: [roleId], references: [id])
+  roleId    String?
+  accounts  Account[]
+  sessions  Session[]
+  addresses Address[]
+  reviews   Review[]
+  wishlists Wishlist[]
+  carts     Cart[]
+  orders    Order[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+// NextAuth compatible Account + Session models (optional for NextAuth)
+model Account {
+  id                 String   @id @default(cuid())
+  userId             String
+  user               User     @relation(fields: [userId], references: [id])
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?
+  access_token       String?
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?
+  session_state      String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  expires      DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Address {
+  id        String   @id @default(uuid())
+  user      User?    @relation(fields: [userId], references: [id])
+  userId    String?
+  label     String?  // Home, Office, etc.
+  country   Country  @default(PAK)
+  province  String?
+  city      City     @default(KARACHI)
+  postcode  String?
+  street1   String
+  street2   String?
+  phone     String?
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Category {
+  id            String    @id @default(uuid())
+  name          String
+  slug          String    @unique
+  description   String?
+  parentId      String?
+  parent        Category? @relation("CategoryToCategory", fields: [parentId], references: [id])
+  children      Category[] @relation("CategoryToCategory")
+  seoTitle      String?
+  seoDescription String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([slug])
+}
+
+model Product {
+  id               String                @id @default(uuid())
+  sku              String?               @unique
+  name             String
+  slug             String                @unique
+  shortDescription String?
+  description      String?
+  status           ProductStatus         @default(DRAFT)
+  categoryId       String?
+  category         Category?             @relation(fields: [categoryId], references: [id])
+  weightGram       Int?
+  heightMm         Int?
+  widthMm          Int?
+  depthMm          Int?
+  images           ProductImage[]
+  variants         ProductVariant[]
+  specifications   ProductSpecification[]
+  reviews          Review[]
+  metadata         Json?
+  seoTitle         String?
+  seoDescription   String?
+  seoImageUrl      String?
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+
+  @@index([categoryId])
+  @@index([sku])
+}
+
+model ProductImage {
+  id               String         @id @default(uuid())
+  product          Product?       @relation(fields: [productId], references: [id])
+  productId        String?
+  productVariant   ProductVariant? @relation(fields: [productVariantId], references: [id])
+  productVariantId String?
+  url              String
+  alt              String?
+  position         Int            @default(0)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@index([productId, position])
+}
+
+model ProductVariant {
+  id             String    @id @default(uuid())
+  product        Product   @relation(fields: [productId], references: [id])
+  productId      String
+  sku            String?   @unique
+  title          String?
+  options        Json?     // e.g. { color: 'red', size: 'M' }
+  price          Int       // stored in smallest currency unit (PKR paisa)
+  compareAtPrice Int?
+  currency       Currency  @default(PKR)
+  inventory      Inventory?
+  isDefault      Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([productId])
+}
+
+model Inventory {
+  id               String         @id @default(uuid())
+  productVariant   ProductVariant @relation(fields: [productVariantId], references: [id])
+  productVariantId String         @unique
+  quantity         Int            @default(0)
+  reserved         Int            @default(0)
+  location         City           @default(KARACHI)
+  safetyStock      Int            @default(0)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+}
+
+model ProductSpecification {
+  id        String   @id @default(uuid())
+  product   Product  @relation(fields: [productId], references: [id])
+  productId String
+  key       String
+  value     String
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([productId])
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  product   Product  @relation(fields: [productId], references: [id])
+  productId String
+  user      User?    @relation(fields: [userId], references: [id])
+  userId    String?
+  rating    Int
+  title     String?
+  body      String?
+  approved  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([productId])
+}
+
+model Wishlist {
+  id        String         @id @default(uuid())
+  user      User?          @relation(fields: [userId], references: [id])
+  userId    String?
+  items     WishlistItem[]
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@index([userId])
+}
+
+model WishlistItem {
+  id               String         @id @default(uuid())
+  wishlist         Wishlist       @relation(fields: [wishlistId], references: [id])
+  wishlistId       String
+  productVariant   ProductVariant @relation(fields: [productVariantId], references: [id])
+  productVariantId String
+  quantity         Int            @default(1)
+  createdAt        DateTime       @default(now())
+
+  @@index([wishlistId])
+}
+
+model Cart {
+  id        String     @id @default(uuid())
+  token     String?    @unique
+  user      User?      @relation(fields: [userId], references: [id])
+  userId    String?
+  status    CartStatus @default(ACTIVE)
+  items     CartItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@index([userId])
+}
+
+model CartItem {
+  id               String         @id @default(uuid())
+  cart             Cart           @relation(fields: [cartId], references: [id])
+  cartId           String
+  productVariant   ProductVariant @relation(fields: [productVariantId], references: [id])
+  productVariantId String
+  quantity         Int            @default(1)
+  unitPrice        Int            // snapshot of price when added (smallest unit)
+  createdAt        DateTime       @default(now())
+
+  @@index([cartId])
+}
+
+model Order {
+  id                 String        @id @default(uuid())
+  orderNumber        String        @unique
+  user               User?         @relation(fields: [userId], references: [id])
+  userId             String?
+  status             OrderStatus   @default(PENDING)
+  subtotal           Int
+  shipping           Int
+  tax                Int
+  discount           Int
+  total              Int
+  currency           Currency      @default(PKR)
+  paymentMethod      String?
+  paymentProvider    String?
+  paymentStatus      String?
+  placedAt           DateTime      @default(now())
+  items              OrderItem[]
+  shippingAddress    OrderAddress? @relation("ShippingAddress", fields: [shippingAddressId], references: [id])
+  shippingAddressId  String?
+  billingAddress     OrderAddress? @relation("BillingAddress", fields: [billingAddressId], references: [id])
+  billingAddressId   String?
+  metadata           Json?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  @@index([orderNumber])
+}
+
+model OrderItem {
+  id               String   @id @default(uuid())
+  order            Order    @relation(fields: [orderId], references: [id])
+  orderId          String
+  productId        String?  // optional reference to original product
+  productName      String
+  variantTitle     String?
+  sku              String?
+  unitPrice        Int
+  quantity         Int
+  subtotal         Int
+  tax              Int?
+  createdAt        DateTime @default(now())
+
+  @@index([orderId])
+}
+
+model OrderAddress {
+  id         String   @id @default(uuid())
+  fullName   String
+  phone      String?
+  email      String?
+  street1    String
+  street2    String?
+  city       String   @default(KARACHI)
+  province   String?
+  country    Country  @default(PAK)
+  postcode   String?
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  actorId   String?
+  action    String
+  model     String?
+  modelId   String?
+  changes   Json?
+  createdAt DateTime @default(now())
+}
+
+model HomePageSection {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  title     String
+  type      String
+  content   Json?
+  meta      Json?
+  position  Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Banner {
+  id        String   @id @default(uuid())
+  title     String
+  imageUrl  String
+  href      String?
+  startAt   DateTime?
+  endAt     DateTime?
+  active    Boolean  @default(true)
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DealCampaign {
+  id        String               @id @default(uuid())
+  name      String
+  description String?
+  startsAt  DateTime?
+  endsAt    DateTime?
+  active    Boolean              @default(true)
+  products  DealCampaignProduct[]
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+}
+
+model DealCampaignProduct {
+  id         String       @id @default(uuid())
+  campaign   DealCampaign @relation(fields: [campaignId], references: [id])
+  campaignId String
+  product    Product      @relation(fields: [productId], references: [id])
+  productId  String
+}
+
+// --------------------
+// Indexes & notes
+// --------------------
+
+// Many commonly queried fields are indexed above (slug, sku, userId, orderNumber).
+// Future improvements:
+// - Add full-text search indexes for product name/description
+// - Add composite indexes for reporting queries
