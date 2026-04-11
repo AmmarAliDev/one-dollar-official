@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { FormErrorSummary } from "@/components/ui/form-error-summary";
 import { SectionHeader } from "@/components/ui/section-header";
 import { buildMetadata } from "@/config/metadata";
 import { routes } from "@/config/routes";
@@ -42,6 +43,11 @@ export default function SignInPage() {
           </ul>
         </CardContent>
       </Card>
+
+      <FormErrorSummary
+        title="Future auth forms will surface clear feedback"
+        errors={["Email is required", "Password must be at least 8 characters"]}
+      />
 
       <EmptyState
         title="No live sign-in form yet"

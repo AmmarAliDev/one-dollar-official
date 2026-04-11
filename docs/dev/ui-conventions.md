@@ -15,15 +15,19 @@
 ## UI State Patterns
 
 - Use `SectionHeader` for page and section intros.
-- Use `EmptyState`, `LoadingState`, and `ErrorState` for predictable UX patterns.
-- Use `Skeleton`, `CardSkeleton`, and `PageSkeleton` while content is loading.
+- Use `PageErrorFallback` for route-level or page-level failures and `SectionErrorState` for isolated modules that should fail without collapsing the whole screen.
+- Use `FormErrorSummary` for validation feedback above forms; prefer friendly user-safe copy from `toUserMessage()` / `getFormErrorMessages()`.
+- Use `EmptyState`, `LoadingState`, and `InlineSpinner` for predictable empty and loading feedback.
+- Use `Skeleton`, `CardSkeleton`, `PageSkeleton`, and `TableSkeleton` while content is loading.
+- Use `ConfirmationDialog` for destructive or high-impact actions instead of browser-native confirm prompts.
 - Use `PriceDisplay` and `Badge` instead of ad-hoc inline styling for storefront metadata.
 
 ## Accessibility Notes
 
 - Keep semantic landmarks in place: `header`, `nav`, `main`, `section`, and `footer`.
 - Preserve visible focus states and `aria-label` support on interactive controls.
-- Prefer server components by default; only use client components for interactivity like theme switching and toast triggers.
+- Error summaries and page fallbacks should keep `role="alert"` / `aria-live` semantics so assistive tech announces important failures clearly.
+- Prefer server components by default; only use client components for interactivity like theme switching, toast triggers, and confirmation dialogs.
 
 ## Deferred Items
 

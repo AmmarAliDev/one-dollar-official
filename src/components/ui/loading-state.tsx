@@ -1,9 +1,9 @@
-import { LoaderCircle } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
 import { Card, CardContent } from "./card";
+import { InlineSpinner } from "./inline-spinner";
 
 type LoadingStateProps = {
   title?: string;
@@ -22,7 +22,7 @@ export function LoadingState({
     <Card className={cn(className)} aria-busy="true" aria-live="polite">
       <CardContent className="flex flex-col gap-4 p-6 sm:p-8">
         <div className="flex items-center gap-3">
-          <LoaderCircle className="text-primary size-5 animate-spin" />
+          <InlineSpinner />
           <div>
             <h3 className="text-base font-semibold tracking-tight">{title}</h3>
             <p className="text-muted-foreground text-sm">{description}</p>

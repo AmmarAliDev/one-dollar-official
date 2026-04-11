@@ -6,10 +6,14 @@ import { PreviewToastButton } from "@/components/layout/preview-toast-button";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { EmptyState } from "@/components/ui/empty-state";
+import { FormErrorSummary } from "@/components/ui/form-error-summary";
+import { InlineSpinner } from "@/components/ui/inline-spinner";
 import { PriceDisplay } from "@/components/ui/price-display";
+import { SectionErrorState } from "@/components/ui/section-error-state";
 import { SectionHeader } from "@/components/ui/section-header";
-import { PageSkeleton } from "@/components/ui/skeleton";
+import { PageSkeleton, TableSkeleton } from "@/components/ui/skeleton";
 import { env } from "@/config/env";
 import { buildMetadata } from "@/config/metadata";
 import { routes } from "@/config/routes";
@@ -56,6 +60,45 @@ export default function StorefrontPreviewPage() {
           <div>
             <p className="mb-3 text-sm font-medium">Skeleton preview</p>
             <PageSkeleton />
+          </div>
+
+          <Card>
+            <CardHeader>
+              <Badge variant="secondary" className="w-fit">
+                Reliable UX defaults
+              </Badge>
+              <CardTitle>Errors, forms, and confirmations now share one pattern.</CardTitle>
+              <CardDescription>
+                These primitives keep raw internal details out of the UI while staying easy to reuse.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <InlineSpinner label="Preparing a safe preview state" />
+              <FormErrorSummary
+                title="Sample validation summary"
+                errors={["Email is required", "Password must be at least 8 characters"]}
+              />
+              <SectionErrorState
+                title="Section fallback preview"
+                description="Feature modules can now fail gracefully without collapsing the rest of the page."
+              />
+              <ConfirmationDialog
+                triggerLabel="Preview confirmation"
+                title="Discard draft changes?"
+                description="Use this shared dialog for destructive or high-impact actions across admin and storefront flows."
+                confirmLabel="Discard draft"
+                confirmVariant="destructive"
+              >
+                <p className="text-muted-foreground">
+                  This keeps confirmations consistent for future product, cart, and order actions.
+                </p>
+              </ConfirmationDialog>
+            </CardContent>
+          </Card>
+
+          <div>
+            <p className="mb-3 text-sm font-medium">Table loading preview</p>
+            <TableSkeleton rows={3} columns={4} />
           </div>
         </div>
       </div>

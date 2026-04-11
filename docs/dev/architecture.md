@@ -35,10 +35,11 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 
 ## Error Handling Strategy
 
-- `src/app/error.tsx` handles route-segment failures gracefully
-- `src/app/global-error.tsx` prevents unhandled app crashes from leaking internals while still surfacing safe `AppError` messages
-- `src/app/not-found.tsx` provides a safe placeholder for unbuilt routes
-- `src/lib/errors` centralizes reusable error abstractions and user-facing messaging
+- `src/app/error.tsx` and `src/app/global-error.tsx` now share `PageErrorFallback` so boundary copy stays consistent and user-safe.
+- `SectionErrorState` and `FormErrorSummary` handle localized module failures and future form validation without leaking raw internals.
+- `src/app/not-found.tsx` provides a safe placeholder for unbuilt routes.
+- `src/lib/errors` centralizes reusable error abstractions and user-facing messaging through `toUserMessage()` and `getFormErrorMessages()`.
+- `src/lib/logger.ts` offers a client/server-safe logger with sensitive field redaction for operational diagnostics.
 
 ## Engineering Quality Gates
 

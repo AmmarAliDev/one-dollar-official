@@ -1,8 +1,11 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { ErrorState } from "@/components/ui/error-state";
-import { toUserMessage } from "@/lib/errors/error-messages";
+import { useEffect } from "react";
+
+import { PageErrorFallback } from "@/components/ui/page-error-fallback";
+import { createLogger } from "@/lib/logger";
+
+const globalErrorLogger = createLogger("global-error-boundary");
 
 export default function GlobalError({
   error,
@@ -11,21 +14,24 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  useEffect(() => {
+    globalErrorLogger.error("Global error boundary triggered", {
+      error,
+      digest: error.digest,
+    });
+  }, [error]);
+
   return (
     <html lang="en">
       <body className="bg-background text-foreground flex min-h-screen items-center justify-center px-4 py-10">
-        <div className="w-full max-w-xl space-y-4">
-          <ErrorState
-            title="The app needs a fresh retry"
-            description={toUserMessage(error)}
-            action={<Button onClick={() => reset()}>Reload experience</Button>}
-          />
-          {process.env.NODE_ENV === "development" ? (
-            <pre className="bg-muted text-muted-foreground overflow-x-auto rounded-[var(--radius)] p-3 text-xs">
-              {error.message}
-            </pre>
-          ) : null}
-        </div>
+        <PageErrorFallback
+          error={error}
+          title="The app needs a fresh retry"
+          onRetry={reset}
+          retryLabel="Reload experience"
+          fullPage={false}
+          className="max-w-xl px-0 py-0"
+        />
       </body>
     </html>
   );
