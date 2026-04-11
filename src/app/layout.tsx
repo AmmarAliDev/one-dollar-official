@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
+import type { ReactNode } from "react";
 
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { buildMetadata } from "@/config/metadata";
@@ -25,7 +25,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full bg-background font-sans text-foreground">
+      <body className="bg-background text-foreground min-h-full font-sans">
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>

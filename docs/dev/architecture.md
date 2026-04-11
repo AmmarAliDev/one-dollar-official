@@ -1,26 +1,45 @@
 # Architecture Notes
 
 ## Goal
+
 Create a scalable foundation for a single-vendor e-commerce app using one shared codebase for storefront, admin, and auth experiences.
 
 ## Layering Pattern
+
 1. **`src/app`** — routing, layouts, metadata, boundaries
 2. **`src/components`** — shared UI and layout primitives
 3. **`src/features`** — future business modules (catalog, cart, checkout, admin tools)
 4. **`src/server`** — future repositories, services, auth, and integrations
-5. **`src/config`** — app-wide constants and configuration strategy
+5. **`src/config`** — app-wide constants, env validation, and safe config loading
 6. **`src/lib`** — low-level helpers and shared error utilities
 
 ## Route Groups
+
 - `(storefront)` reserves the customer-facing shell
 - `(admin)` reserves the operations dashboard space
 - `(auth)` reserves sign-in and account entry points
 
+## Config and Environment Strategy
+
+- `src/config/env.ts` validates public env input with a typed schema and throws readable `CONFIG_ERROR` messages.
+- `src/config/app-config.ts` builds a safe application config snapshot for future server and feature modules.
+- `src/config/feature-flags.ts` derives preview flags from validated env values instead of raw `process.env` access.
+- `getRequiredServerEnv()` should be used when a future integration needs a non-public secret at runtime.
+
 ## Error Handling Strategy
+
 - `src/app/error.tsx` handles route-segment failures gracefully
-- `src/app/global-error.tsx` prevents unhandled app crashes from leaking details
+- `src/app/global-error.tsx` prevents unhandled app crashes from leaking internals while still surfacing safe `AppError` messages
 - `src/app/not-found.tsx` provides a safe placeholder for unbuilt routes
 - `src/lib/errors` centralizes reusable error abstractions and user-facing messaging
 
+## Engineering Quality Gates
+
+- ESLint enforces consistent import ordering and type-only import style.
+- Prettier formats code and keeps Tailwind utility order consistent.
+- TypeScript runs in strict mode with stronger safety checks and shared path aliases.
+- Vitest smoke tests now cover config loading and invalid env handling.
+
 ## Deferred on Purpose
+
 This phase does **not** implement business features, database access, auth logic, or admin workflows. Those should be added in later prompts on top of the existing structure.

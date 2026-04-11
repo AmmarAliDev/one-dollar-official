@@ -10,9 +10,7 @@ type BuildMetadataOptions = {
 };
 
 export function buildMetadata(options: BuildMetadataOptions = {}): Metadata {
-  const title = options.title
-    ? `${options.title} | ${siteConfig.name}`
-    : siteConfig.name;
+  const title = options.title ? `${options.title} | ${siteConfig.name}` : siteConfig.name;
   const description = options.description ?? siteConfig.description;
   const metadataBase = new URL(env.appUrl);
 

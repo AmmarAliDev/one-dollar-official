@@ -16,8 +16,10 @@ export default function SignInPage() {
   return (
     <PageShell className="max-w-3xl">
       <div className="space-y-3">
-        <p className="text-sm font-medium text-primary">Auth route group placeholder</p>
-        <h1 className="text-3xl font-semibold tracking-tight">Sign-in flow reserved for the next phase</h1>
+        <p className="text-primary text-sm font-medium">Auth route group placeholder</p>
+        <h1 className="text-3xl font-semibold tracking-tight">
+          Sign-in flow reserved for the next phase
+        </h1>
         <p className="text-muted-foreground">
           The route structure and shared layout are in place, but real authentication logic is
           intentionally deferred.
