@@ -2,9 +2,10 @@
 
 import { useEffect } from "react";
 
-import { Button } from "@/components/ui/button";
-import { ErrorState } from "@/components/ui/error-state";
-import { toUserMessage } from "@/lib/errors/error-messages";
+import { PageErrorFallback } from "@/components/ui/page-error-fallback";
+import { createLogger } from "@/lib/logger";
+
+const routeErrorLogger = createLogger("route-error-boundary");
 
 export default function Error({
   error,
@@ -14,17 +15,11 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("Route error boundary triggered", error);
+    routeErrorLogger.error("Route error boundary triggered", {
+      error,
+      digest: error.digest,
+    });
   }, [error]);
 
-  return (
-    <div className="mx-auto flex min-h-[60vh] w-full max-w-2xl items-center px-4 py-12 sm:px-6">
-      <ErrorState
-        title="We hit a recoverable error"
-        description={toUserMessage(error)}
-        action={<Button onClick={() => reset()}>Try again</Button>}
-        className="w-full"
-      />
-    </div>
-  );
+  return <PageErrorFallback error={error} title="We hit a recoverable error" onRetry={reset} />;
 }

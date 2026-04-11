@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-**Phase 1 / Prompt 1.1 — Theme system, design tokens, and global UI shell**
+**Phase 1 / Prompt 1.2 — Shared UX infrastructure**
 
 ## Completed
 
@@ -12,9 +12,13 @@
 - [x] Admin route group upgraded with a sidebar + topbar placeholder shell
 - [x] Reusable UI state primitives added for page containers, section headers, empty/loading/error states, badges, prices, and skeletons
 - [x] Shared frontend toast support added through `sonner`, `AppToaster`, and `notify.*()`
-- [x] Boundary pages (`loading`, `error`, `global-error`, `not-found`) aligned with the new design system
-- [x] Smoke tests added for theme options, nav structure, and PKR price formatting
-- [x] AI and developer docs updated with UI conventions for future prompts
+- [x] Page-level fallbacks now use `PageErrorFallback`, while reusable `SectionErrorState` and `FormErrorSummary` cover localized and form-specific failures
+- [x] Loading infrastructure expanded with `InlineSpinner`, configurable `PageSkeleton`, `CardSkeleton`, and `TableSkeleton`
+- [x] Empty-state messaging is more configurable, and `ConfirmationDialog` now provides one reusable abstraction for high-impact actions
+- [x] `src/lib/errors/error-messages.ts` centralizes friendly user-safe copy, and `src/lib/logger.ts` redacts sensitive fields for client/server logging
+- [x] Boundary pages and preview/auth placeholders now exercise the new UX reliability patterns
+- [x] Smoke coverage now includes safe messaging, validation summaries, and log redaction behavior in `tests/smoke/ux-infrastructure.test.ts`
+- [x] AI and developer docs updated with UX and error-handling conventions for future prompts
 
 ## Deferred by design
 
@@ -26,4 +30,4 @@
 
 ## Recommended Next Prompt
 
-Proceed with shared UX infrastructure or the auth/data layer on top of this visual foundation.
+Proceed with the auth/data layer (Prompt 2.1 / 2.3) or start storefront business features on top of this shared UX foundation.

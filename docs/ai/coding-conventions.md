@@ -5,7 +5,8 @@
 - Use TypeScript everywhere.
 - Prefer server components by default; add client components only when interactivity is required.
 - Keep modules small, typed, and feature-oriented.
-- Do not leak raw internal errors to the UI; only surface safe `AppError` messages.
+- Do not leak raw internal errors to the UI; route them through `toUserMessage()` and only surface safe `AppError` messages.
+- Use `createLogger()` / `logger` from `src/lib/logger.ts` instead of ad-hoc `console.*` calls when logging app failures or operational context.
 
 ## Engineering Quality Rules
 
@@ -30,8 +31,10 @@
 - Prefer the shared UI wrappers before creating one-off markup:
   - `PageContainer` / `PageShell`
   - `SectionHeader`
-  - `EmptyState`, `LoadingState`, `ErrorState`
-  - `Badge`, `PriceDisplay`, and `Skeleton`
+  - `PageErrorFallback`, `SectionErrorState`, `FormErrorSummary`
+  - `EmptyState`, `LoadingState`, `InlineSpinner`
+  - `Badge`, `PriceDisplay`, `Skeleton`, `CardSkeleton`, `PageSkeleton`, and `TableSkeleton`
+  - `ConfirmationDialog` for destructive or high-impact confirmation flows
 - Keep styles composable through `cn()` from `src/lib/utils`.
 - Use `notify.*()` from `src/lib/notify.ts` for frontend toast feedback instead of ad-hoc alert patterns.
 
