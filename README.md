@@ -4,14 +4,14 @@ Production-ready foundation for a **single-vendor e-commerce app** built with **
 
 ## Current Status
 
-This repository now covers **Phase 0 / Prompt 0.2**:
+This repository now covers **Phase 1 / Prompt 1.1**:
 
-- shared storefront, admin, and auth placeholders
-- centralized routing, metadata, and feature config
-- strict TypeScript and shared path aliases
-- ESLint + Prettier engineering quality gates
-- typed environment validation with readable config errors
-- smoke tests covering config loading and env validation
+- polished storefront and admin shell placeholders
+- system-aware theme switching with light and dark support
+- global design tokens for spacing, radii, shadows, and semantic colors
+- reusable UI primitives for page sections, empty/loading/error states, badges, price display, and skeletons
+- shared frontend toast/notification support via `sonner`
+- smoke tests covering UI foundation helpers and config behavior
 
 > Business features remain intentionally deferred to later prompts.
 
@@ -72,7 +72,8 @@ tests           Smoke tests for scaffold and config behavior
 - `docs/ai/task-status.md`
 - `docs/dev/setup.md`
 - `docs/dev/architecture.md`
+- `docs/dev/ui-conventions.md`
 
 ## Next Recommended Step
 
-Proceed with the next product-focused prompt on top of the now-validated engineering foundation.
+Proceed with shared UX infrastructure or the next auth/data-layer prompt on top of the validated visual foundation.

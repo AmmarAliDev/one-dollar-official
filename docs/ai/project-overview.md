@@ -10,27 +10,27 @@
 
 ## Current Phase
 
-This repository currently implements **Prompt 0.2 — engineering quality standards on top of the initial scaffold**.
+This repository currently implements **Prompt 1.1 — the visual foundation for storefront and admin shells**.
 
 ### Included now
 
 - Next.js App Router + TypeScript + Tailwind CSS foundation
-- shadcn/ui-compatible setup (`components.json`, `cn()` utility, base UI primitives)
-- route placeholders for storefront, admin, and auth
-- theme provider wiring for dark/light mode
-- centralized config for env, routes, metadata, feature flags, and safe app config loading
-- strict TypeScript, shared aliases, ESLint, Prettier, and project scripts
-- readable runtime errors for invalid or missing environment variables
-- smoke tests covering config behavior and env validation
-- AI and developer documentation structure
+- shadcn/ui-compatible setup (`components.json`, `cn()` utility, reusable primitives)
+- theme provider wiring plus a three-way `system` / `light` / `dark` toggle
+- global design tokens in `src/app/globals.css` for semantic colors, spacing, radii, and shadows
+- polished storefront header/footer and a responsive admin shell placeholder with sidebar + topbar
+- reusable UI wrappers for page containers, section headers, empty/loading/error states, badges, price formatting, and skeletons
+- shared frontend toast support through `sonner`, `AppToaster`, and `notify.*()`
+- smoke tests covering theme option availability, nav structure, and PKR price formatting
+- updated AI and developer docs for UI conventions and future continuity
 
 ### Intentionally deferred
 
 - catalog, cart, checkout, payments
 - database and Prisma
-- authentication providers
+- authentication providers and real auth forms
 - RBAC and admin workflows
-- analytics, notifications, and CMS logic
+- analytics, notifications beyond shared frontend toasts, and CMS logic
 
 ## Folder Structure Snapshot
 

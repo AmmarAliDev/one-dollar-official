@@ -2,31 +2,28 @@
 
 ## Current Milestone
 
-**Phase 0 / Prompt 0.2 — Engineering quality standards**
+**Phase 1 / Prompt 1.1 — Theme system, design tokens, and global UI shell**
 
 ## Completed
 
-- [x] Next.js App Router project initialized with `pnpm`
-- [x] Core folder structure established under `src/`, `docs/`, and `tests/`
-- [x] Global layout wired with a theme provider placeholder
-- [x] Central config modules added for env, metadata, routes, and feature flags
-- [x] Placeholder pages added for storefront preview, admin, and auth
-- [x] Error, loading, and not-found boundaries added
-- [x] ESLint, Prettier, strict TypeScript settings, and shared scripts configured
-- [x] Shared path aliases added for app, config, lib, server, and tests
-- [x] Typed env validation and safe app config loading layer added
-- [x] Readable config errors added for invalid or missing required env values
-- [x] Smoke tests extended for config loading and env validation
-- [x] AI and developer documentation updated for the engineering workflow
+- [x] System-aware theme switching upgraded to explicit `system`, `light`, and `dark` selection
+- [x] Global design tokens added for semantic colors, spacing, radii, and shadows in `src/app/globals.css`
+- [x] Storefront shell polished with a reusable header, footer, and responsive navigation structure
+- [x] Admin route group upgraded with a sidebar + topbar placeholder shell
+- [x] Reusable UI state primitives added for page containers, section headers, empty/loading/error states, badges, prices, and skeletons
+- [x] Shared frontend toast support added through `sonner`, `AppToaster`, and `notify.*()`
+- [x] Boundary pages (`loading`, `error`, `global-error`, `not-found`) aligned with the new design system
+- [x] Smoke tests added for theme options, nav structure, and PKR price formatting
+- [x] AI and developer docs updated with UI conventions for future prompts
 
 ## Deferred by design
 
+- [ ] Product catalog and PDP implementation
 - [ ] Real auth implementation
 - [ ] Prisma/data layer
-- [ ] Storefront business features
-- [ ] Admin business workflows
-- [ ] Sensitive server integrations that actively consume `APP_SECRET`
+- [ ] Admin CRUD workflows and RBAC
+- [ ] Server-side notifications and third-party integrations
 
 ## Recommended Next Prompt
 
-Proceed with the next product-oriented step (catalog, data layer, or auth) on top of this validated engineering baseline.
+Proceed with shared UX infrastructure or the auth/data layer on top of this visual foundation.

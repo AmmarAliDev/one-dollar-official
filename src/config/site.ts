@@ -4,21 +4,44 @@ import type { NavItem } from "@/types/app";
 import { env } from "./env";
 import { routes } from "./routes";
 
-export const primaryNav: NavItem[] = [
+export const storefrontNav: NavItem[] = [
   {
-    title: "Storefront",
-    href: routes.storefront.home,
-    description: "Customer-facing e-commerce experience.",
+    title: "Preview",
+    href: routes.storefront.preview,
+    description: "Customer-facing shell preview.",
   },
   {
-    title: "Admin",
+    title: "Why One Dollar",
+    href: `${routes.storefront.home}#why-one-dollar`,
+    description: "Brand promise and delivery positioning.",
+  },
+  {
+    title: "UI Foundation",
+    href: `${routes.storefront.home}#ui-foundation`,
+    description: "Design system and loading state showcase.",
+  },
+];
+
+export const adminNav: NavItem[] = [
+  {
+    title: "Overview",
     href: routes.admin.dashboard,
-    description: "Back-office operations and content management.",
+    description: "Dashboard and daily ops snapshot.",
   },
   {
-    title: "Auth",
-    href: routes.auth.signIn,
-    description: "Authentication entry points and future account flows.",
+    title: "Catalog",
+    href: `${routes.admin.dashboard}#catalog`,
+    description: "Product and inventory tools placeholder.",
+  },
+  {
+    title: "Orders",
+    href: `${routes.admin.dashboard}#orders`,
+    description: "Fulfillment and status workflow placeholder.",
+  },
+  {
+    title: "Content",
+    href: `${routes.admin.dashboard}#content`,
+    description: "Homepage and SEO controls placeholder.",
   },
 ];
 
@@ -32,7 +55,9 @@ export function loadSiteConfig(runtimeEnv: RuntimeEnv = env) {
     country: "Pakistan",
     defaultCity: runtimeEnv.defaultCity,
     supportEmail: "support@onedollar.local",
-    primaryNav,
+    primaryNav: storefrontNav,
+    storefrontNav,
+    adminNav,
   } as const;
 }
 

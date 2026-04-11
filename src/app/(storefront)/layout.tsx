@@ -7,7 +7,9 @@ export default function StorefrontLayout({ children }: { children: ReactNode }) 
   return (
     <div className="flex min-h-screen flex-col">
       <AppHeader />
-      <div className="flex flex-1 flex-col">{children}</div>
+      <main id="main-content" className="flex flex-1 flex-col">
+        {children}
+      </main>
       <AppFooter />
     </div>
   );

@@ -15,9 +15,16 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 
 ## Route Groups
 
-- `(storefront)` reserves the customer-facing shell
-- `(admin)` reserves the operations dashboard space
+- `(storefront)` now uses a polished shared shell via `AppHeader` + `AppFooter`
+- `(admin)` now uses `AdminShell` with a responsive sidebar and topbar placeholder
 - `(auth)` reserves sign-in and account entry points
+
+## UI Foundation Strategy
+
+- Global design tokens live in `src/app/globals.css` and define semantic colors, spacing rhythm, radii, and shadow presets.
+- `src/components/ui` now contains reusable UI-state and presentation primitives like `Badge`, `PriceDisplay`, `SectionHeader`, `EmptyState`, `LoadingState`, `ErrorState`, and `Skeleton`.
+- `PageContainer` and `PageShell` should be reused for page spacing instead of duplicating wrapper classes.
+- Shared frontend feedback uses `sonner` through `src/components/providers/app-toaster.tsx` and `src/lib/notify.ts`.
 
 ## Config and Environment Strategy
 
