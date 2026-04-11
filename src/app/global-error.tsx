@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { ErrorState } from "@/components/ui/error-state";
 import { toUserMessage } from "@/lib/errors/error-messages";
 
 export default function GlobalError({
@@ -12,14 +13,15 @@ export default function GlobalError({
 }) {
   return (
     <html lang="en">
-      <body className="bg-background text-foreground flex min-h-screen items-center justify-center px-4">
-        <div className="border-border bg-card max-w-xl space-y-4 rounded-xl border p-6 shadow-sm">
-          <p className="text-primary text-sm font-medium">Global error boundary</p>
-          <h2 className="text-2xl font-semibold tracking-tight">The app needs a fresh retry.</h2>
-          <p className="text-muted-foreground">{toUserMessage(error)}</p>
-          <Button onClick={() => reset()}>Reload experience</Button>
+      <body className="bg-background text-foreground flex min-h-screen items-center justify-center px-4 py-10">
+        <div className="w-full max-w-xl space-y-4">
+          <ErrorState
+            title="The app needs a fresh retry"
+            description={toUserMessage(error)}
+            action={<Button onClick={() => reset()}>Reload experience</Button>}
+          />
           {process.env.NODE_ENV === "development" ? (
-            <pre className="bg-muted text-muted-foreground overflow-x-auto rounded-md p-3 text-xs">
+            <pre className="bg-muted text-muted-foreground overflow-x-auto rounded-[var(--radius)] p-3 text-xs">
               {error.message}
             </pre>
           ) : null}

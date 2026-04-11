@@ -25,9 +25,15 @@
 
 ## Styling Conventions
 
-- Use Tailwind utilities with shared design tokens from `src/app/globals.css`.
+- Use Tailwind utilities with shared design tokens from `src/app/globals.css`; avoid hard-coded page-only color values when a semantic token already exists.
 - Follow shadcn/ui-compatible patterns for reusable primitives.
+- Prefer the shared UI wrappers before creating one-off markup:
+  - `PageContainer` / `PageShell`
+  - `SectionHeader`
+  - `EmptyState`, `LoadingState`, `ErrorState`
+  - `Badge`, `PriceDisplay`, and `Skeleton`
 - Keep styles composable through `cn()` from `src/lib/utils`.
+- Use `notify.*()` from `src/lib/notify.ts` for frontend toast feedback instead of ad-hoc alert patterns.
 
 ## Documentation Conventions
 

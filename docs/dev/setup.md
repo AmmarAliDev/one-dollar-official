@@ -47,3 +47,14 @@ pnpm build
 ```
 
 Use `pnpm test:watch` during local iteration.
+
+## UI Foundation Checks
+
+For this phase, verify these manual flows locally:
+
+- theme toggle switches between `system`, `light`, and `dark`
+- storefront shell loads at `/` and `/preview`
+- admin shell placeholder loads at `/admin`
+- toast preview button renders a frontend notification
+
+See `docs/dev/ui-conventions.md` for the current design-system usage rules.

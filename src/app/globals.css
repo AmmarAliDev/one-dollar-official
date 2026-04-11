@@ -3,19 +3,32 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #f8fafc;
+  --background: #f6f8fb;
   --foreground: #0f172a;
   --card: #ffffff;
   --card-foreground: #0f172a;
-  --muted: #e2e8f0;
+  --muted: #edf2f7;
   --muted-foreground: #475569;
-  --accent: #e0f2fe;
-  --accent-foreground: #0f172a;
+  --accent: #ecfeff;
+  --accent-foreground: #134e4a;
   --primary: #0f766e;
-  --primary-foreground: #f8fafc;
+  --primary-foreground: #f0fdfa;
+  --secondary: #e2e8f0;
+  --secondary-foreground: #0f172a;
   --border: #dbe4ee;
+  --input: #cbd5e1;
   --ring: #14b8a6;
-  --radius: 0.9rem;
+  --success: #15803d;
+  --warning: #b45309;
+  --destructive: #dc2626;
+  --info: #2563eb;
+  --radius: 0.95rem;
+  --radius-card: 1.25rem;
+  --space-page: clamp(1rem, 0.85rem + 0.8vw, 1.5rem);
+  --space-section: clamp(2.5rem, 1.6rem + 2.8vw, 4.5rem);
+  --space-stack: clamp(1rem, 0.8rem + 1vw, 1.5rem);
+  --shadow-soft: 0 12px 30px -20px rgb(15 23 42 / 0.28);
+  --shadow-elevated: 0 24px 60px -32px rgb(15 23 42 / 0.38);
 }
 
 .dark {
@@ -23,14 +36,23 @@
   --foreground: #e2e8f0;
   --card: #0f172a;
   --card-foreground: #e2e8f0;
-  --muted: #1e293b;
+  --muted: #172033;
   --muted-foreground: #94a3b8;
-  --accent: #0f1d33;
-  --accent-foreground: #e2e8f0;
+  --accent: #0f2b36;
+  --accent-foreground: #ccfbf1;
   --primary: #2dd4bf;
   --primary-foreground: #042f2e;
-  --border: #1e293b;
-  --ring: #2dd4bf;
+  --secondary: #1e293b;
+  --secondary-foreground: #e2e8f0;
+  --border: #233047;
+  --input: #334155;
+  --ring: #5eead4;
+  --success: #4ade80;
+  --warning: #f59e0b;
+  --destructive: #f87171;
+  --info: #60a5fa;
+  --shadow-soft: 0 18px 40px -26px rgb(2 6 23 / 0.65);
+  --shadow-elevated: 0 28px 70px -34px rgb(2 6 23 / 0.72);
 }
 
 @theme inline {
@@ -44,13 +66,21 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
   --color-border: var(--border);
+  --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-destructive: var(--destructive);
+  --color-info: var(--info);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
+  --radius-xl: var(--radius-card);
 }
 
 * {
@@ -63,10 +93,16 @@ html {
 
 body {
   min-height: 100vh;
-  background: var(--background);
+  background: radial-gradient(
+      circle at top,
+      color-mix(in srgb, var(--accent) 40%, transparent),
+      transparent 35%
+    ),
+    var(--background);
   color: var(--foreground);
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--primary) 25%, white);
+  background: color-mix(in srgb, var(--primary) 24%, white);
+  color: var(--foreground);
 }
