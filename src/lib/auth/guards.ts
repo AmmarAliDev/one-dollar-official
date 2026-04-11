@@ -5,7 +5,12 @@ import type { RoleKey } from "@prisma/client";
 
 import { routes } from "@/config/routes";
 
-import { type AccessDenialReason, evaluateRouteAccess, type RbacPermission,rbacPermissions } from "./rbac";
+import {
+  type AccessDenialReason,
+  evaluateRouteAccess,
+  type RbacPermission,
+  rbacPermissions,
+} from "./rbac";
 
 type AuthenticatedSession = Session & {
   user: NonNullable<Session["user"]>;
@@ -33,13 +38,36 @@ async function getAuthSession() {
   return auth();
 }
 
+function isSafeRelativePath(value: string) {
+  const candidate = value.trim();
+
+  if (!candidate.startsWith("/")) {
+    return false;
+  }
+
+  if (candidate.startsWith("//") || candidate.includes("://") || candidate.includes("\\")) {
+    return false;
+  }
+
+  if (/^[a-zA-Z][a-zA-Z\d+.-]*:/.test(candidate.slice(1)) || /[\r\n]/.test(candidate)) {
+    return false;
+  }
+
+  return true;
+}
+
 function appendFromQuery(path: string, from?: string) {
   if (!from) {
     return path;
   }
 
+  const candidate = from.trim();
+  if (!candidate || !isSafeRelativePath(candidate)) {
+    return path;
+  }
+
   const separator = path.includes("?") ? "&" : "?";
-  return `${path}${separator}from=${encodeURIComponent(from)}`;
+  return `${path}${separator}from=${encodeURIComponent(candidate)}`;
 }
 
 export function getAccessDeniedPath(reason: AccessDenialReason, from?: string) {

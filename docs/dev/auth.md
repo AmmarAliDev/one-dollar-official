@@ -78,7 +78,7 @@ DATABASE_URL=postgresql://user:password@localhost:5432/one_dollar
 
 ### Guard flow
 
-- `src/proxy.ts` performs a lightweight redirect for `/admin` requests before rendering.
+- `src/proxy.ts` performs a lightweight, best-effort pre-render redirect for `/admin` requests before the full page loads.
 - `src/app/(admin)/layout.tsx` uses `requireAdminAccess()` as the authoritative server-side guard.
 - `src/lib/auth/guards.ts` exposes a route-handler-safe `guardRouteHandlerAccess()` helper that returns a typed `NextResponse` for `401`/`403` API responses.
 - `src/lib/auth/rbac.ts` owns the typed role/permission matrix and reusable permission helpers.
@@ -116,7 +116,7 @@ const { data: session, status } = useSession();
 ```
 src/
   auth.ts                              # Auth.js config (providers, callbacks, pages)
-  middleware.ts                        # Auth session middleware (route protection in 2.4)
+  proxy.ts                             # Lightweight /admin pre-render redirects using auth/session hints
   types/next-auth.d.ts                 # Session/JWT type augmentation
   features/auth/
     validators.ts                      # Zod schemas: signIn, signUp, forgotPassword

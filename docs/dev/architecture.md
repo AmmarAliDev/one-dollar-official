@@ -46,7 +46,12 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 
 - `src/lib/auth/rbac.ts` is the single source of truth for admin roles and permission grants.
 - `src/lib/auth/guards.ts` keeps server-component and route-handler authorization checks consistent.
-- `src/proxy.ts` performs an optimistic pre-render redirect, while the `(admin)` layout remains the authoritative server-side guard.
+- `src/proxy.ts` is a lightweight, early request-time layer that performs an **optimistic pre-render redirect**. In plain language, that means it uses the request path and available session hints to redirect obviously blocked `/admin` requests before the full page renders.
+- `src/app/(admin)/layout.tsx` is the **authoritative** server-side guard. It always makes the final access-control decision during rendering through `requireAdminAccess()`.
+- **Conflict resolution rule:** if `src/proxy.ts` allows a request but the layout denies it, the layout wins and the user is redirected.
+- **Why both layers exist:** the proxy fast-path improves performance and user experience for clearly blocked requests, while the layout deep check preserves security and consistency for every render.
+- **Sequence:** `src/proxy.ts` → request reaches the server/render pipeline → `(admin)` layout guard runs → final admin render or redirect to `/unauthorized` / `/forbidden`.
+- If these layers cannot be kept consistent over time, prefer consolidating to a single authoritative server-side guard rather than maintaining conflicting rules.
 - `src/app/unauthorized/page.tsx` and `src/app/forbidden/page.tsx` provide explicit recovery screens instead of raw auth errors.
 - `src/lib/audit/admin-actions.ts` prepares structured admin action records for future `AuditLog` persistence.
 
@@ -67,4 +72,4 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 
 ## Deferred on Purpose
 
-This phase does **not** implement feature-specific repositories, auth logic, or admin workflows. Those should be added in later prompts on top of the shared `src/server/db` structure.
+This phase already includes the RBAC foundation (`src/lib/auth/rbac.ts`, `src/lib/auth/guards.ts`, `src/proxy.ts`, the unauthorized/forbidden pages, and the audit-ready helper). Feature-specific repositories, richer auth/business integrations, and real admin workflows should still be added in later prompts on top of the shared `src/server/db` structure.

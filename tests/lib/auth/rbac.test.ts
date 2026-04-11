@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import ForbiddenPage from "../../../src/app/forbidden/page";
 import { createAdminAuditEntry } from "../../../src/lib/audit/admin-actions";
-import { buildAccessDeniedResponse } from "../../../src/lib/auth/guards";
+import { buildAccessDeniedResponse, getAccessDeniedPath } from "../../../src/lib/auth/guards";
 import {
   evaluateRouteAccess,
   hasPermission,
@@ -53,6 +53,14 @@ describe("rbac foundation", () => {
       code: "FORBIDDEN",
       message: expect.stringContaining("permission"),
     });
+  });
+
+  it("ignores unsafe external redirect targets in access-denied paths", () => {
+    expect(getAccessDeniedPath("forbidden", "https://evil.example")).toBe("/forbidden");
+    expect(getAccessDeniedPath("unauthorized", "//evil.example")).toBe("/unauthorized");
+    expect(getAccessDeniedPath("forbidden", "/admin/orders")).toBe(
+      "/forbidden?from=%2Fadmin%2Forders",
+    );
   });
 
   it("creates an audit-log-ready payload for admin actions", () => {
