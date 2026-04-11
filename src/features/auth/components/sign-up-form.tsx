@@ -30,10 +30,9 @@ export function SignUpForm() {
           role="alert"
           className="rounded-[calc(var(--radius)-2px)] border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive"
         >
-          {errors.map((error) => (
-            <p key={error}>{error}</p>
-          ))}
-        </div>
+          {errors.map((error, index) => (
+            <p key={`${error}-${index}`}>{error}</p>
+          ))}        </div>
       )}
 
       {/* Name (optional) */}

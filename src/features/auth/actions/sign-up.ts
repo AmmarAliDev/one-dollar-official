@@ -61,40 +61,66 @@ export async function signUpAction(
 
   // ── 2. Rate limit (in-memory; upgrade to Redis in Prompt 2.5) ─────────────
   const headerList = await headers();
-  const ip = headerList.get("x-forwarded-for") ?? "unknown";
-  const rlResult = await checkRateLimit({
-    identifier: `${ip}:${email}`,
+  // Prefer x-real-ip (set by the reverse proxy, not client-controllable) over
+  // x-forwarded-for whose leftmost value is supplied by the client. When only
+  // x-forwarded-for is present, take the *last* entry (appended by the
+  // outermost trusted proxy). Cap length to prevent oversized store keys.
+  const rawIp =
+    headerList.get("x-real-ip")?.trim() ??
+    headerList.get("x-forwarded-for")?.split(",").at(-1)?.trim() ??
+    "unknown";
+  const ip = rawIp.slice(0, 45);
+
+  // IP-only bucket — primary enumeration guard. An attacker cycling through
+  // different email addresses cannot create fresh buckets to evade this limit.
+  const ipRlResult = await checkRateLimit({
+    identifier: ip,
     action: "auth:sign-up",
-    limit: 5,
+    limit: 10,
     windowMs: 60_000,
   });
 
-  if (!rlResult.success) {
+  if (!ipRlResult.success) {
+    return {
+      errors: ["Too many sign-up attempts. Please wait a minute and try again."],
+    };
+  }
+
+  // Per-email bucket — secondary limit to slow concentrated attempts against a
+  // single address (e.g. credential-stuffing a known email).
+  const emailRlResult = await checkRateLimit({
+    identifier: email,
+    action: "auth:sign-up:email",
+    limit: 3,
+    windowMs: 60_000,
+  });
+
+  if (!emailRlResult.success) {
     return {
       errors: ["Too many sign-up attempts. Please wait a minute and try again."],
     };
   }
 
   // ── 3. Check for duplicate email ──────────────────────────────────────────
+  // Return a generic success-like response for existing emails so an attacker
+  // cannot distinguish a registered address from an unregistered one (i.e. no
+  // email enumeration via differing error vs. success responses).
   const existing = await db.user.findUnique({ where: { email } });
   if (existing) {
-    // Intentionally vague to avoid email enumeration.
-    return {
-      errors: ["An account with this email already exists."],
-    };
+    return { success: true };
   }
 
   // ── 4. Hash password ──────────────────────────────────────────────────────
   const passwordHash = await hashPassword(password);
 
   // ── 5. Resolve CUSTOMER role ──────────────────────────────────────────────
-  let customerRole = await db.role.findUnique({ where: { key: "CUSTOMER" } });
-  if (!customerRole) {
-    // Safety net: seed should have created this, but create it if missing.
-    customerRole = await db.role.create({
-      data: { key: "CUSTOMER", name: "Customer" },
-    });
-  }
+  // Upsert is idempotent: creates the role when missing and avoids unique-
+  // constraint races when multiple sign-up requests run concurrently.
+  const customerRole = await db.role.upsert({
+    where: { key: "CUSTOMER" },
+    create: { key: "CUSTOMER", name: "Customer" },
+    update: {},
+  });
 
   // ── 6. Create user ────────────────────────────────────────────────────────
   try {

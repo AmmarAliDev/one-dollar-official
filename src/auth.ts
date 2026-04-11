@@ -83,12 +83,31 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     /**
      * jwt callback — runs when a token is created or refreshed.
      * Persist `id` and `role` into the JWT so the session callback can read them.
+     *
+     * Credentials sign-in: authorize() already attaches `role` to the user object,
+     * so no extra DB query is needed.
+     * OAuth sign-in: PrismaAdapter returns the user row without relations, so we
+     * fetch the role from the DB only in that case (once, at sign-in time).
      */
-    jwt({ token, user }) {
+    async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        // `user.role` is set by our authorize() function above.
-        token.role = (user as { role?: string | null }).role ?? null;
+        const roleFromUser = (user as { role?: string | null }).role;
+        if (roleFromUser != null) {
+          // Credentials path — role already resolved by authorize().
+          token.role = roleFromUser;
+        } else {
+          // OAuth path — look up the role relation for this user.
+        if (user.id) {
+          const dbUser = await db.user.findUnique({
+            where: { id: user.id },
+            include: { role: true },
+          });
+          token.role = dbUser?.role?.key ?? "CUSTOMER";
+        } else {
+          token.role = "CUSTOMER";
+        }
+        }
       }
       return token;
     },

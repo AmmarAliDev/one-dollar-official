@@ -40,7 +40,55 @@ interface MemoryEntry {
   resetAt: number; // Unix ms timestamp
 }
 
+// ── Store configuration ────────────────────────────────────────────────────
+/** How often (ms) the cleanup sweep runs. Override before first import. */
+export const RATE_LIMIT_CLEANUP_INTERVAL_MS = 5 * 60_000; // 5 minutes
+
+/** Maximum number of keys kept in the store. When exceeded, oldest keys are
+ *  evicted (FIFO — Map preserves insertion order). */
+export const RATE_LIMIT_MAX_STORE_SIZE = 10_000;
+
 const memoryStore = new Map<string, MemoryEntry>();
+
+/** Remove entries whose window has already expired. */
+function evictExpired(): void {
+  const now = Date.now();
+  for (const [key, entry] of memoryStore) {
+    if (entry.resetAt < now) {
+      memoryStore.delete(key);
+    }
+  }
+}
+
+/** Drop the oldest insertion(s) until the store is within the max-size limit. */
+function evictOldestIfNeeded(): void {
+  while (memoryStore.size >= RATE_LIMIT_MAX_STORE_SIZE) {
+    const firstKey = memoryStore.keys().next().value;
+    if (firstKey !== undefined) {
+      memoryStore.delete(firstKey);
+    } else {
+      break;
+    }
+  }
+}
+
+// Start the periodic cleanup sweep. The unref() call (Node.js only) means this
+// timer will not prevent the process from exiting naturally.
+const _cleanupInterval: ReturnType<typeof setInterval> = setInterval(
+  evictExpired,
+  RATE_LIMIT_CLEANUP_INTERVAL_MS,
+);
+if (typeof _cleanupInterval === "object" && "unref" in _cleanupInterval) {
+  (_cleanupInterval as NodeJS.Timeout).unref();
+}
+
+/**
+ * Stop the background cleanup interval.
+ * Call this in test teardown (afterAll / afterEach) to avoid open-handle warnings.
+ */
+export function stopRateLimitCleanup(): void {
+  clearInterval(_cleanupInterval);
+}
 
 /**
  * Check whether an action by the given identifier is within rate limits.
@@ -62,6 +110,7 @@ export async function checkRateLimit({
   // Window expired or first request — start a fresh window.
   if (!entry || entry.resetAt < now) {
     const resetAt = now + windowMs;
+    evictOldestIfNeeded();
     memoryStore.set(key, { count: 1, resetAt });
     return { success: true, remaining: limit - 1, reset: new Date(resetAt) };
   }

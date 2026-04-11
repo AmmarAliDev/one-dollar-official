@@ -30,15 +30,15 @@ export function SignInForm() {
       {/* Error summary */}
       {errors.length > 0 && (
         <div
+          id="sign-in-errors"
           role="alert"
           className="rounded-[calc(var(--radius)-2px)] border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive"
         >
-          {errors.map((error) => (
-            <p key={error}>{error}</p>
+          {errors.map((error, index) => (
+            <p key={index}>{error}</p>
           ))}
         </div>
       )}
-
       {/* Email */}
       <div className="space-y-1.5">
         <Label htmlFor="sign-in-email">Email address</Label>

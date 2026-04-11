@@ -69,10 +69,11 @@ DATABASE_URL=postgresql://user:password@localhost:5432/one_dollar
 ```typescript
 import { auth } from "@/auth";
 // or use helpers:
-import { getSession, getCurrentUserId, requireSession } from "@/lib/auth/session";
+import { getSession, requireSession, getCurrentUserId } from "@/lib/auth/session";
 
-const session = await auth();             // nullable
-const session = await requireSession();  // throws redirect if not logged in
+const session = await auth();             // nullable (raw Auth.js call)
+const session = await getSession();       // nullable (helper wrapper around auth())
+const session = await requireSession();   // throws redirect if not logged in
 const userId  = await getCurrentUserId(); // nullable string
 ```
 
@@ -120,8 +121,24 @@ src/
 ## Rate Limiting
 
 Auth routes use an in-memory sliding-window rate limiter:
-- Sign-in: 10 attempts / minute / (IP + email)
-- Sign-up: 5 attempts / minute / (IP + email)
+- Sign-in: 10 attempts / minute / IP
+- Sign-up: 10 attempts / minute / IP (+ 3 attempts / minute / email)
+
+> **WARNING — not suitable for multi-instance or serverless deployments.**
+> The current implementation (`src/lib/rate-limit/index.ts`) keeps counters
+> in process memory. Every instance (Vercel serverless function, AWS Lambda
+> invocation, load-balancer node) maintains its own independent counter, so
+> an attacker who distributes requests across instances effectively multiplies
+> the allowed attempts by the number of running instances and can bypass the
+> limit entirely. **Do not rely on this implementation in any horizontally
+> scaled or serverless production environment.**
+>
+> Migrate to a centralized store before going to production. The recommended
+> path is to swap the store inside `src/lib/rate-limit/index.ts` for a
+> Redis-backed implementation (e.g. [`@upstash/ratelimit`](https://github.com/upstash/ratelimit-js)).
+> All callers use the stable `checkRateLimit` function — no call-site changes
+> are required. See the **Production upgrade** note below for the planned
+> migration checkpoint.
 
 **Production upgrade (Prompt 2.5):** Swap `src/lib/rate-limit/index.ts` implementation with a Redis-backed store (e.g. `@upstash/ratelimit`). The `checkRateLimit` function signature is stable — callers don't change.
 

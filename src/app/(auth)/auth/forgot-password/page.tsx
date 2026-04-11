@@ -8,7 +8,7 @@ import { routes } from "@/config/routes";
 export const metadata = buildMetadata({
   title: "Forgot Password",
   path: "/auth/forgot-password",
-  description: "Reset your One Dollar account password.",
+  description: "Placeholder: password reset is coming soon.",
 });
 
 /**
