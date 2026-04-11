@@ -17,8 +17,13 @@ datasource db {
 }
 
 // Region and currency enums (small scoped for initial launch)
-enum Country { PAK }
-enum City { KARACHI }
+enum Country {
+  PAK
+}
+
+enum City {
+  KARACHI
+}
 
 // Role and permission model keys
 enum RoleKey {
@@ -30,12 +35,31 @@ enum RoleKey {
 }
 
 // Product / Order / Cart statuses
-enum ProductStatus { DRAFT PUBLISHED ARCHIVED }
-enum OrderStatus { PENDING CONFIRMED PAID FULFILLED CANCELLED REFUNDED }
-enum CartStatus { ACTIVE COMPLETED ABANDONED }
+enum ProductStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PAID
+  FULFILLED
+  CANCELLED
+  REFUNDED
+}
+
+enum CartStatus {
+  ACTIVE
+  COMPLETED
+  ABANDONED
+}
 
 // Currency (Pakistan Rupee only for now)
-enum Currency { PKR }
+enum Currency {
+  PKR
+}
 
 // --------------------
 // Core models
@@ -53,11 +77,11 @@ model Role {
 }
 
 model User {
-  id        String    @id @default(uuid())
-  email     String?   @unique
-  phone     String?   @unique
+  id        String     @id @default(uuid())
+  email     String?    @unique
+  phone     String?    @unique
   name      String?
-  role      Role?     @relation(fields: [roleId], references: [id])
+  role      Role?      @relation(fields: [roleId], references: [id])
   roleId    String?
   accounts  Account[]
   sessions  Session[]
@@ -66,27 +90,27 @@ model User {
   wishlists Wishlist[]
   carts     Cart[]
   orders    Order[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 }
 
 // NextAuth compatible Account + Session models (optional for NextAuth)
 model Account {
-  id                 String   @id @default(cuid())
-  userId             String
-  user               User     @relation(fields: [userId], references: [id])
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String?
-  access_token       String?
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String?
-  session_state      String?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id])
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   @@unique([provider, providerAccountId])
   @@index([userId])
@@ -108,7 +132,7 @@ model Address {
   id        String   @id @default(uuid())
   user      User?    @relation(fields: [userId], references: [id])
   userId    String?
-  label     String?  // Home, Office, etc.
+  label     String? // Home, Office, etc.
   country   Country  @default(PAK)
   province  String?
   city      City     @default(KARACHI)
@@ -124,33 +148,34 @@ model Address {
 }
 
 model Category {
-  id            String    @id @default(uuid())
-  name          String
-  slug          String    @unique
-  description   String?
-  parentId      String?
-  parent        Category? @relation("CategoryToCategory", fields: [parentId], references: [id])
-  children      Category[] @relation("CategoryToCategory")
-  seoTitle      String?
+  id             String     @id @default(uuid())
+  name           String
+  slug           String     @unique
+  description    String?
+  parentId       String?
+  parent         Category?  @relation("CategoryToCategory", fields: [parentId], references: [id])
+  children       Category[] @relation("CategoryToCategory")
+  products       Product[]
+  seoTitle       String?
   seoDescription String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
 
   @@index([slug])
 }
 
 model Product {
-  id               String                @id @default(uuid())
+  id               String                 @id @default(uuid())
   // Optional master product code (parent identifier). Actual SKU for
   // inventory/fulfillment lives on `ProductVariant.sku`.
   masterSku        String?
   name             String
-  slug             String                @unique
+  slug             String                 @unique
   shortDescription String?
   description      String?
-  status           ProductStatus         @default(DRAFT)
+  status           ProductStatus          @default(DRAFT)
   categoryId       String?
-  category         Category?             @relation(fields: [categoryId], references: [id])
+  category         Category?              @relation(fields: [categoryId], references: [id])
   weightGram       Int?
   heightMm         Int?
   widthMm          Int?
@@ -159,28 +184,29 @@ model Product {
   variants         ProductVariant[]
   specifications   ProductSpecification[]
   reviews          Review[]
+  dealCampaigns    DealCampaignProduct[]
   metadata         Json?
   seoTitle         String?
   seoDescription   String?
   seoImageUrl      String?
-  createdAt        DateTime              @default(now())
-  updatedAt        DateTime              @updatedAt
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
 
   @@index([categoryId])
   @@index([masterSku])
 }
 
 model ProductImage {
-  id               String         @id @default(uuid())
-  product          Product?       @relation(fields: [productId], references: [id])
+  id               String          @id @default(uuid())
+  product          Product?        @relation(fields: [productId], references: [id])
   productId        String?
   productVariant   ProductVariant? @relation(fields: [productVariantId], references: [id])
   productVariantId String?
   url              String
   alt              String?
-  position         Int            @default(0)
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
+  position         Int             @default(0)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
 
   // NOTE: At least one of `productId` or `productVariantId` MUST be set.
   // This is enforced by a DB CHECK constraint in the migration (product_id IS NOT NULL OR product_variant_id IS NOT NULL).
@@ -188,19 +214,22 @@ model ProductImage {
 }
 
 model ProductVariant {
-  id             String    @id @default(uuid())
-  product        Product   @relation(fields: [productId], references: [id])
+  id             String         @id @default(uuid())
+  product        Product        @relation(fields: [productId], references: [id])
   productId      String
-  sku            String?   @unique
+  sku            String?        @unique
   title          String?
-  options        Json?     // e.g. { color: 'red', size: 'M' }
-  price          Int       // stored in smallest currency unit (PKR paisa)
+  options        Json? // e.g. { color: 'red', size: 'M' }
+  price          Int // stored in smallest currency unit (PKR paisa)
   compareAtPrice Int?
-  currency       Currency  @default(PKR)
+  currency       Currency       @default(PKR)
   inventory      Inventory?
-  isDefault      Boolean   @default(false)
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  images         ProductImage[]
+  wishlistItems  WishlistItem[]
+  cartItems      CartItem[]
+  isDefault      Boolean        @default(false)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
 
   @@index([productId])
 }
@@ -292,7 +321,7 @@ model CartItem {
   productVariant   ProductVariant @relation(fields: [productVariantId], references: [id])
   productVariantId String
   quantity         Int            @default(1)
-  unitPrice        Int            // snapshot of price when added (smallest unit)
+  unitPrice        Int // snapshot of price when added (smallest unit)
   createdAt        DateTime       @default(now())
 
   // Prevent duplicate cart entries for the same cart + variant
@@ -301,66 +330,68 @@ model CartItem {
 }
 
 model Order {
-  id                 String        @id @default(uuid())
-  orderNumber        String        @unique
-  user               User?         @relation(fields: [userId], references: [id])
-  userId             String?
-  status             OrderStatus   @default(PENDING)
-  subtotal           Int
-  shipping           Int
-  tax                Int
-  discount           Int
-  total              Int
-  currency           Currency      @default(PKR)
-  paymentMethod      String?
-  paymentProvider    String?
-  paymentStatus      String?
-  placedAt           DateTime      @default(now())
-  items              OrderItem[]
-  shippingAddress    OrderAddress? @relation("ShippingAddress", fields: [shippingAddressId], references: [id])
-  shippingAddressId  String?
-  billingAddress     OrderAddress? @relation("BillingAddress", fields: [billingAddressId], references: [id])
-  billingAddressId   String?
-  metadata           Json?
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
+  id                String        @id @default(uuid())
+  orderNumber       String        @unique
+  user              User?         @relation(fields: [userId], references: [id])
+  userId            String?
+  status            OrderStatus   @default(PENDING)
+  subtotal          Int
+  shipping          Int
+  tax               Int
+  discount          Int
+  total             Int
+  currency          Currency      @default(PKR)
+  paymentMethod     String?
+  paymentProvider   String?
+  paymentStatus     String?
+  placedAt          DateTime      @default(now())
+  items             OrderItem[]
+  shippingAddress   OrderAddress? @relation("ShippingAddress", fields: [shippingAddressId], references: [id])
+  shippingAddressId String?
+  billingAddress    OrderAddress? @relation("BillingAddress", fields: [billingAddressId], references: [id])
+  billingAddressId  String?
+  metadata          Json?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 
   @@index([orderNumber])
   @@index([userId])
 }
 
 model OrderItem {
-  id               String   @id @default(uuid())
-  order            Order    @relation(fields: [orderId], references: [id])
-  orderId          String
-  productId        String?  // optional reference to original product
-  productName      String
-  variantTitle     String?
-  sku              String?
-  unitPrice        Int
-  quantity         Int
-  subtotal         Int
-  tax              Int?
-  createdAt        DateTime @default(now())
+  id           String   @id @default(uuid())
+  order        Order    @relation(fields: [orderId], references: [id])
+  orderId      String
+  productId    String? // optional reference to original product
+  productName  String
+  variantTitle String?
+  sku          String?
+  unitPrice    Int
+  quantity     Int
+  subtotal     Int
+  tax          Int?
+  createdAt    DateTime @default(now())
 
   @@index([orderId])
 }
 
 model OrderAddress {
-  id         String   @id @default(uuid())
-  fullName   String
-  phone      String?
-  email      String?
-  street1    String
-  street2    String?
+  id             String   @id @default(uuid())
+  fullName       String
+  phone          String?
+  email          String?
+  street1        String
+  street2        String?
   // Use the shared City enum for consistency with `Address`
-  city       City     @default(KARACHI)
-  province   String?
-  country    Country  @default(PAK)
-  postcode   String?
-  notes      String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  city           City     @default(KARACHI)
+  province       String?
+  country        Country  @default(PAK)
+  postcode       String?
+  notes          String?
+  shippingOrders Order[]  @relation("ShippingAddress")
+  billingOrders  Order[]  @relation("BillingAddress")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
 model AuditLog {
@@ -387,28 +418,28 @@ model HomePageSection {
 }
 
 model Banner {
-  id        String   @id @default(uuid())
+  id        String    @id @default(uuid())
   title     String
   imageUrl  String
   href      String?
   startAt   DateTime?
   endAt     DateTime?
-  active    Boolean  @default(true)
-  position  Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  active    Boolean   @default(true)
+  position  Int       @default(0)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
 model DealCampaign {
-  id        String               @id @default(uuid())
-  name      String
+  id          String                @id @default(uuid())
+  name        String
   description String?
-  startsAt  DateTime?
-  endsAt    DateTime?
-  active    Boolean              @default(true)
-  products  DealCampaignProduct[]
-  createdAt DateTime             @default(now())
-  updatedAt DateTime             @updatedAt
+  startsAt    DateTime?
+  endsAt      DateTime?
+  active      Boolean               @default(true)
+  products    DealCampaignProduct[]
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
 }
 
 model DealCampaignProduct {

@@ -13,6 +13,14 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 5. **`src/config`** — app-wide constants, env validation, and safe config loading
 6. **`src/lib`** — low-level helpers and shared error utilities
 
+## Database Access Strategy
+
+- `src/server/db/client.ts` owns the lazy Prisma singleton for Next.js server execution.
+- `src/server/db/repository.ts` standardizes how repositories and services receive a `db` executor.
+- `src/server/db/transaction.ts` provides shared transaction helpers so nested services can reuse an open transaction instead of opening another one.
+- `src/server/db/pagination.ts` and `src/server/db/query-result.ts` keep list and result contracts consistent across feature modules.
+- `src/lib/prisma.ts` remains only as a compatibility re-export and should not grow new logic.
+
 ## Route Groups
 
 - `(storefront)` now uses a polished shared shell via `AppHeader` + `AppFooter`
@@ -32,6 +40,7 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `src/config/app-config.ts` builds a safe application config snapshot for future server and feature modules.
 - `src/config/feature-flags.ts` derives preview flags from validated env values instead of raw `process.env` access.
 - `getRequiredServerEnv()` should be used when a future integration needs a non-public secret at runtime.
+- `DATABASE_URL` must be available anywhere Prisma queries or CLI workflows run.
 
 ## Error Handling Strategy
 
@@ -50,4 +59,4 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 
 ## Deferred on Purpose
 
-This phase does **not** implement business features, database access, auth logic, or admin workflows. Those should be added in later prompts on top of the existing structure.
+This phase does **not** implement feature-specific repositories, auth logic, or admin workflows. Those should be added in later prompts on top of the shared `src/server/db` structure.
