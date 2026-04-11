@@ -30,9 +30,17 @@ Validation is centralized in `src/config/env.ts`, and the safe shared config sna
 | `NEXT_PUBLIC_DEFAULT_CITY` | No                              | Launch-city label for the current Karachi-first storefront scaffold                                     |
 | `NEXT_PUBLIC_ENABLE_ADMIN` | No                              | Enables or disables the admin preview placeholder                                                       |
 | `NEXT_PUBLIC_ENABLE_AUTH`  | No                              | Enables or disables the auth preview placeholder                                                        |
+| `DATABASE_URL`             | Yes for Prisma workflows        | PostgreSQL connection string used by Prisma CLI commands and server-side database access                |
 | `APP_SECRET`               | Conditionally required          | Add before enabling a sensitive server-side integration that calls `getRequiredServerEnv("APP_SECRET")` |
 
 If a required or invalid value is detected, the app throws a readable `CONFIG_ERROR` with guidance for updating `.env.local`.
+
+## Database Workflow
+
+- Run `pnpm prisma:validate` after schema edits.
+- Use `pnpm prisma:migrate:dev` for local schema changes.
+- Keep application queries behind `src/server/db` and feature-level repositories instead of importing Prisma directly into route handlers.
+- See `docs/dev/database-access.md` for the repository/service/transaction pattern.
 
 ## Code Quality Workflow
 

@@ -21,8 +21,17 @@
 - `src/components` contains shared presentational and layout building blocks.
 - `src/features/<feature>` should own feature-specific UI, validation, and orchestration.
 - `src/server` is reserved for server-only services, repositories, and integrations.
+- `src/server/db` is the shared database foundation; future repositories and services should build on it instead of instantiating Prisma directly.
 - `src/config` is the source of truth for routes, env validation, metadata, feature flags, and safe app config loading.
 - Avoid direct `process.env` reads outside `src/config/env.ts`; use `env`, `loadAppConfig()`, or `getRequiredServerEnv()` instead.
+
+## Database Access Conventions
+
+- Use `getPrismaClient()` from `src/server/db` for the root Prisma singleton when a repository or service needs direct access.
+- Repositories should accept a `db` executor and contain Prisma query details only.
+- Services should compose repositories and own `runInTransaction()` / `runWithTransaction()` boundaries.
+- Use `normalizePagination()` and `createPaginatedResult()` for list queries so pagination behavior stays consistent.
+- Use `QueryResult` helpers when a caller needs an explicit success/failure return contract instead of exceptions.
 
 ## Styling Conventions
 

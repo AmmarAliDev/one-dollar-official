@@ -10,7 +10,7 @@
 
 ## Current Phase
 
-This repository currently implements **Prompt 1.1 — the visual foundation for storefront and admin shells**.
+This repository currently implements **Prompt 2.2 — database access layer conventions** on top of the previously completed UI and schema foundation.
 
 ### Included now
 
@@ -21,13 +21,14 @@ This repository currently implements **Prompt 1.1 — the visual foundation for 
 - polished storefront header/footer and a responsive admin shell placeholder with sidebar + topbar
 - reusable UI wrappers for page containers, section headers, empty/loading/error states, badges, price formatting, and skeletons
 - shared frontend toast support through `sonner`, `AppToaster`, and `notify.*()`
-- smoke tests covering theme option availability, nav structure, and PKR price formatting
+- lazy Prisma singleton access through `src/server/db/client.ts`
+- shared server-side database conventions for repositories, services, transaction orchestration, pagination, and query result typing in `src/server/db`
+- helper tests covering pagination, query results, transaction helpers, and safe Prisma singleton reuse
 - updated AI and developer docs for UI conventions and future continuity
 
 ### Intentionally deferred
 
 - catalog, cart, checkout, payments
-- database and Prisma
 - authentication providers and real auth forms
 - RBAC and admin workflows
 - analytics, notifications beyond shared frontend toasts, and CMS logic
@@ -51,5 +52,6 @@ src/
 - Continue from the current repository state.
 - Extend existing layers instead of creating duplicate patterns.
 - Keep business logic inside `src/features` or `src/server`, not directly in pages.
+- Put new Prisma queries behind repository factories in `src/server` and let services own transactions.
 - Reuse `loadAppConfig()` / `getRequiredServerEnv()` for new config-dependent server features.
 - Update both `docs/ai` and `docs/dev` whenever a new capability is added.
