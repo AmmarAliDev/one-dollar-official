@@ -6,10 +6,12 @@ Models (summary)
 - `User`: { id, email?, phone?, name?, roleId?, createdAt, updatedAt }
 - `Role`: { id, key, name, permissions: JSON }
 - `Category`: { id, name, slug, parentId?, seoTitle?, seoDescription? }
-- `Product`: { id, sku?, name, slug, shortDescription?, description?, status, categoryId?, metadata?: JSON, seoTitle?, seoDescription?, seoImageUrl? }
-- `ProductVariant`: { id, productId, sku?, title?, options?: JSON, price, compareAtPrice?, currency }
-- `Inventory`: { id, productVariantId, quantity, reserved, location }
-- `ProductImage`: { id, productId?, productVariantId?, url, alt, position }
+-- `Product`: { id, masterSku?, name, slug, shortDescription?, description?, status, categoryId?, metadata?: JSON, seoTitle?, seoDescription?, seoImageUrl? }
+	- Note: `masterSku` is a parent/master product code (optional). The actual SKU used for inventory, pricing, and fulfillment lives on `ProductVariant.sku`.
+-- `ProductVariant`: { id, productId, sku?, title?, options?: JSON, price, compareAtPrice?, currency }
+-- `Inventory`: { id, productVariantId, quantity, reserved, location }
+-- `ProductImage`: { id, productId?, productVariantId?, url, alt, position }
+	- Rule: A `ProductImage` must reference at least one of `productId` or `productVariantId`. This is enforced by a DB CHECK constraint (`product_id IS NOT NULL OR product_variant_id IS NOT NULL`).
 - `ProductSpecification`: { id, productId, key, value }
 - `Review`: { id, productId, userId?, rating, title?, body?, approved }
 - `Wishlist` / `WishlistItem`: wishlist per user, items reference variants

@@ -52,7 +52,8 @@ async function main() {
 main()
   .catch((e) => {
     console.error(e);
-    process.exit(1);
+    // Set non-zero exit code but allow finally() to run so prisma disconnects cleanly.
+    process.exitCode = 1;
   })
   .finally(async () => {
     await prisma.$disconnect();

@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS "Category" (
 -- Products (skeleton)
 CREATE TABLE IF NOT EXISTS "Product" (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  sku text UNIQUE,
+  master_sku text,
   name text NOT NULL,
   slug text UNIQUE NOT NULL,
   short_description text,
@@ -88,6 +88,9 @@ CREATE TABLE IF NOT EXISTS "Product" (
   updated_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT fk_product_category FOREIGN KEY(category_id) REFERENCES "Category"(id) ON DELETE SET NULL
 );
+
+-- Index for master_sku (non-unique parent product code)
+CREATE INDEX IF NOT EXISTS idx_product_master_sku ON "Product"(master_sku);
 
 -- Product variants
 CREATE TABLE IF NOT EXISTS "ProductVariant" (
@@ -118,6 +121,9 @@ CREATE TABLE IF NOT EXISTS "Inventory" (
   CONSTRAINT fk_inventory_variant FOREIGN KEY(product_variant_id) REFERENCES "ProductVariant"(id) ON DELETE CASCADE
 );
 
+-- Ensure inventory counts are non-negative
+ALTER TABLE IF EXISTS "Inventory" ADD CONSTRAINT chk_inventory_non_negative CHECK (quantity >= 0 AND reserved >= 0 AND safety_stock >= 0);
+
 -- Product images
 CREATE TABLE IF NOT EXISTS "ProductImage" (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -131,6 +137,9 @@ CREATE TABLE IF NOT EXISTS "ProductImage" (
   CONSTRAINT fk_image_product FOREIGN KEY(product_id) REFERENCES "Product"(id) ON DELETE CASCADE,
   CONSTRAINT fk_image_variant FOREIGN KEY(product_variant_id) REFERENCES "ProductVariant"(id) ON DELETE CASCADE
 );
+
+-- Enforce that a ProductImage references either a product or a product variant (or both)
+ALTER TABLE IF EXISTS "ProductImage" ADD CONSTRAINT chk_productimage_one_fk CHECK (product_id IS NOT NULL OR product_variant_id IS NOT NULL);
 
 -- Product specifications
 CREATE TABLE IF NOT EXISTS "ProductSpecification" (
@@ -159,6 +168,9 @@ CREATE TABLE IF NOT EXISTS "Review" (
   CONSTRAINT fk_review_user FOREIGN KEY(user_id) REFERENCES "User"(id) ON DELETE SET NULL
 );
 
+-- Ensure ratings are within expected bounds
+ALTER TABLE IF EXISTS "Review" ADD CONSTRAINT chk_review_rating_bounds CHECK (rating BETWEEN 1 AND 5);
+
 -- Wishlist + items
 CREATE TABLE IF NOT EXISTS "Wishlist" (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -177,6 +189,9 @@ CREATE TABLE IF NOT EXISTS "WishlistItem" (
   CONSTRAINT fk_wishlistitem_wishlist FOREIGN KEY(wishlist_id) REFERENCES "Wishlist"(id) ON DELETE CASCADE,
   CONSTRAINT fk_wishlistitem_variant FOREIGN KEY(product_variant_id) REFERENCES "ProductVariant"(id) ON DELETE CASCADE
 );
+
+-- Prevent duplicate wishlist entries for the same wishlist + variant
+ALTER TABLE IF EXISTS "WishlistItem" ADD CONSTRAINT uniq_wishlistitem_wishlist_variant UNIQUE (wishlist_id, product_variant_id);
 
 -- Cart + items
 CREATE TABLE IF NOT EXISTS "Cart" (
@@ -200,6 +215,9 @@ CREATE TABLE IF NOT EXISTS "CartItem" (
   CONSTRAINT fk_cartitem_variant FOREIGN KEY(product_variant_id) REFERENCES "ProductVariant"(id) ON DELETE CASCADE
 );
 
+-- Prevent duplicate cart entries for same cart + variant
+ALTER TABLE IF EXISTS "CartItem" ADD CONSTRAINT uk_cartitem_cart_variant UNIQUE (cart_id, product_variant_id);
+
 -- Orders + items + address snapshot
 CREATE TABLE IF NOT EXISTS "Order" (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -222,6 +240,9 @@ CREATE TABLE IF NOT EXISTS "Order" (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
+
+-- Referential integrity: ensure order.user_id references an existing user
+ALTER TABLE IF EXISTS "Order" ADD CONSTRAINT fk_order_user FOREIGN KEY (user_id) REFERENCES "User"(id) ON DELETE SET NULL;
 
 CREATE TABLE IF NOT EXISTS "OrderItem" (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -314,6 +335,9 @@ CREATE TABLE IF NOT EXISTS "DealCampaignProduct" (
   CONSTRAINT fk_dcp_campaign FOREIGN KEY(campaign_id) REFERENCES "DealCampaign"(id) ON DELETE CASCADE,
   CONSTRAINT fk_dcp_product FOREIGN KEY(product_id) REFERENCES "Product"(id) ON DELETE CASCADE
 );
+
+-- Prevent duplicate (campaign_id, product_id) pairs
+ALTER TABLE IF EXISTS "DealCampaignProduct" ADD CONSTRAINT unique_dcp_campaign_product UNIQUE (campaign_id, product_id);
 
 -- NextAuth Account + Session are intentionally lightweight here; use Prisma's generated migration when possible
 

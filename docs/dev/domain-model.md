@@ -17,6 +17,8 @@ Key entities
 - `Category` — hierarchical categories with `parentId` support and SEO fields.
 - `Product` — product master record (sku, slug, seo, metadata). `Product` -> `ProductVariant` is a 1:N relationship.
 - `ProductVariant` — SKU-level inventory, pricing, options JSON (color/size). `Inventory` is required per variant.
+ - `Product` — product master record. Uses an optional `masterSku`/`product_code` as a parent identifier; it is a catalog-level record that groups variants and carries shared SEO/metadata.
+ - `ProductVariant` — SKU-level record used for inventory, pricing and fulfillment. `ProductVariant.sku` is the authoritative SKU for orders and inventory. `Inventory` is required per variant.
 - `Inventory` — tracks `quantity`, `reserved`, `safetyStock` and `location` (Karachi by default).
 - `Review`, `Wishlist`, `Cart` (and their items) for UX flows.
 - `Order` / `OrderItem` / `OrderAddress` — orders contain snapshot fields (productName, unitPrice, etc.) so historical data remains stable.
@@ -26,6 +28,7 @@ Key entities
 Data and indexing strategy
 - Timestamps: `createdAt` and `updatedAt` are present on most models (`@default(now())` and `@updatedAt`).
 - Unique constraints for `slug`, `sku`, and `orderNumber` to support lookups and safe indexing.
+ - Unique constraints for `slug` and `orderNumber` to support lookups and safe indexing. The authoritative SKU lives on `ProductVariant.sku`; the product-level identifier is `masterSku` (optional) and not required to be unique.
 - Indexes on foreign keys (`userId`, `productId`, `categoryId`) to support common queries.
 - Price fields use integer in the smallest currency unit (PKR) to avoid floating point errors.
 
