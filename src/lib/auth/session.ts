@@ -5,15 +5,23 @@
  * uses server APIs). Do not import this file from Client Components.
  *
  * Usage pattern:
- *   const session = await getSession();           // nullable
- *   const session = await requireSession();       // throws/redirects
- *   const userId  = await getCurrentUserId();     // nullable string
+ *   const session = await getSession();             // nullable
+ *   const session = await requireSession();         // redirects if missing
+ *   const role    = await getCurrentUserRole();     // typed RoleKey | null
+ *   const allowed = await hasPermission(...);       // boolean
  */
 
 import { redirect } from "next/navigation";
+import type { RoleKey } from "@prisma/client";
 
 import { auth } from "@/auth";
 import { routes } from "@/config/routes";
+
+import {
+  hasAnyPermission as roleHasAnyPermission,
+  normalizeRole,
+  type RbacPermission,
+} from "./rbac";
 
 /** Return the current session, or `null` if the user is not authenticated. */
 export async function getSession() {
@@ -43,20 +51,31 @@ export async function getCurrentUserId(): Promise<string | null> {
 }
 
 /**
- * Return the current user's role key (e.g. "CUSTOMER", "SUPER_ADMIN"),
+ * Return the current user's typed role key (e.g. `RoleKey.CUSTOMER`),
  * or `null` if not authenticated.
  */
-export async function getCurrentUserRole(): Promise<string | null> {
+export async function getCurrentUserRole(): Promise<RoleKey | null> {
   const session = await auth();
-  return session?.user?.role ?? null;
+  return normalizeRole(session?.user?.role);
 }
 
 /**
  * Check whether the current user has one of the given roles.
  * Returns `false` for unauthenticated users.
  */
-export async function hasRole(...roleKeys: string[]): Promise<boolean> {
+export async function hasRole(...roleKeys: RoleKey[]): Promise<boolean> {
   const role = await getCurrentUserRole();
-  if (!role) return false;
-  return roleKeys.includes(role);
+  return role ? roleKeys.includes(role) : false;
+}
+
+/** Check whether the current user has a specific permission grant. */
+export async function hasPermission(permission: RbacPermission): Promise<boolean> {
+  const role = await getCurrentUserRole();
+  return roleHasAnyPermission(role, [permission]);
+}
+
+/** Check whether the current user has any permission from the supplied list. */
+export async function hasAnyPermission(...permissions: RbacPermission[]): Promise<boolean> {
+  const role = await getCurrentUserRole();
+  return roleHasAnyPermission(role, permissions);
 }

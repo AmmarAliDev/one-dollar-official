@@ -7,6 +7,7 @@ Authentication is implemented with [Auth.js v5 (next-auth)](https://authjs.dev/)
 - **Google SSO** via the Google OAuth provider
 - **JWT sessions** (no DB round-trip per request; OAuth accounts stored in DB)
 - **Prisma adapter** to persist OAuth accounts and user records
+- **Typed RBAC guards** for admin-only route protection and permission-aware server utilities
 
 ## Environment Variables
 
@@ -63,18 +64,43 @@ DATABASE_URL=postgresql://user:password@localhost:5432/one_dollar
 - Client: call `signOut()` from `next-auth/react` or use a form action pointing to `signOutAction`.
 - The JWT cookie is cleared and the user is redirected to home.
 
+## RBAC and Route Protection
+
+### Admin role matrix
+
+| Role | Admin access | Primary permissions |
+| --- | --- | --- |
+| `SUPER_ADMIN` | ✅ | Full admin access, catalog, orders, users, settings |
+| `PRODUCT_MANAGER` | ✅ | Catalog read/write, order read |
+| `ORDER_MANAGER` | ✅ | Order read/write, customer read |
+| `CUSTOMER` | ❌ | Storefront-only for now |
+| `GUEST` | ❌ | Anonymous browsing only |
+
+### Guard flow
+
+- `src/proxy.ts` performs a lightweight, best-effort pre-render redirect for `/admin` requests before the full page loads.
+- `src/app/(admin)/layout.tsx` uses `requireAdminAccess()` as the authoritative server-side guard.
+- `src/lib/auth/guards.ts` exposes a route-handler-safe `guardRouteHandlerAccess()` helper that returns a typed `NextResponse` for `401`/`403` API responses.
+- `src/lib/auth/rbac.ts` owns the typed role/permission matrix and reusable permission helpers.
+- `src/app/unauthorized/page.tsx` and `src/app/forbidden/page.tsx` provide the user-facing recovery screens.
+
 ## Session Access
 
 ### Server Components / Server Actions
 ```typescript
 import { auth } from "@/auth";
 // or use helpers:
-import { getSession, requireSession, getCurrentUserId } from "@/lib/auth/session";
+import { getSession, requireSession, getCurrentUserId, hasPermission } from "@/lib/auth/session";
+import { requireAdminAccess } from "@/lib/auth/guards";
+import { rbacPermissions } from "@/lib/auth/rbac";
 
-const session = await auth();             // nullable (raw Auth.js call)
-const session = await getSession();       // nullable (helper wrapper around auth())
-const session = await requireSession();   // throws redirect if not logged in
-const userId  = await getCurrentUserId(); // nullable string
+const session = await auth();                            // nullable (raw Auth.js call)
+const session = await getSession();                      // nullable (helper wrapper around auth())
+const session = await requireSession();                  // redirects if not logged in
+const userId  = await getCurrentUserId();                // nullable string
+const canEdit = await hasPermission(rbacPermissions.catalogWrite); // boolean
+
+await requireAdminAccess({ from: "/admin" });
 ```
 
 ### Client Components
@@ -90,7 +116,7 @@ const { data: session, status } = useSession();
 ```
 src/
   auth.ts                              # Auth.js config (providers, callbacks, pages)
-  middleware.ts                        # Auth session middleware (route protection in 2.4)
+  proxy.ts                             # Lightweight /admin pre-render redirects using auth/session hints
   types/next-auth.d.ts                 # Session/JWT type augmentation
   features/auth/
     validators.ts                      # Zod schemas: signIn, signUp, forgotPassword
@@ -105,7 +131,11 @@ src/
   lib/auth/
     session.ts                         # Server-side session helpers
     client.ts                          # Client-side auth re-exports
+    guards.ts                          # Route guards for RSCs and route handlers
+    rbac.ts                            # Typed role + permission model
     password.ts                        # bcrypt hash/compare utilities
+  lib/audit/
+    admin-actions.ts                   # Audit-log-ready helper for admin mutations
   lib/rate-limit/
     index.ts                           # In-memory rate limit (Redis-ready abstraction)
   components/providers/
@@ -115,6 +145,8 @@ src/
     sign-up/page.tsx                   # /auth/sign-up
     error/page.tsx                     # /auth/error (Auth.js error page)
     forgot-password/page.tsx           # /auth/forgot-password (placeholder)
+  app/unauthorized/page.tsx            # Friendly 401-style recovery page
+  app/forbidden/page.tsx               # Friendly 403-style recovery page
   app/api/auth/[...nextauth]/route.ts  # Auth.js catch-all API route
 ```
 
@@ -156,6 +188,6 @@ const valid = await comparePassword("mysecretpassword", hash); // true
 ## Deferred
 
 - **Email-based password reset** — requires transactional email provider (Resend/Postmark). Placeholder page at `/auth/forgot-password`. Will be implemented in Prompt 4.4.
-- **Admin route protection** — middleware exposes the session but does not block routes yet. Role-based blocking is implemented in Prompt 2.4 (RBAC).
+- **Audit log persistence** — `src/lib/audit/admin-actions.ts` currently logs structured admin events and prepares `AuditLog`-ready payloads; DB writes will be added alongside real admin mutations.
 - **Email verification flow** — `User.emailVerified` is set by Auth.js for OAuth accounts. Credential-based email verification is deferred.
 - **Redis rate limiting** — current in-memory implementation is single-instance only. Redis upgrade is in Prompt 2.5.

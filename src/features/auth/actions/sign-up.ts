@@ -19,6 +19,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { AuthError } from "next-auth";
+import { RoleKey } from "@prisma/client";
 
 import { signIn } from "@/auth";
 import { routes } from "@/config/routes";
@@ -117,8 +118,12 @@ export async function signUpAction(
   // Upsert is idempotent: creates the role when missing and avoids unique-
   // constraint races when multiple sign-up requests run concurrently.
   const customerRole = await db.role.upsert({
-    where: { key: "CUSTOMER" },
-    create: { key: "CUSTOMER", name: "Customer" },
+    where: { key: RoleKey.CUSTOMER },
+    create: {
+      key: RoleKey.CUSTOMER,
+      name: "Customer",
+      permissions: [],
+    },
     update: {},
   });
 

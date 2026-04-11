@@ -1,7 +1,11 @@
 import type { ReactNode } from "react";
 
 import { AdminShell } from "@/components/layout/admin-shell";
+import { routes } from "@/config/routes";
+import { requireAdminAccess } from "@/lib/auth/guards";
 
-export default function AdminLayout({ children }: { children: ReactNode }) {
+export default async function AdminLayout({ children }: { children: ReactNode }) {
+  await requireAdminAccess({ from: routes.admin.dashboard });
+
   return <AdminShell>{children}</AdminShell>;
 }
