@@ -122,7 +122,11 @@ CREATE TABLE IF NOT EXISTS "Inventory" (
 );
 
 -- Ensure inventory counts are non-negative
-ALTER TABLE IF EXISTS "Inventory" ADD CONSTRAINT chk_inventory_non_negative CHECK (quantity >= 0 AND reserved >= 0 AND safety_stock >= 0);
+DO $$ BEGIN
+  ALTER TABLE IF EXISTS "Inventory" ADD CONSTRAINT chk_inventory_non_negative CHECK (quantity >= 0 AND reserved >= 0 AND safety_stock >= 0);
+EXCEPTION WHEN duplicate_object THEN
+  NULL;
+END $$;
 
 -- Product images
 CREATE TABLE IF NOT EXISTS "ProductImage" (
@@ -139,7 +143,11 @@ CREATE TABLE IF NOT EXISTS "ProductImage" (
 );
 
 -- Enforce that a ProductImage references either a product or a product variant (or both)
-ALTER TABLE IF EXISTS "ProductImage" ADD CONSTRAINT chk_productimage_one_fk CHECK (product_id IS NOT NULL OR product_variant_id IS NOT NULL);
+DO $$ BEGIN
+  ALTER TABLE IF EXISTS "ProductImage" ADD CONSTRAINT chk_productimage_one_fk CHECK (product_id IS NOT NULL OR product_variant_id IS NOT NULL);
+EXCEPTION WHEN duplicate_object THEN
+  NULL;
+END $$;
 
 -- Product specifications
 CREATE TABLE IF NOT EXISTS "ProductSpecification" (
@@ -169,7 +177,11 @@ CREATE TABLE IF NOT EXISTS "Review" (
 );
 
 -- Ensure ratings are within expected bounds
-ALTER TABLE IF EXISTS "Review" ADD CONSTRAINT chk_review_rating_bounds CHECK (rating BETWEEN 1 AND 5);
+DO $$ BEGIN
+  ALTER TABLE IF EXISTS "Review" ADD CONSTRAINT chk_review_rating_bounds CHECK (rating BETWEEN 1 AND 5);
+EXCEPTION WHEN duplicate_object THEN
+  NULL;
+END $$;
 
 -- Wishlist + items
 CREATE TABLE IF NOT EXISTS "Wishlist" (
@@ -191,7 +203,11 @@ CREATE TABLE IF NOT EXISTS "WishlistItem" (
 );
 
 -- Prevent duplicate wishlist entries for the same wishlist + variant
-ALTER TABLE IF EXISTS "WishlistItem" ADD CONSTRAINT uniq_wishlistitem_wishlist_variant UNIQUE (wishlist_id, product_variant_id);
+DO $$ BEGIN
+  ALTER TABLE IF EXISTS "WishlistItem" ADD CONSTRAINT uniq_wishlistitem_wishlist_variant UNIQUE (wishlist_id, product_variant_id);
+EXCEPTION WHEN duplicate_object THEN
+  NULL;
+END $$;
 
 -- Cart + items
 CREATE TABLE IF NOT EXISTS "Cart" (
@@ -216,7 +232,11 @@ CREATE TABLE IF NOT EXISTS "CartItem" (
 );
 
 -- Prevent duplicate cart entries for same cart + variant
-ALTER TABLE IF EXISTS "CartItem" ADD CONSTRAINT uk_cartitem_cart_variant UNIQUE (cart_id, product_variant_id);
+DO $$ BEGIN
+  ALTER TABLE IF EXISTS "CartItem" ADD CONSTRAINT uk_cartitem_cart_variant UNIQUE (cart_id, product_variant_id);
+EXCEPTION WHEN duplicate_object THEN
+  NULL;
+END $$;
 
 -- Orders + items + address snapshot
 CREATE TABLE IF NOT EXISTS "Order" (
@@ -242,7 +262,11 @@ CREATE TABLE IF NOT EXISTS "Order" (
 );
 
 -- Referential integrity: ensure order.user_id references an existing user
-ALTER TABLE IF EXISTS "Order" ADD CONSTRAINT fk_order_user FOREIGN KEY (user_id) REFERENCES "User"(id) ON DELETE SET NULL;
+DO $$ BEGIN
+  ALTER TABLE IF EXISTS "Order" ADD CONSTRAINT fk_order_user FOREIGN KEY (user_id) REFERENCES "User"(id) ON DELETE SET NULL;
+EXCEPTION WHEN duplicate_object THEN
+  NULL;
+END $$;
 
 CREATE TABLE IF NOT EXISTS "OrderItem" (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -275,9 +299,64 @@ CREATE TABLE IF NOT EXISTS "OrderAddress" (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
+-- Safe conversion helper: if the table/column existed previously as TEXT,
+-- preserve the original values in `city_old` and create a new enum-backed
+-- `city` column. This block is idempotent and will skip if enum is already used.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = current_schema() AND table_name = 'OrderAddress' AND column_name = 'city'
+  ) THEN
+    -- If the existing column is not of enum type 'city', perform a safe conversion
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_schema = current_schema() AND table_name = 'OrderAddress' AND column_name = 'city' AND udt_name = 'city'
+    ) THEN
+      -- Preserve original values
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = current_schema() AND table_name = 'OrderAddress' AND column_name = 'city_old'
+      ) THEN
+        ALTER TABLE "OrderAddress" RENAME COLUMN city TO city_old;
+      END IF;
+
+      -- Add the new enum-backed column; default to KARACHI to be safe
+      BEGIN
+        ALTER TABLE "OrderAddress" ADD COLUMN city city NOT NULL DEFAULT 'KARACHI';
+      EXCEPTION WHEN duplicate_column THEN
+        -- already exists, ignore
+        NULL;
+      END;
+
+      -- Map known existing values to enum members. Extend mapping as required.
+      UPDATE "OrderAddress"
+      SET city = 'KARACHI'
+      WHERE city_old IS NOT NULL AND city_old::text = 'KARACHI';
+
+      -- NOTE: Other values remain preserved in `city_old` for manual review.
+    END IF;
+  END IF;
+EXCEPTION WHEN undefined_table THEN
+  -- table doesn't exist yet; nothing to do
+  NULL;
+WHEN duplicate_column THEN
+  NULL;
+WHEN others THEN
+  RAISE NOTICE 'OrderAddress.city conversion skipped with error: %', SQLERRM;
+END $$;
+
 -- Link order address fields
-ALTER TABLE IF EXISTS "Order" ADD CONSTRAINT fk_order_shipping_address FOREIGN KEY (shipping_address_id) REFERENCES "OrderAddress"(id) ON DELETE SET NULL;
-ALTER TABLE IF EXISTS "Order" ADD CONSTRAINT fk_order_billing_address FOREIGN KEY (billing_address_id) REFERENCES "OrderAddress"(id) ON DELETE SET NULL;
+DO $$ BEGIN
+  ALTER TABLE IF EXISTS "Order" ADD CONSTRAINT fk_order_shipping_address FOREIGN KEY (shipping_address_id) REFERENCES "OrderAddress"(id) ON DELETE SET NULL;
+EXCEPTION WHEN duplicate_object THEN
+  NULL;
+END $$;
+DO $$ BEGIN
+  ALTER TABLE IF EXISTS "Order" ADD CONSTRAINT fk_order_billing_address FOREIGN KEY (billing_address_id) REFERENCES "OrderAddress"(id) ON DELETE SET NULL;
+EXCEPTION WHEN duplicate_object THEN
+  NULL;
+END $$;
 
 -- Audit log
 CREATE TABLE IF NOT EXISTS "AuditLog" (
@@ -337,7 +416,11 @@ CREATE TABLE IF NOT EXISTS "DealCampaignProduct" (
 );
 
 -- Prevent duplicate (campaign_id, product_id) pairs
-ALTER TABLE IF EXISTS "DealCampaignProduct" ADD CONSTRAINT unique_dcp_campaign_product UNIQUE (campaign_id, product_id);
+DO $$ BEGIN
+  ALTER TABLE IF EXISTS "DealCampaignProduct" ADD CONSTRAINT unique_dcp_campaign_product UNIQUE (campaign_id, product_id);
+EXCEPTION WHEN duplicate_object THEN
+  NULL;
+END $$;
 
 -- NextAuth Account + Session are intentionally lightweight here; use Prisma's generated migration when possible
 
