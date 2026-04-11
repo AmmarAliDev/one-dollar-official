@@ -5,17 +5,16 @@ import { buildMetadata } from "@/config/metadata";
 export const metadata = buildMetadata({
   title: "Admin Placeholder",
   path: "/admin",
-  description:
-    "Starter admin surface for future catalog, order, and content management modules.",
+  description: "Starter admin surface for future catalog, order, and content management modules.",
 });
 
 export default function AdminPage() {
   return (
     <PageShell>
       <div className="space-y-3">
-        <p className="text-sm font-medium text-primary">Admin route group placeholder</p>
+        <p className="text-primary text-sm font-medium">Admin route group placeholder</p>
         <h1 className="text-3xl font-semibold tracking-tight">Operations dashboard foundation</h1>
-        <p className="max-w-2xl text-muted-foreground">
+        <p className="text-muted-foreground max-w-2xl">
           This page reserves the admin surface inside the shared codebase without implementing
           business workflows yet.
         </p>

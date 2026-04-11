@@ -3,7 +3,8 @@ export class AppError extends Error {
 
   constructor(message: string, code = "APP_ERROR", options?: { cause?: unknown }) {
     super(message, options);
-    this.name = "AppError";
+    this.name = new.target.name;
     this.code = code;
+    Object.setPrototypeOf(this, new.target.prototype);
   }
 }

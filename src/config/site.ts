@@ -1,5 +1,7 @@
+import type { RuntimeEnv } from "@/config/env";
 import type { NavItem } from "@/types/app";
 
+import { env } from "./env";
 import { routes } from "./routes";
 
 export const primaryNav: NavItem[] = [
@@ -20,14 +22,18 @@ export const primaryNav: NavItem[] = [
   },
 ];
 
-export const siteConfig = {
-  name: "One Dollar",
-  shortName: "One Dollar",
-  description:
-    "Production-ready Karachi-first e-commerce foundation built with Next.js App Router, TypeScript, Tailwind CSS, and shadcn/ui patterns.",
-  locale: "en-PK",
-  country: "Pakistan",
-  defaultCity: "Karachi",
-  supportEmail: "support@onedollar.local",
-  primaryNav,
-} as const;
+export function loadSiteConfig(runtimeEnv: RuntimeEnv = env) {
+  return {
+    name: "One Dollar",
+    shortName: "One Dollar",
+    description:
+      "Production-ready Karachi-first e-commerce foundation built with Next.js App Router, TypeScript, Tailwind CSS, and shadcn/ui patterns.",
+    locale: "en-PK",
+    country: "Pakistan",
+    defaultCity: runtimeEnv.defaultCity,
+    supportEmail: "support@onedollar.local",
+    primaryNav,
+  } as const;
+}
+
+export const siteConfig = loadSiteConfig();

@@ -1,22 +1,21 @@
 import { PageShell } from "@/components/layout/page-shell";
 import { PlaceholderPanel } from "@/components/layout/placeholder-panel";
-import { buildMetadata } from "@/config/metadata";
 import { env } from "@/config/env";
+import { buildMetadata } from "@/config/metadata";
 
 export const metadata = buildMetadata({
   title: "Storefront Preview",
   path: "/preview",
-  description:
-    "Customer-facing placeholder shell for the Karachi-first storefront architecture.",
+  description: "Customer-facing placeholder shell for the Karachi-first storefront architecture.",
 });
 
 export default function StorefrontPreviewPage() {
   return (
     <PageShell>
       <div className="space-y-3">
-        <p className="text-sm font-medium text-primary">Storefront route group placeholder</p>
+        <p className="text-primary text-sm font-medium">Storefront route group placeholder</p>
         <h1 className="text-3xl font-semibold tracking-tight">Shared storefront shell is ready</h1>
-        <p className="max-w-2xl text-muted-foreground">
+        <p className="text-muted-foreground max-w-2xl">
           This preview shows the reusable customer-facing frame, with theme support and clear space
           for future catalog, cart, and checkout work.
         </p>
