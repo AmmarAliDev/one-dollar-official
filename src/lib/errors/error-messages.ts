@@ -36,6 +36,10 @@ function collectFormMessages(input: unknown): string[] {
     return input.issues.map((issue) => issue.message);
   }
 
+  if (input instanceof Error) {
+    return input.message.trim() ? [input.message] : [DEFAULT_ERROR_MESSAGE];
+  }
+
   if (Array.isArray(input)) {
     return input.flatMap((value) => collectFormMessages(value));
   }

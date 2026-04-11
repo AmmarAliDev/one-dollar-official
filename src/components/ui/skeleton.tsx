@@ -39,7 +39,7 @@ export function CardSkeleton({ className, lines = 4, showImage = false }: CardSk
               index === 1 ? "h-7" : "h-4",
               index === 0 && "w-24",
               index === 1 && "w-2/3",
-              index > 1 && index % 2 === 0 ? "w-full" : "w-5/6",
+              index > 1 ? (index % 2 === 0 ? "w-full" : "w-5/6") : undefined,
             )}
           />
         ))}

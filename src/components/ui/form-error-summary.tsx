@@ -37,12 +37,11 @@ export function FormErrorSummary({
         </div>
 
         <ul className="space-y-1.5 pl-4 text-sm text-muted-foreground">
-          {messages.map((message) => (
-            <li key={message} className="list-disc">
+          {messages.map((message, index) => (
+            <li key={`${index}-${message}`} className="list-disc">
               {message}
             </li>
-          ))}
-        </ul>
+          ))}        </ul>
       </CardContent>
     </Card>
   );

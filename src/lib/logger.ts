@@ -31,6 +31,10 @@ export function sanitizeForLogging(value: unknown, depth = 0): unknown {
   }
 
   if (Array.isArray(value)) {
+    if (depth >= MAX_DEPTH) {
+      return "[MaxDepthExceeded]";
+    }
+
     return value.map((item) => sanitizeForLogging(item, depth + 1));
   }
 

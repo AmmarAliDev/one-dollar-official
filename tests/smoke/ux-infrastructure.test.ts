@@ -31,10 +31,13 @@ describe("shared UX infrastructure", () => {
     const result = schema.safeParse({ email: "bad", password: "123" });
 
     expect(result.success).toBe(false);
-    expect(getFormErrorMessages(result.error)).toEqual([
-      "Enter a valid email address",
-      "Password must be at least 8 characters",
-    ]);
+
+    if (!result.success) {
+      expect(getFormErrorMessages(result.error)).toEqual([
+        "Enter a valid email address",
+        "Password must be at least 8 characters",
+      ]);
+    }
   });
 
   it("redacts sensitive data before writing logs", () => {
