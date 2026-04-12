@@ -73,7 +73,6 @@
 - [x] Category listing pages now include loading, empty, sorting, filtering, and pagination states
 - [x] Storefront navigation and homepage fallback links now point to category listing routes
 - [x] Catalog-focused tests added for filter parsing, listing behavior, and storefront route coverage
-- [x] Catalog-focused tests added for filter parsing, listing behavior, and storefront route coverage
 - [x] Product detail routes added at `/categories/[slug]/[productSlug]` with static params and SEO metadata
 - [x] PDP now includes a multi-image gallery, product info block (title, price, compare-at, stock, SKU, short description), and add-to-cart interaction stub
 - [x] Variant selection UX added for variant-enabled products with dynamic price/SKU/stock state updates

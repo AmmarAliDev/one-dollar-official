@@ -39,10 +39,15 @@ export function ProductInfoBlock({
       {/* Rating summary */}
       {product.reviewSummary.totalCount > 0 ? (
         <div className="text-muted-foreground flex items-center gap-2 text-sm">
-          <span className="text-amber-500" aria-hidden>
-            {"★".repeat(Math.round(product.reviewSummary.averageRating))}
-            {"☆".repeat(5 - Math.round(product.reviewSummary.averageRating))}
-          </span>
+          {(() => {
+            const rounded = Math.max(0, Math.min(5, Math.round(product.reviewSummary.averageRating)));
+            return (
+              <span className="text-amber-500" aria-hidden>
+                {"★".repeat(rounded)}
+                {"☆".repeat(5 - rounded)}
+              </span>
+            );
+          })()}
           <span>
             {product.reviewSummary.averageRating.toFixed(1)} | {product.reviewSummary.totalCount} reviews
           </span>

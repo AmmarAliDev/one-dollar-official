@@ -8,10 +8,11 @@ type ProductReviewsProps = {
 };
 
 function StarRating({ rating, max = 5 }: { rating: number; max?: number }) {
+  const clamped = Math.max(0, Math.min(max, Math.round(rating)));
   return (
     <span className="text-amber-500" aria-label={`${rating} out of ${max} stars`}>
-      {"★".repeat(Math.round(rating))}
-      {"☆".repeat(max - Math.round(rating))}
+      {"★".repeat(clamped)}
+      {"☆".repeat(max - clamped)}
     </span>
   );
 }
@@ -85,7 +86,7 @@ export function ProductReviews({ reviews, summary }: ProductReviewsProps) {
                     <StarRating rating={review.rating} />
                   </div>
                   <time dateTime={review.date} className="text-muted-foreground text-xs shrink-0">
-                    {new Date(review.date).toLocaleDateString("en-PK", {
+                    {new Date(review.date).toLocaleDateString(undefined, {
                       year: "numeric",
                       month: "short",
                       day: "numeric",

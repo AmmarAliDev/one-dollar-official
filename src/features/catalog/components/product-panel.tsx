@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import type { CatalogProductDetail, ProductVariantOption } from "../types";
 import { ProductAddToCart } from "./product-add-to-cart";
@@ -46,6 +46,10 @@ export function ProductPanel({ product }: ProductPanelProps) {
   const [selectedOptionIds, setSelectedOptionIds] = useState<Record<string, string>>(
     buildDefaultSelections(product),
   );
+
+  useEffect(() => {
+    setSelectedOptionIds(buildDefaultSelections(product));
+  }, [product.id]);
 
   const activeOption = resolveActiveOption(product, selectedOptionIds);
 
