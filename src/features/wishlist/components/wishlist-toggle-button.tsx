@@ -33,11 +33,11 @@ export function WishlistToggleButton({
   const [wishlisted, setWishlisted] = useState(initiallyWishlisted);
 
   async function handleToggle() {
-    if (pending) {
+    if (pending || status === "loading") {
       return;
     }
 
-    if (status !== "authenticated") {
+    if (status === "unauthenticated") {
       notify.info("Sign in required", "Please sign in to save products to your wishlist.");
       router.push(`${routes.auth.signIn}?from=${encodeURIComponent(pathname || routes.storefront.wishlist)}`);
       return;
@@ -80,7 +80,7 @@ export function WishlistToggleButton({
       size="lg"
       className="w-full"
       onClick={handleToggle}
-      disabled={pending || !sku}
+      disabled={status === "loading" || pending || !sku}
       aria-busy={pending}
       aria-pressed={wishlisted}
     >

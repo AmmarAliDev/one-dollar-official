@@ -21,6 +21,38 @@ type SignInFormProps = {
   redirectTo?: string;
 };
 
+function isSafeRelativePath(value: string) {
+  let candidate = value.trim();
+
+  try {
+    for (let index = 0; index < 3; index += 1) {
+      const decodedCandidate = decodeURIComponent(candidate);
+
+      if (decodedCandidate === candidate) {
+        break;
+      }
+
+      candidate = decodedCandidate;
+    }
+  } catch {
+    return false;
+  }
+
+  if (!candidate.startsWith("/")) {
+    return false;
+  }
+
+  if (candidate.startsWith("//") || candidate.includes("://") || candidate.includes("\\")) {
+    return false;
+  }
+
+  if (/^[a-zA-Z][a-zA-Z\d+.-]*:/.test(candidate.slice(1)) || /[\r\n]/.test(candidate)) {
+    return false;
+  }
+
+  return true;
+}
+
 export function SignInForm({ redirectTo = routes.storefront.home }: SignInFormProps) {
   const [state, dispatch, isPending] = useActionState<SignInActionState | null, FormData>(
     signInAction,
@@ -28,10 +60,11 @@ export function SignInForm({ redirectTo = routes.storefront.home }: SignInFormPr
   );
 
   const errors = state?.errors ?? [];
+  const safeRedirectTo = isSafeRelativePath(redirectTo) ? redirectTo.trim() : routes.storefront.home;
 
   return (
     <form action={dispatch} className="space-y-4" noValidate>
-      <input type="hidden" name="redirectTo" value={redirectTo} />
+      <input type="hidden" name="redirectTo" value={safeRedirectTo} />
 
       {/* Error summary */}
       {errors.length > 0 && (

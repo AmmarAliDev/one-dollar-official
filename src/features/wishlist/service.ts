@@ -1,4 +1,4 @@
-import { Currency, ProductStatus } from "@prisma/client";
+import { Currency, Prisma, ProductStatus } from "@prisma/client";
 
 import { routes } from "@/config/routes";
 import { catalogCategorySeeds, catalogProductDetailSeeds, catalogProductSeeds } from "@/features/catalog/data";
@@ -72,12 +72,21 @@ export function resolveWishlistSeedSelection(input: ResolveWishlistSelectionInpu
   }
 
   const firstVariantGroup = productDetail.variantGroups[0];
-  const selectedOption = input.optionId
-    ? firstVariantGroup?.options.find((option) => option.id === input.optionId)
-    : firstVariantGroup?.options[0] ?? null;
-
-  if (input.optionId && !selectedOption) {
-    throw toMissingVariantError(input.optionId);
+  let selectedOption = null;
+  if (input.optionId) {
+    // Search all variant groups for the optionId
+    for (const group of productDetail.variantGroups) {
+      const found = group.options.find((option) => option.id === input.optionId);
+      if (found) {
+        selectedOption = found;
+        break;
+      }
+    }
+    if (!selectedOption) {
+      throw toMissingVariantError(input.optionId);
+    }
+  } else {
+    selectedOption = firstVariantGroup?.options[0] ?? null;
   }
 
   const resolvedSku = selectedOption?.sku ?? productDetail.sku;
@@ -107,18 +116,27 @@ export function resolveWishlistSeedSelection(input: ResolveWishlistSelectionInpu
 async function getOrCreateWishlistForUser(userId: string) {
   const db = getPrismaClient();
 
-  const existingWishlist = await db.wishlist.findFirst({
-    where: { userId },
-    orderBy: { createdAt: "asc" },
-  });
+  try {
+    return await db.wishlist.create({
+      data: { userId },
+    });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      const existingWishlist = await db.wishlist.findFirst({
+        where: { userId },
+        orderBy: { createdAt: "asc" },
+      });
 
-  if (existingWishlist) {
-    return existingWishlist;
+      if (existingWishlist) {
+        return existingWishlist;
+      }
+    }
+
+    throw error;
   }
-
-  return db.wishlist.create({
-    data: { userId },
-  });
 }
 
 async function ensureSeedCatalogVariant(selection: WishlistSeedSelection) {
@@ -215,7 +233,15 @@ export async function addWishlistItemForUser(userId: string, input: ResolveWishl
 
 export async function removeWishlistSelectionForUser(userId: string, input: ResolveWishlistSelectionInput) {
   const db = getPrismaClient();
-  const selection = resolveWishlistSeedSelection(input);
+  let selection;
+  try {
+    selection = resolveWishlistSeedSelection(input);
+  } catch (err) {
+    if (err instanceof AppError && err.statusCode === 404) {
+      return false;
+    }
+    throw err;
+  }
 
   const variant = await db.productVariant.findUnique({
     where: { sku: selection.sku },

@@ -29,7 +29,21 @@ export interface SignInActionState {
 }
 
 function isSafeRelativePath(value: string) {
-  const candidate = value.trim();
+  let candidate = value.trim();
+
+  try {
+    for (let index = 0; index < 3; index += 1) {
+      const decodedCandidate = decodeURIComponent(candidate);
+
+      if (decodedCandidate === candidate) {
+        break;
+      }
+
+      candidate = decodedCandidate;
+    }
+  } catch {
+    return false;
+  }
 
   if (!candidate.startsWith("/")) {
     return false;
