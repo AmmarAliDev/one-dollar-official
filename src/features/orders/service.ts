@@ -5,7 +5,13 @@ import { CartStatus, City, Country, OrderStatus, Prisma } from "@prisma/client";
 import { mergeGuestCartIntoUserCart } from "@/features/cart";
 import type { CheckoutPayload } from "@/features/checkout";
 import { calculateCheckoutTotals, getCheckoutPaymentProvider } from "@/features/checkout";
+import {
+  notifyOrderConfirmed,
+  notifyOrderPlaced,
+  type OrderNotificationPayload,
+} from "@/features/notifications";
 import { AppError } from "@/lib/errors/app-error";
+import { createLogger, sanitizeForLogging } from "@/lib/logger";
 import type { DatabaseExecutor } from "@/server/db";
 import { getPrismaClient, runWithTransaction } from "@/server/db";
 
@@ -54,8 +60,11 @@ type OrderLookup = Prisma.OrderGetPayload<{
 }>;
 
 const ORDER_NUMBER_RETRY_LIMIT = 5;
+const orderServiceLogger = createLogger("orders.service");
 
-function getAvailableInventoryQuantity(inventory: { quantity: number; reserved: number; safetyStock: number } | null) {
+function getAvailableInventoryQuantity(
+  inventory: { quantity: number; reserved: number; safetyStock: number } | null,
+) {
   if (!inventory) {
     return Number.POSITIVE_INFINITY;
   }
@@ -102,29 +111,29 @@ async function resolveCartForOrder(
 
   if (input.context.userId) {
     cart = await transaction.cart.findFirst({
-        where: {
-          userId: input.context.userId,
-          status: CartStatus.ACTIVE,
-        },
-        orderBy: {
-          updatedAt: "desc",
-        },
-        include: {
-          items: {
-            orderBy: {
-              createdAt: "asc",
-            },
-            include: {
-              productVariant: {
-                include: {
-                  inventory: true,
-                  product: true,
-                },
+      where: {
+        userId: input.context.userId,
+        status: CartStatus.ACTIVE,
+      },
+      orderBy: {
+        updatedAt: "desc",
+      },
+      include: {
+        items: {
+          orderBy: {
+            createdAt: "asc",
+          },
+          include: {
+            productVariant: {
+              include: {
+                inventory: true,
+                product: true,
               },
             },
           },
         },
-      });
+      },
+    });
   } else {
     if (!input.context.guestToken) {
       throw new AppError("Cart context missing for order placement.", "CART_CONTEXT_MISSING", {
@@ -134,30 +143,30 @@ async function resolveCartForOrder(
     }
 
     cart = await transaction.cart.findFirst({
-        where: {
-          token: input.context.guestToken,
-          userId: null,
-          status: CartStatus.ACTIVE,
-        },
-        orderBy: {
-          updatedAt: "desc",
-        },
-        include: {
-          items: {
-            orderBy: {
-              createdAt: "asc",
-            },
-            include: {
-              productVariant: {
-                include: {
-                  inventory: true,
-                  product: true,
-                },
+      where: {
+        token: input.context.guestToken,
+        userId: null,
+        status: CartStatus.ACTIVE,
+      },
+      orderBy: {
+        updatedAt: "desc",
+      },
+      include: {
+        items: {
+          orderBy: {
+            createdAt: "asc",
+          },
+          include: {
+            productVariant: {
+              include: {
+                inventory: true,
+                product: true,
               },
             },
           },
         },
-      });
+      },
+    });
   }
 
   if (!cart || cart.items.length === 0) {
@@ -234,7 +243,8 @@ function mapOrderDetails(order: OrderLookup): OrderDetails {
   }
 
   const confirmationAccessToken = readMetadataString(order.metadata, "confirmationAccessToken");
-  const invoiceNumber = readMetadataString(order.metadata, "invoiceNumber") ?? createInvoiceNumber(order.orderNumber);
+  const invoiceNumber =
+    readMetadataString(order.metadata, "invoiceNumber") ?? createInvoiceNumber(order.orderNumber);
 
   return {
     id: order.id,
@@ -268,7 +278,8 @@ function mapOrderDetails(order: OrderLookup): OrderDetails {
       street2: order.shippingAddress.street2,
       city: order.shippingAddress.city === City.KARACHI ? "Karachi" : order.shippingAddress.city,
       province: order.shippingAddress.province,
-      country: order.shippingAddress.country === Country.PAK ? "Pakistan" : order.shippingAddress.country,
+      country:
+        order.shippingAddress.country === Country.PAK ? "Pakistan" : order.shippingAddress.country,
       postcode: order.shippingAddress.postcode,
       notes: order.shippingAddress.notes,
     },
@@ -288,6 +299,62 @@ function isOrderNumberConflict(error: unknown) {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
 }
 
+function createOrderNotificationPayload(input: {
+  orderId: string;
+  orderNumber: string;
+  placedAt: Date;
+  customerName: string;
+  customerEmail: string | null;
+  customerPhone: string | null;
+  itemCount: number;
+  subtotal: number;
+  shipping: number;
+  total: number;
+  paymentMethodLabel: string;
+  confirmationUrl: string;
+  invoiceUrl: string;
+}): OrderNotificationPayload {
+  return {
+    orderId: input.orderId,
+    orderNumber: input.orderNumber,
+    placedAt: input.placedAt,
+    customerName: input.customerName,
+    customerEmail: input.customerEmail,
+    customerPhone: input.customerPhone,
+    itemCount: input.itemCount,
+    subtotal: input.subtotal,
+    shipping: input.shipping,
+    total: input.total,
+    paymentMethodLabel: input.paymentMethodLabel,
+    confirmationUrl: input.confirmationUrl,
+    invoiceUrl: input.invoiceUrl,
+  };
+}
+
+async function notifyOrderPlacedSafely(payload: OrderNotificationPayload) {
+  try {
+    await notifyOrderPlaced(payload);
+  } catch (error) {
+    orderServiceLogger.error("order placed notification crashed", {
+      orderId: payload.orderId,
+      orderNumber: payload.orderNumber,
+      error: sanitizeForLogging(error),
+    });
+  }
+}
+
+async function notifyOrderConfirmedSafely(payload: OrderNotificationPayload) {
+  try {
+    await notifyOrderConfirmed(payload);
+  } catch (error) {
+    orderServiceLogger.error("order confirmed notification crashed", {
+      orderId: payload.orderId,
+      orderNumber: payload.orderNumber,
+      error: sanitizeForLogging(error),
+    });
+  }
+}
+
 /**
  * Maps shipping address city string to City enum value.
  * Currently only supports Karachi as per business requirements.
@@ -298,10 +365,14 @@ function mapCityStringToEnum(cityString: string): City {
     return City.KARACHI;
   }
   // Fallback to KARACHI for now; expand enum and validation when supporting other cities
-  throw new AppError(`City "${cityString}" is not currently supported. We only ship to Karachi.`, "CITY_NOT_SUPPORTED", {
-    statusCode: 400,
-    userMessage: "The city you selected is not currently supported. We only ship to Karachi.",
-  });
+  throw new AppError(
+    `City "${cityString}" is not currently supported. We only ship to Karachi.`,
+    "CITY_NOT_SUPPORTED",
+    {
+      statusCode: 400,
+      userMessage: "The city you selected is not currently supported. We only ship to Karachi.",
+    },
+  );
 }
 
 /**
@@ -315,10 +386,15 @@ function mapCountryStringToEnum(countryString: string): Country {
     return Country.PAK;
   }
   // Fallback; expand enum and validation when supporting other countries
-  throw new AppError(`Country "${countryString}" is not currently supported. We only ship within Pakistan.`, "COUNTRY_NOT_SUPPORTED", {
-    statusCode: 400,
-    userMessage: "The country you selected is not currently supported. We only ship within Pakistan.",
-  });
+  throw new AppError(
+    `Country "${countryString}" is not currently supported. We only ship within Pakistan.`,
+    "COUNTRY_NOT_SUPPORTED",
+    {
+      statusCode: 400,
+      userMessage:
+        "The country you selected is not currently supported. We only ship within Pakistan.",
+    },
+  );
 }
 
 export async function placeOrderFromCheckout(input: PlaceOrderInput): Promise<PlaceOrderResult> {
@@ -329,11 +405,13 @@ export async function placeOrderFromCheckout(input: PlaceOrderInput): Promise<Pl
     const orderNumber = createOrderNumber(now);
     const confirmationAccessToken = createConfirmationAccessToken();
     const invoiceNumber = createInvoiceNumber(orderNumber);
+    let totalQuantity = 0;
 
     try {
-      return await runWithTransaction(
+      const result = await runWithTransaction(
         async (transaction) => {
           const cart = await resolveCartForOrder(input, transaction);
+          totalQuantity = cart.items.reduce((sum, item) => sum + item.quantity, 0);
           const totals = calculateCheckoutTotals(
             cart.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0),
           );
@@ -447,6 +525,26 @@ export async function placeOrderFromCheckout(input: PlaceOrderInput): Promise<Pl
           isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
         },
       );
+
+      await notifyOrderPlacedSafely(
+        createOrderNotificationPayload({
+          orderId: result.orderId,
+          orderNumber: result.orderNumber,
+          placedAt: result.placedAt,
+          customerName: input.payload.customer.fullName.trim(),
+          customerEmail: input.payload.customer.email.trim(),
+          customerPhone: input.payload.customer.phone.trim(),
+          itemCount: totalQuantity,
+          subtotal: result.totals.subtotal,
+          shipping: result.totals.shipping,
+          total: result.totals.total,
+          paymentMethodLabel: getPaymentMethodLabel(input.payload.paymentMethod),
+          confirmationUrl: result.confirmationUrl,
+          invoiceUrl: result.invoiceUrl,
+        }),
+      );
+
+      return result;
     } catch (error) {
       if (isOrderNumberConflict(error) && attempt < ORDER_NUMBER_RETRY_LIMIT - 1) {
         continue;
@@ -456,10 +554,14 @@ export async function placeOrderFromCheckout(input: PlaceOrderInput): Promise<Pl
     }
   }
 
-  throw new AppError("Order number generation exhausted retry budget.", "ORDER_NUMBER_GENERATION_FAILED", {
-    statusCode: 500,
-    userMessage: "We could not finalize your order number. Please retry checkout.",
-  });
+  throw new AppError(
+    "Order number generation exhausted retry budget.",
+    "ORDER_NUMBER_GENERATION_FAILED",
+    {
+      statusCode: 500,
+      userMessage: "We could not finalize your order number. Please retry checkout.",
+    },
+  );
 }
 
 export async function getOrderDetailsForAccess(input: {
@@ -493,13 +595,18 @@ export async function getOrderDetailsForAccess(input: {
   return mapOrderDetails(order);
 }
 
-export async function updateOrderStatus(input: UpdateOrderStatusInput): Promise<UpdateOrderStatusResult> {
+export async function updateOrderStatus(
+  input: UpdateOrderStatusInput,
+): Promise<UpdateOrderStatusResult> {
   const db = getPrismaClient();
 
-  return runWithTransaction(async (transaction) => {
+  const output = await runWithTransaction(async (transaction) => {
     const order = await transaction.order.findUnique({
       where: {
         id: input.orderId,
+      },
+      include: {
+        shippingAddress: true,
       },
     });
 
@@ -541,6 +648,42 @@ export async function updateOrderStatus(input: UpdateOrderStatusInput): Promise<
       nextStatus: input.nextStatus,
     };
   }, db);
+
+  if (output.nextStatus === OrderStatus.CONFIRMED) {
+    const order = await db.order.findUnique({
+      where: {
+        id: output.orderId,
+      },
+      include: {
+        shippingAddress: true,
+        items: true,
+      },
+    });
+
+    if (order?.shippingAddress) {
+      const confirmationAccessToken = readMetadataString(order.metadata, "confirmationAccessToken");
+
+      await notifyOrderConfirmedSafely(
+        createOrderNotificationPayload({
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          placedAt: order.placedAt,
+          customerName: order.shippingAddress.fullName,
+          customerEmail: order.shippingAddress.email,
+          customerPhone: order.shippingAddress.phone,
+          itemCount: order.items.length,
+          subtotal: order.subtotal,
+          shipping: order.shipping,
+          total: order.total,
+          paymentMethodLabel: getPaymentMethodLabel(order.paymentMethod),
+          confirmationUrl: buildOrderConfirmationUrl(order.orderNumber, confirmationAccessToken),
+          invoiceUrl: buildOrderInvoiceUrl(order.orderNumber, confirmationAccessToken),
+        }),
+      );
+    }
+  }
+
+  return output;
 }
 
 export function buildOrderInvoiceFilename(orderNumber: string) {
