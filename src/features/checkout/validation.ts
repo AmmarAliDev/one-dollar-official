@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { CHECKOUT_PAYMENT_METHODS, CHECKOUT_SUPPORTED_CITY } from "./constants";
+import { CHECKOUT_FIXED_PROVINCE, CHECKOUT_PAYMENT_METHODS, CHECKOUT_SUPPORTED_CITY } from "./constants";
 
 const phonePattern = /^\+?[0-9\s-]{10,16}$/;
 
@@ -14,6 +14,15 @@ const citySchema = z
   })
   .transform(() => CHECKOUT_SUPPORTED_CITY);
 
+const provinceSchema = z
+  .string()
+  .trim()
+  .transform((value) => value.toLowerCase())
+  .refine((value) => value === CHECKOUT_FIXED_PROVINCE.toLowerCase(), {
+    message: `Province must be ${CHECKOUT_FIXED_PROVINCE}.`,
+  })
+  .transform(() => CHECKOUT_FIXED_PROVINCE);
+
 export const checkoutPayloadSchema = z.object({
   cartId: z.string().trim().min(1, "Cart is missing. Refresh and try again."),
   customer: z.object({
@@ -25,9 +34,14 @@ export const checkoutPayloadSchema = z.object({
     addressLine1: z.string().trim().min(5, "Please provide your delivery address.").max(220),
     addressLine2: z.string().trim().max(220).optional(),
     city: citySchema,
-    province: z.string().trim().max(120).optional(),
+    province: provinceSchema,
     country: z.string().trim().min(2, "Please provide a country for shipping.").max(120),
-    postcode: z.string().trim().min(2, "Please provide a postal code.").max(32),
+    postcode: z
+      .string()
+      .trim()
+      .regex(/^\d+$/, "Postal code must contain numbers only.")
+      .min(4, "Please provide a valid postal code.")
+      .max(10),
   }),
   paymentMethod: z.enum([CHECKOUT_PAYMENT_METHODS.COD]),
   notes: z.string().trim().max(600, "Order notes must be 600 characters or less.").optional(),

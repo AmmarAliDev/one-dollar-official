@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-**Phase 4 / Prompt 4.2 — One-page checkout foundation**
+**Phase 4 / Prompt 4.3 — Order placement and lifecycle**
 
 ## Completed
 
@@ -118,6 +118,16 @@
 - [x] Cart page now routes to `/checkout` when stock checks pass
 - [x] Checkout docs added in `docs/dev/checkout.md` with assumptions and payment expansion path
 - [x] Checkout tests added in `tests/features/checkout/*` for validation, totals, and payment contract coverage
+- [x] Order feature module added in `src/features/orders` with transactional placement, lifecycle helpers, access checks, and invoice utilities
+- [x] Checkout API now places orders transactionally instead of returning a validation-only payload
+- [x] Active cart stock is revalidated inside a serializable transaction before inventory rows are decremented
+- [x] Order item snapshots and order-address snapshots are persisted on successful placement
+- [x] Order numbering strategy added with `OD-YYYYMMDD-XXXXXX` format and retry-on-conflict protection
+- [x] Order lifecycle statuses updated to `pending`, `confirmed`, `packed`, `shipped`, `delivered`, and `cancelled`
+- [x] Customer confirmation route added at `/checkout/confirmation/[orderNumber]`
+- [x] Invoice PDF download route added at `/api/orders/[orderNumber]/invoice`
+- [x] `AuditLog` persistence now records `order.created` and `order.status.changed` events
+- [x] Account order history now links to customer-visible confirmation pages and uses lifecycle status badges
 
 ## Deferred by design
 
@@ -125,7 +135,6 @@
 - [ ] Email verification for credentials accounts
 - [ ] Nonce-based CSP hardening once all inline/script requirements are audited
 - [ ] Dedicated CSRF token flow for any future embedded or cross-origin clients
-- [ ] Transactional order placement and lifecycle (Prompt 4.3)
 - [ ] Online gateway provider implementations under checkout payment contract
 - [ ] Live catalog persistence beyond the fallback listing dataset
 - [ ] Admin CRUD workflows
@@ -133,4 +142,4 @@
 
 ## Recommended Next Prompt
 
-Proceed with **Phase 4 / Prompt 4.3 — transactional order placement and lifecycle management**.
+Proceed with **Phase 4 / Prompt 4.4 — email notifications and Telegram alerts**.

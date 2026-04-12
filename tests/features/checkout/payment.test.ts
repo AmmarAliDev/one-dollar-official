@@ -29,6 +29,7 @@ describe("checkout payment providers", () => {
         shippingAddress: {
           addressLine1: "House 1",
           city: "Karachi",
+          province: "Sindh",
           country: "Pakistan",
           postcode: "75400",
         },
@@ -36,8 +37,8 @@ describe("checkout payment providers", () => {
       },
       totals: {
         subtotal: 1000,
-        shipping: 250,
-        total: 1250,
+        shipping: 150,
+        total: 1150,
       },
     });
 

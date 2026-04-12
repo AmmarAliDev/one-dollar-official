@@ -1,6 +1,6 @@
-# Checkout Foundation (Prompt 4.2)
+# Checkout And Orders (Prompts 4.2 and 4.3)
 
-This document describes the one-page checkout foundation added in Phase 4 / Prompt 4.2.
+This document describes the one-page checkout flow and the transactional order lifecycle implemented in Phase 4.
 
 ## Scope implemented
 
@@ -10,12 +10,19 @@ This document describes the one-page checkout foundation added in Phase 4 / Prom
 - fixed shipping fee of PKR 250
 - payment method abstraction with COD implementation
 - checkout API validation and retry-safe UX handling
+- transactional order placement from checkout
+- inventory deduction on successful order placement
+- order item and address snapshots persisted in Prisma
+- customer order confirmation page at `/checkout/confirmation/[orderNumber]`
+- PDF invoice download route at `/api/orders/[orderNumber]/invoice`
+- persisted `AuditLog` entries for order creation and lifecycle status changes
+- order lifecycle helpers for `pending`, `confirmed`, `packed`, `shipped`, `delivered`, and `cancelled`
 
 ## Current assumptions
 
-- checkout currently validates and confirms payload, but does not create orders yet
-- order creation, status lifecycle, stock deduction, and invoice generation are deferred to Prompt 4.3
 - payment methods include only COD right now
+- invoice PDFs are generated on demand from the stored order snapshot rather than persisted as blobs
+- guest order confirmation and invoice access use a per-order confirmation token in the order metadata
 
 ## Architecture
 
@@ -37,6 +44,40 @@ Current provider:
 - `COD`: offline, enabled
 
 Future providers (e.g., card gateways) should implement the same contract and be added to the registry without changing the checkout API or page form shape.
+
+### Order placement flow
+
+Order lifecycle logic lives under `src/features/orders`:
+
+- `service.ts`: transactional order placement, access checks, and status updates
+- `status.ts`: lifecycle transition helpers and presentation labels
+- `invoice.ts`: order number strategy, invoice number strategy, confirmation/invoice URLs, and minimal PDF generation
+
+Placement flow:
+
+1. Validate trusted origin and checkout payload
+2. Resolve active cart for guest or signed-in user
+3. Re-check stock inside a serializable transaction
+4. Atomically decrement inventory rows
+5. Create order-address snapshots and order-item snapshots
+6. Create the order with `PENDING` status
+7. Mark the cart as `COMPLETED`
+8. Persist `AuditLog` entry for order creation
+9. Return confirmation and invoice URLs
+
+### Status lifecycle
+
+Supported transitions:
+
+- `pending -> confirmed`
+- `pending -> cancelled`
+- `confirmed -> packed`
+- `confirmed -> cancelled`
+- `packed -> shipped`
+- `packed -> cancelled`
+- `shipped -> delivered`
+
+`delivered` and `cancelled` are terminal states.
 
 ## Karachi-only behavior
 
@@ -68,15 +109,20 @@ Server flow:
 1. Trusted-origin check
 2. Payload validation with Zod
 3. Resolve cart context (guest/auth)
-4. Validate cart exists, IDs match, and stock is still valid
-5. Build checkout attempt result using selected payment provider
-6. Return totals and payment confirmation message
+4. Place order transactionally with stock protection and snapshot persistence
+5. Return order number, totals, payment message, confirmation URL, and invoice URL
+
+Invoice route: `GET /api/orders/[orderNumber]/invoice`
+
+Access rules:
+
+- signed-in customers can access their own orders without a token
+- guest customers use the confirmation token returned after checkout
 
 ## Next expansion path
 
-Prompt 4.3 should add:
+Prompt 4.4 should add:
 
-- transactional order creation from validated checkout payload
-- order number generation and status lifecycle
-- stock reduction and order/address snapshots
-- payment transaction persistence hooks behind the same payment abstraction
+- email and Telegram notifications triggered from order events
+- notification failure isolation around the placement service
+- template-ready email payload builders that can use the stored order snapshot

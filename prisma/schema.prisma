@@ -44,10 +44,10 @@ enum ProductStatus {
 enum OrderStatus {
   PENDING
   CONFIRMED
-  PAID
-  FULFILLED
+  PACKED
+  SHIPPED
+  DELIVERED
   CANCELLED
-  REFUNDED
 }
 
 enum CartStatus {
