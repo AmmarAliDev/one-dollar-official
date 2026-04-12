@@ -14,6 +14,8 @@ export const routes = {
     wishlist: "/wishlist",
     cart: "/cart",
     checkout: "/checkout",
+    checkoutConfirmation: (orderNumber: string) => `/checkout/confirmation/${orderNumber}`,
+    orderInvoice: (orderNumber: string) => `/api/orders/${orderNumber}/invoice`,
     about: "/about",
     contact: "/contact",
     privacy: "/privacy",

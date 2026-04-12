@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PriceDisplay } from "@/components/ui/price-display";
 import type { CartSummary } from "@/features/cart";
-import { CHECKOUT_SUPPORTED_CITY, checkoutPayloadSchema, type CheckoutPaymentMethodDefinition } from "@/features/checkout";
+import { CHECKOUT_FIXED_PROVINCE, CHECKOUT_SUPPORTED_CITY, checkoutPayloadSchema, type CheckoutPaymentMethodDefinition } from "@/features/checkout";
 import { notify } from "@/lib/notify";
 
 type CheckoutPageClientProps = {
@@ -45,6 +46,7 @@ export function CheckoutPageClient({
   paymentMethods,
   initialCustomer,
 }: CheckoutPageClientProps) {
+  const router = useRouter();
   const defaultPaymentMethod = paymentMethods[0]?.code ?? "COD";
 
   const [form, setForm] = useState<CheckoutFormState>({
@@ -54,7 +56,7 @@ export function CheckoutPageClient({
     addressLine1: "",
     addressLine2: "",
     city: CHECKOUT_SUPPORTED_CITY,
-    province: "",
+    province: CHECKOUT_FIXED_PROVINCE,
     country: "Pakistan",
     postcode: "",
     paymentMethod: defaultPaymentMethod,
@@ -101,7 +103,9 @@ export function CheckoutPageClient({
       const responsePayload = (await response.json().catch(() => null)) as
         | {
             error?: string;
-            checkout?: {
+            order?: {
+              confirmationUrl: string;
+              orderNumber: string;
               payment: { message: string };
               totals: { total: number };
             };
@@ -112,16 +116,22 @@ export function CheckoutPageClient({
         throw new Error(responsePayload?.error ?? "Checkout could not be submitted. Please try again.");
       }
 
-      const paymentMessage = responsePayload?.checkout?.payment?.message ?? "Checkout accepted.";
-      const total = responsePayload?.checkout?.totals?.total ?? totals.total;
+      const paymentMessage = responsePayload?.order?.payment?.message ?? "Order placed.";
+      const total = responsePayload?.order?.totals?.total ?? totals.total;
+      const confirmationUrl = responsePayload?.order?.confirmationUrl;
 
       const message = `${paymentMessage} Total payable: PKR ${total.toLocaleString("en-PK")}.`;
 
       setErrors([]);
       setRetryPayload(null);
       setSuccessMessage(message);
-      notify.success("Checkout submitted", paymentMessage);
+      notify.success("Order placed", paymentMessage);
       setSubmitted(true);
+      window.dispatchEvent(new Event("cart:changed"));
+
+      if (confirmationUrl) {
+        router.push(confirmationUrl);
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Checkout could not be submitted. Please retry.";
       setSuccessMessage(null);
@@ -152,7 +162,7 @@ export function CheckoutPageClient({
         addressLine1: form.addressLine1,
         ...(form.addressLine2.trim().length > 0 ? { addressLine2: form.addressLine2 } : {}),
         city: form.city,
-        ...(form.province.trim().length > 0 ? { province: form.province } : {}),
+        province: form.province,
         country: form.country,
         postcode: form.postcode,
       },
@@ -250,11 +260,11 @@ export function CheckoutPageClient({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="checkout-province">Province / State (optional)</Label>
+              <Label htmlFor="checkout-province">Province</Label>
               <Input
                 id="checkout-province"
                 value={form.province}
-                onChange={(event) => setForm((prev) => ({ ...prev, province: event.target.value }))}
+                readOnly
               />
             </div>
             <div className="space-y-1.5">
@@ -271,8 +281,12 @@ export function CheckoutPageClient({
               <Label htmlFor="checkout-postcode">Postal code</Label>
               <Input
                 id="checkout-postcode"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={form.postcode}
-                onChange={(event) => setForm((prev) => ({ ...prev, postcode: event.target.value }))}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, postcode: event.target.value.replace(/\D/g, "") }))
+                }
                 required
               />
             </div>
@@ -363,7 +377,7 @@ export function CheckoutPageClient({
             <span>Total</span>
             <PriceDisplay amount={totals.total} size="sm" />
           </div>
-          <p className="text-xs text-muted-foreground">Shipping is fixed at PKR 250 for Karachi deliveries.</p>
+          <p className="text-xs text-muted-foreground">Shipping is fixed at PKR 150 for Karachi deliveries.</p>
         </CardContent>
       </Card>
     </div>

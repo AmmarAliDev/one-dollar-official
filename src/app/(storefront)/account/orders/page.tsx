@@ -1,12 +1,23 @@
+import Link from "next/link";
 import { PackageSearch } from "lucide-react";
 
 import { auth } from "@/auth";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PriceDisplay } from "@/components/ui/price-display";
 import { buildMetadata } from "@/config/metadata";
 import { routes } from "@/config/routes";
+import { siteConfig } from "@/config/site";
+import { formatOrderStatusLabel, getOrderStatusVariant } from "@/features/orders";
 import { getPrismaClient } from "@/server/db";
+
+function formatOrderDate(date: Date | null | undefined): string {
+  if (!date) {
+    return "N/A";
+  }
+  return date.toLocaleDateString(siteConfig.locale);
+}
 
 export const metadata = buildMetadata({
   title: "Order History",
@@ -50,10 +61,17 @@ export default async function AccountOrdersPage() {
       {orders.map((order) => (
         <Card key={order.id}>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Order {order.orderNumber}</CardTitle>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <CardTitle className="text-base">
+                <Link href={routes.storefront.checkoutConfirmation(order.orderNumber)} className="hover:text-foreground transition-colors">
+                  Order {order.orderNumber}
+                </Link>
+              </CardTitle>
+              <Badge variant={getOrderStatusVariant(order.status)}>{formatOrderStatusLabel(order.status)}</Badge>
+            </div>
           </CardHeader>
           <CardContent className="flex flex-wrap items-center justify-between gap-2 text-sm">
-            <p className="text-muted-foreground">Status: {order.status}</p>
+            <p className="text-muted-foreground">Placed {formatOrderDate(order.placedAt)}</p>
             <PriceDisplay amount={order.total} size="sm" />
           </CardContent>
         </Card>

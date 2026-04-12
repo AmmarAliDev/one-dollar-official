@@ -5,17 +5,11 @@ import { auth } from "@/auth";
 import {
   applyCartTokenCookie,
   CART_COOKIE_NAME,
-  getCartSummaryForContext,
   getOrCreateGuestCartToken,
   readCartTokenFromCookieValue,
-  validateCartStock,
 } from "@/features/cart";
-import {
-  assertCheckoutCartReady,
-  buildCheckoutAttemptResult,
-  checkoutPayloadSchema,
-} from "@/features/checkout";
-import { AppError } from "@/lib/errors/app-error";
+import { checkoutPayloadSchema } from "@/features/checkout";
+import { placeOrderFromCheckout } from "@/features/orders";
 import { createRouteHandlerErrorResponse, createValidationAppError } from "@/lib/errors/handling";
 import { assertTrustedRouteHandlerRequest } from "@/lib/security/csrf";
 
@@ -45,35 +39,20 @@ export async function POST(request: Request) {
 
     const context = await resolveCheckoutContext();
     const ensuredGuestToken = await getOrCreateGuestCartToken(context.guestToken);
-
-    const cart = assertCheckoutCartReady(
-      await getCartSummaryForContext({
+    const order = await placeOrderFromCheckout({
+      payload: parsed.data,
+      context: {
         ...context,
         guestToken: ensuredGuestToken,
-      }),
-    );
+      },
+    });
 
-    if (cart.id !== parsed.data.cartId) {
-      throw new AppError("Checkout cart mismatch.", "CHECKOUT_CART_MISMATCH", {
-        statusCode: 409,
-        userMessage: "Your cart changed. Please refresh checkout and try again.",
-      });
-    }
-
-    const stock = validateCartStock(cart);
-    if (!stock.ok) {
-      throw new AppError("Checkout blocked due to stock issues.", "CHECKOUT_STOCK_ISSUES", {
-        statusCode: 409,
-        userMessage: "Some items are no longer in stock. Please update your cart and retry.",
-      });
-    }
-
-    const checkout = buildCheckoutAttemptResult(parsed.data, cart);
+    const freshGuestToken = await getOrCreateGuestCartToken();
 
     const response = NextResponse.json(
       {
         ok: true,
-        checkout,
+        order,
       },
       {
         headers: {
@@ -82,12 +61,12 @@ export async function POST(request: Request) {
       },
     );
 
-    applyCartTokenCookie(response, cart.token || ensuredGuestToken);
+    applyCartTokenCookie(response, freshGuestToken);
 
     return response;
   } catch (error) {
     return createRouteHandlerErrorResponse(error, "checkout:submit", {
-      userMessage: "We could not submit checkout details right now. Please retry.",
+      userMessage: "We could not place your order right now. Please retry.",
     });
   }
 }

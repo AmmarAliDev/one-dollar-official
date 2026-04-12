@@ -44,10 +44,17 @@ enum ProductStatus {
 enum OrderStatus {
   PENDING
   CONFIRMED
-  PAID
-  FULFILLED
+  PACKED
+  SHIPPED
+  DELIVERED
   CANCELLED
-  REFUNDED
+}
+
+enum RefundStatus {
+  NONE
+  PENDING
+  COMPLETED
+  REVERSED
 }
 
 enum CartStatus {
@@ -348,6 +355,7 @@ model Order {
   paymentMethod     String?
   paymentProvider   String?
   paymentStatus     String?
+  refundStatus      RefundStatus  @default(NONE)
   placedAt          DateTime      @default(now())
   items             OrderItem[]
   shippingAddress   OrderAddress? @relation("ShippingAddress", fields: [shippingAddressId], references: [id])
