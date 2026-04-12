@@ -71,8 +71,14 @@ describe("signUpValidator", () => {
     expect(result.success).toBe(true);
   });
 
-  it("accepts sign-up without a name", () => {
-    const result = signUpValidator.safeParse({ ...valid, name: "" });
+  it("accepts sign-up with optional name omitted", () => {
+    const { name: _, ...withoutName } = valid;
+    const result = signUpValidator.safeParse(withoutName);
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts sign-up with whitespace-only name (trimmed to empty)", () => {
+    const result = signUpValidator.safeParse({ ...valid, name: "   " });
     expect(result.success).toBe(true);
   });
 

@@ -25,8 +25,11 @@ import { signIn } from "@/auth";
 import { routes } from "@/config/routes";
 import { signUpValidator } from "@/features/auth/validators";
 import { hashPassword } from "@/lib/auth/password";
+import { toActionErrorState } from "@/lib/errors/handling";
 import { logger } from "@/lib/logger";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { assertTrustedOrigin, getClientIp } from "@/lib/security/csrf";
+import { validateWithSchema } from "@/lib/security/validation";
 import { getPrismaClient } from "@/server/db";
 
 export interface SignUpActionState {
@@ -43,6 +46,12 @@ export async function signUpAction(
 ): Promise<SignUpActionState> {
   const db = getPrismaClient();
 
+  try {
+    await assertTrustedOrigin({ action: "auth:sign-up" });
+  } catch (error) {
+    return toActionErrorState(error, "sign-up");
+  }
+
   // ── 1. Parse & validate ───────────────────────────────────────────────────
   const raw = {
     name: formData.get("name") ?? undefined,
@@ -51,26 +60,18 @@ export async function signUpAction(
     confirmPassword: formData.get("confirmPassword"),
   };
 
-  const parsed = signUpValidator.safeParse(raw);
+  const parsed = validateWithSchema(signUpValidator, raw);
   if (!parsed.success) {
     return {
-      errors: parsed.error.issues.map((i) => i.message),
+      errors: parsed.errors,
     };
   }
 
   const { name, email, password } = parsed.data;
 
-  // ── 2. Rate limit (in-memory; upgrade to Redis in Prompt 2.5) ─────────────
+  // ── 2. Rate limit (Redis-backed when configured; memory fallback for local) ──
   const headerList = await headers();
-  // Prefer x-real-ip (set by the reverse proxy, not client-controllable) over
-  // x-forwarded-for whose leftmost value is supplied by the client. When only
-  // x-forwarded-for is present, take the *last* entry (appended by the
-  // outermost trusted proxy). Cap length to prevent oversized store keys.
-  const rawIp =
-    headerList.get("x-real-ip")?.trim() ??
-    headerList.get("x-forwarded-for")?.split(",").at(-1)?.trim() ??
-    "unknown";
-  const ip = rawIp.slice(0, 45);
+  const ip = getClientIp(headerList);
 
   // IP-only bucket — primary enumeration guard. An attacker cycling through
   // different email addresses cannot create fresh buckets to evade this limit.
@@ -90,7 +91,7 @@ export async function signUpAction(
   // Per-email bucket — secondary limit to slow concentrated attempts against a
   // single address (e.g. credential-stuffing a known email).
   const emailRlResult = await checkRateLimit({
-    identifier: email,
+    identifier: email.toLowerCase(),
     action: "auth:sign-up:email",
     limit: 3,
     windowMs: 60_000,
@@ -138,10 +139,11 @@ export async function signUpAction(
       },
     });
   } catch (err) {
-    logger.error("sign-up: user creation failed", { err });
-    return {
-      errors: ["Could not create your account. Please try again."],
-    };
+    return toActionErrorState(
+      err,
+      "sign-up:create-user",
+      "Could not create your account. Please try again.",
+    );
   }
 
   // ── 7. Sign in immediately (throws redirect on success) ────────────────────

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { checkRateLimit } from "../../../src/lib/rate-limit";
+import { checkRateLimit, getRateLimitBackend } from "../../../src/lib/rate-limit";
 
 describe("checkRateLimit", () => {
   it("allows the first request", async () => {
@@ -12,10 +12,16 @@ describe("checkRateLimit", () => {
     });
     expect(result.success).toBe(true);
     expect(result.remaining).toBe(2);
+    expect(result.backend).toBe("memory");
   });
 
   it("blocks a request after the limit is exceeded", async () => {
-    const options = { identifier: "test-ip-2", action: "test:action-2", limit: 2, windowMs: 60_000 };
+    const options = {
+      identifier: "test-ip-2",
+      action: "test:action-2",
+      limit: 2,
+      windowMs: 60_000,
+    };
 
     await checkRateLimit(options); // 1st
     await checkRateLimit(options); // 2nd — hits limit
@@ -28,8 +34,18 @@ describe("checkRateLimit", () => {
   it("uses separate windows per action key", async () => {
     const ip = "test-ip-3";
 
-    const r1 = await checkRateLimit({ identifier: ip, action: "action-A", limit: 1, windowMs: 60_000 });
-    const r2 = await checkRateLimit({ identifier: ip, action: "action-B", limit: 1, windowMs: 60_000 });
+    const r1 = await checkRateLimit({
+      identifier: ip,
+      action: "action-A",
+      limit: 1,
+      windowMs: 60_000,
+    });
+    const r2 = await checkRateLimit({
+      identifier: ip,
+      action: "action-B",
+      limit: 1,
+      windowMs: 60_000,
+    });
 
     // Both first requests should succeed because they use different action keys.
     expect(r1.success).toBe(true);
@@ -45,5 +61,9 @@ describe("checkRateLimit", () => {
       windowMs: 30_000,
     });
     expect(result.reset.getTime()).toBeGreaterThan(before);
+  });
+
+  it("uses the memory backend when Redis env vars are not configured", () => {
+    expect(getRateLimitBackend({})).toBe("memory");
   });
 });

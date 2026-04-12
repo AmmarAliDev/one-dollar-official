@@ -37,9 +37,8 @@ const booleanFromEnv = (defaultValue: boolean) =>
 export const publicEnvSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   NEXT_PUBLIC_APP_URL: z
-    .string()
+    .url({ error: "Provide a valid absolute URL, for example http://localhost:3000." })
     .trim()
-    .url("Provide a valid absolute URL, for example http://localhost:3000.")
     .default("http://localhost:3000"),
   NEXT_PUBLIC_DEFAULT_CITY: z
     .string()
@@ -50,21 +49,72 @@ export const publicEnvSchema = z.object({
   NEXT_PUBLIC_ENABLE_AUTH: booleanFromEnv(true),
 });
 
-export const serverEnvSchema = z.object({
-  APP_SECRET: z.string().trim().min(1, "APP_SECRET cannot be empty.").optional(),
+export const serverEnvSchema = z
+  .object({
+    APP_SECRET: z.string().trim().min(1, "APP_SECRET cannot be empty.").optional(),
 
-  // Auth.js v5 secret — required in any non-development environment.
-  // Generate with: openssl rand -base64 32
-  AUTH_SECRET: z
-    .string()
-    .trim()
-    .min(32, "AUTH_SECRET must be at least 32 characters for security.")
-    .optional(),
+    // Auth.js v5 secret — required in any non-development environment.
+    // Generate with: openssl rand -base64 32
+    AUTH_SECRET: z
+      .string()
+      .trim()
+      .min(32, "AUTH_SECRET must be at least 32 characters for security.")
+      .optional(),
+    AUTH_URL: z.url({ error: "AUTH_URL must be a valid absolute URL." }).trim().optional(),
 
-  // Google OAuth credentials — required when Google SSO is enabled.
-  AUTH_GOOGLE_ID: z.string().trim().min(1, "AUTH_GOOGLE_ID cannot be empty.").optional(),
-  AUTH_GOOGLE_SECRET: z.string().trim().min(1, "AUTH_GOOGLE_SECRET cannot be empty.").optional(),
-});
+    // Google OAuth credentials — required when Google SSO is enabled.
+    AUTH_GOOGLE_ID: z.string().trim().min(1, "AUTH_GOOGLE_ID cannot be empty.").optional(),
+    AUTH_GOOGLE_SECRET: z.string().trim().min(1, "AUTH_GOOGLE_SECRET cannot be empty.").optional(),
+
+    // Optional Redis-backed rate limiting (recommended for production).
+    UPSTASH_REDIS_REST_URL: z
+      .url({ error: "UPSTASH_REDIS_REST_URL must be a valid absolute URL." })
+      .trim()
+      .optional(),
+    UPSTASH_REDIS_REST_TOKEN: z
+      .string()
+      .trim()
+      .min(1, "UPSTASH_REDIS_REST_TOKEN cannot be empty.")
+      .optional(),
+
+    // Extra trusted origins for reverse proxies or separate first-party domains.
+    APP_ALLOWED_ORIGINS: z.string().trim().optional(),
+  })
+  .superRefine((value, context) => {
+    const hasRedisUrl = Boolean(value.UPSTASH_REDIS_REST_URL);
+    const hasRedisToken = Boolean(value.UPSTASH_REDIS_REST_TOKEN);
+
+    if (hasRedisUrl !== hasRedisToken) {
+      context.addIssue({
+        code: "custom",
+        message:
+          "UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN must either both be set or both be omitted.",
+        path: [hasRedisUrl ? "UPSTASH_REDIS_REST_TOKEN" : "UPSTASH_REDIS_REST_URL"],
+      });
+    }
+
+    if (!value.APP_ALLOWED_ORIGINS) {
+      return;
+    }
+
+    for (const origin of value.APP_ALLOWED_ORIGINS.split(",")) {
+      const trimmedOrigin = origin.trim();
+
+      if (trimmedOrigin.length === 0) {
+        continue;
+      }
+
+      try {
+        new URL(trimmedOrigin);
+      } catch {
+        context.addIssue({
+          code: "custom",
+          message: `Invalid origin in APP_ALLOWED_ORIGINS: ${trimmedOrigin}`,
+          path: ["APP_ALLOWED_ORIGINS"],
+        });
+      }
+    }
+  });
 
 type PublicEnvValues = z.infer<typeof publicEnvSchema>;
 type ServerEnvValues = z.infer<typeof serverEnvSchema>;

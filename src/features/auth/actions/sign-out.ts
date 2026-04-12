@@ -10,7 +10,9 @@
 
 import { signOut } from "@/auth";
 import { routes } from "@/config/routes";
+import { assertTrustedOrigin } from "@/lib/security/csrf";
 
 export async function signOutAction() {
+  await assertTrustedOrigin({ action: "auth:sign-out" });
   await signOut({ redirectTo: routes.storefront.home });
 }
