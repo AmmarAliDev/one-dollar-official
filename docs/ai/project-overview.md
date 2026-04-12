@@ -10,9 +10,11 @@
 
 ## Current Phase
 
-This repository currently implements **Prompt 2.2 — database access layer conventions** on top of the previously completed UI and schema foundation.
+This repository currently implements **Prompt 3.3 — category listing and product grid** on top of the previously completed storefront shell, homepage foundation, auth, RBAC, and security baseline.
 
 ### Included now
+
+> This list highlights recent and core additions and is not exhaustive; previously completed features include auth, RBAC, and the security baseline.
 
 - Next.js App Router + TypeScript + Tailwind CSS foundation
 - shadcn/ui-compatible setup (`components.json`, `cn()` utility, reusable primitives)
@@ -23,15 +25,18 @@ This repository currently implements **Prompt 2.2 — database access layer conv
 - shared frontend toast support through `sonner`, `AppToaster`, and `notify.*()`
 - lazy Prisma singleton access through `src/server/db/client.ts`
 - shared server-side database conventions for repositories, services, transaction orchestration, pagination, and query result typing in `src/server/db`
-- helper tests covering pagination, query results, transaction helpers, and safe Prisma singleton reuse
+- homepage rendering through `src/features/homepage` with CMS-ready fallback sections
+- catalog listing routes at `/categories` and `/categories/[slug]` backed by `src/features/catalog`
+- typed filter parsing, basic sorting, and pagination contracts ready to swap from fallback data to Prisma-backed catalog queries later
+- helper tests covering pagination, query results, transaction helpers, safe Prisma singleton reuse, and storefront catalog filtering
 - updated AI and developer docs for UI conventions and future continuity
 
 ### Intentionally deferred
 
-- catalog, cart, checkout, payments
-- authentication providers and real auth forms
-- RBAC and admin workflows
-- analytics, notifications beyond shared frontend toasts, and CMS logic
+- product detail pages, cart, checkout, and payments
+- live Prisma-backed catalog persistence and admin catalog CRUD
+- analytics and notifications beyond shared frontend toasts
+- CMS persistence beyond the current homepage fallback scaffolds
 
 ## Folder Structure Snapshot
 
@@ -52,6 +57,7 @@ src/
 - Continue from the current repository state.
 - Extend existing layers instead of creating duplicate patterns.
 - Keep business logic inside `src/features` or `src/server`, not directly in pages.
+- Use `src/features/catalog` as the seam for listing filters, seeded fallback data, and future product/category service logic.
 - Put new Prisma queries behind repository factories in `src/server` and let services own transactions.
 - Reuse `loadAppConfig()` / `getRequiredServerEnv()` for new config-dependent server features.
 - Update both `docs/ai` and `docs/dev` whenever a new capability is added.
