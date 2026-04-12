@@ -26,12 +26,12 @@ export function HeroBannerSectionBlock({ section }: HeroBannerSectionProps) {
             <Link href={section.primaryCtaHref} className={buttonVariants()}>
               {section.primaryCtaLabel}
             </Link>
-            {section.secondaryCtaHref && section.secondaryCtaLabel ? (
+            {section.secondaryCta ? (
               <Link
-                href={section.secondaryCtaHref}
+                href={section.secondaryCta.href}
                 className={cn(buttonVariants({ variant: "outline" }), "bg-background")}
               >
-                {section.secondaryCtaLabel}
+                {section.secondaryCta.label}
               </Link>
             ) : null}
           </div>

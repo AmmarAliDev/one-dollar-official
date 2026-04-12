@@ -32,7 +32,14 @@ export const SECTION_COMPONENTS: SectionComponentMap = {
 };
 
 export function renderHomepageSection(section: HomepageSection) {
-  const SectionComponent = SECTION_COMPONENTS[section.kind] as ComponentType<{ section: HomepageSection }>;
+  const SectionComponent = SECTION_COMPONENTS[section.kind] as
+    | ComponentType<{ section: HomepageSection }>
+    | undefined;
+
+  if (!SectionComponent) {
+    console.warn(`[homepage] No component registered for section kind="${section.kind}" id="${section.id}"`);
+    return null;
+  }
 
   return <SectionComponent key={section.id} section={section} />;
 }

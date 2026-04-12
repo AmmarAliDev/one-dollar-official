@@ -29,7 +29,9 @@ export function FeaturedProductsSectionBlock({ section }: FeaturedProductsSectio
                 <CardTitle className="text-base">{product.name}</CardTitle>
                 {product.badge ? <Badge variant="success">{product.badge}</Badge> : null}
               </div>
-              <CardDescription>Campaign slot ready for admin-managed featured products.</CardDescription>
+              {product.description ? (
+                <CardDescription>{product.description}</CardDescription>
+              ) : null}
             </CardHeader>
             <CardContent className="space-y-4">
               <PriceDisplay

@@ -14,8 +14,7 @@ export type HeroBannerSection = {
   description: string;
   primaryCtaLabel: string;
   primaryCtaHref: string;
-  secondaryCtaLabel?: string;
-  secondaryCtaHref?: string;
+  secondaryCta?: { label: string; href: string };
   eyebrow?: string;
 };
 
@@ -39,6 +38,7 @@ export type FeaturedCategoriesSection = {
 export type FeaturedProductItem = {
   id: string;
   name: string;
+  description?: string;
   href: string;
   price: number;
   compareAt?: number;
@@ -73,6 +73,7 @@ export type BlogHighlightItem = {
   id: string;
   title: string;
   excerpt: string;
+  href: string;
 };
 
 export type BlogHighlightsSection = {

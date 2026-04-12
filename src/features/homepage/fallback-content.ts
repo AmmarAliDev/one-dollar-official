@@ -11,8 +11,7 @@ export const HOMEPAGE_FALLBACK_SECTIONS: HomepageSection[] = [
       "The homepage is now section-based and ready for CMS/admin-driven updates without code deployments.",
     primaryCtaLabel: "Shop featured deals",
     primaryCtaHref: routes.storefront.search,
-    secondaryCtaLabel: "Preview storefront shell",
-    secondaryCtaHref: routes.storefront.preview,
+    secondaryCta: { label: "Preview storefront shell", href: routes.storefront.preview },
     eyebrow: "CMS-ready homepage foundation",
     displayOrder: 10,
   },
@@ -53,6 +52,7 @@ export const HOMEPAGE_FALLBACK_SECTIONS: HomepageSection[] = [
       {
         id: "prod-detergent",
         name: "Ultra Wash Detergent 1kg",
+        description: "Powerful cleaning formula for everyday laundry.",
         href: routes.storefront.preview,
         price: 899,
         compareAt: 1099,
@@ -61,6 +61,7 @@ export const HOMEPAGE_FALLBACK_SECTIONS: HomepageSection[] = [
       {
         id: "prod-olive-oil",
         name: "Olive Blend Cooking Oil 1L",
+        description: "Premium blend ideal for frying and salads.",
         href: routes.storefront.preview,
         price: 1299,
         compareAt: 1499,
@@ -68,6 +69,7 @@ export const HOMEPAGE_FALLBACK_SECTIONS: HomepageSection[] = [
       {
         id: "prod-skin-care",
         name: "Hydra Care Face Wash",
+        description: "Gentle daily cleanser for all skin types.",
         href: routes.storefront.preview,
         price: 699,
       },
