@@ -31,7 +31,7 @@ export function CategoryListingFilters({ listing }: { listing: CatalogCategoryLi
           <div>
             <CardTitle className="text-base">Filters and sorting</CardTitle>
             <p className="text-muted-foreground text-sm">
-              Simple scaffold now, ready for real catalog persistence later.
+              Narrow results by price or sort to find the best deals.
             </p>
           </div>
         </div>
@@ -127,12 +127,16 @@ export function CategoryListingFilters({ listing }: { listing: CatalogCategoryLi
             <Link href={routes.storefront.category(category.slug)} className={buttonVariants({ variant: "outline" })}>
               Reset
             </Link>
-            <Link
-              href={buildCategoryListingHref(category.slug, filters, { page: Math.max(1, filters.page - 1) })}
-              className={buttonVariants({ variant: "ghost" })}
-            >
-              Previous page
-            </Link>
+            {(filters.page ?? 1) > 1 && (
+              <Link
+                href={buildCategoryListingHref(category.slug, filters, {
+                  page: Math.max(1, (filters.page ?? 1) - 1),
+                })}
+                className={buttonVariants({ variant: "ghost" })}
+              >
+                Previous page
+              </Link>
+            )}
           </div>
         </form>
       </CardContent>

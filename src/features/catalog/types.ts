@@ -52,7 +52,9 @@ export type CatalogProductCard = {
   name: string;
   description: string;
   categorySlug: string;
+  /** Selling price in whole PKR (integer, e.g. 899 = PKR 899). */
   price: number;
+  /** Original / compare-at price in whole PKR (integer); present only when the item is on sale. */
   compareAt?: number;
   inventoryQuantity: number;
   averageRating: number;

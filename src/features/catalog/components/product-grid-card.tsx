@@ -26,10 +26,10 @@ function getInventoryBadge(quantity: number) {
 
 function getReviewSummary(product: CatalogProductCard) {
   if (product.reviewCount <= 0) {
-    return "Review summary placeholder";
+    return "No reviews yet";
   }
 
-  return `${product.averageRating.toFixed(1)} average rating placeholder · ${product.reviewCount} reviews`;
+  return `${product.averageRating.toFixed(1)} average rating · ${product.reviewCount} ${product.reviewCount === 1 ? "review" : "reviews"}`;
 }
 
 export function ProductGridCard({ product }: { product: CatalogProductCard }) {

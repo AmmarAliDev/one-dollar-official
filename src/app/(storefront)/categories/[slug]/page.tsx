@@ -77,7 +77,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
             <EmptyState
               icon={PackageSearch}
               title="No products match these filters"
-              description="Adjust price, stock, rating, or discount filters to widen the listing. Variant-aware attributes remain a documented placeholder for the next catalog iteration."
+              description="Try adjusting your filters to see more products."
               eyebrow="Empty state"
             />
           ) : (

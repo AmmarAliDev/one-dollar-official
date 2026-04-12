@@ -26,7 +26,7 @@ export function CategoryOverviewCard({ category }: { category: CatalogCategory }
 
           <div className="mt-auto flex items-center justify-between gap-3 text-sm">
             <span className="text-muted-foreground">Slug: /categories/{category.slug}</span>
-            <span className="font-medium">{category.productCount} products</span>
+            <span className="font-medium">{category.productCount} {category.productCount === 1 ? "product" : "products"}</span>
           </div>
         </CardContent>
       </Card>

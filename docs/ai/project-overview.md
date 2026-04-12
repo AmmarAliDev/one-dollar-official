@@ -14,6 +14,8 @@ This repository currently implements **Prompt 3.3 — category listing and produ
 
 ### Included now
 
+> This list highlights recent and core additions and is not exhaustive; previously completed features include auth, RBAC, and the security baseline.
+
 - Next.js App Router + TypeScript + Tailwind CSS foundation
 - shadcn/ui-compatible setup (`components.json`, `cn()` utility, reusable primitives)
 - theme provider wiring plus a three-way `system` / `light` / `dark` toggle

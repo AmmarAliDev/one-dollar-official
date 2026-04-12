@@ -9,7 +9,7 @@ import { CategoryOverviewCard, getCatalogCategories } from "@/features/catalog";
 export const metadata = buildMetadata({
   title: "Categories",
   path: "/categories",
-  description: "SEO-friendly category routes with scalable product listing foundations.",
+  description: "Browse our product categories to find deals and items you love — all at one-dollar prices.",
 });
 
 export default async function CategoriesPage() {
@@ -19,8 +19,8 @@ export default async function CategoriesPage() {
     <PageShell className="gap-8">
       <SectionHeader
         eyebrow="Catalog"
-        title="Browse simple categories"
-        description="Category landing pages now use clean slugs and a shared listing foundation that can scale into real catalog persistence later."
+        title="Shop by Category"
+        description="Browse our categories to find exactly what you're looking for — from everyday essentials to hard-to-find items, all at one-dollar prices."
       />
 
       {categories.length === 0 ? (
