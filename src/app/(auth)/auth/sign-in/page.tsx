@@ -12,7 +12,36 @@ export const metadata = buildMetadata({
   description: "Sign in to your One Dollar account.",
 });
 
-export default function SignInPage() {
+type SignInPageProps = {
+  searchParams?: Promise<{
+    from?: string;
+  }>;
+};
+
+function isSafeRelativePath(value: string) {
+  const candidate = value.trim();
+
+  if (!candidate.startsWith("/")) {
+    return false;
+  }
+
+  if (candidate.startsWith("//") || candidate.includes("://") || candidate.includes("\\")) {
+    return false;
+  }
+
+  if (/^[a-zA-Z][a-zA-Z\d+.-]*:/.test(candidate.slice(1)) || /[\r\n]/.test(candidate)) {
+    return false;
+  }
+
+  return true;
+}
+
+export default async function SignInPage({ searchParams }: SignInPageProps) {
+  const resolvedSearchParams = await searchParams;
+  const redirectTo = isSafeRelativePath(`${resolvedSearchParams?.from ?? ""}`)
+    ? `${resolvedSearchParams?.from}`.trim()
+    : routes.storefront.home;
+
   return (
     <Card className="w-full max-w-sm">
       <CardHeader className="text-center">
@@ -22,7 +51,7 @@ export default function SignInPage() {
 
       <CardContent className="space-y-4">
         {/* Credentials form */}
-        <SignInForm />
+        <SignInForm redirectTo={redirectTo} />
 
         {/* Divider */}
         <div className="relative">

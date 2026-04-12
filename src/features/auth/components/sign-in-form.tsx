@@ -17,7 +17,11 @@ import { Label } from "@/components/ui/label";
 import { routes } from "@/config/routes";
 import { signInAction, type SignInActionState } from "@/features/auth/actions/sign-in";
 
-export function SignInForm() {
+type SignInFormProps = {
+  redirectTo?: string;
+};
+
+export function SignInForm({ redirectTo = routes.storefront.home }: SignInFormProps) {
   const [state, dispatch, isPending] = useActionState<SignInActionState | null, FormData>(
     signInAction,
     null,
@@ -27,6 +31,8 @@ export function SignInForm() {
 
   return (
     <form action={dispatch} className="space-y-4" noValidate>
+      <input type="hidden" name="redirectTo" value={redirectTo} />
+
       {/* Error summary */}
       {errors.length > 0 && (
         <div

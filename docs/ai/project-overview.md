@@ -10,7 +10,7 @@
 
 ## Current Phase
 
-This repository currently implements **Prompt 3.4 — product detail page (PDP)** on top of the previously completed storefront shell, homepage foundation, auth, RBAC, security baseline, and category listing.
+This repository currently implements **Prompt 3.6 — wishlist and customer account foundation** on top of the previously completed storefront shell, homepage foundation, auth, RBAC, security baseline, category listing, PDP, and search.
 
 ### Included now
 
@@ -31,8 +31,13 @@ This repository currently implements **Prompt 3.4 — product detail page (PDP)*
 - product detail routes at `/categories/[slug]/[productSlug]` with static params, metadata generation, and seeded fallback product detail contracts
 - PDP feature components for image gallery, variant selection UX, product info panel, specifications, review summary/list, related products, and structured skeleton loading state
 - catalog product cards now link to PDP routes and related-product cards reuse the same route contracts
+- wishlist mutations via `POST/DELETE /api/wishlist/items` with authenticated user checks and safe request validation
+- wishlist UI support on PDP (`Save to wishlist`) plus a real `/wishlist` page with guest sign-in prompt, empty state, and remove actions
+- protected account area with reusable account shell and section routes for profile, addresses, order history, and reviews placeholders
+- sign-in return-path support (`/auth/sign-in?from=...`) for smoother guest-to-authenticated wishlist/account flows
 - helper tests covering pagination, query results, transaction helpers, safe Prisma singleton reuse, and storefront catalog filtering
 - helper tests now also cover PDP service retrieval and related-product behavior
+- helper tests now include wishlist seed-selection behavior and updated storefront route assertions
 - updated AI and developer docs for UI conventions and future continuity
 
 ### Intentionally deferred

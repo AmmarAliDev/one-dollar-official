@@ -1,0 +1,328 @@
+import { Currency, ProductStatus } from "@prisma/client";
+
+import { routes } from "@/config/routes";
+import { catalogCategorySeeds, catalogProductDetailSeeds, catalogProductSeeds } from "@/features/catalog/data";
+import { AppError } from "@/lib/errors/app-error";
+import { getPrismaClient } from "@/server/db";
+
+type ResolveWishlistSelectionInput = {
+  productSlug: string;
+  optionId?: string | undefined;
+};
+
+type WishlistSeedSelection = {
+  categorySlug: string;
+  categoryName: string;
+  productSlug: string;
+  productName: string;
+  shortDescription: string;
+  longDescription: string;
+  optionId: string | null;
+  optionLabel: string | null;
+  sku: string;
+  price: number;
+  compareAt: number | null;
+  inventoryQuantity: number;
+};
+
+export type WishlistItemView = {
+  id: string;
+  productName: string;
+  productSlug: string;
+  categorySlug: string;
+  categoryName: string;
+  sku: string;
+  optionLabel: string | null;
+  price: number;
+  compareAt: number | null;
+  quantity: number;
+  href: string;
+  createdAt: string;
+};
+
+function toMissingProductError(slug: string) {
+  return new AppError(`Wishlist product not found for slug: ${slug}`, "WISHLIST_PRODUCT_NOT_FOUND", {
+    statusCode: 404,
+    userMessage: "This product is not available for wishlist right now.",
+  });
+}
+
+function toMissingVariantError(optionId: string) {
+  return new AppError(`Wishlist variant not found for option: ${optionId}`, "WISHLIST_VARIANT_NOT_FOUND", {
+    statusCode: 404,
+    userMessage: "The selected product option is no longer available.",
+  });
+}
+
+export function resolveWishlistSeedSelection(input: ResolveWishlistSelectionInput): WishlistSeedSelection {
+  const product = catalogProductSeeds.find((item) => item.slug === input.productSlug);
+
+  if (!product) {
+    throw toMissingProductError(input.productSlug);
+  }
+
+  const productDetail = catalogProductDetailSeeds[input.productSlug];
+  if (!productDetail) {
+    throw toMissingProductError(input.productSlug);
+  }
+
+  const category = catalogCategorySeeds.find((item) => item.slug === product.categorySlug);
+  if (!category) {
+    throw toMissingProductError(input.productSlug);
+  }
+
+  const firstVariantGroup = productDetail.variantGroups[0];
+  const selectedOption = input.optionId
+    ? firstVariantGroup?.options.find((option) => option.id === input.optionId)
+    : firstVariantGroup?.options[0] ?? null;
+
+  if (input.optionId && !selectedOption) {
+    throw toMissingVariantError(input.optionId);
+  }
+
+  const resolvedSku = selectedOption?.sku ?? productDetail.sku;
+  if (!resolvedSku) {
+    throw new AppError(`Wishlist SKU missing for product: ${input.productSlug}`, "WISHLIST_SKU_MISSING", {
+      statusCode: 500,
+      userMessage: "This product cannot be wishlisted right now. Please try again.",
+    });
+  }
+
+  return {
+    categorySlug: category.slug,
+    categoryName: category.name,
+    productSlug: product.slug,
+    productName: product.name,
+    shortDescription: productDetail.shortDescription,
+    longDescription: productDetail.longDescription,
+    optionId: selectedOption?.id ?? null,
+    optionLabel: selectedOption?.label ?? null,
+    sku: resolvedSku,
+    price: selectedOption?.price ?? product.price,
+    compareAt: selectedOption?.compareAt ?? product.compareAt ?? null,
+    inventoryQuantity: selectedOption?.inventoryQuantity ?? product.inventoryQuantity,
+  };
+}
+
+async function getOrCreateWishlistForUser(userId: string) {
+  const db = getPrismaClient();
+
+  const existingWishlist = await db.wishlist.findFirst({
+    where: { userId },
+    orderBy: { createdAt: "asc" },
+  });
+
+  if (existingWishlist) {
+    return existingWishlist;
+  }
+
+  return db.wishlist.create({
+    data: { userId },
+  });
+}
+
+async function ensureSeedCatalogVariant(selection: WishlistSeedSelection) {
+  const db = getPrismaClient();
+
+  const category = await db.category.upsert({
+    where: { slug: selection.categorySlug },
+    update: {
+      name: selection.categoryName,
+    },
+    create: {
+      slug: selection.categorySlug,
+      name: selection.categoryName,
+      description: `Seed-backed category for ${selection.categoryName}`,
+    },
+  });
+
+  const product = await db.product.upsert({
+    where: { slug: selection.productSlug },
+    update: {
+      name: selection.productName,
+      shortDescription: selection.shortDescription,
+      description: selection.longDescription,
+      categoryId: category.id,
+    },
+    create: {
+      slug: selection.productSlug,
+      name: selection.productName,
+      shortDescription: selection.shortDescription,
+      description: selection.longDescription,
+      categoryId: category.id,
+      status: ProductStatus.PUBLISHED,
+    },
+  });
+
+  return db.productVariant.upsert({
+    where: { sku: selection.sku },
+    update: {
+      productId: product.id,
+      title: selection.optionLabel,
+      price: selection.price,
+      compareAtPrice: selection.compareAt,
+      isDefault: selection.optionId === null,
+    },
+    create: {
+      productId: product.id,
+      sku: selection.sku,
+      title: selection.optionLabel,
+      price: selection.price,
+      compareAtPrice: selection.compareAt,
+      currency: Currency.PKR,
+      isDefault: selection.optionId === null,
+    },
+  });
+}
+
+export async function addWishlistItemForUser(userId: string, input: ResolveWishlistSelectionInput) {
+  const db = getPrismaClient();
+  const selection = resolveWishlistSeedSelection(input);
+
+  const [wishlist, variant] = await Promise.all([
+    getOrCreateWishlistForUser(userId),
+    ensureSeedCatalogVariant(selection),
+  ]);
+
+  return db.wishlistItem.upsert({
+    where: {
+      wishlistId_productVariantId: {
+        wishlistId: wishlist.id,
+        productVariantId: variant.id,
+      },
+    },
+    update: {
+      quantity: 1,
+    },
+    create: {
+      wishlistId: wishlist.id,
+      productVariantId: variant.id,
+      quantity: 1,
+    },
+    include: {
+      productVariant: {
+        include: {
+          product: {
+            include: {
+              category: true,
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
+export async function removeWishlistSelectionForUser(userId: string, input: ResolveWishlistSelectionInput) {
+  const db = getPrismaClient();
+  const selection = resolveWishlistSeedSelection(input);
+
+  const variant = await db.productVariant.findUnique({
+    where: { sku: selection.sku },
+    select: { id: true },
+  });
+
+  if (!variant) {
+    return false;
+  }
+
+  const deleted = await db.wishlistItem.deleteMany({
+    where: {
+      productVariantId: variant.id,
+      wishlist: {
+        userId,
+      },
+    },
+  });
+
+  return deleted.count > 0;
+}
+
+export async function removeWishlistSkuForUser(userId: string, sku: string) {
+  const db = getPrismaClient();
+
+  const deleted = await db.wishlistItem.deleteMany({
+    where: {
+      productVariant: {
+        sku,
+      },
+      wishlist: {
+        userId,
+      },
+    },
+  });
+
+  return deleted.count > 0;
+}
+
+export async function getWishlistSkusForUser(userId: string) {
+  const db = getPrismaClient();
+
+  const items = await db.wishlistItem.findMany({
+    where: {
+      wishlist: {
+        userId,
+      },
+    },
+    select: {
+      productVariant: {
+        select: {
+          sku: true,
+        },
+      },
+    },
+  });
+
+  return items
+    .map((item) => item.productVariant.sku)
+    .filter((sku): sku is string => Boolean(sku));
+}
+
+export async function getWishlistItemsForUser(userId: string): Promise<WishlistItemView[]> {
+  const db = getPrismaClient();
+
+  const items = await db.wishlistItem.findMany({
+    where: {
+      wishlist: {
+        userId,
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+    include: {
+      productVariant: {
+        include: {
+          product: {
+            include: {
+              category: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  return items.map((item) => {
+    const categorySlug = item.productVariant.product.category?.slug;
+    const categoryName = item.productVariant.product.category?.name;
+
+    return {
+      id: item.id,
+      productName: item.productVariant.product.name,
+      productSlug: item.productVariant.product.slug,
+      categorySlug: categorySlug ?? "",
+      categoryName: categoryName ?? "Category",
+      sku: item.productVariant.sku ?? "",
+      optionLabel: item.productVariant.title,
+      price: item.productVariant.price,
+      compareAt: item.productVariant.compareAtPrice,
+      quantity: item.quantity,
+      href:
+        categorySlug && item.productVariant.product.slug
+          ? routes.storefront.product(categorySlug, item.productVariant.product.slug)
+          : routes.storefront.wishlist,
+      createdAt: item.createdAt.toISOString(),
+    };
+  });
+}

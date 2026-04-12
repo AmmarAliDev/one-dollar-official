@@ -26,6 +26,8 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `(storefront)` now uses a polished shared shell via `AppHeader` + `AppFooter`
 - `(storefront)/categories` provides category discovery and listing routes through clean slugs (`/categories/[slug]`)
 - `(storefront)/categories/[slug]/[productSlug]` now provides PDP rendering with gallery, variant interactions, specifications, reviews, and related products
+- `(storefront)/wishlist` now renders authenticated wishlist entries and guest sign-in prompts
+- `(storefront)/account/*` now provides customer account routes for profile, addresses, order history, and reviews
 - `(admin)` now uses `AdminShell` with a responsive sidebar and topbar placeholder, protected by the RBAC proxy/layout guards
 - `(auth)` reserves sign-in and account entry points
 
@@ -37,6 +39,8 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - Shared frontend feedback uses `sonner` through `src/components/providers/app-toaster.tsx` and `src/lib/notify.ts`.
 - Catalog listing UI lives in `src/features/catalog/components`; keep product-grid and filter scaffolds there instead of placing listing-specific markup directly in route files.
 - PDP UI also lives in `src/features/catalog/components` (gallery, product panel, variants, specs, reviews, related products, and skeleton states); route files should compose these primitives instead of duplicating product-detail markup.
+- Customer account shell UI lives in `src/features/account/components/account-shell.tsx` and should be reused for future account sections.
+- Wishlist client controls live in `src/features/wishlist/components` and call the dedicated wishlist API route.
 
 ## Config and Environment Strategy
 
@@ -76,6 +80,14 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `searchCatalogProducts()` in `src/features/catalog/service.ts` is the stable entrypoint used by API/UI layers.
 - `src/features/catalog/search-adapter.ts` is the upgrade seam. The current seed-backed scoring logic can be replaced by a dedicated search provider while preserving API and UI contracts.
 - See `docs/dev/search-architecture.md` for flow details and phased upgrade guidance.
+
+## Wishlist + Account Strategy
+
+- `src/features/wishlist/service.ts` owns wishlist seed-resolution logic, persistence, and user-scoped queries.
+- `src/app/api/wishlist/items/route.ts` is the only mutation entrypoint for add/remove operations and enforces authenticated access.
+- Wishlist persistence currently uses a seed-bridge approach: seed catalog slugs/options are resolved to stable SKU-backed ProductVariant rows if missing, so wishlist can work before full catalog DB integration.
+- `src/app/(storefront)/account/layout.tsx` is the authoritative customer-account route guard and redirects unauthenticated users to sign-in with a safe return path.
+- `src/app/(auth)/auth/sign-in/page.tsx` and `src/features/auth/actions/sign-in.ts` support safe `from` path handling to return users after authentication.
 
 ## Error Handling Strategy
 

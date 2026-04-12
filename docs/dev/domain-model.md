@@ -51,3 +51,4 @@ Notes and next steps
 - Add full-text search indices for product search (Postgres `GIN`/`tsvector`).
 - Add reporting materialized views or analytics tables as traffic grows.
 - Add admin UI pages to manage `DealCampaign` and `HomePageSection` objects.
+- Wishlist currently supports a seed-bridge write path: when a seeded storefront product/variant is saved, minimal Category/Product/ProductVariant rows are upserted so `WishlistItem` relations remain valid until full catalog persistence is introduced.

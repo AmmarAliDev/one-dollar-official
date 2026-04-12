@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-**Phase 3 / Prompt 3.5 — Search experience foundation**
+**Phase 3 / Prompt 3.6 — Wishlist and customer account foundation**
 
 ## Completed
 
@@ -88,6 +88,15 @@
 - [x] Search UX state handling added for loading, empty, and error outcomes
 - [x] Recent-search helper placeholder reserved in the search experience UI
 - [x] Search architecture and migration guidance documented in `docs/dev/search-architecture.md`
+- [x] Wishlist API added at `POST/DELETE /api/wishlist/items` for authenticated add/remove operations
+- [x] PDP now includes a wishlist toggle action with guest sign-in prompts and authenticated save/remove behavior
+- [x] `/wishlist` now renders real account-backed wishlist entries with remove actions and empty-state handling
+- [x] Customer account foundation added with protected routes and reusable account shell navigation
+- [x] Account pages now available at `/account/profile`, `/account/addresses`, `/account/orders`, and `/account/reviews`
+- [x] `/account` now redirects to `/account/profile` for a stable account entrypoint
+- [x] Sign-in flow now accepts a safe `from` return path and redirects back after successful credentials login
+- [x] Wishlist resolver tests added in `tests/features/wishlist/service.test.ts`
+- [x] Storefront route smoke tests updated for account sub-routes
 
 ## Deferred by design
 
@@ -101,4 +110,4 @@
 
 ## Recommended Next Prompt
 
-Proceed with **Phase 3 / Prompt 3.5 — cart foundations and server-backed cart state**.
+Proceed with **Phase 4 / Prompt 4.1 — cart system foundations and guest/auth cart behavior**.
