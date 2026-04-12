@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-**Phase 3 / Prompt 3.1 — Storefront navigation and static pages**
+**Phase 3 / Prompt 3.2 — Homepage CMS-driven foundation**
 
 ## Completed
 
@@ -61,6 +61,12 @@
 - [x] Additional placeholder routes added for `/search`, `/account`, `/wishlist`, and `/cart` so primary header actions resolve cleanly
 - [x] Route config and smoke coverage updated for storefront shell navigation requirements
 - [x] AI and developer docs updated for Prompt 3.1 conventions
+- [x] Homepage switched to a section-based renderer through `src/features/homepage` for CMS/admin-driven composition
+- [x] Initial homepage sections added: hero banner, featured categories, featured products, deal spotlight, and blog highlights placeholder
+- [x] Fallback homepage payload added so storefront renders when CMS content is missing or fully disabled
+- [x] Server-side homepage service seam added in `src/features/homepage/service.ts` with CMS loading stub + resolver
+- [x] Section contract documented in `docs/dev/homepage-section-contract.md`
+- [x] Homepage section rendering coverage added in `tests/features/homepage/section-rendering.test.ts`
 
 ## Deferred by design
 
@@ -74,4 +80,4 @@
 
 ## Recommended Next Prompt
 
-Proceed with **Phase 3 / Prompt 3.2 — Homepage CMS-driven foundation**.
+Proceed with **Phase 3 / Prompt 3.3 — Banner and campaign admin CRUD with persistence**.
