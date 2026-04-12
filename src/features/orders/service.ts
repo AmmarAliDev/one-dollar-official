@@ -288,6 +288,39 @@ function isOrderNumberConflict(error: unknown) {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
 }
 
+/**
+ * Maps shipping address city string to City enum value.
+ * Currently only supports Karachi as per business requirements.
+ */
+function mapCityStringToEnum(cityString: string): City {
+  const normalized = cityString.trim().toLowerCase();
+  if (normalized === "karachi") {
+    return City.KARACHI;
+  }
+  // Fallback to KARACHI for now; expand enum and validation when supporting other cities
+  throw new AppError(`City "${cityString}" is not currently supported. We only ship to Karachi.`, "CITY_NOT_SUPPORTED", {
+    statusCode: 400,
+    userMessage: "The city you selected is not currently supported. We only ship to Karachi.",
+  });
+}
+
+/**
+ * Maps shipping address country string to Country enum value.
+ * Currently only supports Pakistan as per business requirements.
+ */
+function mapCountryStringToEnum(countryString: string): Country {
+  const normalized = countryString.trim().toLowerCase();
+  // Match various forms of "Pakistan"
+  if (normalized === "pakistan" || normalized === "pak" || normalized === "pk") {
+    return Country.PAK;
+  }
+  // Fallback; expand enum and validation when supporting other countries
+  throw new AppError(`Country "${countryString}" is not currently supported. We only ship within Pakistan.`, "COUNTRY_NOT_SUPPORTED", {
+    statusCode: 400,
+    userMessage: "The country you selected is not currently supported. We only ship within Pakistan.",
+  });
+}
+
 export async function placeOrderFromCheckout(input: PlaceOrderInput): Promise<PlaceOrderResult> {
   const db = getPrismaClient();
 
@@ -304,13 +337,16 @@ export async function placeOrderFromCheckout(input: PlaceOrderInput): Promise<Pl
           const totals = calculateCheckoutTotals(
             cart.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0),
           );
+
+          // Decrement inventory BEFORE payment authorization to avoid orphaned authorizations
+          // If inventory decrement fails, payment won't be authorized
+          await decrementInventoryForOrder(cart, transaction);
+
           const paymentProvider = getCheckoutPaymentProvider(input.payload.paymentMethod);
           const payment = paymentProvider.authorize({
             payload: input.payload,
             totals,
           });
-
-          await decrementInventoryForOrder(cart, transaction);
 
           const shippingAddress = await transaction.orderAddress.create({
             data: {
@@ -321,9 +357,9 @@ export async function placeOrderFromCheckout(input: PlaceOrderInput): Promise<Pl
               ...(input.payload.shippingAddress.addressLine2
                 ? { street2: input.payload.shippingAddress.addressLine2.trim() }
                 : {}),
-              city: City.KARACHI,
+              city: mapCityStringToEnum(input.payload.shippingAddress.city),
               province: input.payload.shippingAddress.province.trim(),
-              country: Country.PAK,
+              country: mapCountryStringToEnum(input.payload.shippingAddress.country),
               postcode: input.payload.shippingAddress.postcode.trim(),
               ...(input.payload.notes ? { notes: input.payload.notes.trim() } : {}),
             },

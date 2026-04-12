@@ -6,7 +6,12 @@ import { routes } from "@/config/routes";
 import type { OrderDetails } from "./types";
 
 function escapePdfText(value: string) {
-  return value.replaceAll("\\", "\\\\").replaceAll("(", "\\(").replaceAll(")", "\\)");
+  return value
+    .replaceAll("\\", "\\\\")
+    .replaceAll("(", "\\(")
+    .replaceAll(")", "\\)")
+    .replaceAll("\n", "\\n")
+    .replaceAll("\r", "\\r");
 }
 
 function buildPdfDocument(lines: string[]) {
@@ -91,7 +96,6 @@ export function buildInvoicePdf(order: OrderDetails) {
     dateStyle: "medium",
     timeStyle: "short",
   });
-
   const itemLines = order.items.flatMap((item) => [
     `${item.productName}${item.variantTitle ? ` (${item.variantTitle})` : ""}`,
     `SKU: ${item.sku ?? "N/A"} | Qty: ${item.quantity} | Unit: PKR ${item.unitPrice.toLocaleString("en-PK")} | Line: PKR ${item.subtotal.toLocaleString("en-PK")}`,

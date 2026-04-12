@@ -8,8 +8,16 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { PriceDisplay } from "@/components/ui/price-display";
 import { buildMetadata } from "@/config/metadata";
 import { routes } from "@/config/routes";
+import { siteConfig } from "@/config/site";
 import { formatOrderStatusLabel, getOrderStatusVariant } from "@/features/orders";
 import { getPrismaClient } from "@/server/db";
+
+function formatOrderDate(date: Date | null | undefined): string {
+  if (!date) {
+    return "N/A";
+  }
+  return date.toLocaleDateString(siteConfig.locale);
+}
 
 export const metadata = buildMetadata({
   title: "Order History",
@@ -63,7 +71,7 @@ export default async function AccountOrdersPage() {
             </div>
           </CardHeader>
           <CardContent className="flex flex-wrap items-center justify-between gap-2 text-sm">
-            <p className="text-muted-foreground">Placed {order.placedAt.toLocaleDateString("en-PK")}</p>
+            <p className="text-muted-foreground">Placed {formatOrderDate(order.placedAt)}</p>
             <PriceDisplay amount={order.total} size="sm" />
           </CardContent>
         </Card>

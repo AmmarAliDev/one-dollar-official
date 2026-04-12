@@ -24,6 +24,27 @@ This document describes the one-page checkout flow and the transactional order l
 - invoice PDFs are generated on demand from the stored order snapshot rather than persisted as blobs
 - guest order confirmation and invoice access use a per-order confirmation token in the order metadata
 
+### Confirmation Token Security
+
+The "confirmation token" is stored in "order metadata" and protects guest order access:
+
+**Token Generation & Storage:**
+- Token must be generated using a cryptographically secure RNG (e.g., `randomBytes()`)
+- Minimum entropy: ≥128 bits or 32+ URL-safe characters
+- Store only SHA-256 hashed token with a strong salt in order metadata (never plaintext)
+- Protect order metadata at rest (encrypted database) and in transit (HTTPS only)
+
+**Token Expiration & Lifecycle:**
+- Token expiration policy: 30 days after order creation, or configurable TTL
+- Token invalidation: Tokens should be treated as single-use per confirmation link or set a limit on use count
+- Token rotation: Issue a new token on successful confirmation; old token becomes invalid
+- Revocation: Provide admin/customer action to revoke token (e.g., on account recovery, fraud suspected)
+
+**Default Implementation Details:**
+- Token stored in `Order.metadata.confirmationAccessToken` (hashed)
+- Comparison: Hash incoming token from request and compare with stored hash (constant-time comparison)
+- No user account required; token is the sole access control for guest orders
+
 ## Architecture
 
 ### Shared contracts
@@ -78,6 +99,8 @@ Supported transitions:
 - `shipped -> delivered`
 
 `delivered` and `cancelled` are terminal states.
+
+Note: `SHIPPED` orders cannot be directly cancelled via a status transition. Cancellations after shipment are handled through the returns/refunds process (create a return request, receive the item, then issue a refund); the lifecycle treats `SHIPPED` as irreversible in the transition table and only allows `SHIPPED -> DELIVERED`. The enforcement for allowed transitions lives in `src/features/orders/status.ts`.
 
 ## Karachi-only behavior
 
