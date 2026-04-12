@@ -153,13 +153,19 @@ export default async function CartPage() {
               <PriceDisplay amount={cart.subtotal} size="sm" />
             </div>
 
-            <button
-              type="button"
-              className={buttonVariants({ size: "lg" })}
-              disabled={!stockValidation.ok}
-            >
-              Proceed to checkout
-            </button>
+            {stockValidation.ok ? (
+              <Link href={routes.storefront.checkout} className={buttonVariants({ size: "lg" })}>
+                Proceed to checkout
+              </Link>
+            ) : (
+              <button
+                type="button"
+                className={buttonVariants({ size: "lg" })}
+                disabled
+              >
+                Proceed to checkout
+              </button>
+            )}
 
             {!stockValidation.ok ? (
               <p className="text-xs text-muted-foreground">

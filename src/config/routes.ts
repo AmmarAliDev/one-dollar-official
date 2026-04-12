@@ -13,6 +13,7 @@ export const routes = {
     accountReviews: "/account/reviews",
     wishlist: "/wishlist",
     cart: "/cart",
+    checkout: "/checkout",
     about: "/about",
     contact: "/contact",
     privacy: "/privacy",

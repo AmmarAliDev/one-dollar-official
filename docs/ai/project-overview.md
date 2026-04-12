@@ -10,7 +10,7 @@
 
 ## Current Phase
 
-This repository currently implements **Prompt 3.6 — wishlist and customer account foundation** on top of the previously completed storefront shell, homepage foundation, auth, RBAC, security baseline, category listing, PDP, and search.
+This repository currently implements **Prompt 4.2 — one-page checkout foundation** on top of the previously completed storefront shell, homepage foundation, auth, RBAC, security baseline, category listing, PDP, search, wishlist/account, and cart flows.
 
 ### Included now
 
@@ -35,14 +35,22 @@ This repository currently implements **Prompt 3.6 — wishlist and customer acco
 - wishlist UI support on PDP (`Save to wishlist`) plus a real `/wishlist` page with guest sign-in prompt, empty state, and remove actions
 - protected account area with reusable account shell and section routes for profile, addresses, order history, and reviews placeholders
 - sign-in return-path support (`/auth/sign-in?from=...`) for smoother guest-to-authenticated wishlist/account flows
+- one-page checkout route at `/checkout` with customer info, shipping address, order summary, and payment method selection
+- Karachi-only checkout restriction enforced on both client and server with clear user-facing copy
+- fixed shipping fee checkout totals (`subtotal + 250`) shared through checkout service helpers
+- `POST /api/checkout` validation endpoint for checkout payload, cart integrity checks, and stock-aware submission gating
+- payment abstraction registry in `src/features/checkout/payment.ts` with COD implementation and extension seam for future online gateways
+- retry-safe checkout UX with user-friendly validation and submit error handling
 - helper tests covering pagination, query results, transaction helpers, safe Prisma singleton reuse, and storefront catalog filtering
 - helper tests now also cover PDP service retrieval and related-product behavior
 - helper tests now include wishlist seed-selection behavior and updated storefront route assertions
+- helper tests now include checkout validation, totals, and payment provider selection contracts
 - updated AI and developer docs for UI conventions and future continuity
 
 ### Intentionally deferred
 
-- cart, checkout, and payments
+- order placement lifecycle and invoice generation
+- online payment gateway integrations
 - live Prisma-backed catalog persistence and admin catalog CRUD
 - analytics and notifications beyond shared frontend toasts
 - CMS persistence beyond the current homepage fallback scaffolds

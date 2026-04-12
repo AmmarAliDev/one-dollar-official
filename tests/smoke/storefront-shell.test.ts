@@ -15,6 +15,7 @@ describe("storefront shell navigation", () => {
     expect(routes.storefront.accountReviews).toBe("/account/reviews");
     expect(routes.storefront.wishlist).toBe("/wishlist");
     expect(routes.storefront.cart).toBe("/cart");
+    expect(routes.storefront.checkout).toBe("/checkout");
   });
 
   it("exposes required static policy and company pages", () => {
