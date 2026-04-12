@@ -6,10 +6,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { InlineSpinner } from "@/components/ui/inline-spinner";
 import { routes } from "@/config/routes";
-import {
-  initialReorderActionState,
-  reorderOrderAction,
-} from "@/features/orders/actions/reorder";
+import { initialReorderActionState } from "@/features/orders/actions/reorder-types";
+import { reorderOrderAction } from "@/features/orders/actions/reorder";
 import { cn } from "@/lib/utils";
 
 type ReorderOrderFormProps = {
@@ -44,8 +42,8 @@ export function ReorderOrderForm({ orderNumber, compact = false }: ReorderOrderF
 
           {state.issues.length > 0 ? (
             <ul className="mt-2 space-y-1 text-xs">
-              {state.issues.slice(0, 3).map((issue) => (
-                <li key={`${issue.productName}-${issue.reason}`}>{issue.message}</li>
+              {state.issues.slice(0, 3).map((issue, idx) => (
+                <li key={`${issue.productName}-${issue.reason}-${idx}`}>{issue.message}</li>
               ))}
             </ul>
           ) : null}

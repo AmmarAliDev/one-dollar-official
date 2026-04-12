@@ -92,11 +92,12 @@ export default async function AccountOrdersPage() {
                 <Link
                   href={buildOrderInvoiceUrl(order.orderNumber)}
                   className="inline-flex items-center gap-1 text-xs font-medium underline underline-offset-4"
+                  target="_blank"
+                  rel="noopener noreferrer"
                 >
                   Invoice
                   <ExternalLink className="size-3" />
-                </Link>
-              </div>
+                </Link>              </div>
             </div>
 
             <ReorderOrderForm orderNumber={order.orderNumber} compact />
