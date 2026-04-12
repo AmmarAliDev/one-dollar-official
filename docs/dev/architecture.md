@@ -68,6 +68,15 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `src/app/(storefront)/categories/[slug]/[productSlug]/page.tsx` is the SEO-friendly PDP route that validates category/product pairing before rendering.
 - Variant-aware attribute filtering is intentionally a visible scaffold only in this phase; real structured variant filters should extend the existing query/filter contracts rather than replacing them.
 
+## Search Strategy
+
+- `src/app/(storefront)/search/page.tsx` composes a dedicated search experience shell through `CatalogSearchExperience`.
+- Debounced client requests call `GET /api/catalog/search` for fast perceived responsiveness without hammering the server on every keypress.
+- Route-handler validation happens in `src/app/api/catalog/search/route.ts` and delegates to feature-level service logic.
+- `searchCatalogProducts()` in `src/features/catalog/service.ts` is the stable entrypoint used by API/UI layers.
+- `src/features/catalog/search-adapter.ts` is the upgrade seam. The current seed-backed scoring logic can be replaced by a dedicated search provider while preserving API and UI contracts.
+- See `docs/dev/search-architecture.md` for flow details and phased upgrade guidance.
+
 ## Error Handling Strategy
 
 - `src/app/error.tsx` and `src/app/global-error.tsx` now share `PageErrorFallback` so boundary copy stays consistent and user-safe.

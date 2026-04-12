@@ -1,4 +1,6 @@
 export { CatalogPagination } from "./components/catalog-pagination";
+export { CatalogSearchExperience } from "./components/catalog-search-experience";
+export { CatalogSearchInput } from "./components/catalog-search-input";
 export { CategoryListingFilters } from "./components/category-listing-filters";
 export { CategoryListingSkeleton } from "./components/category-listing-skeleton";
 export { CategoryOverviewCard } from "./components/category-overview-card";
@@ -10,8 +12,8 @@ export { ProductRelatedGrid } from "./components/product-related-grid";
 export { ProductReviews } from "./components/product-reviews";
 export { ProductSpecifications } from "./components/product-specifications";
 export { buildCategoryListingHref, parseCatalogSearchParams } from "./filters";
-export { getCatalogCategories, getCatalogCategory, getCatalogCategoryListing, getCatalogCategorySlugs, getProductBySlug, getProductSlugsWithCategory, getRelatedProducts } from "./service";
-export type { CatalogCategory, CatalogCategoryListing, CatalogListingFilters, CatalogProductCard, CatalogProductDetail, ProductImage, ProductReview, ProductReviewSummary, ProductSpec, ProductVariantGroup, ProductVariantOption } from "./types";
+export { getCatalogCategories, getCatalogCategory, getCatalogCategoryListing, getCatalogCategorySlugs, getProductBySlug, getProductSlugsWithCategory, getRelatedProducts, searchCatalogProducts } from "./service";
+export type { CatalogCategory, CatalogCategoryListing, CatalogListingFilters, CatalogProductCard, CatalogProductDetail, CatalogSearchResponse, ProductImage, ProductReview, ProductReviewSummary, ProductSpec, ProductVariantGroup, ProductVariantOption } from "./types";
 export {
   availabilityFilterOptions,
   catalogSortOptions,

@@ -4,6 +4,7 @@ import { createPaginatedResult } from "@/server/db/pagination";
 import { catalogCategorySeeds, catalogProductDetailSeeds, catalogProductSeeds } from "./data";
 import type { CatalogSearchParams } from "./filters";
 import { parseCatalogSearchParams } from "./filters";
+import { getCatalogSearchAdapter } from "./search-adapter";
 import type { CatalogCategory, CatalogCategoryListing, CatalogProductCard, CatalogProductDetail } from "./types";
 
 type CategoryListingInput = {
@@ -180,4 +181,17 @@ export async function getRelatedProducts(categorySlug: string, excludeSlug: stri
 
 export async function getProductSlugsWithCategory(): Promise<{ slug: string; categorySlug: string }[]> {
   return catalogProductSeeds.map((p) => ({ slug: p.slug, categorySlug: p.categorySlug }));
+}
+
+type CatalogProductSearchOptions = {
+  limit?: number;
+};
+
+export async function searchCatalogProducts(query: string, options: CatalogProductSearchOptions = {}) {
+  const adapter = getCatalogSearchAdapter();
+
+  return adapter.searchProducts({
+    query,
+    ...(typeof options.limit === "number" ? { limit: options.limit } : {}),
+  });
 }

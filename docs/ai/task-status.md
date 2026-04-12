@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-**Phase 3 / Prompt 3.4 — Product detail page (PDP)**
+**Phase 3 / Prompt 3.5 — Search experience foundation**
 
 ## Completed
 
@@ -82,6 +82,12 @@
 - [x] Product cards now link directly to PDP routes
 - [x] Catalog service now exposes product detail and related-product helpers
 - [x] PDP service tests added for rendering prerequisites, variant availability data, and related-product behavior
+- [x] Storefront search page now includes a reusable search input with debounced query behavior
+- [x] `GET /api/catalog/search` route added for server-side catalog search requests
+- [x] Catalog search adapter seam added in `src/features/catalog/search-adapter.ts` for future dedicated search integrations
+- [x] Search UX state handling added for loading, empty, and error outcomes
+- [x] Recent-search helper placeholder reserved in the search experience UI
+- [x] Search architecture and migration guidance documented in `docs/dev/search-architecture.md`
 
 ## Deferred by design
 

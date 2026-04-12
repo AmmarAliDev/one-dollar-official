@@ -160,3 +160,10 @@ export type CatalogCategoryListing = {
   filters: CatalogListingFilters;
   pagination: PaginationMeta;
 };
+
+export type CatalogSearchResponse = {
+  query: string;
+  total: number;
+  items: CatalogProductCard[];
+  source: "seed" | "external";
+};
