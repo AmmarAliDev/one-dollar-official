@@ -112,10 +112,10 @@ export function CartItemQuantityControls({
         size="sm"
         onClick={() => runMutation(() => removeItem(cartItemId), `${productName} removed`)}
         disabled={pending}
+        aria-label={`Remove ${productName} from cart`}
       >
         <Trash2 className="size-4" aria-hidden="true" />
         Remove
-      </Button>
-    </div>
+      </Button>    </div>
   );
 }

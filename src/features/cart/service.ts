@@ -226,7 +226,6 @@ async function ensureSeedCatalogVariant(selection: CartSeedSelection, db: Databa
     },
     update: {
       quantity: selection.inventoryQuantity,
-      reserved: 0,
       safetyStock: 0,
     },
     create: {

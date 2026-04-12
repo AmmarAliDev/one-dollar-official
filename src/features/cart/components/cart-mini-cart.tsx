@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, ShoppingBag, ShoppingCart } from "lucide-react";
 
@@ -32,11 +32,29 @@ async function fetchCart() {
   return payload.cart;
 }
 
+function getTabbableElements(container: HTMLElement) {
+  const selectors = [
+    "a[href]",
+    "button:not([disabled])",
+    "input:not([disabled])",
+    "select:not([disabled])",
+    "textarea:not([disabled])",
+    "[tabindex]:not([tabindex='-1'])",
+  ].join(",");
+
+  return Array.from(container.querySelectorAll<HTMLElement>(selectors)).filter(
+    (element) => !element.hasAttribute("disabled") && !element.getAttribute("aria-hidden"),
+  );
+}
+
 export function CartMiniCart() {
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [cart, setCart] = useState<CartSummary | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const wasOpenRef = useRef(false);
 
   async function load() {
     setPending(true);
@@ -66,11 +84,99 @@ export function CartMiniCart() {
     };
   }, []);
 
+  useEffect(() => {
+    if (open) {
+      const panel = panelRef.current;
+      if (panel) {
+        const tabbables = getTabbableElements(panel);
+        (tabbables[0] ?? panel).focus();
+      }
+    }
+
+    if (!open && wasOpenRef.current) {
+      triggerRef.current?.focus();
+    }
+
+    wasOpenRef.current = open;
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    function handleDocumentMouseDown(event: MouseEvent) {
+      const target = event.target;
+      if (!(target instanceof Node)) {
+        return;
+      }
+
+      const panel = panelRef.current;
+      const trigger = triggerRef.current;
+
+      if (!panel || panel.contains(target) || trigger?.contains(target)) {
+        return;
+      }
+
+      setOpen(false);
+    }
+
+    function handleDocumentKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setOpen(false);
+        return;
+      }
+
+      if (event.key !== "Tab") {
+        return;
+      }
+
+      const panel = panelRef.current;
+      if (!panel) {
+        return;
+      }
+
+      const tabbables = getTabbableElements(panel);
+      if (tabbables.length === 0) {
+        event.preventDefault();
+        panel.focus();
+        return;
+      }
+
+      const first = tabbables[0];
+      const last = tabbables[tabbables.length - 1];
+      if (!first || !last) {
+        return;
+      }
+      const active = document.activeElement;
+
+      if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      }
+
+      if (event.shiftKey && active === first) {
+        event.preventDefault();
+        last.focus();
+      }
+    }
+
+    document.addEventListener("mousedown", handleDocumentMouseDown);
+    document.addEventListener("keydown", handleDocumentKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handleDocumentMouseDown);
+      document.removeEventListener("keydown", handleDocumentKeyDown);
+    };
+  }, [open]);
+
   const itemCount = useMemo(() => cart?.itemCount ?? 0, [cart?.itemCount]);
 
   return (
     <div className="relative">
       <Button
+        ref={triggerRef}
         type="button"
         variant="outline"
         size="sm"
@@ -81,16 +187,19 @@ export function CartMiniCart() {
         <ShoppingCart className="size-4" aria-hidden="true" />
         Cart
         <span className="bg-primary text-primary-foreground rounded-full px-1.5 py-0.5 text-[10px] leading-none">
-          {itemCount}
+          <span aria-hidden="true">{itemCount}</span>
+          <span className="sr-only">{`${itemCount} ${itemCount === 1 ? "item" : "items"} in cart`}</span>
         </span>
       </Button>
 
       {open ? (
         <div
+          ref={panelRef}
           id="mini-cart-panel"
           className="border-border bg-background absolute right-0 top-[calc(100%+0.5rem)] z-50 w-[min(88vw,24rem)] rounded-xl border p-4 shadow-xl"
           role="dialog"
           aria-label="Mini cart"
+          tabIndex={-1}
         >
           <div className="mb-3 flex items-center justify-between">
             <h3 className="text-sm font-semibold tracking-tight">Your cart</h3>
@@ -177,6 +286,19 @@ export function CartMiniCart() {
                   );
                 })}
               </ul>
+
+              {cart.items.length > 5 ? (
+                <p className="text-xs text-muted-foreground">
+                  and {cart.items.length - 5} more. {" "}
+                  <Link
+                    href={routes.storefront.cart}
+                    className="font-medium underline-offset-4 hover:underline"
+                    onClick={() => setOpen(false)}
+                  >
+                    View full cart
+                  </Link>
+                </p>
+              ) : null}
 
               <div className="border-border/70 flex items-center justify-between border-t pt-2">
                 <span className="text-sm text-muted-foreground">Subtotal</span>

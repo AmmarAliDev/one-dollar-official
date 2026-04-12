@@ -20,7 +20,7 @@ How it is used now:
 
 - Guest carts are resolved by `Cart.token` and persisted in an HTTP-only cookie (`one-dollar-cart`)
 - Authenticated carts are resolved by `userId` + `status=ACTIVE`
-- Carts are always given a token so the frontend can keep continuity across guest/auth transitions
+- ACTIVE carts are given a token so the frontend can keep continuity across guest/auth transitions; guest carts moving to `ABANDONED` have their token removed
 - `CartItem.unitPrice` is kept as a snapshot at add/update time
 
 ## Guest to auth merge
@@ -29,7 +29,7 @@ When a signed-in user has a guest token cookie, cart resolution performs a merge
 
 1. Load guest active cart by token (`userId=null`)
 2. Resolve or create the user active cart
-3. Merge line items by (`cartId`, `productVariantId`), summing quantities
+3. Merge line items by `productVariantId` across the guest and user carts, summing quantities; `cartId` scoping only applies to operations within a single cart
 4. Clamp merged quantities to available stock
 5. Mark guest cart as `ABANDONED`, null out token, remove guest line items
 
