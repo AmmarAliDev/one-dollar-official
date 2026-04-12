@@ -25,6 +25,7 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 
 - `(storefront)` now uses a polished shared shell via `AppHeader` + `AppFooter`
 - `(storefront)/categories` provides category discovery and listing routes through clean slugs (`/categories/[slug]`)
+- `(storefront)/categories/[slug]/[productSlug]` now provides PDP rendering with gallery, variant interactions, specifications, reviews, and related products
 - `(admin)` now uses `AdminShell` with a responsive sidebar and topbar placeholder, protected by the RBAC proxy/layout guards
 - `(auth)` reserves sign-in and account entry points
 
@@ -35,6 +36,7 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `PageContainer` and `PageShell` should be reused for page spacing instead of duplicating wrapper classes.
 - Shared frontend feedback uses `sonner` through `src/components/providers/app-toaster.tsx` and `src/lib/notify.ts`.
 - Catalog listing UI lives in `src/features/catalog/components`; keep product-grid and filter scaffolds there instead of placing listing-specific markup directly in route files.
+- PDP UI also lives in `src/features/catalog/components` (gallery, product panel, variants, specs, reviews, related products, and skeleton states); route files should compose these primitives instead of duplicating product-detail markup.
 
 ## Config and Environment Strategy
 
@@ -61,8 +63,9 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 
 - `src/features/catalog` is the storefront catalog seam for this phase. It currently uses typed fallback seeds so routes can render without a live database dependency.
 - `filters.ts` owns query-string parsing and href rebuilding for sorting, filtering, and pagination.
-- `service.ts` owns listing assembly and should be the handoff point when real Prisma-backed category/product repositories are added later.
+- `service.ts` owns listing + PDP assembly (`getCatalogCategoryListing`, `getProductBySlug`, `getRelatedProducts`) and should be the handoff point when real Prisma-backed category/product repositories are added later.
 - `src/app/(storefront)/categories/page.tsx` is the category index. `src/app/(storefront)/categories/[slug]/page.tsx` is the SEO-friendly category listing route.
+- `src/app/(storefront)/categories/[slug]/[productSlug]/page.tsx` is the SEO-friendly PDP route that validates category/product pairing before rendering.
 - Variant-aware attribute filtering is intentionally a visible scaffold only in this phase; real structured variant filters should extend the existing query/filter contracts rather than replacing them.
 
 ## Error Handling Strategy

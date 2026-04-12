@@ -1,5 +1,79 @@
 import type { PaginationMeta } from "@/server/db/pagination";
 
+// ---------------------------------------------------------------------------
+// Product image placeholder
+// ---------------------------------------------------------------------------
+
+export type ProductImage = {
+  id: string;
+  label: string;
+  tone: CatalogProductImageTone;
+  isPrimary: boolean;
+};
+
+// ---------------------------------------------------------------------------
+// Product specifications
+// ---------------------------------------------------------------------------
+
+export type ProductSpec = {
+  label: string;
+  value: string;
+};
+
+// ---------------------------------------------------------------------------
+// Product variants
+// ---------------------------------------------------------------------------
+
+export type ProductVariantOption = {
+  id: string;
+  label: string;
+  sku: string;
+  price?: number;
+  compareAt?: number;
+  inventoryQuantity: number;
+};
+
+export type ProductVariantGroup = {
+  id: string;
+  name: string; // e.g. "Size", "Scent"
+  options: ProductVariantOption[];
+};
+
+// ---------------------------------------------------------------------------
+// Product reviews
+// ---------------------------------------------------------------------------
+
+export type ProductReview = {
+  id: string;
+  author: string;
+  rating: number;
+  comment: string;
+  date: string; // ISO 8601 date string
+  verified: boolean;
+};
+
+export type ProductReviewSummary = {
+  averageRating: number;
+  totalCount: number;
+  distribution: Record<1 | 2 | 3 | 4 | 5, number>;
+};
+
+// ---------------------------------------------------------------------------
+// Full product detail (used on PDP)
+// ---------------------------------------------------------------------------
+
+export type CatalogProductDetail = CatalogProductCard & {
+  sku: string;
+  shortDescription: string;
+  longDescription: string;
+  images: ProductImage[];
+  specifications: ProductSpec[];
+  variantGroups: ProductVariantGroup[];
+  reviews: ProductReview[];
+  reviewSummary: ProductReviewSummary;
+  href: string;
+};
+
 export const catalogSortOptions = [
   { value: "featured", label: "Featured" },
   { value: "newest", label: "Newest" },
@@ -62,6 +136,8 @@ export type CatalogProductCard = {
   imageLabel: string;
   imageTone: CatalogProductImageTone;
   attributeSummary: string[];
+  /** Resolved storefront URL for this product. */
+  href: string;
 };
 
 export type CatalogListingFilters = {

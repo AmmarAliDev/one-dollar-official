@@ -2,10 +2,16 @@ export { CatalogPagination } from "./components/catalog-pagination";
 export { CategoryListingFilters } from "./components/category-listing-filters";
 export { CategoryListingSkeleton } from "./components/category-listing-skeleton";
 export { CategoryOverviewCard } from "./components/category-overview-card";
+export { ProductDetailSkeleton } from "./components/product-detail-skeleton";
 export { ProductGridCard } from "./components/product-grid-card";
+export { ProductImageGallery } from "./components/product-image-gallery";
+export { ProductPanel } from "./components/product-panel";
+export { ProductRelatedGrid } from "./components/product-related-grid";
+export { ProductReviews } from "./components/product-reviews";
+export { ProductSpecifications } from "./components/product-specifications";
 export { buildCategoryListingHref, parseCatalogSearchParams } from "./filters";
-export { getCatalogCategories, getCatalogCategory, getCatalogCategoryListing, getCatalogCategorySlugs } from "./service";
-export type { CatalogCategory, CatalogCategoryListing, CatalogListingFilters, CatalogProductCard } from "./types";
+export { getCatalogCategories, getCatalogCategory, getCatalogCategoryListing, getCatalogCategorySlugs, getProductBySlug, getProductSlugsWithCategory, getRelatedProducts } from "./service";
+export type { CatalogCategory, CatalogCategoryListing, CatalogListingFilters, CatalogProductCard, CatalogProductDetail, ProductImage, ProductReview, ProductReviewSummary, ProductSpec, ProductVariantGroup, ProductVariantOption } from "./types";
 export {
   availabilityFilterOptions,
   catalogSortOptions,
