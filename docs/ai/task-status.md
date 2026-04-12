@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-**Phase 4 / Prompt 4.1 — Cart foundations with guest/auth continuity**
+**Phase 4 / Prompt 4.2 — One-page checkout foundation**
 
 ## Completed
 
@@ -108,6 +108,16 @@
 - [x] Cart route-level loading and error boundaries added (`/cart/loading`, `/cart/error`)
 - [x] Cart helper tests added in `tests/features/cart/service.test.ts`
 - [x] Cart behavior documentation added at `docs/dev/cart.md`
+- [x] Checkout feature module added in `src/features/checkout` with shared constants, payload schema, totals helper, and payment-provider abstraction
+- [x] One-page checkout route added at `/checkout` with customer info, shipping address, order summary, and payment method selection
+- [x] Karachi-only city restriction implemented in both UI messaging and server-side payload validation
+- [x] Fixed shipping calculations added for checkout (`shipping=250`, `total=subtotal+shipping`)
+- [x] COD payment option implemented through provider contract (`payment.ts`) to preserve future online gateway extension seam
+- [x] Checkout API route added at `POST /api/checkout` with trusted-origin checks, payload validation, cart ID integrity checks, and stock-aware submit blocking
+- [x] Checkout form now supports user-friendly validation summaries plus retry of the last failed submission
+- [x] Cart page now routes to `/checkout` when stock checks pass
+- [x] Checkout docs added in `docs/dev/checkout.md` with assumptions and payment expansion path
+- [x] Checkout tests added in `tests/features/checkout/*` for validation, totals, and payment contract coverage
 
 ## Deferred by design
 
@@ -115,10 +125,12 @@
 - [ ] Email verification for credentials accounts
 - [ ] Nonce-based CSP hardening once all inline/script requirements are audited
 - [ ] Dedicated CSRF token flow for any future embedded or cross-origin clients
+- [ ] Transactional order placement and lifecycle (Prompt 4.3)
+- [ ] Online gateway provider implementations under checkout payment contract
 - [ ] Live catalog persistence beyond the fallback listing dataset
 - [ ] Admin CRUD workflows
 - [ ] Server-side notifications and third-party integrations
 
 ## Recommended Next Prompt
 
-Proceed with **Phase 4 / Prompt 4.2 — checkout flow and order creation using cart stock validation**.
+Proceed with **Phase 4 / Prompt 4.3 — transactional order placement and lifecycle management**.

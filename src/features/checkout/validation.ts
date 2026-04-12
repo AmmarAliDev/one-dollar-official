@@ -1,0 +1,36 @@
+import { z } from "zod";
+
+import { CHECKOUT_PAYMENT_METHODS, CHECKOUT_SUPPORTED_CITY } from "./constants";
+
+const phonePattern = /^\+?[0-9\s-]{10,16}$/;
+
+const citySchema = z
+  .string()
+  .trim()
+  .min(1)
+  .transform((value) => value.toLowerCase())
+  .refine((value) => value === CHECKOUT_SUPPORTED_CITY.toLowerCase(), {
+    message: `We currently ship only to ${CHECKOUT_SUPPORTED_CITY}.`,
+  })
+  .transform(() => CHECKOUT_SUPPORTED_CITY);
+
+export const checkoutPayloadSchema = z.object({
+  cartId: z.string().trim().min(1, "Cart is missing. Refresh and try again."),
+  customer: z.object({
+    fullName: z.string().trim().min(2, "Please provide your full name.").max(120),
+    email: z.email("Please provide a valid email address.").max(254),
+    phone: z.string().trim().regex(phonePattern, "Please provide a valid phone number."),
+  }),
+  shippingAddress: z.object({
+    addressLine1: z.string().trim().min(5, "Please provide your delivery address.").max(220),
+    addressLine2: z.string().trim().max(220).optional(),
+    city: citySchema,
+    province: z.string().trim().max(120).optional(),
+    country: z.string().trim().min(2, "Please provide a country for shipping.").max(120),
+    postcode: z.string().trim().min(2, "Please provide a postal code.").max(32),
+  }),
+  paymentMethod: z.enum([CHECKOUT_PAYMENT_METHODS.COD]),
+  notes: z.string().trim().max(600, "Order notes must be 600 characters or less.").optional(),
+});
+
+export type CheckoutPayloadSchema = z.infer<typeof checkoutPayloadSchema>;
