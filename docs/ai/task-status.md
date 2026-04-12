@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-**Phase 2 / Prompt 2.5 — Baseline security layer**
+**Phase 3 / Prompt 3.1 — Storefront navigation and static pages**
 
 ## Completed
 
@@ -54,6 +54,13 @@
 - [x] Centralized safe error normalization/response helpers added in `src/lib/errors/handling.ts`
 - [x] Security-focused developer guide added at `docs/dev/security.md`
 - [x] Validation, rate-limit, and safe-error helper coverage expanded in Vitest
+- [x] Storefront header now includes logo, search placeholder, account, wishlist, and cart links
+- [x] Responsive mobile navigation added with accessible toggle semantics and shared nav config usage
+- [x] Footer expanded with company links, policy links, and newsletter placeholder section
+- [x] Storefront placeholder pages added for `/about`, `/contact`, `/privacy`, `/terms`, `/shipping-policy`, and `/return-policy`
+- [x] Additional placeholder routes added for `/search`, `/account`, `/wishlist`, and `/cart` so primary header actions resolve cleanly
+- [x] Route config and smoke coverage updated for storefront shell navigation requirements
+- [x] AI and developer docs updated for Prompt 3.1 conventions
 
 ## Deferred by design
 
@@ -67,4 +74,4 @@
 
 ## Recommended Next Prompt
 
-Proceed with the next product-facing module or the remaining auth hardening items (for example email verification or password-reset delivery) on top of this security baseline.
+Proceed with **Phase 3 / Prompt 3.2 — Homepage CMS-driven foundation**.

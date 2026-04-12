@@ -2,6 +2,16 @@ export const routes = {
   storefront: {
     home: "/",
     preview: "/preview",
+    search: "/search",
+    account: "/account",
+    wishlist: "/wishlist",
+    cart: "/cart",
+    about: "/about",
+    contact: "/contact",
+    privacy: "/privacy",
+    terms: "/terms",
+    shippingPolicy: "/shipping-policy",
+    returnPolicy: "/return-policy",
   },
   admin: {
     dashboard: "/admin",

@@ -6,19 +6,29 @@ import { routes } from "./routes";
 
 export const storefrontNav: NavItem[] = [
   {
-    title: "Preview",
-    href: routes.storefront.preview,
-    description: "Customer-facing shell preview.",
+    title: "Home",
+    href: routes.storefront.home,
+    description: "Storefront landing page.",
   },
   {
-    title: "Why One Dollar",
-    href: `${routes.storefront.home}#why-one-dollar`,
-    description: "Brand promise and delivery positioning.",
+    title: "About",
+    href: routes.storefront.about,
+    description: "Company story and mission placeholder.",
   },
   {
-    title: "UI Foundation",
-    href: `${routes.storefront.home}#ui-foundation`,
-    description: "Design system and loading state showcase.",
+    title: "Contact",
+    href: routes.storefront.contact,
+    description: "Customer contact page placeholder.",
+  },
+  {
+    title: "Shipping Policy",
+    href: routes.storefront.shippingPolicy,
+    description: "Delivery policy placeholder.",
+  },
+  {
+    title: "Returns",
+    href: routes.storefront.returnPolicy,
+    description: "Return policy placeholder.",
   },
 ];
 

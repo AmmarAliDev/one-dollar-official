@@ -4,13 +4,16 @@ Production-ready foundation for a **single-vendor e-commerce app** built with **
 
 ## Current Status
 
-This repository now covers **Phase 2 / Prompt 2.2** foundation work:
+This repository now covers **Phase 3 / Prompt 3.1** foundation work:
 
 - polished storefront and admin shell placeholders
 - system-aware theme switching with light and dark support
 - global design tokens for spacing, radii, shadows, and semantic colors
 - reusable UI primitives for page sections, empty/loading/error states, badges, price display, and skeletons
 - shared frontend toast/notification support via `sonner`
+- storefront primary navigation with responsive header and mobile nav
+- footer sections for company links, policies, and newsletter placeholder
+- static placeholder pages for company and policy routes
 - Prisma schema and migration foundation for the initial commerce domain
 - server-side database access conventions in `src/server/db` for repositories, services, transactions, and pagination
 - smoke and unit tests covering UI, config, schema validation, and new data-layer helpers
