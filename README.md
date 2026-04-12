@@ -78,6 +78,7 @@ tests           Smoke tests for scaffold and config behavior
 - `docs/ai/task-status.md`
 - `docs/dev/setup.md`
 - `docs/dev/architecture.md`
+- `docs/dev/search-architecture.md`
 - `docs/dev/database-access.md`
 - `docs/dev/ui-conventions.md`
 
