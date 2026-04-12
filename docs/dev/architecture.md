@@ -27,7 +27,7 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `(storefront)/categories` provides category discovery and listing routes through clean slugs (`/categories/[slug]`)
 - `(storefront)/categories/[slug]/[productSlug]` now provides PDP rendering with gallery, variant interactions, specifications, reviews, and related products
 - `(storefront)/wishlist` now renders authenticated wishlist entries and guest sign-in prompts
-- `(storefront)/account/*` now provides customer account routes for profile, addresses, order history, and reviews
+- `(storefront)/account/*` now provides customer account routes for profile, addresses, order history, order detail, and reviews
 - `(admin)` now uses `AdminShell` with a responsive sidebar and topbar placeholder, protected by the RBAC proxy/layout guards
 - `(auth)` reserves sign-in and account entry points
 
@@ -88,6 +88,7 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - Wishlist persistence currently uses a seed-bridge approach: seed catalog slugs/options are resolved to stable SKU-backed ProductVariant rows if missing, so wishlist can work before full catalog DB integration.
 - `src/app/(storefront)/account/layout.tsx` is the authoritative customer-account route guard and redirects unauthenticated users to sign-in with a safe return path.
 - `src/app/(auth)/auth/sign-in/page.tsx` and `src/features/auth/actions/sign-in.ts` support safe `from` path handling to return users after authentication.
+- `src/features/orders/service.ts` now owns customer order-history retrieval plus stock-aware re-order logic that rehydrates active cart items while reporting unavailable/out-of-stock lines.
 
 ## Error Handling Strategy
 

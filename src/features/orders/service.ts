@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { CartStatus, City, Country, OrderStatus, Prisma } from "@prisma/client";
+import { CartStatus, City, Country, OrderStatus, Prisma, ProductStatus } from "@prisma/client";
 
 import { mergeGuestCartIntoUserCart } from "@/features/cart";
 import type { CheckoutPayload } from "@/features/checkout";
@@ -21,11 +21,17 @@ import {
   createInvoiceNumber,
   createOrderNumber,
 } from "./invoice";
+import { resolveReorderLineDecision } from "./reorder";
 import { assertOrderStatusTransition, formatOrderStatusLabel } from "./status";
 import type {
   OrderDetails,
+  OrderHistoryItem,
   PlaceOrderInput,
   PlaceOrderResult,
+  ReorderFromOrderInput,
+  ReorderFromOrderResult,
+  ReorderIssue,
+  ReorderIssueReason,
   UpdateOrderStatusInput,
   UpdateOrderStatusResult,
 } from "./types";
@@ -59,7 +65,28 @@ type OrderLookup = Prisma.OrderGetPayload<{
   };
 }>;
 
+type OrderHistoryLookup = Prisma.OrderGetPayload<{
+  include: {
+    _count: {
+      select: {
+        items: true;
+      };
+    };
+  };
+}>;
+
+type ReorderOrderLookup = Prisma.OrderGetPayload<{
+  include: {
+    items: {
+      orderBy: {
+        createdAt: "asc";
+      };
+    };
+  };
+}>;
+
 const ORDER_NUMBER_RETRY_LIMIT = 5;
+const MAX_CART_ITEM_QUANTITY = 99;
 const orderServiceLogger = createLogger("orders.service");
 
 function getAvailableInventoryQuantity(
@@ -284,6 +311,112 @@ function mapOrderDetails(order: OrderLookup): OrderDetails {
       notes: order.shippingAddress.notes,
     },
   };
+}
+
+function mapOrderHistoryItem(order: OrderHistoryLookup): OrderHistoryItem {
+  return {
+    id: order.id,
+    orderNumber: order.orderNumber,
+    status: order.status,
+    statusLabel: formatOrderStatusLabel(order.status),
+    placedAt: order.placedAt,
+    total: order.total,
+    itemCount: order._count.items,
+  };
+}
+
+function createReorderIssue(input: {
+  orderItemId: string;
+  productName: string;
+  sku: string | null;
+  requestedQuantity: number;
+  addedQuantity: number;
+  availableQuantity: number;
+  reason: ReorderIssueReason;
+}): ReorderIssue {
+  let message: string;
+
+  if (input.reason === "UNAVAILABLE") {
+    message = `${input.productName} is no longer available.`;
+  } else if (input.reason === "OUT_OF_STOCK") {
+    message = `${input.productName} is currently out of stock.`;
+  } else {
+    message = `${input.productName} quantity was adjusted to ${input.addedQuantity}.`;
+  }
+
+  return {
+    orderItemId: input.orderItemId,
+    productName: input.productName,
+    sku: input.sku,
+    requestedQuantity: input.requestedQuantity,
+    addedQuantity: input.addedQuantity,
+    availableQuantity: input.availableQuantity,
+    reason: input.reason,
+    message,
+  };
+}
+
+async function getOrCreateActiveCartForUser(userId: string, transaction: DatabaseExecutor) {
+  const existing = await transaction.cart.findFirst({
+    where: {
+      userId,
+      status: CartStatus.ACTIVE,
+    },
+    orderBy: {
+      updatedAt: "desc",
+    },
+  });
+
+  if (existing) {
+    if (existing.token) {
+      return existing;
+    }
+
+    return transaction.cart.update({
+      where: {
+        id: existing.id,
+      },
+      data: {
+        token: randomUUID().replaceAll("-", ""),
+      },
+    });
+  }
+
+  return transaction.cart.create({
+    data: {
+      userId,
+      token: randomUUID().replaceAll("-", ""),
+      status: CartStatus.ACTIVE,
+    },
+  });
+}
+
+async function resolveVariantForReorderItem(
+  orderItem: ReorderOrderLookup["items"][number],
+  transaction: DatabaseExecutor,
+) {
+  if (orderItem.sku) {
+    const variantBySku = await transaction.productVariant.findUnique({
+      where: {
+        sku: orderItem.sku,
+      },
+    });
+
+    if (variantBySku) {
+      return variantBySku;
+    }
+  }
+
+  if (!orderItem.productId) {
+    return null;
+  }
+
+  return transaction.productVariant.findFirst({
+    where: {
+      productId: orderItem.productId,
+    },
+    orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }],
+  });
 }
 
 function hasOrderAccess(order: OrderLookup, userId?: string | null, accessToken?: string | null) {
@@ -595,6 +728,217 @@ export async function getOrderDetailsForAccess(input: {
   return mapOrderDetails(order);
 }
 
+export async function getOrderHistoryForUser(userId: string, limit = 20): Promise<OrderHistoryItem[]> {
+  const db = getPrismaClient();
+  const normalizedLimit = Math.max(1, Math.min(50, Math.trunc(limit)));
+
+  const orders = await db.order.findMany({
+    where: {
+      userId,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+    take: normalizedLimit,
+    include: {
+      _count: {
+        select: {
+          items: true,
+        },
+      },
+    },
+  });
+
+  return orders.map(mapOrderHistoryItem);
+}
+
+export async function getOrderDetailsForUser(input: { userId: string; orderNumber: string }) {
+  return getOrderDetailsForAccess({
+    orderNumber: input.orderNumber,
+    userId: input.userId,
+  });
+}
+
+export async function reorderFromOrder(input: ReorderFromOrderInput): Promise<ReorderFromOrderResult> {
+  const db = getPrismaClient();
+
+  return runWithTransaction(async (transaction) => {
+    const order = await transaction.order.findFirst({
+      where: {
+        orderNumber: input.orderNumber,
+        userId: input.userId,
+      },
+      include: {
+        items: {
+          orderBy: {
+            createdAt: "asc",
+          },
+        },
+      },
+    });
+
+    if (!order) {
+      throw new AppError("Order not found for reorder.", "ORDER_NOT_FOUND", {
+        statusCode: 404,
+        userMessage: "This order could not be found.",
+      });
+    }
+
+    const cart = await getOrCreateActiveCartForUser(input.userId, transaction);
+    const issues: ReorderIssue[] = [];
+    let addedLineCount = 0;
+    let addedQuantity = 0;
+
+    for (const item of order.items) {
+      const variant = await resolveVariantForReorderItem(item, transaction);
+
+      if (!variant) {
+        issues.push(
+          createReorderIssue({
+            orderItemId: item.id,
+            productName: item.productName,
+            sku: item.sku,
+            requestedQuantity: item.quantity,
+            addedQuantity: 0,
+            availableQuantity: 0,
+            reason: "UNAVAILABLE",
+          }),
+        );
+        continue;
+      }
+
+      const product = await transaction.product.findUnique({
+        where: {
+          id: variant.productId,
+        },
+        select: {
+          status: true,
+        },
+      });
+
+      if (!product || product.status !== ProductStatus.PUBLISHED) {
+        issues.push(
+          createReorderIssue({
+            orderItemId: item.id,
+            productName: item.productName,
+            sku: item.sku,
+            requestedQuantity: item.quantity,
+            addedQuantity: 0,
+            availableQuantity: 0,
+            reason: "UNAVAILABLE",
+          }),
+        );
+        continue;
+      }
+
+      const existingCartItem = await transaction.cartItem.findUnique({
+        where: {
+          cartId_productVariantId: {
+            cartId: cart.id,
+            productVariantId: variant.id,
+          },
+        },
+      });
+
+      const inventory = await transaction.inventory.findUnique({
+        where: {
+          productVariantId: variant.id,
+        },
+      });
+
+      const availableQuantity = getAvailableInventoryQuantity(inventory);
+      const normalizedAvailableQuantity = Number.isFinite(availableQuantity)
+        ? Math.trunc(availableQuantity)
+        : MAX_CART_ITEM_QUANTITY;
+
+      const decision = resolveReorderLineDecision({
+        requestedQuantity: item.quantity,
+        existingQuantity: existingCartItem?.quantity ?? 0,
+        availableQuantity: normalizedAvailableQuantity,
+        maxCartItemQuantity: MAX_CART_ITEM_QUANTITY,
+      });
+
+      if (decision.quantityToAdd < 1) {
+        issues.push(
+          createReorderIssue({
+            orderItemId: item.id,
+            productName: item.productName,
+            sku: item.sku,
+            requestedQuantity: item.quantity,
+            addedQuantity: 0,
+            availableQuantity: decision.availableToAdd,
+            reason: "OUT_OF_STOCK",
+          }),
+        );
+        continue;
+      }
+
+      const nextQuantity = (existingCartItem?.quantity ?? 0) + decision.quantityToAdd;
+
+      await transaction.cartItem.upsert({
+        where: {
+          cartId_productVariantId: {
+            cartId: cart.id,
+            productVariantId: variant.id,
+          },
+        },
+        update: {
+          quantity: nextQuantity,
+          unitPrice: variant.price,
+        },
+        create: {
+          cartId: cart.id,
+          productVariantId: variant.id,
+          quantity: decision.quantityToAdd,
+          unitPrice: variant.price,
+        },
+      });
+
+      addedLineCount += 1;
+      addedQuantity += decision.quantityToAdd;
+
+      if (decision.reason === "ADJUSTED") {
+        issues.push(
+          createReorderIssue({
+            orderItemId: item.id,
+            productName: item.productName,
+            sku: item.sku,
+            requestedQuantity: item.quantity,
+            addedQuantity: decision.quantityToAdd,
+            availableQuantity: decision.availableToAdd,
+            reason: "QUANTITY_ADJUSTED",
+          }),
+        );
+      }
+    }
+
+    await transaction.auditLog.create({
+      data: {
+        actorId: input.userId,
+        action: "order.reordered",
+        model: "Order",
+        modelId: order.id,
+        changes: {
+          orderNumber: order.orderNumber,
+          cartId: cart.id,
+          addedLineCount,
+          addedQuantity,
+          issueCount: issues.length,
+        },
+      },
+    });
+
+    return {
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      cartId: cart.id,
+      addedLineCount,
+      addedQuantity,
+      issues,
+    };
+  }, db);
+}
+
 export async function updateOrderStatus(
   input: UpdateOrderStatusInput,
 ): Promise<UpdateOrderStatusResult> {
@@ -671,7 +1015,7 @@ export async function updateOrderStatus(
           customerName: order.shippingAddress.fullName,
           customerEmail: order.shippingAddress.email,
           customerPhone: order.shippingAddress.phone,
-          itemCount: order.items.length,
+          itemCount: order.items?.length ?? 0,
           subtotal: order.subtotal,
           shipping: order.shipping,
           total: order.total,

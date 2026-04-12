@@ -75,3 +75,53 @@ export type UpdateOrderStatusResult = {
   previousStatus: OrderStatus;
   nextStatus: OrderStatus;
 };
+
+export type OrderHistoryItem = {
+  id: string;
+  orderNumber: string;
+  status: OrderStatus;
+  statusLabel: string;
+  placedAt: Date | null;
+  total: number;
+  itemCount: number;
+};
+
+export type ReorderIssueReason = "UNAVAILABLE" | "OUT_OF_STOCK" | "QUANTITY_ADJUSTED";
+
+export type ReorderIssue = {
+  orderItemId: string;
+  productName: string;
+  sku: string | null;
+  requestedQuantity: number;
+  addedQuantity: number;
+  availableQuantity: number;
+  reason: ReorderIssueReason;
+  message: string;
+};
+
+export type ReorderFromOrderInput = {
+  userId: string;
+  orderNumber: string;
+};
+
+export type ReorderFromOrderResult = {
+  orderId: string;
+  orderNumber: string;
+  cartId: string;
+  addedLineCount: number;
+  addedQuantity: number;
+  issues: ReorderIssue[];
+};
+
+export type ReorderLineDecision = {
+  quantityToAdd: number;
+  availableToAdd: number;
+  reason: "FULL" | "ADJUSTED" | "OUT_OF_STOCK";
+};
+
+export type ResolveReorderLineDecisionInput = {
+  requestedQuantity: number;
+  existingQuantity: number;
+  availableQuantity: number;
+  maxCartItemQuantity?: number;
+};

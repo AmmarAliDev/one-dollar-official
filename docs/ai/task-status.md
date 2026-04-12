@@ -128,6 +128,11 @@
 - [x] Invoice PDF download route added at `/api/orders/[orderNumber]/invoice`
 - [x] `AuditLog` persistence now records `order.created` and `order.status.changed` events
 - [x] Account order history now links to customer-visible confirmation pages and uses lifecycle status badges
+- [x] Account order history upgraded with detail, invoice, and re-order actions
+- [x] Account order detail route added at `/account/orders/[orderNumber]` with item/address/payment breakdown
+- [x] Stock-aware re-order flow added to recreate cart items from prior customer orders
+- [x] Re-order feedback now clearly reports unavailable, out-of-stock, and quantity-adjusted items
+- [x] Re-order helper tests added in `tests/features/orders/reorder.test.ts`
 
 ## Deferred by design
 

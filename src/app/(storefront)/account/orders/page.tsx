@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PackageSearch } from "lucide-react";
+import { ExternalLink, PackageSearch } from "lucide-react";
 
 import { auth } from "@/auth";
 import { Badge } from "@/components/ui/badge";
@@ -9,8 +9,13 @@ import { PriceDisplay } from "@/components/ui/price-display";
 import { buildMetadata } from "@/config/metadata";
 import { routes } from "@/config/routes";
 import { siteConfig } from "@/config/site";
-import { formatOrderStatusLabel, getOrderStatusVariant } from "@/features/orders";
-import { getPrismaClient } from "@/server/db";
+import {
+  buildOrderInvoiceUrl,
+  formatOrderStatusLabel,
+  getOrderHistoryForUser,
+  getOrderStatusVariant,
+} from "@/features/orders";
+import { ReorderOrderForm } from "@/features/orders/components/reorder-order-form";
 
 function formatOrderDate(date: Date | null | undefined): string {
   if (!date) {
@@ -39,12 +44,7 @@ export default async function AccountOrdersPage() {
     );
   }
 
-  const db = getPrismaClient();
-  const orders = await db.order.findMany({
-    where: { userId },
-    orderBy: { createdAt: "desc" },
-    take: 10,
-  });
+  const orders = await getOrderHistoryForUser(userId, 20);
 
   if (orders.length === 0) {
     return (
@@ -63,16 +63,44 @@ export default async function AccountOrdersPage() {
           <CardHeader className="pb-3">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <CardTitle className="text-base">
-                <Link href={routes.storefront.checkoutConfirmation(order.orderNumber)} className="hover:text-foreground transition-colors">
+                <Link
+                  href={routes.storefront.accountOrderDetail(order.orderNumber)}
+                  className="hover:text-foreground transition-colors"
+                >
                   Order {order.orderNumber}
                 </Link>
               </CardTitle>
               <Badge variant={getOrderStatusVariant(order.status)}>{formatOrderStatusLabel(order.status)}</Badge>
             </div>
           </CardHeader>
-          <CardContent className="flex flex-wrap items-center justify-between gap-2 text-sm">
-            <p className="text-muted-foreground">Placed {formatOrderDate(order.placedAt)}</p>
-            <PriceDisplay amount={order.total} size="sm" />
+          <CardContent className="space-y-4 text-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-muted-foreground">Placed {formatOrderDate(order.placedAt)}</p>
+              <PriceDisplay amount={order.total} size="sm" />
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-muted-foreground text-xs">{order.itemCount} item(s)</p>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <Link
+                  href={routes.storefront.accountOrderDetail(order.orderNumber)}
+                  className="text-xs font-medium underline underline-offset-4"
+                >
+                  View details
+                </Link>
+                <Link
+                  href={buildOrderInvoiceUrl(order.orderNumber)}
+                  className="inline-flex items-center gap-1 text-xs font-medium underline underline-offset-4"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Invoice
+                  <ExternalLink className="size-3" />
+                </Link>              </div>
+            </div>
+
+            <ReorderOrderForm orderNumber={order.orderNumber} compact />
           </CardContent>
         </Card>
       ))}

@@ -5,11 +5,15 @@ export {
   createInvoiceNumber,
   createOrderNumber,
 } from "./invoice";
+export { resolveReorderLineDecision } from "./reorder";
 export {
   buildOrderInvoiceFilename,
   buildOrderLookupPayload,
   getOrderDetailsForAccess,
+  getOrderDetailsForUser,
+  getOrderHistoryForUser,
   placeOrderFromCheckout,
+  reorderFromOrder,
   updateOrderStatus,
 } from "./service";
 export {
@@ -20,4 +24,17 @@ export {
   getOrderStatusVariant,
   orderStatuses,
 } from "./status";
-export type { OrderDetails, PlaceOrderInput, PlaceOrderResult, UpdateOrderStatusInput, UpdateOrderStatusResult } from "./types";
+export type {
+  OrderDetails,
+  OrderHistoryItem,
+  PlaceOrderInput,
+  PlaceOrderResult,
+  ReorderFromOrderInput,
+  ReorderFromOrderResult,
+  ReorderIssue,
+  ReorderIssueReason,
+  ReorderLineDecision,
+  ResolveReorderLineDecisionInput,
+  UpdateOrderStatusInput,
+  UpdateOrderStatusResult,
+} from "./types";

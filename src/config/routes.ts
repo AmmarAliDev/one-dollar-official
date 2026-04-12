@@ -10,6 +10,7 @@ export const routes = {
     accountProfile: "/account/profile",
     accountAddresses: "/account/addresses",
     accountOrders: "/account/orders",
+    accountOrderDetail: (orderNumber: string) => `/account/orders/${orderNumber}`,
     accountReviews: "/account/reviews",
     wishlist: "/wishlist",
     cart: "/cart",

@@ -14,7 +14,10 @@ This document describes the one-page checkout flow and the transactional order l
 - inventory deduction on successful order placement
 - order item and address snapshots persisted in Prisma
 - customer order confirmation page at `/checkout/confirmation/[orderNumber]`
+- customer account order history at `/account/orders`
+- customer account order detail page at `/account/orders/[orderNumber]`
 - PDF invoice download route at `/api/orders/[orderNumber]/invoice`
+- re-order action that rehydrates the active cart from a prior order with stock-aware adjustments
 - persisted `AuditLog` entries for order creation and lifecycle status changes
 - order lifecycle helpers for `pending`, `confirmed`, `packed`, `shipped`, `delivered`, and `cancelled`
 
@@ -141,6 +144,16 @@ Access rules:
 
 - signed-in customers can access their own orders without a token
 - guest customers use the confirmation token returned after checkout
+
+## Account order history and re-order
+
+- `/account/orders` now renders a signed-in user's recent orders with status badges, totals, detail links, invoice links, and a re-order action.
+- `/account/orders/[orderNumber]` provides customer-visible order detail (items, shipping address, payment summary) plus invoice download and re-order controls.
+- Re-order behavior is stock aware:
+	- unavailable products are reported as unavailable and skipped
+	- out-of-stock products are skipped with clear feedback
+	- partially available products are added with adjusted quantity and a clear adjustment message
+	- successful lines are added into the customer's active cart (creating one if needed)
 
 ## Next expansion path
 
