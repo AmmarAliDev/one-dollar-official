@@ -10,7 +10,7 @@ export const metadata = buildMetadata({
 export default function CartPage() {
   return (
     <StaticPagePlaceholder
-      pageTag="Checkout"
+      pageTag="Cart"
       title="Cart"
       description="A placeholder for cart line items and totals planned for Prompt 4.1."
     />
