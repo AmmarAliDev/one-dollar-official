@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-**Phase 3 / Prompt 3.6 — Wishlist and customer account foundation**
+**Phase 4 / Prompt 4.1 — Cart foundations with guest/auth continuity**
 
 ## Completed
 
@@ -97,6 +97,17 @@
 - [x] Sign-in flow now accepts a safe `from` return path and redirects back after successful credentials login
 - [x] Wishlist resolver tests added in `tests/features/wishlist/service.test.ts`
 - [x] Storefront route smoke tests updated for account sub-routes
+- [x] Cart feature module added in `src/features/cart` with transactional add/update/remove operations
+- [x] Guest cart persistence implemented via HTTP-only cart token cookie (`one-dollar-cart`)
+- [x] Guest-to-auth cart merge implemented when a signed-in user has a guest cart token
+- [x] Cart API route added at `GET/POST/PATCH/DELETE /api/cart`
+- [x] Stock validation route added at `GET /api/cart/validate`
+- [x] PDP add-to-cart action now uses real cart API (supports variant and non-variant products)
+- [x] `/cart` page now renders live line items, quantity controls, subtotal, and checkout gating on stock issues
+- [x] Header mini-cart added with loading/empty/error states and live cart count updates
+- [x] Cart route-level loading and error boundaries added (`/cart/loading`, `/cart/error`)
+- [x] Cart helper tests added in `tests/features/cart/service.test.ts`
+- [x] Cart behavior documentation added at `docs/dev/cart.md`
 
 ## Deferred by design
 
@@ -110,4 +121,4 @@
 
 ## Recommended Next Prompt
 
-Proceed with **Phase 4 / Prompt 4.1 — cart system foundations and guest/auth cart behavior**.
+Proceed with **Phase 4 / Prompt 4.2 — checkout flow and order creation using cart stock validation**.
