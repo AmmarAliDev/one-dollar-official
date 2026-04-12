@@ -79,6 +79,22 @@ export const serverEnvSchema = z
 
     // Extra trusted origins for reverse proxies or separate first-party domains.
     APP_ALLOWED_ORIGINS: z.string().trim().optional(),
+
+    // Notification recipients and channels.
+    NOTIFY_ADMIN_EMAILS: z.string().trim().optional(),
+    SMTP_HOST: z.string().trim().min(1, "SMTP_HOST cannot be empty.").optional(),
+    SMTP_PORT: z
+      .string()
+      .trim()
+      .regex(/^\d+$/, "SMTP_PORT must be a valid port number.")
+      .optional(),
+    SMTP_SECURE: z.string().trim().optional(),
+    SMTP_USER: z.string().trim().min(1, "SMTP_USER cannot be empty.").optional(),
+    SMTP_PASSWORD: z.string().trim().min(1, "SMTP_PASSWORD cannot be empty.").optional(),
+    SMTP_FROM_EMAIL: z.email("SMTP_FROM_EMAIL must be a valid email address.").trim().optional(),
+    SMTP_FROM_NAME: z.string().trim().optional(),
+    TELEGRAM_BOT_TOKEN: z.string().trim().min(1, "TELEGRAM_BOT_TOKEN cannot be empty.").optional(),
+    TELEGRAM_CHAT_ID: z.string().trim().min(1, "TELEGRAM_CHAT_ID cannot be empty.").optional(),
   })
   .superRefine((value, context) => {
     const hasRedisUrl = Boolean(value.UPSTASH_REDIS_REST_URL);
@@ -90,6 +106,67 @@ export const serverEnvSchema = z
         message:
           "UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN must either both be set or both be omitted.",
         path: [hasRedisUrl ? "UPSTASH_REDIS_REST_TOKEN" : "UPSTASH_REDIS_REST_URL"],
+      });
+    }
+
+    const smtpRequiredKeys: Array<keyof typeof value> = [
+      "SMTP_HOST",
+      "SMTP_PORT",
+      "SMTP_FROM_EMAIL",
+    ];
+    const hasAnySmtpConfig = smtpRequiredKeys.some((key) => Boolean(value[key]));
+
+    if (hasAnySmtpConfig) {
+      for (const key of smtpRequiredKeys) {
+        if (!value[key]) {
+          context.addIssue({
+            code: "custom",
+            message: `${key} is required when SMTP email notifications are configured.`,
+            path: [key],
+          });
+        }
+      }
+    }
+
+    const hasSmtpUser = Boolean(value.SMTP_USER);
+    const hasSmtpPassword = Boolean(value.SMTP_PASSWORD);
+
+    if (hasSmtpUser !== hasSmtpPassword) {
+      context.addIssue({
+        code: "custom",
+        message: "SMTP_USER and SMTP_PASSWORD must either both be set or both be omitted.",
+        path: [hasSmtpUser ? "SMTP_PASSWORD" : "SMTP_USER"],
+      });
+    }
+
+    if (value.NOTIFY_ADMIN_EMAILS) {
+      const emails = value.NOTIFY_ADMIN_EMAILS.split(",").map((email) => email.trim());
+
+      for (const email of emails) {
+        if (email.length === 0) {
+          continue;
+        }
+
+        const parsed = z.email().safeParse(email);
+        if (!parsed.success) {
+          context.addIssue({
+            code: "custom",
+            message: `Invalid email in NOTIFY_ADMIN_EMAILS: ${email}`,
+            path: ["NOTIFY_ADMIN_EMAILS"],
+          });
+        }
+      }
+    }
+
+    const hasTelegramToken = Boolean(value.TELEGRAM_BOT_TOKEN);
+    const hasTelegramChatId = Boolean(value.TELEGRAM_CHAT_ID);
+
+    if (hasTelegramToken !== hasTelegramChatId) {
+      context.addIssue({
+        code: "custom",
+        message:
+          "TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID must either both be set or both be omitted.",
+        path: [hasTelegramToken ? "TELEGRAM_CHAT_ID" : "TELEGRAM_BOT_TOKEN"],
       });
     }
 
