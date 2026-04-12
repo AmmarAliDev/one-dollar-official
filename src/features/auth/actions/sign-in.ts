@@ -28,6 +28,38 @@ export interface SignInActionState {
   errors?: string[];
 }
 
+function isSafeRelativePath(value: string) {
+  let candidate = value.trim();
+
+  try {
+    for (let index = 0; index < 3; index += 1) {
+      const decodedCandidate = decodeURIComponent(candidate);
+
+      if (decodedCandidate === candidate) {
+        break;
+      }
+
+      candidate = decodedCandidate;
+    }
+  } catch {
+    return false;
+  }
+
+  if (!candidate.startsWith("/")) {
+    return false;
+  }
+
+  if (candidate.startsWith("//") || candidate.includes("://") || candidate.includes("\\")) {
+    return false;
+  }
+
+  if (/^[a-zA-Z][a-zA-Z\d+.-]*:/.test(candidate.slice(1)) || /[\r\n]/.test(candidate)) {
+    return false;
+  }
+
+  return true;
+}
+
 /**
  * Sign-in server action — compatible with React 19 `useActionState`.
  */
@@ -53,6 +85,10 @@ export async function signInAction(
   }
 
   const { email } = parsed.data;
+  const redirectCandidate = `${formData.get("redirectTo") ?? ""}`;
+  const redirectTo = isSafeRelativePath(redirectCandidate)
+    ? redirectCandidate.trim()
+    : routes.storefront.home;
 
   // ── 2. Rate limit ─────────────────────────────────────────────────────────
   const headerList = await headers();
@@ -74,7 +110,7 @@ export async function signInAction(
   try {
     await signIn("credentials", {
       ...Object.fromEntries(formData),
-      redirectTo: routes.storefront.home,
+      redirectTo,
     });
   } catch (err) {
     if (err instanceof AuthError) {

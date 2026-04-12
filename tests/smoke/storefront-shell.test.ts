@@ -9,6 +9,10 @@ describe("storefront shell navigation", () => {
     expect(routes.storefront.category("home-care")).toBe("/categories/home-care");
     expect(routes.storefront.search).toBe("/search");
     expect(routes.storefront.account).toBe("/account");
+    expect(routes.storefront.accountProfile).toBe("/account/profile");
+    expect(routes.storefront.accountAddresses).toBe("/account/addresses");
+    expect(routes.storefront.accountOrders).toBe("/account/orders");
+    expect(routes.storefront.accountReviews).toBe("/account/reviews");
     expect(routes.storefront.wishlist).toBe("/wishlist");
     expect(routes.storefront.cart).toBe("/cart");
   });

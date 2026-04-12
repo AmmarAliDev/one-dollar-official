@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import { WishlistToggleButton } from "@/features/wishlist/components/wishlist-toggle-button";
+
 import type { CatalogProductDetail, ProductVariantOption } from "../types";
 import { ProductAddToCart } from "./product-add-to-cart";
 import { ProductInfoBlock } from "./product-info-block";
@@ -9,6 +11,7 @@ import { ProductVariantPicker } from "./product-variant-picker";
 
 type ProductPanelProps = {
   product: CatalogProductDetail;
+  initialWishlistedSkus?: readonly string[];
 };
 
 function resolveActiveOption(
@@ -42,7 +45,7 @@ function buildDefaultSelections(product: CatalogProductDetail): Record<string, s
   return defaults;
 }
 
-export function ProductPanel({ product }: ProductPanelProps) {
+export function ProductPanel({ product, initialWishlistedSkus = [] }: ProductPanelProps) {
   const [selectedOptionIds, setSelectedOptionIds] = useState<Record<string, string>>(
     buildDefaultSelections(product),
   );
@@ -57,6 +60,8 @@ export function ProductPanel({ product }: ProductPanelProps) {
   const effectiveCompareAt = activeOption?.compareAt ?? product.compareAt;
   const effectiveSku = activeOption?.sku ?? product.sku;
   const effectiveInventory = activeOption?.inventoryQuantity ?? product.inventoryQuantity;
+  const effectiveOptionId = activeOption?.id;
+  const isInitiallyWishlisted = Boolean(effectiveSku && initialWishlistedSkus.includes(effectiveSku));
 
   function handleSelect(groupId: string, optionId: string) {
     setSelectedOptionIds((prev) => ({ ...prev, [groupId]: optionId }));
@@ -85,6 +90,14 @@ export function ProductPanel({ product }: ProductPanelProps) {
       <div className="border-t border-border/50 pt-5">
         <ProductAddToCart productName={product.name} isAvailable={effectiveInventory > 0} />
       </div>
+
+      <WishlistToggleButton
+        productSlug={product.slug}
+        {...(effectiveOptionId ? { optionId: effectiveOptionId } : {})}
+        sku={effectiveSku}
+        productName={product.name}
+        initiallyWishlisted={isInitiallyWishlisted}
+      />
     </div>
   );
 }
