@@ -107,7 +107,7 @@ function buildLowStockAdminMessage(
   const { payload } = event;
 
   return {
-    subject: `[Low Stock Placeholder] ${payload.sku}`,
+    subject: `Low Stock Alert: ${payload.sku}`,
     text: [
       "Inventory alert placeholder event fired.",
       `SKU: ${payload.sku}`,
@@ -124,7 +124,7 @@ function buildContactAdminMessage(
   const { payload } = event;
 
   return {
-    subject: `[Contact Placeholder] ${payload.subject}`,
+    subject: `Contact: ${payload.subject}`,
     text: [
       "Contact form placeholder event fired.",
       `Name: ${payload.fullName}`,

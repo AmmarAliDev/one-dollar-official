@@ -27,7 +27,7 @@ export class EmailNotificationChannel implements NotificationChannel {
       host: config.host,
       port: config.port,
       secure: config.secure,
-      ...(config.user || config.password
+      ...(config.user && config.password
         ? {
             auth: {
               user: config.user,
@@ -37,7 +37,8 @@ export class EmailNotificationChannel implements NotificationChannel {
         : {}),
     });
 
-    this.from = config.fromName ? `${config.fromName} <${config.fromEmail}>` : config.fromEmail;
+    const rawName = config.fromName?.replace(/[\r\n<>]+/g, "").trim() ?? "";
+    this.from = rawName ? `${rawName} <${config.fromEmail}>` : config.fromEmail;
   }
 
   async send(payload: NotificationChannelPayload): Promise<void> {

@@ -119,15 +119,7 @@ export class NotificationService {
         eventType: event.type,
         attempted: 0,
         delivered: 0,
-        failures: [
-          {
-            eventType: event.type,
-            channel: "email",
-            audience: "admin",
-            recipient: "n/a",
-            reason: error instanceof Error ? error.message : "Notification dispatch crashed",
-          },
-        ],
+        failures: [],
       };
     }
   }

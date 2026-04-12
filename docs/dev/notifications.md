@@ -49,7 +49,7 @@ SMTP_FROM_NAME="One Dollar Dev"
 
 1. Open Telegram and create a new supergroup (or use an existing one)
 2. Add @BotFather and create a new bot with `/newbot`
-3. Copy the bot token and get the group chat ID (e.g., via @userinfobot or checking logs)
+3. Copy the bot token, then get the group chat ID: add the bot to the group, send a message in the group, and call `https://api.telegram.org/bot<TOKEN>/getUpdates` — the returned `message.chat.id` is your group ID. Alternatively, use helper bots such as @RawDataBot or @getidsbot
 4. Add to `.env.local`:
 
 ```bash
@@ -59,7 +59,7 @@ TELEGRAM_CHAT_ID=<your-group-chat-id>
 
 ## Production Setup
 
-### Email via AWS SES, SendGrid, or GCP SendGrid
+### Email via AWS SES, SendGrid, or Google Cloud
 
 Use a managed transactional email service:
 
@@ -79,7 +79,7 @@ SMTP_FROM_NAME="One Dollar Store"
 
 1. Create a Telegram channel or supergroup for order notifications
 2. Add your bot to the group with `post_messages` permission
-3. Get the group chat ID (ask @BotFather if unsure)
+3. Get the group chat ID: add the bot to the group, send a test message, then call the Bot API `getUpdates` endpoint to read `message.chat.id`; alternatively use @RawDataBot or @getidsbot
 4. Store both in deployment secrets
 
 ## Resilience Guarantees
@@ -113,8 +113,9 @@ Tests verify:
 
 **"Channel email is not configured"**
 
-- All SMTP variables from the `superRefine` rules are missing
-- Add any two of `SMTP_HOST`, `SMTP_PORT`, `SMTP_FROM_EMAIL` to enable email (the rest default)
+- Required: `SMTP_HOST` and `SMTP_FROM_EMAIL` — both must be set to enable email delivery
+- Optional: `SMTP_PORT` (default: `587`), `SMTP_USERNAME`, `SMTP_PASSWORD` (omit if no auth required)
+- Example minimal config: `SMTP_HOST=smtp.example.com SMTP_FROM_EMAIL=no-reply@example.com`
 
 **"NOTIFY_ADMIN_EMAILS must contain valid email addresses"**
 

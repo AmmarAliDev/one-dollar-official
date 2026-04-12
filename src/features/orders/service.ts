@@ -405,13 +405,13 @@ export async function placeOrderFromCheckout(input: PlaceOrderInput): Promise<Pl
     const orderNumber = createOrderNumber(now);
     const confirmationAccessToken = createConfirmationAccessToken();
     const invoiceNumber = createInvoiceNumber(orderNumber);
-    let itemCountForNotification = 0;
+    let totalQuantity = 0;
 
     try {
       const result = await runWithTransaction(
         async (transaction) => {
           const cart = await resolveCartForOrder(input, transaction);
-          itemCountForNotification = cart.items.reduce((sum, item) => sum + item.quantity, 0);
+          totalQuantity = cart.items.reduce((sum, item) => sum + item.quantity, 0);
           const totals = calculateCheckoutTotals(
             cart.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0),
           );
@@ -534,11 +534,11 @@ export async function placeOrderFromCheckout(input: PlaceOrderInput): Promise<Pl
           customerName: input.payload.customer.fullName.trim(),
           customerEmail: input.payload.customer.email.trim(),
           customerPhone: input.payload.customer.phone.trim(),
-          itemCount: itemCountForNotification,
+          itemCount: totalQuantity,
           subtotal: result.totals.subtotal,
           shipping: result.totals.shipping,
           total: result.totals.total,
-          paymentMethodLabel: getPaymentMethodLabel(result.payment.provider),
+          paymentMethodLabel: getPaymentMethodLabel(input.payload.paymentMethod),
           confirmationUrl: result.confirmationUrl,
           invoiceUrl: result.invoiceUrl,
         }),
@@ -656,6 +656,7 @@ export async function updateOrderStatus(
       },
       include: {
         shippingAddress: true,
+        items: true,
       },
     });
 
@@ -670,7 +671,7 @@ export async function updateOrderStatus(
           customerName: order.shippingAddress.fullName,
           customerEmail: order.shippingAddress.email,
           customerPhone: order.shippingAddress.phone,
-          itemCount: 0,
+          itemCount: order.items.length,
           subtotal: order.subtotal,
           shipping: order.shipping,
           total: order.total,
