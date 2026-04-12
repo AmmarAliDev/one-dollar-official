@@ -29,6 +29,14 @@
 - Error summaries and page fallbacks should keep `role="alert"` / `aria-live` semantics so assistive tech announces important failures clearly.
 - Prefer server components by default; only use client components for interactivity like theme switching, toast triggers, and confirmation dialogs.
 
+## Storefront Navigation (Prompt 3.1)
+
+- `AppHeader` now provides required storefront actions: logo, search trigger placeholder, account, wishlist, and cart links.
+- Desktop and mobile navigation share the same `siteConfig.storefrontNav` source to avoid duplicated link logic.
+- Mobile navigation behavior lives in `src/components/layout/storefront-mobile-nav.tsx` and must keep `aria-expanded`, `aria-controls`, and a labeled toggle button.
+- `AppFooter` now has three sections: company links, policy links, and a newsletter placeholder block.
+- Static storefront placeholders live under `src/app/(storefront)` for `/about`, `/contact`, `/privacy`, `/terms`, `/shipping-policy`, and `/return-policy`.
+
 ## Deferred Items
 
 - Product listing cards, cart interactions, and auth forms are intentionally deferred.

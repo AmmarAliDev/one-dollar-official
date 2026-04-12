@@ -72,7 +72,8 @@ describe("signUpValidator", () => {
   });
 
   it("accepts sign-up with optional name omitted", () => {
-    const { name: _, ...withoutName } = valid;
+    const withoutName: Partial<typeof valid> = { ...valid };
+    delete withoutName.name;
     const result = signUpValidator.safeParse(withoutName);
     expect(result.success).toBe(true);
   });
