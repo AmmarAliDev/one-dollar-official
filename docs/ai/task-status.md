@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-**Phase 3 / Prompt 3.2 — Homepage CMS-driven foundation**
+**Phase 3 / Prompt 3.3 — Category listing and product grid**
 
 ## Completed
 
@@ -67,6 +67,12 @@
 - [x] Server-side homepage service seam added in `src/features/homepage/service.ts` with CMS loading stub + resolver
 - [x] Section contract documented in `docs/dev/homepage-section-contract.md`
 - [x] Homepage section rendering coverage added in `tests/features/homepage/section-rendering.test.ts`
+- [x] SEO-friendly category routes added at `/categories` and `/categories/[slug]`
+- [x] Catalog listing module added in `src/features/catalog` with typed fallback data, filter parsing, sorting, and pagination helpers
+- [x] Reusable product grid cards now show placeholder imagery, product title, price, compare price, stock badge, and review summary placeholder
+- [x] Category listing pages now include loading, empty, sorting, filtering, and pagination states
+- [x] Storefront navigation and homepage fallback links now point to category listing routes
+- [x] Catalog-focused tests added for filter parsing, listing behavior, and storefront route coverage
 
 ## Deferred by design
 
@@ -74,10 +80,10 @@
 - [ ] Email verification for credentials accounts
 - [ ] Nonce-based CSP hardening once all inline/script requirements are audited
 - [ ] Dedicated CSRF token flow for any future embedded or cross-origin clients
-- [ ] Product catalog and PDP implementation
+- [ ] Product detail pages and live catalog persistence beyond the fallback listing dataset
 - [ ] Admin CRUD workflows
 - [ ] Server-side notifications and third-party integrations
 
 ## Recommended Next Prompt
 
-Proceed with **Phase 3 / Prompt 3.3 — Banner and campaign admin CRUD with persistence**.
+Proceed with **Phase 3 / Prompt 3.4 — Product details page**.

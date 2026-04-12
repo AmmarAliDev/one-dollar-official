@@ -24,6 +24,7 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 ## Route Groups
 
 - `(storefront)` now uses a polished shared shell via `AppHeader` + `AppFooter`
+- `(storefront)/categories` provides category discovery and listing routes through clean slugs (`/categories/[slug]`)
 - `(admin)` now uses `AdminShell` with a responsive sidebar and topbar placeholder, protected by the RBAC proxy/layout guards
 - `(auth)` reserves sign-in and account entry points
 
@@ -33,6 +34,7 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `src/components/ui` now contains reusable UI-state and presentation primitives like `Badge`, `PriceDisplay`, `SectionHeader`, `EmptyState`, `LoadingState`, `ErrorState`, and `Skeleton`.
 - `PageContainer` and `PageShell` should be reused for page spacing instead of duplicating wrapper classes.
 - Shared frontend feedback uses `sonner` through `src/components/providers/app-toaster.tsx` and `src/lib/notify.ts`.
+- Catalog listing UI lives in `src/features/catalog/components`; keep product-grid and filter scaffolds there instead of placing listing-specific markup directly in route files.
 
 ## Config and Environment Strategy
 
@@ -54,6 +56,14 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - If these layers cannot be kept consistent over time, prefer consolidating to a single authoritative server-side guard rather than maintaining conflicting rules.
 - `src/app/unauthorized/page.tsx` and `src/app/forbidden/page.tsx` provide explicit recovery screens instead of raw auth errors.
 - `src/lib/audit/admin-actions.ts` prepares structured admin action records for future `AuditLog` persistence.
+
+## Catalog Listing Strategy
+
+- `src/features/catalog` is the storefront catalog seam for this phase. It currently uses typed fallback seeds so routes can render without a live database dependency.
+- `filters.ts` owns query-string parsing and href rebuilding for sorting, filtering, and pagination.
+- `service.ts` owns listing assembly and should be the handoff point when real Prisma-backed category/product repositories are added later.
+- `src/app/(storefront)/categories/page.tsx` is the category index. `src/app/(storefront)/categories/[slug]/page.tsx` is the SEO-friendly category listing route.
+- Variant-aware attribute filtering is intentionally a visible scaffold only in this phase; real structured variant filters should extend the existing query/filter contracts rather than replacing them.
 
 ## Error Handling Strategy
 

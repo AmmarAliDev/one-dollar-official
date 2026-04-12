@@ -37,7 +37,15 @@
 - `AppFooter` now has three sections: company links, policy links, and a newsletter placeholder block.
 - Static storefront placeholders live under `src/app/(storefront)` for `/about`, `/contact`, `/privacy`, `/terms`, `/shipping-policy`, and `/return-policy`.
 
+## Product Listing Conventions (Prompt 3.3)
+
+- Category discovery lives at `/categories`, while individual listing pages live at `/categories/[slug]` for clean, SEO-friendly storefront URLs.
+- `src/features/catalog/components/product-grid-card.tsx` is the reusable catalog card; keep product price, compare price, stock badge, and review summary placeholder logic there.
+- Listing filter UI should remain server-render-friendly and query-string-based until a later prompt requires richer client interactivity.
+- Use the shared empty and loading primitives for listing states instead of bespoke skeleton or empty-state markup.
+- Treat variant-aware attributes as an additive scaffold for now; future implementation should extend the current filter contract instead of replacing it.
+
 ## Deferred Items
 
-- Product listing cards, cart interactions, and auth forms are intentionally deferred.
+- Product detail pages, cart interactions, and auth forms are intentionally deferred.
 - Future features should compose the current primitives instead of duplicating layout and state styling.
