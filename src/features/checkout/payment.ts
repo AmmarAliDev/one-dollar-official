@@ -41,7 +41,9 @@ const providerRegistry: Record<CheckoutPaymentMethodCode, CheckoutPaymentProvide
 };
 
 export function listCheckoutPaymentMethods() {
-  return Object.values(providerRegistry).map((provider) => provider.method);
+  return Object.values(providerRegistry)
+    .map((provider) => provider.method)
+    .filter((method) => method.enabled);
 }
 
 export function getCheckoutPaymentProvider(code: CheckoutPaymentMethodCode): CheckoutPaymentProvider {

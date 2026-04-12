@@ -10,8 +10,11 @@ export type CheckoutCustomerInfo = {
 
 export type CheckoutShippingAddress = {
   addressLine1: string;
-  addressLine2?: string | undefined;
+  addressLine2?: string;
   city: string;
+  province?: string;
+  country: string;
+  postcode: string;
 };
 
 export type CheckoutPayload = {

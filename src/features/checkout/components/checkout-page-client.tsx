@@ -31,6 +31,9 @@ type CheckoutFormState = {
   addressLine1: string;
   addressLine2: string;
   city: string;
+  province: string;
+  country: string;
+  postcode: string;
   paymentMethod: CheckoutPaymentMethodDefinition["code"];
   notes: string;
 };
@@ -51,6 +54,9 @@ export function CheckoutPageClient({
     addressLine1: "",
     addressLine2: "",
     city: CHECKOUT_SUPPORTED_CITY,
+    province: "",
+    country: "Pakistan",
+    postcode: "",
     paymentMethod: defaultPaymentMethod,
     notes: "",
   });
@@ -58,6 +64,7 @@ export function CheckoutPageClient({
   const [errors, setErrors] = useState<string[]>([]);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [retryPayload, setRetryPayload] = useState<unknown | null>(null);
+  const [submitted, setSubmitted] = useState(false);
 
   const totals = useMemo(
     () => ({
@@ -69,7 +76,14 @@ export function CheckoutPageClient({
   );
 
   async function submitCheckout(payload: unknown) {
-    if (pending) {
+    if (pending || submitted) {
+      return;
+    }
+
+    // Validate payload before sending. If invalid, report errors and do not set retryPayload
+    const parsedPayload = checkoutPayloadSchema.safeParse(payload);
+    if (!parsedPayload.success) {
+      setErrors(parsedPayload.error.issues.map((issue) => issue.message));
       return;
     }
 
@@ -81,7 +95,7 @@ export function CheckoutPageClient({
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(parsedPayload.data),
       });
 
       const responsePayload = (await response.json().catch(() => null)) as
@@ -98,8 +112,8 @@ export function CheckoutPageClient({
         throw new Error(responsePayload?.error ?? "Checkout could not be submitted. Please try again.");
       }
 
-      const paymentMessage = responsePayload?.checkout?.payment.message ?? "Checkout accepted.";
-      const total = responsePayload?.checkout?.totals.total ?? totals.total;
+      const paymentMessage = responsePayload?.checkout?.payment?.message ?? "Checkout accepted.";
+      const total = responsePayload?.checkout?.totals?.total ?? totals.total;
 
       const message = `${paymentMessage} Total payable: PKR ${total.toLocaleString("en-PK")}.`;
 
@@ -107,11 +121,13 @@ export function CheckoutPageClient({
       setRetryPayload(null);
       setSuccessMessage(message);
       notify.success("Checkout submitted", paymentMessage);
+      setSubmitted(true);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Checkout could not be submitted. Please retry.";
       setSuccessMessage(null);
       setErrors([message]);
-      setRetryPayload(payload);
+      // Only populate retryPayload for transient/network failures using the validated payload
+      setRetryPayload(parsedPayload.data);
       notify.error("Checkout failed", message);
     } finally {
       setPending(false);
@@ -121,6 +137,9 @@ export function CheckoutPageClient({
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSuccessMessage(null);
+    if (submitted) {
+      return;
+    }
 
     const payload = {
       cartId: cart.id,
@@ -133,6 +152,9 @@ export function CheckoutPageClient({
         addressLine1: form.addressLine1,
         ...(form.addressLine2.trim().length > 0 ? { addressLine2: form.addressLine2 } : {}),
         city: form.city,
+        ...(form.province.trim().length > 0 ? { province: form.province } : {}),
+        country: form.country,
+        postcode: form.postcode,
       },
       paymentMethod: form.paymentMethod,
       ...(form.notes.trim().length > 0 ? { notes: form.notes } : {}),
@@ -142,7 +164,6 @@ export function CheckoutPageClient({
 
     if (!parsed.success) {
       setErrors(parsed.error.issues.map((issue) => issue.message));
-      setRetryPayload(payload);
       return;
     }
 
@@ -229,6 +250,14 @@ export function CheckoutPageClient({
               />
             </div>
             <div className="space-y-1.5">
+              <Label htmlFor="checkout-province">Province / State (optional)</Label>
+              <Input
+                id="checkout-province"
+                value={form.province}
+                onChange={(event) => setForm((prev) => ({ ...prev, province: event.target.value }))}
+              />
+            </div>
+            <div className="space-y-1.5">
               <Label htmlFor="checkout-city">City</Label>
               <Input
                 id="checkout-city"
@@ -237,6 +266,19 @@ export function CheckoutPageClient({
                 readOnly
               />
               <p className="text-xs text-muted-foreground">Delivery is currently available only in Karachi.</p>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="checkout-postcode">Postal code</Label>
+              <Input
+                id="checkout-postcode"
+                value={form.postcode}
+                onChange={(event) => setForm((prev) => ({ ...prev, postcode: event.target.value }))}
+                required
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="checkout-country">Country</Label>
+              <Input id="checkout-country" value={form.country} readOnly />
             </div>
           </CardContent>
         </Card>
@@ -283,7 +325,7 @@ export function CheckoutPageClient({
         </Card>
 
         <div className="flex flex-wrap items-center gap-3">
-          <Button type="submit" size="lg" disabled={pending || !allowSubmit}>
+          <Button type="submit" size="lg" disabled={pending || submitted || !allowSubmit}>
             {pending ? "Submitting..." : "Confirm checkout details"}
           </Button>
 
@@ -292,7 +334,7 @@ export function CheckoutPageClient({
               type="button"
               variant="outline"
               onClick={() => void submitCheckout(retryPayload)}
-              disabled={pending || !allowSubmit}
+              disabled={pending || submitted || !allowSubmit}
             >
               Retry last attempt
             </Button>

@@ -27,9 +27,17 @@ export function assertCheckoutCartReady(cart: CartSummary | null) {
   return cart;
 }
 
-export function assertKarachiCity(city: string) {
-  if (city.trim().toLowerCase() !== CHECKOUT_SUPPORTED_CITY.toLowerCase()) {
-    throw new AppError(`Unsupported shipping city submitted: ${city}`, "CHECKOUT_CITY_UNSUPPORTED", {
+export function assertKarachiCity(city: unknown) {
+  if (typeof city !== "string" || city.trim().length === 0) {
+    throw new AppError("Shipping city missing or invalid.", "CHECKOUT_CITY_UNSUPPORTED", {
+      statusCode: 400,
+      userMessage: `Please provide a valid city for shipping. We currently deliver only in ${CHECKOUT_SUPPORTED_CITY}.`,
+    });
+  }
+
+  const trimmed = city.trim();
+  if (trimmed.toLowerCase() !== CHECKOUT_SUPPORTED_CITY.toLowerCase()) {
+    throw new AppError(`Unsupported shipping city submitted: ${trimmed}`, "CHECKOUT_CITY_UNSUPPORTED", {
       statusCode: 400,
       userMessage: `We currently deliver only in ${CHECKOUT_SUPPORTED_CITY}.`,
     });
@@ -50,7 +58,7 @@ export function buildCheckoutAttemptResult(payload: CheckoutPayload, cart: CartS
     cart: {
       id: cart.id,
       itemCount: cart.itemCount,
-      subtotal: cart.subtotal,
+      subtotal: totals.subtotal,
     },
     totals,
     payment,

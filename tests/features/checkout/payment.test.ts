@@ -29,6 +29,8 @@ describe("checkout payment providers", () => {
         shippingAddress: {
           addressLine1: "House 1",
           city: "Karachi",
+          country: "Pakistan",
+          postcode: "75400",
         },
         paymentMethod: CHECKOUT_PAYMENT_METHODS.COD,
       },

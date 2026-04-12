@@ -14,6 +14,8 @@ describe("checkout payload validation", () => {
       shippingAddress: {
         addressLine1: "House 12, Street 5, Gulshan",
         city: "Karachi",
+        country: "Pakistan",
+        postcode: "75400",
       },
       paymentMethod: CHECKOUT_PAYMENT_METHODS.COD,
       notes: "Call before delivery",
@@ -36,6 +38,8 @@ describe("checkout payload validation", () => {
       shippingAddress: {
         addressLine1: "House 12, Street 5, Gulshan",
         city: "Lahore",
+        country: "Pakistan",
+        postcode: "54000",
       },
       paymentMethod: CHECKOUT_PAYMENT_METHODS.COD,
     });
@@ -57,6 +61,8 @@ describe("checkout payload validation", () => {
       shippingAddress: {
         addressLine1: "House 12, Street 5, Gulshan",
         city: "Karachi",
+        country: "Pakistan",
+        postcode: "75400",
       },
       paymentMethod: "CARD",
     });
