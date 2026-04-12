@@ -193,16 +193,18 @@ function getRateLimitStore(): RateLimitStore {
     return memoryRateLimitStore;
   }
 
-  try {
-    redisRateLimitStore ??= new UpstashRateLimitStore();
-    return redisRateLimitStore;
-  } catch (error) {
-    redisRateLimitStore = null;
-    rateLimitLogger.warn("upstash rate-limit initialization failed; using memory fallback", {
-      err: error,
-    });
-    return memoryRateLimitStore;
+  if (redisRateLimitStore === undefined) {
+    try {
+      redisRateLimitStore = new UpstashRateLimitStore();
+    } catch (error) {
+      redisRateLimitStore = null;
+      rateLimitLogger.warn("upstash rate-limit initialization failed; using memory fallback", {
+        err: error,
+      });
+    }
   }
+
+  return redisRateLimitStore ?? memoryRateLimitStore;
 }
 
 function normalizeOptions({

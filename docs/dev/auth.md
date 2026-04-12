@@ -169,6 +169,29 @@ The current baseline uses a **Next.js-compatible same-origin strategy**:
 - **Future Route Handlers** should use `assertTrustedRouteHandlerRequest()` together with `createRouteHandlerErrorResponse()` for consistent blocking and safe error payloads.
 - `next.config.ts` now also sets `experimental.serverActions.allowedOrigins` so the app stays compatible behind trusted reverse proxies without weakening the default CSRF model.
 
+### Allowed Origins Configuration
+
+When the app runs behind a reverse proxy (e.g. Nginx, Cloudflare, Vercel Edge Network), the `Host` header seen by Next.js may differ from the browser's `Origin` header. Next.js rejects server-action requests when these don't match, so `experimental.serverActions.allowedOrigins` tells the framework which extra `host:port` values are legitimate.
+
+The configuration key is:
+
+```
+experimental.serverActions.allowedOrigins
+```
+
+In this project the list is built at startup by `getServerActionAllowedOrigins()` in `src/config/security.ts`, which derives host values from:
+
+| Source | Example entries |
+|---|---|
+| `NEXT_PUBLIC_APP_URL` | `onedollar.com`, `www.onedollar.com` |
+| `AUTH_URL` | `onedollar.com` |
+| `APP_ALLOWED_ORIGINS` | Comma-separated extra origins you control (e.g. a staging proxy) |
+| Hard-coded dev origins | `localhost:3000`, `127.0.0.1:3000` |
+
+Each value is normalised to `host` (or `host:port`) via `new URL(origin).host`.
+
+> **Security warning:** Only add origins that you own and control. Never use wildcards, IP ranges, or untrusted third-party domains. A misconfigured list effectively tells Next.js to skip its built-in same-origin check for those hosts, which **weakens CSRF protection**. When configured correctly — listing only your production domain, its `www` variant, the local dev address, and any trusted proxy origin — the default same-origin CSRF model remains fully intact.
+
 ## Rate Limiting
 
 Sensitive auth flows now use a **Redis-first** rate-limit helper:

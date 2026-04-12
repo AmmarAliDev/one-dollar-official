@@ -30,7 +30,7 @@ function getDerivedHostOrigin(input: {
   forwardedHost?: string | null;
   forwardedProto?: string | null;
 }): string | null {
-  const host = input.forwardedHost?.split(",").at(-1)?.trim() ?? input.host?.trim();
+  const host = input.forwardedHost?.split(",").at(0)?.trim() ?? input.host?.trim();
 
   if (!host) {
     return null;
@@ -147,7 +147,7 @@ export function assertTrustedRouteHandlerRequest(
 export function getClientIp(headerList: Pick<Headers, "get">): string {
   const rawIp =
     headerList.get("x-real-ip")?.trim() ??
-    headerList.get("x-forwarded-for")?.split(",").at(-1)?.trim() ??
+    headerList.get("x-forwarded-for")?.split(",").at(0)?.trim() ??
     "unknown";
 
   return rawIp.slice(0, 64);

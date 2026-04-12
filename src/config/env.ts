@@ -37,9 +37,8 @@ const booleanFromEnv = (defaultValue: boolean) =>
 export const publicEnvSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   NEXT_PUBLIC_APP_URL: z
-    .string()
+    .url({ error: "Provide a valid absolute URL, for example http://localhost:3000." })
     .trim()
-    .url("Provide a valid absolute URL, for example http://localhost:3000.")
     .default("http://localhost:3000"),
   NEXT_PUBLIC_DEFAULT_CITY: z
     .string()
@@ -61,7 +60,7 @@ export const serverEnvSchema = z
       .trim()
       .min(32, "AUTH_SECRET must be at least 32 characters for security.")
       .optional(),
-    AUTH_URL: z.string().trim().url("AUTH_URL must be a valid absolute URL.").optional(),
+    AUTH_URL: z.url({ error: "AUTH_URL must be a valid absolute URL." }).trim().optional(),
 
     // Google OAuth credentials — required when Google SSO is enabled.
     AUTH_GOOGLE_ID: z.string().trim().min(1, "AUTH_GOOGLE_ID cannot be empty.").optional(),
@@ -69,7 +68,7 @@ export const serverEnvSchema = z
 
     // Optional Redis-backed rate limiting (recommended for production).
     UPSTASH_REDIS_REST_URL: z
-      .url("UPSTASH_REDIS_REST_URL must be a valid absolute URL.")
+      .url({ error: "UPSTASH_REDIS_REST_URL must be a valid absolute URL." })
       .trim()
       .optional(),
     UPSTASH_REDIS_REST_TOKEN: z

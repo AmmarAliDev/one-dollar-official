@@ -36,7 +36,13 @@ function buildDirective(name: string, values: Array<string | undefined | null>):
 }
 
 export function getTrustedOrigins(rawEnv: EnvSource = process.env): string[] {
-  const trustedOrigins = new Set<string>(LOCAL_DEV_ORIGINS);
+  const trustedOrigins = new Set<string>();
+
+  if (rawEnv.NODE_ENV !== "production") {
+    for (const origin of LOCAL_DEV_ORIGINS) {
+      trustedOrigins.add(origin);
+    }
+  }
 
   const appOrigin = normalizeOrigin(rawEnv.NEXT_PUBLIC_APP_URL);
   const authOrigin = normalizeOrigin(rawEnv.AUTH_URL);
