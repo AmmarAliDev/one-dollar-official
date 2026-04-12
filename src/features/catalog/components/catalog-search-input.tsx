@@ -36,7 +36,7 @@ export function CatalogSearchInput({
       />
 
       {isLoading ? (
-        <span className="text-muted-foreground px-2" aria-label="Searching">
+        <span className="text-muted-foreground px-2" role="status" aria-label="Searching">
           <InlineSpinner />
         </span>
       ) : null}
