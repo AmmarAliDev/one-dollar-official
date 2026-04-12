@@ -72,7 +72,7 @@ describe("signUpValidator", () => {
   });
 
   it("accepts sign-up without a name", () => {
-    const result = signUpValidator.safeParse({ ...valid, name: "" });
+    const result = signUpValidator.safeParse({ ...valid, name: "   " });
     expect(result.success).toBe(true);
   });
 

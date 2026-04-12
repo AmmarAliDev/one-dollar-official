@@ -3,6 +3,7 @@
 ## Overview
 
 Authentication is implemented with [Auth.js v5 (next-auth)](https://authjs.dev/) using:
+
 - **Email/password** via the Credentials provider
 - **Google SSO** via the Google OAuth provider
 - **JWT sessions** (no DB round-trip per request; OAuth accounts stored in DB)
@@ -42,17 +43,20 @@ DATABASE_URL=postgresql://user:password@localhost:5432/one_dollar
 ## Auth Flow
 
 ### Sign-up (credentials)
+
 1. User fills the sign-up form at `/auth/sign-up`.
-2. `signUpAction` server action validates, rate-limits, hashes password, creates `User` with `CUSTOMER` role.
+2. `signUpAction` verifies trusted request origin, validates input with Zod, rate-limits the attempt, hashes the password, and creates the `User` with the `CUSTOMER` role.
 3. Immediately calls `signIn("credentials")` → creates JWT session → redirects to home.
 
 ### Sign-in (credentials)
+
 1. User fills the sign-in form at `/auth/sign-in`.
-2. `signInAction` server action validates, rate-limits, calls Auth.js `signIn("credentials")`.
+2. `signInAction` verifies trusted request origin, validates input, rate-limits the attempt, and calls Auth.js `signIn("credentials")`.
 3. Auth.js `authorize()` in `src/auth.ts` fetches the user, verifies bcrypt hash.
 4. On success → JWT cookie set → redirected to home.
 
 ### Sign-in (Google)
+
 1. User clicks "Continue with Google" at `/auth/sign-in` or `/auth/sign-up`.
 2. Browser redirects to Google OAuth consent screen.
 3. Auth.js callback at `/api/auth/callback/google` processes the token.
@@ -61,6 +65,7 @@ DATABASE_URL=postgresql://user:password@localhost:5432/one_dollar
 6. JWT session created → redirected to home.
 
 ### Sign-out
+
 - Client: call `signOut()` from `next-auth/react` or use a form action pointing to `signOutAction`.
 - The JWT cookie is cleared and the user is redirected to home.
 
@@ -68,13 +73,13 @@ DATABASE_URL=postgresql://user:password@localhost:5432/one_dollar
 
 ### Admin role matrix
 
-| Role | Admin access | Primary permissions |
-| --- | --- | --- |
-| `SUPER_ADMIN` | ✅ | Full admin access, catalog, orders, users, settings |
-| `PRODUCT_MANAGER` | ✅ | Catalog read/write, order read |
-| `ORDER_MANAGER` | ✅ | Order read/write, customer read |
-| `CUSTOMER` | ❌ | Storefront-only for now |
-| `GUEST` | ❌ | Anonymous browsing only |
+| Role              | Admin access | Primary permissions                                 |
+| ----------------- | ------------ | --------------------------------------------------- |
+| `SUPER_ADMIN`     | ✅           | Full admin access, catalog, orders, users, settings |
+| `PRODUCT_MANAGER` | ✅           | Catalog read/write, order read                      |
+| `ORDER_MANAGER`   | ✅           | Order read/write, customer read                     |
+| `CUSTOMER`        | ❌           | Storefront-only for now                             |
+| `GUEST`           | ❌           | Anonymous browsing only                             |
 
 ### Guard flow
 
@@ -87,6 +92,7 @@ DATABASE_URL=postgresql://user:password@localhost:5432/one_dollar
 ## Session Access
 
 ### Server Components / Server Actions
+
 ```typescript
 import { auth } from "@/auth";
 // or use helpers:
@@ -94,16 +100,17 @@ import { getSession, requireSession, getCurrentUserId, hasPermission } from "@/l
 import { requireAdminAccess } from "@/lib/auth/guards";
 import { rbacPermissions } from "@/lib/auth/rbac";
 
-const session = await auth();                            // nullable (raw Auth.js call)
-const session = await getSession();                      // nullable (helper wrapper around auth())
-const session = await requireSession();                  // redirects if not logged in
-const userId  = await getCurrentUserId();                // nullable string
+const session = await auth(); // nullable (raw Auth.js call)
+const session = await getSession(); // nullable (helper wrapper around auth())
+const session = await requireSession(); // redirects if not logged in
+const userId = await getCurrentUserId(); // nullable string
 const canEdit = await hasPermission(rbacPermissions.catalogWrite); // boolean
 
 await requireAdminAccess({ from: "/admin" });
 ```
 
 ### Client Components
+
 ```typescript
 import { useSession } from "@/lib/auth/client";
 
@@ -137,7 +144,10 @@ src/
   lib/audit/
     admin-actions.ts                   # Audit-log-ready helper for admin mutations
   lib/rate-limit/
-    index.ts                           # In-memory rate limit (Redis-ready abstraction)
+    index.ts                           # Redis-first rate limiting with safe in-memory fallback
+  lib/security/
+    csrf.ts                            # Trusted-origin CSRF checks for sensitive mutations
+    validation.ts                      # Shared Zod validation primitives and helpers
   components/providers/
     auth-provider.tsx                  # SessionProvider wrapper for root layout
   app/(auth)/auth/
@@ -150,29 +160,29 @@ src/
   app/api/auth/[...nextauth]/route.ts  # Auth.js catch-all API route
 ```
 
+## CSRF and Mutation Safety
+
+The current baseline uses a **Next.js-compatible same-origin strategy**:
+
+- **Auth.js** continues to protect `/api/auth/*` with its built-in CSRF handling.
+- **Custom Server Actions** such as `signInAction`, `signUpAction`, and `signOutAction` call `assertTrustedOrigin()` from `src/lib/security/csrf.ts` before doing sensitive work.
+- **Future Route Handlers** should use `assertTrustedRouteHandlerRequest()` together with `createRouteHandlerErrorResponse()` for consistent blocking and safe error payloads.
+- `next.config.ts` now also sets `experimental.serverActions.allowedOrigins` so the app stays compatible behind trusted reverse proxies without weakening the default CSRF model.
+
 ## Rate Limiting
 
-Auth routes use an in-memory sliding-window rate limiter:
-- Sign-in: 10 attempts / minute / IP
+Sensitive auth flows now use a **Redis-first** rate-limit helper:
+
+- Sign-in: 10 attempts / minute / IP+email bucket
 - Sign-up: 10 attempts / minute / IP (+ 3 attempts / minute / email)
 
-> **WARNING — not suitable for multi-instance or serverless deployments.**
-> The current implementation (`src/lib/rate-limit/index.ts`) keeps counters
-> in process memory. Every instance (Vercel serverless function, AWS Lambda
-> invocation, load-balancer node) maintains its own independent counter, so
-> an attacker who distributes requests across instances effectively multiplies
-> the allowed attempts by the number of running instances and can bypass the
-> limit entirely. **Do not rely on this implementation in any horizontally
-> scaled or serverless production environment.**
->
-> Migrate to a centralized store before going to production. The recommended
-> path is to swap the store inside `src/lib/rate-limit/index.ts` for a
-> Redis-backed implementation (e.g. [`@upstash/ratelimit`](https://github.com/upstash/ratelimit-js)).
-> All callers use the stable `checkRateLimit` function — no call-site changes
-> are required. See the **Production upgrade** note below for the planned
-> migration checkpoint.
+Implementation notes:
 
-**Production upgrade (Prompt 2.5):** Swap `src/lib/rate-limit/index.ts` implementation with a Redis-backed store (e.g. `@upstash/ratelimit`). The `checkRateLimit` function signature is stable — callers don't change.
+- `src/lib/rate-limit/index.ts` uses **Upstash Redis** when `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are configured.
+- Local development and CI fall back to the in-memory store automatically so the same helper still compiles and works without infrastructure.
+- Call sites continue to use the stable `checkRateLimit()` API.
+
+> For production, Redis credentials should still be configured so all instances share one central rate-limit state.
 
 ## Password Security
 
@@ -190,4 +200,5 @@ const valid = await comparePassword("mysecretpassword", hash); // true
 - **Email-based password reset** — requires transactional email provider (Resend/Postmark). Placeholder page at `/auth/forgot-password`. Will be implemented in Prompt 4.4.
 - **Audit log persistence** — `src/lib/audit/admin-actions.ts` currently logs structured admin events and prepares `AuditLog`-ready payloads; DB writes will be added alongside real admin mutations.
 - **Email verification flow** — `User.emailVerified` is set by Auth.js for OAuth accounts. Credential-based email verification is deferred.
-- **Redis rate limiting** — current in-memory implementation is single-instance only. Redis upgrade is in Prompt 2.5.
+- **Nonce-based CSP hardening** — the current CSP is intentionally baseline-compatible; tighten it later if inline/script needs are fully mapped.
+- **Dedicated double-submit CSRF tokens for embedded clients** — current same-origin protection is correct for the app today, but future cross-origin embeds or native clients may need an explicit token layer.

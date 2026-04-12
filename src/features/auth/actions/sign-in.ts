@@ -18,8 +18,11 @@ import { AuthError } from "next-auth";
 import { signIn } from "@/auth";
 import { routes } from "@/config/routes";
 import { signInValidator } from "@/features/auth/validators";
+import { toActionErrorState } from "@/lib/errors/handling";
 import { logger } from "@/lib/logger";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { assertTrustedOrigin, getClientIp } from "@/lib/security/csrf";
+import { validateWithSchema } from "@/lib/security/validation";
 
 export interface SignInActionState {
   errors?: string[];
@@ -32,24 +35,30 @@ export async function signInAction(
   _prev: SignInActionState | null,
   formData: FormData,
 ): Promise<SignInActionState> {
+  try {
+    await assertTrustedOrigin({ action: "auth:sign-in" });
+  } catch (error) {
+    return toActionErrorState(error, "sign-in");
+  }
+
   // ── 1. Validate ───────────────────────────────────────────────────────────
   const raw = {
     email: formData.get("email"),
     password: formData.get("password"),
   };
 
-  const parsed = signInValidator.safeParse(raw);
+  const parsed = validateWithSchema(signInValidator, raw);
   if (!parsed.success) {
-    return { errors: parsed.error.issues.map((i) => i.message) };
+    return { errors: parsed.errors };
   }
 
   const { email } = parsed.data;
 
   // ── 2. Rate limit ─────────────────────────────────────────────────────────
   const headerList = await headers();
-  const ip = headerList.get("x-forwarded-for") ?? "unknown";
+  const ip = getClientIp(headerList);
   const rlResult = await checkRateLimit({
-    identifier: `${ip}:${email}`,
+    identifier: `${ip}:${email.toLowerCase()}`,
     action: "auth:sign-in",
     limit: 10,
     windowMs: 60_000,

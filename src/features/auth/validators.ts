@@ -13,6 +13,12 @@
 
 import { z } from "zod";
 
+import {
+  createPasswordSchema,
+  emailAddressSchema,
+  optionalDisplayNameSchema,
+} from "@/lib/security/validation";
+
 // ── Constants ────────────────────────────────────────────────────────────────
 
 const MIN_PASSWORD_LENGTH = 8;
@@ -21,11 +27,7 @@ const MAX_PASSWORD_LENGTH = 72; // bcrypt truncates at 72 bytes
 // ── Sign-in ──────────────────────────────────────────────────────────────────
 
 export const signInValidator = z.object({
-  email: z
-    .email("Please enter a valid email address.")
-    .trim()
-    .min(1, "Email address is required."),
-
+  email: emailAddressSchema,
   password: z
     .string()
     .min(1, "Password is required.")
@@ -38,24 +40,9 @@ export type SignInInput = z.infer<typeof signInValidator>;
 
 export const signUpValidator = z
   .object({
-    name: z
-      .string()
-      .trim()
-      .min(2, "Name must be at least 2 characters.")
-      .max(100, "Name must be at most 100 characters.")
-      .optional()
-      .or(z.literal("")),
-
-    email: z
-      .email("Please enter a valid email address.")
-      .trim()
-      .min(1, "Email address is required."),
-      
-    password: z
-      .string()
-      .min(MIN_PASSWORD_LENGTH, `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`)
-      .max(MAX_PASSWORD_LENGTH, "Password is too long."),
-
+    name: optionalDisplayNameSchema.optional(),
+    email: emailAddressSchema,
+    password: createPasswordSchema(MIN_PASSWORD_LENGTH, MAX_PASSWORD_LENGTH),
     confirmPassword: z.string().min(1, "Please confirm your password."),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -65,13 +52,10 @@ export const signUpValidator = z
 
 export type SignUpInput = z.infer<typeof signUpValidator>;
 
-// ── Forgot-password placeholder ───────────────────────────────────────────────
+// ── Forgot-password placeholder ─────────────────────────────────────────────
 
 export const forgotPasswordValidator = z.object({
-  email: z
-    .email("Please enter a valid email address.")
-    .trim()
-    .min(1, "Email address is required."),
+  email: emailAddressSchema,
 });
 
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordValidator>;

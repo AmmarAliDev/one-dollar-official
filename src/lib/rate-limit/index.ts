@@ -1,17 +1,14 @@
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
+
+import { logger } from "@/lib/logger";
+
 /**
- * Rate-limit foundation for auth routes.
+ * Rate-limit foundation for sensitive auth and mutation routes.
  *
- * Current implementation: in-memory sliding window (development/single-instance).
- * Production path: swap the store for a Redis-backed implementation.
- *
- * Redis upgrade path (Prompt 2.5):
- *  1. Add `ioredis` or `@upstash/ratelimit` dependency.
- *  2. Replace `MemoryStore` with a Redis store using the same interface.
- *  3. No changes needed in callers — `checkRateLimit` signature is stable.
- *
- * NOTE: The in-memory store is NOT shared across Vercel/serverless instances.
- *       It is suitable for development and provides the right abstraction
- *       boundary for a Redis upgrade. Do NOT use in horizontally-scaled prod.
+ * Preferred production backend: Upstash Redis (`@upstash/redis` + `@upstash/ratelimit`).
+ * Local/test fallback: in-memory sliding window so the same helper can compile
+ * and run even when Redis is intentionally not configured.
  */
 
 export interface RateLimitOptions {
@@ -32,48 +29,58 @@ export interface RateLimitResult {
   remaining: number;
   /** Timestamp when the current window resets. */
   reset: Date;
+  /** Which backend served the check. */
+  backend: "memory" | "redis";
 }
 
-/** In-memory store — replaced by Redis in production (see upgrade path above). */
+interface NormalizedRateLimitOptions {
+  action: string;
+  identifier: string;
+  limit: number;
+  windowMs: number;
+}
+
+interface RateLimitStore {
+  limit(options: NormalizedRateLimitOptions): Promise<RateLimitResult>;
+}
+
 interface MemoryEntry {
   count: number;
-  resetAt: number; // Unix ms timestamp
+  resetAt: number;
 }
 
-// ── Store configuration ────────────────────────────────────────────────────
-/** How often (ms) the cleanup sweep runs. Override before first import. */
-export const RATE_LIMIT_CLEANUP_INTERVAL_MS = 5 * 60_000; // 5 minutes
+/** How often (ms) the cleanup sweep runs. */
+export const RATE_LIMIT_CLEANUP_INTERVAL_MS = 5 * 60_000;
 
-/** Maximum number of keys kept in the store. When exceeded, oldest keys are
- *  evicted (FIFO — Map preserves insertion order). */
+/** Maximum number of keys kept in the in-memory fallback store. */
 export const RATE_LIMIT_MAX_STORE_SIZE = 10_000;
 
+const RATE_LIMIT_IDENTIFIER_MAX_LENGTH = 128;
 const memoryStore = new Map<string, MemoryEntry>();
+const rateLimitLogger = logger.child("rate-limit");
 
-/** Remove entries whose window has already expired. */
 function evictExpired(): void {
   const now = Date.now();
+
   for (const [key, entry] of memoryStore) {
-    if (entry.resetAt < now) {
+    if (entry.resetAt <= now) {
       memoryStore.delete(key);
     }
   }
 }
 
-/** Drop the oldest insertion(s) until the store is within the max-size limit. */
 function evictOldestIfNeeded(): void {
   while (memoryStore.size >= RATE_LIMIT_MAX_STORE_SIZE) {
     const firstKey = memoryStore.keys().next().value;
-    if (firstKey !== undefined) {
-      memoryStore.delete(firstKey);
-    } else {
+
+    if (firstKey === undefined) {
       break;
     }
+
+    memoryStore.delete(firstKey);
   }
 }
 
-// Start the periodic cleanup sweep. The unref() call (Node.js only) means this
-// timer will not prevent the process from exiting naturally.
 const _cleanupInterval: ReturnType<typeof setInterval> = setInterval(
   evictExpired,
   RATE_LIMIT_CLEANUP_INTERVAL_MS,
@@ -82,45 +89,163 @@ if (typeof _cleanupInterval === "object" && "unref" in _cleanupInterval) {
   (_cleanupInterval as NodeJS.Timeout).unref();
 }
 
-/**
- * Stop the background cleanup interval.
- * Call this in test teardown (afterAll / afterEach) to avoid open-handle warnings.
- */
 export function stopRateLimitCleanup(): void {
   clearInterval(_cleanupInterval);
+}
+
+class MemoryRateLimitStore implements RateLimitStore {
+  async limit({
+    identifier,
+    action,
+    limit,
+    windowMs,
+  }: NormalizedRateLimitOptions): Promise<RateLimitResult> {
+    const key = `${action}:${identifier}`;
+    const now = Date.now();
+    const entry = memoryStore.get(key);
+
+    if (!entry || entry.resetAt <= now) {
+      const resetAt = now + windowMs;
+      evictOldestIfNeeded();
+      memoryStore.set(key, { count: 1, resetAt });
+
+      return {
+        success: true,
+        remaining: Math.max(0, limit - 1),
+        reset: new Date(resetAt),
+        backend: "memory",
+      };
+    }
+
+    if (entry.count >= limit) {
+      return {
+        success: false,
+        remaining: 0,
+        reset: new Date(entry.resetAt),
+        backend: "memory",
+      };
+    }
+
+    entry.count += 1;
+
+    return {
+      success: true,
+      remaining: Math.max(0, limit - entry.count),
+      reset: new Date(entry.resetAt),
+      backend: "memory",
+    };
+  }
+}
+
+function hasUpstashConfig(
+  rawEnv: Readonly<Record<string, string | undefined>> = process.env,
+): boolean {
+  return Boolean(rawEnv.UPSTASH_REDIS_REST_URL && rawEnv.UPSTASH_REDIS_REST_TOKEN);
+}
+
+class UpstashRateLimitStore implements RateLimitStore {
+  private readonly redis = Redis.fromEnv();
+  private readonly limiters = new Map<string, Ratelimit>();
+
+  private getLimiter(limit: number, windowMs: number): Ratelimit {
+    const cacheKey = `${limit}:${windowMs}`;
+    const existingLimiter = this.limiters.get(cacheKey);
+
+    if (existingLimiter) {
+      return existingLimiter;
+    }
+
+    const seconds = Math.max(1, Math.ceil(windowMs / 1_000));
+    const ratelimit = new Ratelimit({
+      redis: this.redis,
+      limiter: Ratelimit.slidingWindow(limit, `${seconds} s`),
+      analytics: false,
+      prefix: "one-dollar:ratelimit",
+    });
+
+    this.limiters.set(cacheKey, ratelimit);
+    return ratelimit;
+  }
+
+  async limit({
+    identifier,
+    action,
+    limit,
+    windowMs,
+  }: NormalizedRateLimitOptions): Promise<RateLimitResult> {
+    const limiter = this.getLimiter(limit, windowMs);
+    const result = await limiter.limit(`${action}:${identifier}`);
+
+    return {
+      success: result.success,
+      remaining: Math.max(0, result.remaining),
+      reset: new Date(result.reset),
+      backend: "redis",
+    };
+  }
+}
+
+const memoryRateLimitStore = new MemoryRateLimitStore();
+let redisRateLimitStore: UpstashRateLimitStore | null | undefined;
+
+function getRateLimitStore(): RateLimitStore {
+  if (!hasUpstashConfig()) {
+    return memoryRateLimitStore;
+  }
+
+  try {
+    redisRateLimitStore ??= new UpstashRateLimitStore();
+    return redisRateLimitStore;
+  } catch (error) {
+    redisRateLimitStore = null;
+    rateLimitLogger.warn("upstash rate-limit initialization failed; using memory fallback", {
+      err: error,
+    });
+    return memoryRateLimitStore;
+  }
+}
+
+function normalizeOptions({
+  action,
+  identifier,
+  limit = 5,
+  windowMs = 60_000,
+}: RateLimitOptions): NormalizedRateLimitOptions {
+  return {
+    action: action.trim() || "global",
+    identifier: identifier.trim().slice(0, RATE_LIMIT_IDENTIFIER_MAX_LENGTH) || "anonymous",
+    limit: Math.max(1, limit),
+    windowMs: Math.max(1_000, windowMs),
+  };
+}
+
+export function getRateLimitBackend(
+  rawEnv: Readonly<Record<string, string | undefined>> = process.env,
+): "memory" | "redis" {
+  return hasUpstashConfig(rawEnv) ? "redis" : "memory";
 }
 
 /**
  * Check whether an action by the given identifier is within rate limits.
  *
- * @example
- * const result = await checkRateLimit({ identifier: ip, action: "auth:sign-in" });
- * if (!result.success) return { error: "Too many attempts. Please wait." };
+ * Callers keep one stable API regardless of whether the active backend is
+ * Redis (production) or the in-memory fallback (local/test).
  */
-export async function checkRateLimit({
-  identifier,
-  action,
-  limit = 5,
-  windowMs = 60_000,
-}: RateLimitOptions): Promise<RateLimitResult> {
-  const key = `${action}:${identifier}`;
-  const now = Date.now();
-  const entry = memoryStore.get(key);
+export async function checkRateLimit(options: RateLimitOptions): Promise<RateLimitResult> {
+  const normalizedOptions = normalizeOptions(options);
+  const store = getRateLimitStore();
 
-  // Window expired or first request — start a fresh window.
-  if (!entry || entry.resetAt < now) {
-    const resetAt = now + windowMs;
-    evictOldestIfNeeded();
-    memoryStore.set(key, { count: 1, resetAt });
-    return { success: true, remaining: limit - 1, reset: new Date(resetAt) };
+  try {
+    return await store.limit(normalizedOptions);
+  } catch (error) {
+    if (store !== memoryRateLimitStore) {
+      rateLimitLogger.warn("redis rate-limit request failed; retrying with memory fallback", {
+        action: normalizedOptions.action,
+        err: error,
+      });
+      return memoryRateLimitStore.limit(normalizedOptions);
+    }
+
+    throw error;
   }
-
-  // Window is active and limit reached.
-  if (entry.count >= limit) {
-    return { success: false, remaining: 0, reset: new Date(entry.resetAt) };
-  }
-
-  // Increment and allow.
-  entry.count += 1;
-  return { success: true, remaining: limit - entry.count, reset: new Date(entry.resetAt) };
 }

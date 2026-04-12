@@ -25,6 +25,14 @@
 - `src/config` is the source of truth for routes, env validation, metadata, feature flags, and safe app config loading.
 - Avoid direct `process.env` reads outside `src/config/env.ts`; use `env`, `loadAppConfig()`, or `getRequiredServerEnv()` instead.
 
+## Security Conventions
+
+- Use the shared header strategy from `src/config/security.ts` via `next.config.ts`; do not add ad-hoc per-page security headers unless the route has a real special case.
+- Protect sensitive Server Actions with `assertTrustedOrigin()` and custom mutation Route Handlers with `assertTrustedRouteHandlerRequest()`.
+- Prefer the shared Zod helpers in `src/lib/security/validation.ts` (`emailAddressSchema`, `createPasswordSchema()`, `validateWithSchema()`) so validation rules and error copy stay consistent.
+- Use `checkRateLimit()` for auth and other abuse-prone mutations; production should provide Upstash Redis credentials, while local/test can rely on the built-in memory fallback.
+- Normalize unexpected server failures with `toAppError()` / `toActionErrorState()` / `createRouteHandlerErrorResponse()` instead of leaking raw exceptions to UI callers.
+
 ## Database Access Conventions
 
 - Use `getPrismaClient()` from `src/server/db` for the root Prisma singleton when a repository or service needs direct access.

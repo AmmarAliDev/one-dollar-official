@@ -1,8 +1,8 @@
 type AppErrorOptions = {
   cause?: unknown;
-  exposeMessage?: boolean;
-  statusCode?: number;
-  userMessage?: string;
+  exposeMessage?: boolean | undefined;
+  statusCode?: number | undefined;
+  userMessage?: string | undefined;
 };
 
 export class AppError extends Error {
@@ -15,7 +15,7 @@ export class AppError extends Error {
     super(message, options);
     this.name = new.target.name;
     this.code = code;
-    this.exposeMessage = options?.exposeMessage ?? true;
+    this.exposeMessage = options?.exposeMessage ?? false;
     this.statusCode = options?.statusCode;
     this.userMessage = options?.userMessage;
     Object.setPrototypeOf(this, new.target.prototype);

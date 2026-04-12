@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-**Phase 2 / Prompt 2.4 — RBAC and route protection foundations**
+**Phase 2 / Prompt 2.5 — Baseline security layer**
 
 ## Completed
 
@@ -47,16 +47,24 @@
 - [x] **5 new RBAC tests** cover non-admin blocking, valid admin-role access, forbidden API responses, audit payload generation, and forbidden-page rendering (54 total tests)
 - [x] Verification re-confirmed with `pnpm typecheck`, `pnpm lint`, `pnpm test`, and `pnpm build`
 - [x] Developer docs at `docs/dev/auth.md`
+- [x] Global security headers added through `next.config.ts` + `src/config/security.ts`
+- [x] CSRF / trusted-origin checks added for sensitive Server Actions through `src/lib/security/csrf.ts`
+- [x] Redis-first rate-limit foundation added using `@upstash/redis` + `@upstash/ratelimit` with a safe in-memory fallback for local/test
+- [x] Shared Zod validation conventions added in `src/lib/security/validation.ts`
+- [x] Centralized safe error normalization/response helpers added in `src/lib/errors/handling.ts`
+- [x] Security-focused developer guide added at `docs/dev/security.md`
+- [x] Validation, rate-limit, and safe-error helper coverage expanded in Vitest
 
 ## Deferred by design
 
 - [ ] Email-based password reset (requires email provider — deferred to Prompt 4.4)
-- [ ] Redis-backed rate limiting (Prompt 2.5)
 - [ ] Email verification for credentials accounts
+- [ ] Nonce-based CSP hardening once all inline/script requirements are audited
+- [ ] Dedicated CSRF token flow for any future embedded or cross-origin clients
 - [ ] Product catalog and PDP implementation
 - [ ] Admin CRUD workflows
 - [ ] Server-side notifications and third-party integrations
 
 ## Recommended Next Prompt
 
-Proceed with **Prompt 2.5 — Redis-backed rate limiting** to replace the current in-memory limiter before any production deployment.
+Proceed with the next product-facing module or the remaining auth hardening items (for example email verification or password-reset delivery) on top of this security baseline.
