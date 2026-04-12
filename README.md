@@ -4,7 +4,7 @@ Production-ready foundation for a **single-vendor e-commerce app** built with **
 
 ## Current Status
 
-This repository now covers **Phase 3 / Prompt 3.1** foundation work:
+This repository now covers **Phase 4 / Prompt 4.1** including cart foundations:
 
 - polished storefront and admin shell placeholders
 - system-aware theme switching with light and dark support
@@ -13,12 +13,16 @@ This repository now covers **Phase 3 / Prompt 3.1** foundation work:
 - shared frontend toast/notification support via `sonner`
 - storefront primary navigation with responsive header and mobile nav
 - footer sections for company links, policies, and newsletter placeholder
-- static placeholder pages for company and policy routes
+- live cart system with guest + authenticated continuity
+- add-to-cart, update quantity, remove item flows through `/api/cart`
+- guest cart token persistence and guest-to-auth cart merge behavior
+- cart page and header mini-cart with loading/empty/error states
+- stock-aware cart validation through `/api/cart/validate`
 - Prisma schema and migration foundation for the initial commerce domain
 - server-side database access conventions in `src/server/db` for repositories, services, transactions, and pagination
 - smoke and unit tests covering UI, config, schema validation, and new data-layer helpers
 
-> Business features remain intentionally deferred to later prompts.
+> Catalog and cart foundations are now live; checkout/payment and richer admin workflows remain deferred.
 
 ## Tech Stack
 
@@ -80,6 +84,7 @@ tests           Smoke tests for scaffold and config behavior
 - `docs/dev/architecture.md`
 - `docs/dev/search-architecture.md`
 - `docs/dev/database-access.md`
+- `docs/dev/cart.md`
 - `docs/dev/ui-conventions.md`
 
 ## Next Recommended Step

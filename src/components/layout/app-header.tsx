@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { Heart, Search, ShoppingCart, Store, User } from "lucide-react";
+import { Heart, Search, Store, User } from "lucide-react";
 
 import { routes } from "@/config/routes";
 import { siteConfig } from "@/config/site";
+import { CartMiniCart } from "@/features/cart/components/cart-mini-cart";
 
 import { ThemeToggle } from "../theme-toggle";
 import { buttonVariants } from "../ui/button";
@@ -68,13 +69,7 @@ export function AppHeader() {
               <Heart className="size-4" aria-hidden="true" />
               Wishlist
             </Link>
-            <Link
-              href={routes.storefront.cart}
-              className={buttonVariants({ variant: "outline", size: "sm" })}
-            >
-              <ShoppingCart className="size-4" aria-hidden="true" />
-              Cart
-            </Link>
+            <CartMiniCart />
             <ThemeToggle />
           </div>
         </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { WishlistToggleButton } from "@/features/wishlist/components/wishlist-toggle-button";
 
@@ -50,10 +50,6 @@ export function ProductPanel({ product, initialWishlistedSkus = [] }: ProductPan
     buildDefaultSelections(product),
   );
 
-  useEffect(() => {
-    setSelectedOptionIds(buildDefaultSelections(product));
-  }, [product.id]);
-
   const activeOption = resolveActiveOption(product, selectedOptionIds);
 
   const effectivePrice = activeOption?.price ?? product.price;
@@ -88,7 +84,12 @@ export function ProductPanel({ product, initialWishlistedSkus = [] }: ProductPan
       ) : null}
 
       <div className="border-t border-border/50 pt-5">
-        <ProductAddToCart productName={product.name} isAvailable={effectiveInventory > 0} />
+        <ProductAddToCart
+          productSlug={product.slug}
+          {...(effectiveOptionId ? { optionId: effectiveOptionId } : {})}
+          productName={product.name}
+          isAvailable={effectiveInventory > 0}
+        />
       </div>
 
       <WishlistToggleButton

@@ -6,11 +6,13 @@ import { Button } from "@/components/ui/button";
 import { notify } from "@/lib/notify";
 
 type ProductAddToCartProps = {
+  productSlug: string;
+  optionId?: string | undefined;
   productName: string;
   isAvailable: boolean;
 };
 
-export function ProductAddToCart({ productName, isAvailable }: ProductAddToCartProps) {
+export function ProductAddToCart({ productSlug, optionId, productName, isAvailable }: ProductAddToCartProps) {
   const [pending, setPending] = useState(false);
 
   async function handleAddToCart() {
@@ -18,11 +20,31 @@ export function ProductAddToCart({ productName, isAvailable }: ProductAddToCartP
 
     setPending(true);
 
-    // Stub: simulate async cart mutation
-    await new Promise<void>((resolve) => setTimeout(resolve, 600));
+    try {
+      const response = await fetch("/api/cart", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          productSlug,
+          ...(optionId ? { optionId } : {}),
+          quantity: 1,
+        }),
+      });
 
-    notify.success(`${productName} added to cart`);
-    setPending(false);
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(payload?.error ?? "Could not add item to cart.");
+      }
+
+      window.dispatchEvent(new CustomEvent("cart:changed"));
+      notify.success(`${productName} added to cart`, "Cart updated.");
+    } catch (error) {
+      notify.error("Could not add to cart", error instanceof Error ? error.message : undefined);
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
