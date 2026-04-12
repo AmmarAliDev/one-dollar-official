@@ -67,7 +67,7 @@ export default function AdminPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="rounded-[var(--radius)] border border-border/70 bg-muted/35 p-4">
+            <div className="rounded-(--radius) border border-border/70 bg-muted/35 p-4">
               <p className="text-muted-foreground text-sm">Revenue placeholder</p>
               <PriceDisplay amount={0} />
             </div>
