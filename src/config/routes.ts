@@ -4,6 +4,7 @@ export const routes = {
     categories: "/categories",
     category: (slug: string) => `/categories/${slug}`,
     preview: "/preview",
+    product: (categorySlug: string, productSlug: string) => `/categories/${categorySlug}/${productSlug}`,
     search: "/search",
     account: "/account",
     wishlist: "/wishlist",

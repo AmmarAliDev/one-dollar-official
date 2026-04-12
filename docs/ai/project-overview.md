@@ -10,7 +10,7 @@
 
 ## Current Phase
 
-This repository currently implements **Prompt 3.3 — category listing and product grid** on top of the previously completed storefront shell, homepage foundation, auth, RBAC, and security baseline.
+This repository currently implements **Prompt 3.4 — product detail page (PDP)** on top of the previously completed storefront shell, homepage foundation, auth, RBAC, security baseline, and category listing.
 
 ### Included now
 
@@ -28,12 +28,16 @@ This repository currently implements **Prompt 3.3 — category listing and produ
 - homepage rendering through `src/features/homepage` with CMS-ready fallback sections
 - catalog listing routes at `/categories` and `/categories/[slug]` backed by `src/features/catalog`
 - typed filter parsing, basic sorting, and pagination contracts ready to swap from fallback data to Prisma-backed catalog queries later
+- product detail routes at `/categories/[slug]/[productSlug]` with static params, metadata generation, and seeded fallback product detail contracts
+- PDP feature components for image gallery, variant selection UX, product info panel, specifications, review summary/list, related products, and structured skeleton loading state
+- catalog product cards now link to PDP routes and related-product cards reuse the same route contracts
 - helper tests covering pagination, query results, transaction helpers, safe Prisma singleton reuse, and storefront catalog filtering
+- helper tests now also cover PDP service retrieval and related-product behavior
 - updated AI and developer docs for UI conventions and future continuity
 
 ### Intentionally deferred
 
-- product detail pages, cart, checkout, and payments
+- cart, checkout, and payments
 - live Prisma-backed catalog persistence and admin catalog CRUD
 - analytics and notifications beyond shared frontend toasts
 - CMS persistence beyond the current homepage fallback scaffolds

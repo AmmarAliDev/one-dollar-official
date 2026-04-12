@@ -1,10 +1,10 @@
 import { routes } from "@/config/routes";
 import { createPaginatedResult } from "@/server/db/pagination";
 
-import { catalogCategorySeeds, catalogProductSeeds } from "./data";
+import { catalogCategorySeeds, catalogProductDetailSeeds, catalogProductSeeds } from "./data";
 import type { CatalogSearchParams } from "./filters";
 import { parseCatalogSearchParams } from "./filters";
-import type { CatalogCategory, CatalogCategoryListing, CatalogProductCard } from "./types";
+import type { CatalogCategory, CatalogCategoryListing, CatalogProductCard, CatalogProductDetail } from "./types";
 
 type CategoryListingInput = {
   slug: string;
@@ -26,6 +26,13 @@ function mapCategory(seed: (typeof catalogCategorySeeds)[number]): CatalogCatego
     ...seed,
     productCount,
     href: routes.storefront.category(seed.slug),
+  };
+}
+
+function mapProduct(seed: (typeof catalogProductSeeds)[number]): CatalogProductCard {
+  return {
+    ...seed,
+    href: routes.storefront.product(seed.categorySlug, seed.slug),
   };
 }
 
@@ -128,10 +135,49 @@ export async function getCatalogCategoryListing({ slug, searchParams }: Category
 
   return {
     category,
-    products: paginatedResult.items,
+    products: paginatedResult.items.map(mapProduct),
     filteredProductCount: filteredProducts.length,
     totalProductCount: categoryProducts.length,
     filters,
     pagination: paginatedResult.meta,
   };
+}
+
+export async function getProductBySlug(slug: string): Promise<CatalogProductDetail | null> {
+  const seed = catalogProductSeeds.find((p) => p.slug === slug);
+
+  if (!seed) {
+    return null;
+  }
+
+  const detail = catalogProductDetailSeeds[slug];
+
+  if (!detail) {
+    return null;
+  }
+
+  const card = mapProduct(seed);
+
+  return {
+    ...card,
+    sku: detail.sku,
+    shortDescription: detail.shortDescription,
+    longDescription: detail.longDescription,
+    images: detail.images,
+    specifications: detail.specifications,
+    variantGroups: detail.variantGroups,
+    reviews: detail.reviews,
+    reviewSummary: detail.reviewSummary,
+  };
+}
+
+export async function getRelatedProducts(categorySlug: string, excludeSlug: string): Promise<CatalogProductCard[]> {
+  return catalogProductSeeds
+    .filter((p) => p.categorySlug === categorySlug && p.slug !== excludeSlug)
+    .slice(0, 4)
+    .map(mapProduct);
+}
+
+export async function getProductSlugsWithCategory(): Promise<{ slug: string; categorySlug: string }[]> {
+  return catalogProductSeeds.map((p) => ({ slug: p.slug, categorySlug: p.categorySlug }));
 }

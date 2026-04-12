@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-**Phase 3 / Prompt 3.3 — Category listing and product grid**
+**Phase 3 / Prompt 3.4 — Product detail page (PDP)**
 
 ## Completed
 
@@ -73,6 +73,15 @@
 - [x] Category listing pages now include loading, empty, sorting, filtering, and pagination states
 - [x] Storefront navigation and homepage fallback links now point to category listing routes
 - [x] Catalog-focused tests added for filter parsing, listing behavior, and storefront route coverage
+- [x] Product detail routes added at `/categories/[slug]/[productSlug]` with static params and SEO metadata
+- [x] PDP now includes a multi-image gallery, product info block (title, price, compare-at, stock, SKU, short description), and add-to-cart interaction stub
+- [x] Variant selection UX added for variant-enabled products with dynamic price/SKU/stock state updates
+- [x] Specifications and reviews sections added with seeded fallback detail data
+- [x] Related products section added with same-category recommendations excluding the current product
+- [x] PDP loading state added through `ProductDetailSkeleton`
+- [x] Product cards now link directly to PDP routes
+- [x] Catalog service now exposes product detail and related-product helpers
+- [x] PDP service tests added for rendering prerequisites, variant availability data, and related-product behavior
 
 ## Deferred by design
 
@@ -80,10 +89,10 @@
 - [ ] Email verification for credentials accounts
 - [ ] Nonce-based CSP hardening once all inline/script requirements are audited
 - [ ] Dedicated CSRF token flow for any future embedded or cross-origin clients
-- [ ] Product detail pages and live catalog persistence beyond the fallback listing dataset
+- [ ] Live catalog persistence beyond the fallback listing dataset
 - [ ] Admin CRUD workflows
 - [ ] Server-side notifications and third-party integrations
 
 ## Recommended Next Prompt
 
-Proceed with **Phase 3 / Prompt 3.4 — Product details page**.
+Proceed with **Phase 3 / Prompt 3.5 — cart foundations and server-backed cart state**.

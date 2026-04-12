@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { PriceDisplay } from "@/components/ui/price-display";
@@ -29,14 +31,18 @@ function getReviewSummary(product: CatalogProductCard) {
     return "No reviews yet";
   }
 
-  return `${product.averageRating.toFixed(1)} average rating · ${product.reviewCount} ${product.reviewCount === 1 ? "review" : "reviews"}`;
+  return `${product.averageRating.toFixed(1)} average rating | ${product.reviewCount} ${product.reviewCount === 1 ? "review" : "reviews"}`;
 }
 
 export function ProductGridCard({ product }: { product: CatalogProductCard }) {
   const stockBadge = getInventoryBadge(product.inventoryQuantity);
 
   return (
-    <Card className="overflow-hidden border-border/70 shadow-[var(--shadow-soft)]">
+    <Link
+      href={product.href}
+      className="group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-[var(--radius-card)]"
+    >
+    <Card className="overflow-hidden border-border/70 shadow-[var(--shadow-soft)] transition-shadow group-hover:shadow-md">
       <div
         role="img"
         aria-label={`${product.name} image placeholder`}
@@ -47,7 +53,7 @@ export function ProductGridCard({ product }: { product: CatalogProductCard }) {
           <p className="mt-2 text-lg font-semibold tracking-tight">{product.imageLabel}</p>
         </div>
         <Badge variant="secondary" className="bg-white/80 text-slate-900">
-          {product.attributeSummary.join(" · ")}
+          {product.attributeSummary.join(" | ")}
         </Badge>
       </div>
 
@@ -59,7 +65,7 @@ export function ProductGridCard({ product }: { product: CatalogProductCard }) {
               <Badge variant="info">Discount available</Badge>
             ) : null}
           </div>
-          <h3 className="text-lg font-semibold tracking-tight">{product.name}</h3>
+          <h3 className="text-lg font-semibold tracking-tight group-hover:text-primary transition-colors">{product.name}</h3>
           <p className="text-muted-foreground text-sm">{product.description}</p>
         </div>
 
@@ -75,5 +81,6 @@ export function ProductGridCard({ product }: { product: CatalogProductCard }) {
         </div>
       </CardContent>
     </Card>
+    </Link>
   );
 }
