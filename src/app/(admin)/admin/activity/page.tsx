@@ -8,9 +8,8 @@ import {
 export const metadata = buildMetadata({
   title: "Admin Activity",
   path: "/admin/activity",
-  description: "Recent activity placeholder using the shared admin list pattern.",
+  description: "View recent team and system activity.",
 });
-
 export default function AdminActivityPage() {
   return (
     <PageShell className="gap-8">
