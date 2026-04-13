@@ -1,110 +1,132 @@
-import { Boxes, FileSliders, PackageSearch, ShoppingBag } from "lucide-react";
+import Link from "next/link";
+import { AlertTriangle, ClipboardList, DollarSign, History, PackageOpen } from "lucide-react";
 
 import { PageShell } from "@/components/layout/page-shell";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { EmptyState } from "@/components/ui/empty-state";
-import { PriceDisplay } from "@/components/ui/price-display";
-import { SectionHeader } from "@/components/ui/section-header";
+import { buttonVariants } from "@/components/ui/button";
 import { buildMetadata } from "@/config/metadata";
+import { routes } from "@/config/routes";
+import {
+  AdminListPattern,
+  AdminPageHeader,
+  AdminTablePattern,
+} from "@/features/admin/components/admin-page-patterns";
 
 export const metadata = buildMetadata({
-  title: "Admin Placeholder",
+  title: "Admin Dashboard",
   path: "/admin",
-  description: "Starter admin surface for future catalog, order, and content management modules.",
+  description: "Simple operations dashboard shell with role-aware navigation and placeholder metrics.",
 });
 
 const adminCards = [
   {
-    title: "Orders queue",
-    value: "0 waiting",
-    description: "Status cards and workflows will plug into this shell later.",
+    title: "Orders",
+    value: "0 pending",
+    description: "New and active orders waiting for your review.",
+    icon: ClipboardList,
+    href: routes.admin.orders,
   },
   {
-    title: "Revenue placeholder",
+    title: "Revenue (placeholder)",
     value: "PKR 0",
-    description: "Real reporting stays deferred until order data exists.",
+    description: "Revenue reporting panel will connect to live sales later.",
+    icon: DollarSign,
+    href: routes.admin.revenue,
   },
   {
-    title: "Content readiness",
-    value: "Preview only",
-    description: "Homepage and SEO controls will reuse the same admin shell.",
+    title: "Low Stock (placeholder)",
+    value: "0 items",
+    description: "Inventory alerts help non-technical operators restock early.",
+    icon: AlertTriangle,
+    href: routes.admin.inventory,
+  },
+  {
+    title: "Recent Activity",
+    value: "No new events",
+    description: "Recent changes and staff actions appear in one simple feed.",
+    icon: History,
+    href: routes.admin.activity,
   },
 ];
 
 export default function AdminPage() {
   return (
     <PageShell className="gap-8">
-      <SectionHeader
-        eyebrow="Admin foundation"
-        title="Operations dashboard placeholder"
-        description="The admin shell is now protected by the RBAC foundation and ready for future catalog, order, and content workflows."
+      <AdminPageHeader
+        eyebrow="Admin dashboard"
+        title="Store operations at a glance"
+        description="Use this simple panel to review daily workload, revenue placeholders, inventory health, and recent activity in one place."
+        actions={
+          <Link href={routes.admin.orders} className={buttonVariants({ variant: "outline", size: "sm" })}>
+            Open orders board
+          </Link>
+        }
       />
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {adminCards.map((card) => (
           <Card key={card.title}>
             <CardHeader>
-              <CardDescription>{card.title}</CardDescription>
+              <div className="flex items-center justify-between">
+                <CardDescription>{card.title}</CardDescription>
+                <card.icon className="text-muted-foreground size-4" />
+              </div>
               <CardTitle>{card.value}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground text-sm">{card.description}</p>
+              <Link
+                href={card.href}
+                className="text-primary mt-3 inline-flex text-sm font-medium hover:underline"
+              >
+                View details
+              </Link>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      <section id="orders" className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-        <Card>
-          <CardHeader>
-            <Badge variant="secondary" className="w-fit">
-              Fulfillment preview
-            </Badge>
-            <CardTitle>Revenue and order summaries can slot in here later.</CardTitle>
-            <CardDescription>
-              The shell is intentionally data-free for now, but the layout pattern is ready.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="rounded-(--radius) border border-border/70 bg-muted/35 p-4">
-              <p className="text-muted-foreground text-sm">Revenue placeholder</p>
-              <PriceDisplay amount={0} />
-            </div>
-          </CardContent>
-        </Card>
-
-        <EmptyState
-          icon={ShoppingBag}
-          title="No live orders yet"
-          description="Order intake, packing workflows, and audit logging remain deferred until the data and auth layers are added."
-        />
-      </section>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        <section id="catalog">
-          <EmptyState
-            icon={Boxes}
-            title="Catalog tools are reserved"
-            description="Product, category, and inventory forms will plug into this panel in later prompts."
-          />
+      <div className="grid gap-4 xl:grid-cols-2">
+        <section>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <PackageOpen className="size-4" />
+                Orders table pattern
+              </CardTitle>
+              <CardDescription>Consistent table placeholder pattern for order and inventory pages.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AdminTablePattern
+                state="empty"
+                emptyTitle="No orders in queue"
+                emptyDescription="New orders will appear here when customers complete checkout."
+                errorDescription="Order records could not be loaded right now."
+              />
+            </CardContent>
+          </Card>
         </section>
-        <section id="content">
-          <EmptyState
-            icon={FileSliders}
-            title="Content controls are reserved"
-            description="Homepage sections, banners, and SEO controls will reuse the same layout and state primitives."
-          />
+
+        <section>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <History className="size-4" />
+                Activity list pattern
+              </CardTitle>
+              <CardDescription>Consistent list placeholder pattern for logs and timeline modules.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AdminListPattern
+                state="empty"
+                emptyTitle="No recent activity"
+                emptyDescription="Staff and system events will appear here once activity tracking starts."
+                errorDescription="Activity records could not be loaded right now."
+              />
+            </CardContent>
+          </Card>
         </section>
       </div>
-
-      <section id="search">
-        <EmptyState
-          icon={PackageSearch}
-          title="Search and data tables are still pending"
-          description="This admin step adds the visual shell only, not real table logic or database-backed operations."
-        />
-      </section>
     </PageShell>
   );
 }

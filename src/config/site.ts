@@ -39,24 +39,34 @@ export const storefrontNav: NavItem[] = [
 
 export const adminNav: NavItem[] = [
   {
-    title: "Overview",
+    title: "Dashboard",
     href: routes.admin.dashboard,
-    description: "Dashboard and daily ops snapshot.",
-  },
-  {
-    title: "Catalog",
-    href: `${routes.admin.dashboard}#catalog`,
-    description: "Product and inventory tools placeholder.",
+    description: "Daily operations summary and quick actions.",
   },
   {
     title: "Orders",
-    href: `${routes.admin.dashboard}#orders`,
-    description: "Fulfillment and status workflow placeholder.",
+    href: routes.admin.orders,
+    description: "Order queue and fulfillment placeholder.",
   },
   {
-    title: "Content",
-    href: `${routes.admin.dashboard}#content`,
-    description: "Homepage and SEO controls placeholder.",
+    title: "Revenue",
+    href: routes.admin.revenue,
+    description: "Revenue summary and trends placeholder.",
+  },
+  {
+    title: "Inventory",
+    href: routes.admin.inventory,
+    description: "Low-stock and catalog health placeholder.",
+  },
+  {
+    title: "Activity",
+    href: routes.admin.activity,
+    description: "Recent staff and system activity placeholder.",
+  },
+  {
+    title: "Settings",
+    href: routes.admin.settings,
+    description: "Admin preferences and access controls placeholder.",
   },
 ];
 

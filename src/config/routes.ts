@@ -26,6 +26,11 @@ export const routes = {
   },
   admin: {
     dashboard: "/admin",
+    orders: "/admin/orders",
+    revenue: "/admin/revenue",
+    inventory: "/admin/inventory",
+    activity: "/admin/activity",
+    settings: "/admin/settings",
   },
   auth: {
     signIn: "/auth/sign-in",

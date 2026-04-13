@@ -5,7 +5,11 @@ import { routes } from "@/config/routes";
 import { requireAdminAccess } from "@/lib/auth/guards";
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
-  await requireAdminAccess({ from: routes.admin.dashboard });
+  const { role, session } = await requireAdminAccess({ from: routes.admin.dashboard });
 
-  return <AdminShell>{children}</AdminShell>;
+  return (
+    <AdminShell role={role} user={session.user}>
+      {children}
+    </AdminShell>
+  );
 }
