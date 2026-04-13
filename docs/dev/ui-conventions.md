@@ -45,6 +45,19 @@
 - Use the shared empty and loading primitives for listing states instead of bespoke skeleton or empty-state markup.
 - Treat variant-aware attributes as an additive scaffold for now; future implementation should extend the current filter contract instead of replacing it.
 
+## Admin UX Conventions
+
+- Keep admin copy plain-language and operational (for example: "Order queue" or "Low stock overview") so non-technical operators can understand screens quickly.
+- Admin routes should use one shared shell with four predictable surfaces: sidebar navigation, topbar, breadcrumb, and user menu.
+- Sidebar navigation must be role-aware. Only show destinations the signed-in role can access, instead of showing disabled or dead-end links.
+- Every admin page should start with the shared page header pattern (`AdminPageHeader`) for consistent title, summary, and optional actions.
+- Use `AdminTablePattern` for record-first screens (orders, inventory) and `AdminListPattern` for timeline/log-first screens (activity, summaries).
+- Prefer explicit empty/loading/error states over blank placeholders:
+	- Empty: `EmptyState`
+	- Loading: `LoadingState` + `TableSkeleton` where tabular data is expected
+	- Error: `PageErrorFallback` for route-level failures and `SectionErrorState` for module-level failures
+- Keep admin actions discoverable in the top-right area (theme toggle, storefront shortcut, user menu) and avoid hidden critical controls.
+
 ## Deferred Items
 
 - Product detail pages, cart interactions, and auth forms are intentionally deferred.
