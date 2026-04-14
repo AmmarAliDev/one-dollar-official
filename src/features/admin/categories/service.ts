@@ -1,0 +1,342 @@
+import { Prisma } from "@prisma/client";
+
+import { AppError } from "@/lib/errors/app-error";
+import { getPrismaClient } from "@/server/db";
+
+import type { CategoryCreateInput, CategoryUpdateInput } from "./validation";
+
+type AuditActorInput = {
+  actorId: string;
+  actorRole?: string | null;
+};
+
+export type AdminCategoryListFilters = {
+  query?: string;
+  status?: "ALL" | "DRAFT" | "PUBLISHED" | "ARCHIVED";
+};
+
+export type AdminCategoryRecord = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+  seoTitle: string | null;
+  seoDescription: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+function isKnownStatus(value: string | undefined): value is "DRAFT" | "PUBLISHED" | "ARCHIVED" {
+  return value === "DRAFT" || value === "PUBLISHED" || value === "ARCHIVED";
+}
+
+function buildSlugError(error: unknown): AppError | null {
+  if (!(error instanceof Prisma.PrismaClientKnownRequestError)) {
+    return null;
+  }
+
+  if (error.code !== "P2002") {
+    return null;
+  }
+
+  return new AppError("Category slug must be unique.", "CATEGORY_SLUG_TAKEN", {
+    statusCode: 409,
+    userMessage: "This slug is already used by another category.",
+  });
+}
+
+async function writeCategoryAuditLog(input: {
+  action: "category.created" | "category.updated" | "category.deleted";
+  actor: AuditActorInput;
+  categoryId: string;
+  changes: Record<string, unknown>;
+}) {
+  const db = getPrismaClient();
+
+  await db.auditLog.create({
+    data: {
+      actorId: input.actor.actorId,
+      action: input.action,
+      model: "Category",
+      modelId: input.categoryId,
+      changes: {
+        actorRole: input.actor.actorRole ?? null,
+        ...input.changes,
+      },
+    },
+  });
+}
+
+export async function listAdminCategories(filters: AdminCategoryListFilters = {}): Promise<AdminCategoryRecord[]> {
+  const db = getPrismaClient();
+  const query = filters.query?.trim();
+  const status = isKnownStatus(filters.status) ? filters.status : undefined;
+
+  return db.category.findMany({
+    where: {
+      ...(status ? { status } : {}),
+      ...(query
+        ? {
+            OR: [
+              {
+                name: {
+                  contains: query,
+                  mode: "insensitive",
+                },
+              },
+              {
+                slug: {
+                  contains: query,
+                  mode: "insensitive",
+                },
+              },
+              {
+                description: {
+                  contains: query,
+                  mode: "insensitive",
+                },
+              },
+            ],
+          }
+        : {}),
+    },
+    orderBy: [{ updatedAt: "desc" }, { name: "asc" }],
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      description: true,
+      status: true,
+      seoTitle: true,
+      seoDescription: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+}
+
+export async function getAdminCategoryById(categoryId: string): Promise<AdminCategoryRecord | null> {
+  const db = getPrismaClient();
+
+  return db.category.findUnique({
+    where: { id: categoryId },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      description: true,
+      status: true,
+      seoTitle: true,
+      seoDescription: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+}
+
+export async function createAdminCategory(input: {
+  data: CategoryCreateInput;
+  actor: AuditActorInput;
+}): Promise<AdminCategoryRecord> {
+  const db = getPrismaClient();
+  const createData: Prisma.CategoryUncheckedCreateInput = {
+    name: input.data.name,
+    slug: input.data.slug,
+    description: input.data.description ?? null,
+    status: input.data.status,
+    seoTitle: input.data.seoTitle ?? null,
+    seoDescription: input.data.seoDescription ?? null,
+    parentId: null,
+  };
+
+  try {
+    const created = await db.category.create({
+      data: createData,
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        status: true,
+        seoTitle: true,
+        seoDescription: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    await writeCategoryAuditLog({
+      action: "category.created",
+      actor: input.actor,
+      categoryId: created.id,
+      changes: {
+        after: {
+          name: created.name,
+          slug: created.slug,
+          status: created.status,
+        },
+      },
+    });
+
+    return created;
+  } catch (error) {
+    const slugError = buildSlugError(error);
+
+    if (slugError) {
+      throw slugError;
+    }
+
+    throw error;
+  }
+}
+
+export async function updateAdminCategory(input: {
+  data: CategoryUpdateInput;
+  actor: AuditActorInput;
+}): Promise<AdminCategoryRecord> {
+  const db = getPrismaClient();
+  const updateData: Prisma.CategoryUncheckedUpdateInput = {
+    name: input.data.name,
+    slug: input.data.slug,
+    description: input.data.description ?? null,
+    status: input.data.status,
+    seoTitle: input.data.seoTitle ?? null,
+    seoDescription: input.data.seoDescription ?? null,
+    parentId: null,
+  };
+
+  const previous = await db.category.findUnique({
+    where: { id: input.data.id },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      status: true,
+      seoTitle: true,
+      seoDescription: true,
+      description: true,
+      updatedAt: true,
+      createdAt: true,
+    },
+  });
+
+  if (!previous) {
+    throw new AppError("Category not found.", "CATEGORY_NOT_FOUND", {
+      statusCode: 404,
+      userMessage: "The selected category no longer exists.",
+    });
+  }
+
+  try {
+    const updated = await db.category.update({
+      where: { id: input.data.id },
+      data: updateData,
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        status: true,
+        seoTitle: true,
+        seoDescription: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    await writeCategoryAuditLog({
+      action: "category.updated",
+      actor: input.actor,
+      categoryId: updated.id,
+      changes: {
+        before: {
+          name: previous.name,
+          slug: previous.slug,
+          status: previous.status,
+        },
+        after: {
+          name: updated.name,
+          slug: updated.slug,
+          status: updated.status,
+        },
+      },
+    });
+
+    return updated;
+  } catch (error) {
+    const slugError = buildSlugError(error);
+
+    if (slugError) {
+      throw slugError;
+    }
+
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      throw new AppError("Category not found during update.", "CATEGORY_NOT_FOUND", {
+        statusCode: 404,
+        userMessage: "The selected category no longer exists.",
+      });
+    }
+
+    throw error;
+  }
+}
+
+export async function deleteAdminCategory(input: {
+  categoryId: string;
+  actor: AuditActorInput;
+}) {
+  const db = getPrismaClient();
+
+  const category = await db.category.findUnique({
+    where: { id: input.categoryId },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      status: true,
+      description: true,
+      seoTitle: true,
+      seoDescription: true,
+    },
+  });
+
+  if (!category) {
+    throw new AppError("Category not found.", "CATEGORY_NOT_FOUND", {
+      statusCode: 404,
+      userMessage: "The selected category no longer exists.",
+    });
+  }
+
+  const productCount = await db.product.count({
+    where: {
+      categoryId: category.id,
+    },
+  });
+
+  if (productCount > 0) {
+    throw new AppError("Cannot delete category with attached products.", "CATEGORY_HAS_PRODUCTS", {
+      statusCode: 409,
+      userMessage: "Move products out of this category before deleting it.",
+    });
+  }
+
+  await db.category.delete({
+    where: {
+      id: category.id,
+    },
+  });
+
+  await writeCategoryAuditLog({
+    action: "category.deleted",
+    actor: input.actor,
+    categoryId: category.id,
+    changes: {
+      before: {
+        name: category.name,
+        slug: category.slug,
+        status: category.status,
+      },
+    },
+  });
+}

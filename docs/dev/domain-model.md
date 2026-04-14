@@ -14,7 +14,7 @@ Key entities
 - `Role` — authoritative role records. `permissions` is a flexible JSON blob for feature flags and fine-grained permissions.
 - `Account` / `Session` — NextAuth-compatible tables are included to make integration straightforward.
 - `Address` — user addresses. Orders use `OrderAddress` snapshots so address changes do not mutate historic orders.
-- `Category` — hierarchical categories with `parentId` support and SEO fields.
+- `Category` — currently managed as simple categories in admin (no parent assignment), with `name`, `slug`, `description`, `status`, and SEO fields.
 - `Product` — product master record (sku, slug, seo, metadata). `Product` -> `ProductVariant` is a 1:N relationship.
 - `ProductVariant` — SKU-level inventory, pricing, options JSON (color/size). `Inventory` is required per variant.
  - `Product` — product master record. Uses an optional `masterSku`/`product_code` as a parent identifier; it is a catalog-level record that groups variants and carries shared SEO/metadata.

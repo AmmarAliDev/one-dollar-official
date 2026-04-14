@@ -28,7 +28,9 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `(storefront)/categories/[slug]/[productSlug]` now provides PDP rendering with gallery, variant interactions, specifications, reviews, and related products
 - `(storefront)/wishlist` now renders authenticated wishlist entries and guest sign-in prompts
 - `(storefront)/account/*` now provides customer account routes for profile, addresses, order history, order detail, and reviews
+- `(storefront)` header now includes a customer signout action when authenticated, and account profile also exposes signout directly
 - `(admin)` now uses `AdminShell` with a responsive sidebar, topbar, breadcrumb, and user menu, plus role-aware navigation filtering protected by the RBAC proxy/layout guards
+- `(admin)/admin/categories` now provides simple category CRUD with search/filter and SEO field controls
 - `(auth)` reserves sign-in and account entry points
 
 ## UI Foundation Strategy

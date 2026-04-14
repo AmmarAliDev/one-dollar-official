@@ -64,11 +64,14 @@ async function main() {
   try {
     await prisma.category.upsert({
       where: { slug: 'uncategorized' },
-      update: {},
+      update: {
+        status: 'PUBLISHED',
+      },
       create: {
         name: 'Uncategorized',
         slug: 'uncategorized',
         description: 'Default category',
+        status: 'PUBLISHED',
       },
     });
     console.log('Ensured default category: uncategorized');

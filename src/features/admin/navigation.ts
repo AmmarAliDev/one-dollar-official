@@ -17,6 +17,12 @@ export const adminNavigationItems: readonly AdminNavigationItem[] = [
     description: "Overview of daily operations and shortcuts.",
   },
   {
+    label: "Categories",
+    href: routes.admin.categories,
+    description: "Create and maintain storefront category taxonomy.",
+    requiredPermission: rbacPermissions.catalogRead,
+  },
+  {
     label: "Orders",
     href: routes.admin.orders,
     description: "Track order intake and fulfillment status.",

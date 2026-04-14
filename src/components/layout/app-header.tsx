@@ -1,6 +1,7 @@
+import { Heart, Search, Store } from "lucide-react";
 import Link from "next/link";
-import { Heart, Search, Store, User } from "lucide-react";
 
+import { auth } from "@/auth";
 import { routes } from "@/config/routes";
 import { siteConfig } from "@/config/site";
 import { CartMiniCart } from "@/features/cart/components/cart-mini-cart";
@@ -9,8 +10,12 @@ import { ThemeToggle } from "../theme-toggle";
 import { buttonVariants } from "../ui/button";
 import { PageContainer } from "../ui/page-container";
 import { StorefrontMobileNav } from "./storefront-mobile-nav";
+import UserMenu from "./user-menu";
 
-export function AppHeader() {
+export async function AppHeader() {
+  const session = await auth();
+  const isSignedIn = Boolean(session?.user?.id);
+
   return (
     <header className="border-border/70 bg-background/95 sticky top-0 z-40 border-b backdrop-blur">
       <a
@@ -43,6 +48,7 @@ export function AppHeader() {
               accountHref={routes.storefront.account}
               wishlistHref={routes.storefront.wishlist}
               cartHref={routes.storefront.cart}
+              isSignedIn={isSignedIn}
             />
           </div>
 
@@ -56,13 +62,6 @@ export function AppHeader() {
               Search
             </Link>
             <Link
-              href={routes.storefront.account}
-              className={buttonVariants({ variant: "outline", size: "sm" })}
-            >
-              <User className="size-4" aria-hidden="true" />
-              Account
-            </Link>
-            <Link
               href={routes.storefront.wishlist}
               className={buttonVariants({ variant: "outline", size: "sm" })}
             >
@@ -71,19 +70,20 @@ export function AppHeader() {
             </Link>
             <CartMiniCart />
             <ThemeToggle />
+            <UserMenu isSignedIn={isSignedIn} />
           </div>
         </div>
 
         <nav aria-label="Storefront" className="hidden gap-1 overflow-x-auto pb-1 md:flex">
-            {siteConfig.storefrontNav.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="text-muted-foreground hover:bg-accent hover:text-foreground rounded-full px-3 py-2 text-sm transition-colors"
-              >
-                {item.title}
-              </Link>
-            ))}
+          {siteConfig.storefrontNav.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="text-muted-foreground hover:bg-accent hover:text-foreground rounded-full px-3 py-2 text-sm transition-colors"
+            >
+              {item.title}
+            </Link>
+          ))}
         </nav>
       </PageContainer>
     </header>
