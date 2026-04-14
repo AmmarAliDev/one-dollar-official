@@ -1,7 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import type { Prisma } from "@prisma/client";
-import { Currency, ProductStatus } from "@prisma/client";
+import { Currency, Prisma, ProductStatus } from "@prisma/client";
 
 import { routes } from "@/config/routes";
 import { catalogCategorySeeds, catalogProductDetailSeeds, catalogProductSeeds } from "@/features/catalog/data";
@@ -79,6 +78,86 @@ function getAvailableInventoryQuantity(inventory: { quantity: number; reserved: 
 
 function generateCartToken() {
   return randomUUID().replace(/-/g, "");
+}
+
+function isCartTokenConflict(error: unknown) {
+  if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== "P2002") {
+    return false;
+  }
+
+  const rawTarget = error.meta?.target;
+  const targets = Array.isArray(rawTarget)
+    ? rawTarget.map((value) => `${value}`.toLowerCase())
+    : typeof rawTarget === "string"
+      ? [rawTarget.toLowerCase()]
+      : [];
+
+  return targets.some((target) => target.includes("token"));
+}
+
+async function createActiveCartWithUniqueToken(
+  input: {
+    userId?: string | null;
+  },
+  db: DatabaseExecutor,
+) {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      return await db.cart.create({
+        data: {
+          userId: input.userId ?? null,
+          token: generateCartToken(),
+          status: "ACTIVE",
+        },
+      });
+    } catch (error) {
+      if (isCartTokenConflict(error)) {
+        continue;
+      }
+
+      throw error;
+    }
+  }
+
+  throw new AppError("Unable to generate a unique cart token.", "CART_TOKEN_CONFLICT", {
+    statusCode: 500,
+    userMessage: "We could not create your cart right now. Please try again.",
+  });
+}
+
+async function ensureCartHasUniqueToken(cartId: string, db: DatabaseExecutor) {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      return await db.cart.update({
+        where: { id: cartId },
+        data: {
+          token: generateCartToken(),
+        },
+      });
+    } catch (error) {
+      if (isCartTokenConflict(error)) {
+        continue;
+      }
+
+      throw error;
+    }
+  }
+
+  throw new AppError("Unable to restore a cart token.", "CART_TOKEN_CONFLICT", {
+    statusCode: 500,
+    userMessage: "We could not restore your cart right now. Please try again.",
+  });
+}
+
+async function findCartByToken(token: string, db: DatabaseExecutor) {
+  return db.cart.findFirst({
+    where: {
+      token,
+    },
+    orderBy: {
+      updatedAt: "desc",
+    },
+  });
 }
 
 function toMissingProductError(slug: string) {
@@ -255,45 +334,42 @@ async function getOrCreateActiveCartForUser(userId: string, db: DatabaseExecutor
       return existing;
     }
 
-    return db.cart.update({
-      where: { id: existing.id },
-      data: {
-        token: generateCartToken(),
-      },
-    });
+    return ensureCartHasUniqueToken(existing.id, db);
   }
 
-  return db.cart.create({
-    data: {
-      userId,
-      token: generateCartToken(),
-      status: "ACTIVE",
-    },
-  });
+  return createActiveCartWithUniqueToken({ userId }, db);
 }
 
 async function getOrCreateActiveCartForGuest(token: string, db: DatabaseExecutor) {
-  const existing = await db.cart.findFirst({
-    where: {
-      token,
-      status: "ACTIVE",
-      userId: null,
-    },
-    orderBy: {
-      updatedAt: "desc",
-    },
-  });
+  const existing = await findCartByToken(token, db);
 
-  if (existing) {
+  if (existing?.status === "ACTIVE") {
     return existing;
   }
 
-  return db.cart.create({
-    data: {
-      token,
-      status: "ACTIVE",
-    },
-  });
+  if (existing) {
+    return createActiveCartWithUniqueToken({}, db);
+  }
+
+  try {
+    return await db.cart.create({
+      data: {
+        token,
+        status: "ACTIVE",
+      },
+    });
+  } catch (error) {
+    if (!isCartTokenConflict(error)) {
+      throw error;
+    }
+
+    const conflicted = await findCartByToken(token, db);
+    if (conflicted?.status === "ACTIVE") {
+      return conflicted;
+    }
+
+    return createActiveCartWithUniqueToken({}, db);
+  }
 }
 
 async function getCartWithItemsById(cartId: string, db: DatabaseExecutor) {
@@ -408,21 +484,18 @@ export async function getOrCreateGuestCartToken(inputToken?: string | undefined)
 
 export async function getCartSummaryForContext(input: ResolveCartContextInput): Promise<CartSummary | null> {
   const db = getPrismaClient();
+  const cartId = await resolveActiveCartId(input, db);
 
-  return runWithTransaction(async (transaction) => {
-    const cartId = await resolveActiveCartId(input, transaction);
+  if (!cartId) {
+    return null;
+  }
 
-    if (!cartId) {
-      return null;
-    }
+  const cart = await getCartWithItemsById(cartId, db);
+  if (!cart) {
+    return null;
+  }
 
-    const cart = await getCartWithItemsById(cartId, transaction);
-    if (!cart) {
-      return null;
-    }
-
-    return toCartSummary(cart);
-  }, db);
+  return toCartSummary(cart);
 }
 
 export async function mergeGuestCartIntoUserCart(
