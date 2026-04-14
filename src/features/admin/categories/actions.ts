@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { isRedirectError } from "next/dist/client/components/redirect-error";
 
 import { routes } from "@/config/routes";
 import { requireRouteAccess } from "@/lib/auth/guards";
@@ -9,15 +10,9 @@ import { rbacPermissions } from "@/lib/auth/rbac";
 import { captureServerError } from "@/lib/errors/handling";
 import { assertTrustedOrigin } from "@/lib/security/csrf";
 
-import {
-  createAdminCategory,
-  deleteAdminCategory,
-  updateAdminCategory,
-} from "./service";
-import {
-  validateCategoryCreateInput,
-  validateCategoryUpdateInput,
-} from "./validation";
+import { type CategoryErrorCode, getCategoryErrorCode } from "./flash";
+import { createAdminCategory, deleteAdminCategory, updateAdminCategory } from "./service";
+import { validateCategoryCreateInput, validateCategoryUpdateInput } from "./validation";
 
 function isSafeRelativePath(value: string) {
   const candidate = value.trim();
@@ -43,8 +38,8 @@ function getReturnTo(formData: FormData, fallbackPath: string) {
   return isSafeRelativePath(value) ? value.trim() : fallbackPath;
 }
 
-function appendFlash(path: string, key: "notice" | "error", message: string) {
-  const encoded = encodeURIComponent(message);
+function appendFlash(path: string, key: "notice" | "error", code: string) {
+  const encoded = encodeURIComponent(code);
   const separator = path.includes("?") ? "&" : "?";
 
   return `${path}${separator}${key}=${encoded}`;
@@ -82,7 +77,7 @@ export async function createAdminCategoryAction(formData: FormData) {
 
     const parsed = validateCategoryCreateInput(readCategoryPayload(formData));
     if (!parsed.success) {
-      redirect(appendFlash(returnTo, "error", parsed.errors[0] ?? "Invalid category input."));
+      redirect(appendFlash(returnTo, "error", "invalidInput"));
     }
 
     await createAdminCategory({
@@ -90,17 +85,21 @@ export async function createAdminCategoryAction(formData: FormData) {
       actor,
     });
   } catch (error) {
+    if (isRedirectError(error)) {
+      throw error;
+    }
+
     const appError = captureServerError(error, "admin:category:create");
-    redirect(appendFlash(returnTo, "error", appError.userMessage ?? "Could not create category."));
+    redirect(appendFlash(returnTo, "error", getCategoryErrorCode(appError, "createFailed")));
   }
 
   revalidatePath(routes.admin.categories);
-  redirect(appendFlash(returnTo, "notice", "Category created."));
+  redirect(appendFlash(returnTo, "notice", "created"));
 }
 
 export async function updateAdminCategoryAction(formData: FormData) {
-  const fallback = routes.admin.categories;
-  const returnTo = getReturnTo(formData, fallback);
+  const returnTo = getReturnTo(formData, routes.admin.categories);
+  let errorCode: CategoryErrorCode | null = null;
 
   try {
     await assertTrustedOrigin({ action: "admin:category:update" });
@@ -112,20 +111,28 @@ export async function updateAdminCategoryAction(formData: FormData) {
     });
 
     if (!parsed.success) {
-      redirect(appendFlash(returnTo, "error", parsed.errors[0] ?? "Invalid category input."));
+      errorCode = "invalidInput";
+    } else {
+      await updateAdminCategory({
+        data: parsed.data,
+        actor,
+      });
+    }
+  } catch (error) {
+    if (isRedirectError(error)) {
+      throw error;
     }
 
-    await updateAdminCategory({
-      data: parsed.data,
-      actor,
-    });
-  } catch (error) {
     const appError = captureServerError(error, "admin:category:update");
-    redirect(appendFlash(returnTo, "error", appError.userMessage ?? "Could not update category."));
+    errorCode = getCategoryErrorCode(appError, "updateFailed");
+  }
+
+  if (errorCode) {
+    redirect(appendFlash(returnTo, "error", errorCode));
   }
 
   revalidatePath(routes.admin.categories);
-  redirect(appendFlash(routes.admin.categories, "notice", "Category updated."));
+  redirect(appendFlash(returnTo, "notice", "updated"));
 }
 
 export async function deleteAdminCategoryAction(formData: FormData) {
@@ -133,7 +140,7 @@ export async function deleteAdminCategoryAction(formData: FormData) {
   const categoryId = `${formData.get("categoryId") ?? ""}`.trim();
 
   if (categoryId.length === 0) {
-    redirect(appendFlash(returnTo, "error", "Category ID is missing."));
+    redirect(appendFlash(returnTo, "error", "missingId"));
   }
 
   try {
@@ -145,10 +152,14 @@ export async function deleteAdminCategoryAction(formData: FormData) {
       actor,
     });
   } catch (error) {
+    if (isRedirectError(error)) {
+      throw error;
+    }
+
     const appError = captureServerError(error, "admin:category:delete");
-    redirect(appendFlash(returnTo, "error", appError.userMessage ?? "Could not delete category."));
+    redirect(appendFlash(returnTo, "error", getCategoryErrorCode(appError, "deleteFailed")));
   }
 
   revalidatePath(routes.admin.categories);
-  redirect(appendFlash(returnTo, "notice", "Category deleted."));
+  redirect(appendFlash(returnTo, "notice", "deleted"));
 }

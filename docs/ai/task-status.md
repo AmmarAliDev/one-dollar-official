@@ -133,8 +133,7 @@
 - [x] Stock-aware re-order flow added to recreate cart items from prior customer orders
 - [x] Re-order feedback now clearly reports unavailable, out-of-stock, and quantity-adjusted items
 - [x] Re-order helper tests added in `tests/features/orders/reorder.test.ts`
-- [x] Customer signout button added in storefront header and account profile page
-- [x] Admin category management added at `/admin/categories` with create/edit/delete flows, search/filter basics, and status + SEO fields
+- [x] Customer sign-out button added in storefront header and account profile page- [x] Admin category management added at `/admin/categories` with create/edit/delete flows, search/filter basics, and status + SEO fields
 - [x] Category admin mutations now persist `AuditLog` entries for create/update/delete events
 - [x] Category validation and service tests added for slug and CRUD logic
 

@@ -8,8 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { buildMetadata } from "@/config/metadata";
 import { routes } from "@/config/routes";
-import { deleteAdminCategoryAction, listAdminCategories } from "@/features/admin/categories";
+import { listAdminCategories } from "@/features/admin/categories";
 import { createAdminCategoryAction } from "@/features/admin/categories/actions";
+import { DeleteCategoryButton } from "@/features/admin/categories/components/delete-category-button";
+import { getCategoryErrorMessage, getCategoryNoticeMessage } from "@/features/admin/categories/flash";
 import { AdminPageHeader, AdminTablePattern } from "@/features/admin/components/admin-page-patterns";
 import { requireRouteAccess } from "@/lib/auth/guards";
 import { rbacPermissions } from "@/lib/auth/rbac";
@@ -68,6 +70,8 @@ export default async function AdminCategoriesPage({ searchParams }: AdminCategor
   });
 
   const returnTo = `${routes.admin.categories}?q=${encodeURIComponent(query)}&status=${status}`;
+  const noticeMessage = getCategoryNoticeMessage(params.notice);
+  const errorMessage = getCategoryErrorMessage(params.error);
 
   return (
     <PageShell className="gap-8">
@@ -77,15 +81,15 @@ export default async function AdminCategoriesPage({ searchParams }: AdminCategor
         description="Create, update, and retire simple storefront categories with SEO controls."
       />
 
-      {params.notice ? (
+      {noticeMessage ? (
         <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-900">
-          {params.notice}
+          {noticeMessage}
         </div>
       ) : null}
 
-      {params.error ? (
+      {errorMessage ? (
         <div className="rounded-md border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-          {params.error}
+          {errorMessage}
         </div>
       ) : null}
 
@@ -264,13 +268,7 @@ export default async function AdminCategoriesPage({ searchParams }: AdminCategor
                             Edit
                           </Link>
 
-                          <form action={deleteAdminCategoryAction}>
-                            <input type="hidden" name="categoryId" value={category.id} />
-                            <input type="hidden" name="returnTo" value={returnTo} />
-                            <Button type="submit" variant="ghost" size="sm" className="text-destructive hover:text-destructive">
-                              Delete
-                            </Button>
-                          </form>
+                          <DeleteCategoryButton categoryId={category.id} categoryName={category.name} returnTo={returnTo} />
                         </div>
                       </td>
                     </tr>

@@ -8,13 +8,14 @@ import { Input } from "@/components/ui/input";
 import { buildMetadata } from "@/config/metadata";
 import { routes } from "@/config/routes";
 import { getAdminCategoryById, updateAdminCategoryAction } from "@/features/admin/categories";
+import { getCategoryErrorMessage, getCategoryNoticeMessage } from "@/features/admin/categories/flash";
 import { AdminPageHeader } from "@/features/admin/components/admin-page-patterns";
 import { requireRouteAccess } from "@/lib/auth/guards";
 import { rbacPermissions } from "@/lib/auth/rbac";
 
 type EditAdminCategoryPageProps = {
   params: Promise<{ categoryId: string }>;
-  searchParams?: Promise<{ error?: string }>;
+  searchParams?: Promise<{ error?: string; notice?: string }>;
 };
 
 export async function generateMetadata({ params }: EditAdminCategoryPageProps) {
@@ -42,6 +43,8 @@ export default async function EditAdminCategoryPage({ params, searchParams }: Ed
   }
 
   const returnTo = routes.admin.categoryEdit(category.id);
+  const noticeMessage = getCategoryNoticeMessage(query.notice);
+  const errorMessage = getCategoryErrorMessage(query.error);
 
   return (
     <PageShell className="gap-8">
@@ -51,9 +54,15 @@ export default async function EditAdminCategoryPage({ params, searchParams }: Ed
         description="Adjust category copy, SEO fields, and publication status."
       />
 
-      {query.error ? (
+      {noticeMessage ? (
+        <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-900">
+          {noticeMessage}
+        </div>
+      ) : null}
+
+      {errorMessage ? (
         <div className="rounded-md border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-          {query.error}
+          {errorMessage}
         </div>
       ) : null}
 

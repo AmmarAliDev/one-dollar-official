@@ -40,6 +40,17 @@ function buildSlugError(error: unknown): AppError | null {
     return null;
   }
 
+  const rawTarget = error.meta?.target;
+  const targets = Array.isArray(rawTarget)
+    ? rawTarget.map((value) => `${value}`.toLowerCase())
+    : typeof rawTarget === "string"
+      ? [rawTarget.toLowerCase()]
+      : [];
+
+  if (!targets.some((target) => target.includes("slug"))) {
+    return null;
+  }
+
   return new AppError("Category slug must be unique.", "CATEGORY_SLUG_TAKEN", {
     statusCode: 409,
     userMessage: "This slug is already used by another category.",
@@ -196,6 +207,7 @@ export async function updateAdminCategory(input: {
   actor: AuditActorInput;
 }): Promise<AdminCategoryRecord> {
   const db = getPrismaClient();
+  const parentInput = input.data as CategoryUpdateInput & { parentId?: string | null };
   const updateData: Prisma.CategoryUncheckedUpdateInput = {
     name: input.data.name,
     slug: input.data.slug,
@@ -203,7 +215,7 @@ export async function updateAdminCategory(input: {
     status: input.data.status,
     seoTitle: input.data.seoTitle ?? null,
     seoDescription: input.data.seoDescription ?? null,
-    parentId: null,
+    ...(parentInput.parentId === undefined ? {} : { parentId: parentInput.parentId }),
   };
 
   const previous = await db.category.findUnique({
@@ -321,11 +333,36 @@ export async function deleteAdminCategory(input: {
     });
   }
 
-  await db.category.delete({
-    where: {
-      id: category.id,
-    },
-  });
+  try {
+    await db.category.delete({
+      where: {
+        id: category.id,
+      },
+    });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
+      const meta = (error.meta ?? {}) as any;
+      const metaStr = JSON.stringify(meta).toLowerCase();
+
+      // If the constraint/meta indicates products are involved, keep the
+      // existing user-friendly message. Otherwise surface a more generic
+      // foreign-key related error so we don't incorrectly claim products
+      // are the cause (could be parent category, audit logs, etc.).
+      if (metaStr.includes("product") || metaStr.includes("products") || metaStr.includes("product_id")) {
+        throw new AppError("Cannot delete category with attached products.", "CATEGORY_HAS_PRODUCTS", {
+          statusCode: 409,
+          userMessage: "Move products out of this category before deleting it.",
+        });
+      }
+
+      throw new AppError("Cannot delete category due to related records.", "CATEGORY_HAS_RELATED_RECORDS", {
+        statusCode: 409,
+        userMessage: "This category has related records preventing deletion.",
+      });
+    }
+
+    throw error;
+  }
 
   await writeCategoryAuditLog({
     action: "category.deleted",

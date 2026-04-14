@@ -133,11 +133,30 @@ describe("admin categories service", () => {
     });
 
     expect(prismaMock.category.update).toHaveBeenCalledTimes(1);
+    expect(prismaMock.category.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.not.objectContaining({
+          parentId: null,
+        }),
+      }),
+    );
     expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
           action: "category.updated",
           modelId: "category-1",
+          changes: expect.objectContaining({
+            before: expect.objectContaining({
+              name: "Home Care",
+              slug: "home-care",
+              status: "DRAFT",
+            }),
+            after: expect.objectContaining({
+              name: "Home + Kitchen",
+              slug: "home-kitchen",
+              status: "PUBLISHED",
+            }),
+          }),
         }),
       }),
     );
