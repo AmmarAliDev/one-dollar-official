@@ -6,6 +6,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { buildMetadata } from "@/config/metadata";
 import { routes } from "@/config/routes";
 import { getPrismaClient } from "@/server/db";
+import { Address } from "@prisma/client";
 
 export const metadata = buildMetadata({
   title: "Account Addresses",
@@ -48,7 +49,7 @@ export default async function AccountAddressesPage() {
 
   return (
     <div className="grid gap-4">
-      {addresses.map((address) => (
+      {addresses.map((address: Address) => (
         <Card key={address.id}>
           <CardHeader className="pb-3">
             <CardTitle className="text-base">{address.label || "Address"}</CardTitle>
