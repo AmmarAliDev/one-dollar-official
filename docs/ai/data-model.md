@@ -8,7 +8,7 @@ Models (summary)
   - RBAC foundation roles: `SUPER_ADMIN`, `PRODUCT_MANAGER`, `ORDER_MANAGER`, `CUSTOMER`, `GUEST`
   - Admin role matrix: `SUPER_ADMIN` = full admin access, `PRODUCT_MANAGER` = catalog-focused admin access, `ORDER_MANAGER` = order-focused admin access
   - Storefront role scope: `CUSTOMER` = authenticated shopper with storefront and order access, `GUEST` = unauthenticated browsing-only access
-- `Category`: { id, name, slug, parentId?, seoTitle?, seoDescription? }
+- `Category`: { id, name, slug, description?, status, parentId?, seoTitle?, seoDescription? }
 -- `Product`: { id, masterSku?, name, slug, shortDescription?, description?, status, categoryId?, metadata?: JSON, seoTitle?, seoDescription?, seoImageUrl? }
 	- Note: `masterSku` is a parent/master product code (optional). The actual SKU used for inventory, pricing, and fulfillment lives on `ProductVariant.sku`.
 -- `ProductVariant`: { id, productId, sku?, title?, options?: JSON, price, compareAtPrice?, currency }

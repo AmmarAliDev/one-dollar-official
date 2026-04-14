@@ -1,10 +1,12 @@
 import { UserRound } from "lucide-react";
 
 import { auth } from "@/auth";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { buildMetadata } from "@/config/metadata";
 import { routes } from "@/config/routes";
+import { signOutAction } from "@/features/auth/actions/sign-out";
 import { getRoleLabel } from "@/lib/auth/rbac";
 
 export const metadata = buildMetadata({
@@ -29,8 +31,13 @@ export default async function AccountProfilePage() {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between gap-4">
         <CardTitle>Profile details</CardTitle>
+        <form action={signOutAction}>
+          <Button type="submit" variant="outline" size="sm">
+            Sign out
+          </Button>
+        </form>
       </CardHeader>
       <CardContent className="grid gap-4 text-sm sm:grid-cols-2">
         <div className="space-y-1">

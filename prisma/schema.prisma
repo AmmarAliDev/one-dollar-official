@@ -41,6 +41,12 @@ enum ProductStatus {
   ARCHIVED
 }
 
+enum CategoryStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
 enum OrderStatus {
   PENDING
   CONFIRMED
@@ -163,6 +169,7 @@ model Category {
   name           String
   slug           String     @unique
   description    String?
+  status         CategoryStatus @default(DRAFT)
   parentId       String?
   parent         Category?  @relation("CategoryToCategory", fields: [parentId], references: [id])
   children       Category[] @relation("CategoryToCategory")
@@ -173,6 +180,7 @@ model Category {
   updatedAt      DateTime   @updatedAt
 
   @@index([slug])
+  @@index([status])
 }
 
 model Product {

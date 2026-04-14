@@ -4,9 +4,11 @@ import { useState } from "react";
 import Link from "next/link";
 import { Heart, Menu, Search, ShoppingCart, User, X } from "lucide-react";
 
+import { signOutAction } from "@/features/auth/actions/sign-out";
 import type { NavItem } from "@/types/app";
 
 import { Button, buttonVariants } from "../ui/button";
+import UserMenu from "./user-menu";
 
 type StorefrontMobileNavProps = {
   navItems: NavItem[];
@@ -14,6 +16,7 @@ type StorefrontMobileNavProps = {
   accountHref: string;
   wishlistHref: string;
   cartHref: string;
+  isSignedIn: boolean;
 };
 
 export function StorefrontMobileNav({
@@ -22,6 +25,7 @@ export function StorefrontMobileNav({
   accountHref,
   wishlistHref,
   cartHref,
+  isSignedIn,
 }: StorefrontMobileNavProps) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -68,14 +72,27 @@ export function StorefrontMobileNav({
             </nav>
 
             <div className="grid grid-cols-3 gap-2">
-              <Link
-                href={accountHref}
-                className={buttonVariants({ variant: "outline", size: "sm" })}
-                onClick={() => setIsOpen(false)}
-              >
-                <User className="size-4" aria-hidden="true" />
-                Account
-              </Link>
+              {/* {isSignedIn ? (
+                <form
+                  action={signOutAction}
+                  onSubmit={() => setIsOpen(false)}
+                >
+                  <button type="submit" className={buttonVariants({ variant: "outline", size: "sm" })}>
+                    <User className="size-4" aria-hidden="true" />
+                    Sign out
+                  </button>
+                </form>
+              ) : (
+                <Link
+                  href={accountHref}
+                  className={buttonVariants({ variant: "outline", size: "sm" })}
+                  onClick={() => setIsOpen(false)}
+                >
+                  <User className="size-4" aria-hidden="true" />
+                  Account
+                </Link>
+              )} */}
+              <UserMenu isSignedIn={isSignedIn} />
               <Link
                 href={wishlistHref}
                 className={buttonVariants({ variant: "outline", size: "sm" })}
