@@ -19,7 +19,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { AuthError } from "next-auth";
-import { RoleKey } from "@prisma/client";
+import { RoleKey } from "@/lib/auth/roles";
 
 import { signIn } from "@/auth";
 import { routes } from "@/config/routes";

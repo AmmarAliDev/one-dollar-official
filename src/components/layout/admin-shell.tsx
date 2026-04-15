@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { RoleKey } from "@prisma/client";
+import type { RoleKey } from "@/lib/auth/roles";
 import type { ReactNode } from "react";
 import type { Session } from "next-auth";
 import { ChevronDown, LogOut, Store } from "lucide-react";

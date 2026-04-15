@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { NextResponse } from "next/server";
 import type { Session } from "next-auth";
-import type { RoleKey } from "@prisma/client";
+import type { RoleKey } from "@/lib/auth/roles";
 
 import { routes } from "@/config/routes";
 

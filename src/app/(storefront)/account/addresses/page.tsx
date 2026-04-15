@@ -35,6 +35,7 @@ export default async function AccountAddressesPage() {
       { createdAt: "desc" },
     ],
   });
+  type AddressRecord = (typeof addresses)[number];
 
   if (addresses.length === 0) {
     return (
@@ -48,7 +49,7 @@ export default async function AccountAddressesPage() {
 
   return (
     <div className="grid gap-4">
-      {addresses.map((address: any) => (
+      {addresses.map((address: AddressRecord) => (
         <Card key={address.id}>
           <CardHeader className="pb-3">
             <CardTitle className="text-base">{address.label || "Address"}</CardTitle>
