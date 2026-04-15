@@ -1,4 +1,4 @@
-import { RoleKey } from "@prisma/client";
+import { RoleKey } from "@/lib/auth/roles";
 
 /**
  * Central RBAC model for the admin foundation.

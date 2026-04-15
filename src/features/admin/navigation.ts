@@ -1,4 +1,4 @@
-import { type RoleKey } from "@prisma/client";
+import { type RoleKey } from "@/lib/auth/roles";
 
 import { routes } from "@/config/routes";
 import { getRoleLabel, hasPermission, type RbacPermission, rbacPermissions } from "@/lib/auth/rbac";

@@ -20,8 +20,8 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import { RoleKey } from "@prisma/client";
 
+import { RoleKey } from "@/lib/auth/roles";
 import { getPrismaClient } from "@/server/db";
 
 import { signInValidator } from "./features/auth/validators";

@@ -1,4 +1,4 @@
-import type { RoleKey } from "@prisma/client";
+import type { RoleKey } from "@/lib/auth/roles";
 
 import { logger, sanitizeForLogging } from "@/lib/logger";
 
