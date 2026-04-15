@@ -9,7 +9,7 @@ import { FormErrorSummary } from "@/components/ui/form-error-summary";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PriceDisplay } from "@/components/ui/price-display";
-import type { CartSummary } from "@/features/cart";
+import type { CartSummary } from "@/features/cart/types";
 import { CHECKOUT_FIXED_PROVINCE, CHECKOUT_SUPPORTED_CITY, checkoutPayloadSchema, type CheckoutPaymentMethodDefinition } from "@/features/checkout";
 import { notify } from "@/lib/notify";
 

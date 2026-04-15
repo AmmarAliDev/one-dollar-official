@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 
-import { Currency, ProductStatus } from "@prisma/client";
 import type { Prisma } from "@prisma/client";
+import { Currency, ProductStatus } from "@prisma/client";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
 import { routes } from "@/config/routes";
@@ -13,8 +13,6 @@ import { getPrismaClient, runWithTransaction } from "@/server/db";
 import type {
   AddCartItemInput,
   CartItemSummary,
-  CartStockIssue,
-  CartStockValidationResult,
   CartSummary,
   RemoveCartItemInput,
   ResolveCartContextInput,
@@ -251,6 +249,30 @@ export function resolveCartSeedSelection(input: ResolveCartSelectionInput): Cart
 }
 
 async function ensureSeedCatalogVariant(selection: CartSeedSelection, db: DatabaseExecutor) {
+  const existingVariant = await db.productVariant.findUnique({
+    where: {
+      sku: selection.sku,
+    },
+    include: {
+      inventory: true,
+    },
+  });
+
+  if (existingVariant) {
+    if (!existingVariant.inventory) {
+      await db.inventory.create({
+        data: {
+          productVariantId: existingVariant.id,
+          quantity: selection.inventoryQuantity,
+          reserved: 0,
+          safetyStock: 0,
+        },
+      });
+    }
+
+    return existingVariant;
+  }
+
   const category = await db.category.upsert({
     where: { slug: selection.categorySlug },
     update: {
@@ -423,23 +445,6 @@ function mapCartItem(item: CartIncludePayload["items"][number]): CartItemSummary
 
 export function calculateCartSubtotal(items: ReadonlyArray<{ quantity: number; unitPrice: number }>) {
   return items.reduce((total, item) => total + item.quantity * item.unitPrice, 0);
-}
-
-export function validateCartStock(summary: CartSummary): CartStockValidationResult {
-  const issues: CartStockIssue[] = summary.items
-    .filter((item) => item.quantity > item.availableQuantity)
-    .map((item) => ({
-      cartItemId: item.id,
-      productName: item.productName,
-      sku: item.sku,
-      requestedQuantity: item.quantity,
-      availableQuantity: item.availableQuantity,
-    }));
-
-  return {
-    ok: issues.length === 0,
-    issues,
-  };
 }
 
 function toCartSummary(cart: CartIncludePayload): CartSummary {

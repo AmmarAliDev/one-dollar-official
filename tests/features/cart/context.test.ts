@@ -1,11 +1,33 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Prisma } from "@prisma/client";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockDb = vi.hoisted(() => ({
   cart: {
     findFirst: vi.fn(),
     findUnique: vi.fn(),
     create: vi.fn(),
+    update: vi.fn(),
+  },
+  category: {
+    upsert: vi.fn(),
+  },
+  product: {
+    upsert: vi.fn(),
+  },
+  productVariant: {
+    findUnique: vi.fn(),
+    upsert: vi.fn(),
+  },
+  inventory: {
+    findUnique: vi.fn(),
+    upsert: vi.fn(),
+    create: vi.fn(),
+  },
+  cartItem: {
+    findUnique: vi.fn(),
+    upsert: vi.fn(),
+    delete: vi.fn(),
+    deleteMany: vi.fn(),
     update: vi.fn(),
   },
 }));
@@ -142,5 +164,109 @@ describe("cart context resolution", () => {
       itemCount: 0,
       subtotal: 0,
     });
+  });
+
+  it("reuses existing seeded catalog records during add-to-cart", async () => {
+    mockDb.cart.findFirst.mockImplementation(async (args?: { where?: Record<string, unknown> }) => {
+      if (args?.where?.token === "guest-token") {
+        return {
+          id: "cart-existing",
+          token: "guest-token",
+          userId: null,
+          status: "ACTIVE",
+        };
+      }
+
+      return null;
+    });
+
+    mockDb.productVariant.findUnique.mockResolvedValue({
+      id: "variant-1",
+      sku: "CFC-900ML-001",
+      inventory: {
+        quantity: 20,
+        reserved: 0,
+        safetyStock: 0,
+      },
+    });
+
+    mockDb.inventory.findUnique.mockResolvedValue({
+      productVariantId: "variant-1",
+      quantity: 20,
+      reserved: 0,
+      safetyStock: 0,
+    });
+
+    mockDb.cartItem.findUnique.mockResolvedValue(null);
+    mockDb.cartItem.upsert.mockResolvedValue({
+      id: "item-1",
+      cartId: "cart-existing",
+      productVariantId: "variant-1",
+      quantity: 1,
+      unitPrice: 499,
+    });
+
+    mockDb.cart.findUnique.mockImplementation(async (args?: { include?: Record<string, unknown> }) => {
+      if (args?.include) {
+        return {
+          id: "cart-existing",
+          token: "guest-token",
+          items: [
+            {
+              id: "item-1",
+              quantity: 1,
+              unitPrice: 499,
+              productVariant: {
+                sku: "CFC-900ML-001",
+                title: null,
+                compareAtPrice: null,
+                inventory: {
+                  quantity: 20,
+                  reserved: 0,
+                  safetyStock: 0,
+                },
+                product: {
+                  name: "Citrus Floor Cleaner",
+                  slug: "citrus-floor-cleaner-900ml",
+                  category: {
+                    slug: "home-care",
+                  },
+                },
+              },
+            },
+          ],
+        };
+      }
+
+      return {
+        id: "cart-existing",
+        token: "guest-token",
+        userId: null,
+        status: "ACTIVE",
+      };
+    });
+
+    const { addCartItemForContext } = await import("@/features/cart");
+
+    await expect(
+      addCartItemForContext(
+        {
+          guestToken: "guest-token",
+        },
+        {
+          productSlug: "citrus-floor-cleaner-900ml",
+          quantity: 1,
+        },
+      ),
+    ).resolves.toMatchObject({
+      id: "cart-existing",
+      itemCount: 1,
+      subtotal: 499,
+    });
+
+    expect(mockDb.category.upsert).not.toHaveBeenCalled();
+    expect(mockDb.product.upsert).not.toHaveBeenCalled();
+    expect(mockDb.productVariant.upsert).not.toHaveBeenCalled();
+    expect(mockDb.inventory.upsert).not.toHaveBeenCalled();
   });
 });
