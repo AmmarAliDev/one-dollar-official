@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
 
-import { CartStatus, City, Country, OrderStatus, Prisma, ProductStatus } from "@prisma/client";
+import { CartStatus, City, Country, OrderStatus, ProductStatus } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
 import { mergeGuestCartIntoUserCart } from "@/features/cart";
 import type { CheckoutPayload } from "@/features/checkout";
@@ -429,7 +431,7 @@ function hasOrderAccess(order: OrderLookup, userId?: string | null, accessToken?
 }
 
 function isOrderNumberConflict(error: unknown) {
-  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
+  return error instanceof PrismaClientKnownRequestError && error.code === "P2002";
 }
 
 function createOrderNotificationPayload(input: {
@@ -655,7 +657,7 @@ export async function placeOrderFromCheckout(input: PlaceOrderInput): Promise<Pl
         },
         db,
         {
-          isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+          isolationLevel: "Serializable" as Prisma.TransactionIsolationLevel,
         },
       );
 
