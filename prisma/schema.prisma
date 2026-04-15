@@ -12,17 +12,22 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
 }
 
 // Region and currency enums (small scoped for initial launch)
 enum Country {
   PAK
+
+  @@map("country")
 }
 
 enum City {
   KARACHI
+
+  @@map("city")
 }
 
 // Role and permission model keys
@@ -32,6 +37,8 @@ enum RoleKey {
   ORDER_MANAGER
   CUSTOMER
   GUEST
+
+  @@map("role_key")
 }
 
 // Product / Order / Cart statuses
@@ -39,6 +46,8 @@ enum ProductStatus {
   DRAFT
   PUBLISHED
   ARCHIVED
+
+  @@map("product_status")
 }
 
 enum CategoryStatus {
@@ -54,6 +63,8 @@ enum OrderStatus {
   SHIPPED
   DELIVERED
   CANCELLED
+
+  @@map("order_status")
 }
 
 enum RefundStatus {
@@ -67,11 +78,15 @@ enum CartStatus {
   ACTIVE
   COMPLETED
   ABANDONED
+
+  @@map("cart_status")
 }
 
 // Currency (Pakistan Rupee only for now)
 enum Currency {
   PKR
+
+  @@map("currency")
 }
 
 // --------------------
@@ -85,8 +100,8 @@ model Role {
   // permissions JSON allows fine-grained flags per role (feature-forward)
   permissions Json     @default("{}")
   users       User[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 }
 
 model User {
@@ -99,7 +114,7 @@ model User {
   phone         String?    @unique
   name          String?
   role          Role?      @relation(fields: [roleId], references: [id])
-  roleId        String?
+  roleId        String?    @map("role_id")
   accounts      Account[]
   sessions      Session[]
   addresses     Address[]
@@ -107,18 +122,18 @@ model User {
   wishlists     Wishlist[]
   carts         Cart[]
   orders        Order[]
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
 }
 
 // NextAuth compatible Account + Session models (optional for NextAuth)
 model Account {
   id                String   @id @default(cuid())
-  userId            String
+  userId            String   @map("user_id")
   user              User     @relation(fields: [userId], references: [id])
   type              String
   provider          String
-  providerAccountId String
+  providerAccountId String   @map("provider_account_id")
   refresh_token     String?
   access_token      String?
   expires_at        Int?
@@ -126,8 +141,8 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
 
   @@unique([provider, providerAccountId])
   @@index([userId])
@@ -135,12 +150,12 @@ model Account {
 
 model Session {
   id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
   user         User     @relation(fields: [userId], references: [id])
   expires      DateTime
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
   @@index([userId])
 }
@@ -148,7 +163,7 @@ model Session {
 model Address {
   id        String   @id @default(uuid())
   user      User?    @relation(fields: [userId], references: [id])
-  userId    String?
+  userId    String?  @map("user_id")
   label     String? // Home, Office, etc.
   country   Country  @default(PAK)
   province  String?
@@ -157,27 +172,27 @@ model Address {
   street1   String
   street2   String?
   phone     String?
-  isDefault Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  isDefault Boolean  @default(false) @map("is_default")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([userId])
 }
 
 model Category {
-  id             String     @id @default(uuid())
+  id             String         @id @default(uuid())
   name           String
-  slug           String     @unique
+  slug           String         @unique
   description    String?
   status         CategoryStatus @default(DRAFT)
-  parentId       String?
-  parent         Category?  @relation("CategoryToCategory", fields: [parentId], references: [id])
-  children       Category[] @relation("CategoryToCategory")
+  parentId       String?        @map("parent_id")
+  parent         Category?      @relation("CategoryToCategory", fields: [parentId], references: [id])
+  children       Category[]     @relation("CategoryToCategory")
   products       Product[]
-  seoTitle       String?
-  seoDescription String?
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
+  seoTitle       String?        @map("seo_title")
+  seoDescription String?        @map("seo_description")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
 
   @@index([slug])
   @@index([status])
@@ -187,29 +202,29 @@ model Product {
   id               String                 @id @default(uuid())
   // Optional master product code (parent identifier). Actual SKU for
   // inventory/fulfillment lives on `ProductVariant.sku`.
-  masterSku        String?
+  masterSku        String?                @map("master_sku")
   name             String
   slug             String                 @unique
-  shortDescription String?
+  shortDescription String?                @map("short_description")
   description      String?
   status           ProductStatus          @default(DRAFT)
-  categoryId       String?
+  categoryId       String?                @map("category_id")
   category         Category?              @relation(fields: [categoryId], references: [id])
-  weightGram       Int?
-  heightMm         Int?
-  widthMm          Int?
-  depthMm          Int?
+  weightGram       Int?                   @map("weight_gram")
+  heightMm         Int?                   @map("height_mm")
+  widthMm          Int?                   @map("width_mm")
+  depthMm          Int?                   @map("depth_mm")
   images           ProductImage[]
   variants         ProductVariant[]
   specifications   ProductSpecification[]
   reviews          Review[]
   dealCampaigns    DealCampaignProduct[]
   metadata         Json?
-  seoTitle         String?
-  seoDescription   String?
-  seoImageUrl      String?
-  createdAt        DateTime               @default(now())
-  updatedAt        DateTime               @updatedAt
+  seoTitle         String?                @map("seo_title")
+  seoDescription   String?                @map("seo_description")
+  seoImageUrl      String?                @map("seo_image_url")
+  createdAt        DateTime               @default(now()) @map("created_at")
+  updatedAt        DateTime               @updatedAt @map("updated_at")
 
   @@index([categoryId])
   @@index([masterSku])
@@ -218,14 +233,14 @@ model Product {
 model ProductImage {
   id               String          @id @default(uuid())
   product          Product?        @relation(fields: [productId], references: [id])
-  productId        String?
+  productId        String?         @map("product_id")
   productVariant   ProductVariant? @relation(fields: [productVariantId], references: [id])
-  productVariantId String?
+  productVariantId String?         @map("product_variant_id")
   url              String
   alt              String?
   position         Int             @default(0)
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
+  createdAt        DateTime        @default(now()) @map("created_at")
+  updatedAt        DateTime        @updatedAt @map("updated_at")
 
   // NOTE: At least one of `productId` or `productVariantId` MUST be set.
   // This is enforced by a DB CHECK constraint in the migration (product_id IS NOT NULL OR product_variant_id IS NOT NULL).
@@ -235,20 +250,20 @@ model ProductImage {
 model ProductVariant {
   id             String         @id @default(uuid())
   product        Product        @relation(fields: [productId], references: [id])
-  productId      String
+  productId      String         @map("product_id")
   sku            String?        @unique
   title          String?
   options        Json? // e.g. { color: 'red', size: 'M' }
   price          Int // stored in smallest currency unit (PKR paisa)
-  compareAtPrice Int?
+  compareAtPrice Int?           @map("compare_at_price")
   currency       Currency       @default(PKR)
   inventory      Inventory?
   images         ProductImage[]
   wishlistItems  WishlistItem[]
   cartItems      CartItem[]
-  isDefault      Boolean        @default(false)
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  isDefault      Boolean        @default(false) @map("is_default")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
 
   @@index([productId])
 }
@@ -256,24 +271,24 @@ model ProductVariant {
 model Inventory {
   id               String         @id @default(uuid())
   productVariant   ProductVariant @relation(fields: [productVariantId], references: [id])
-  productVariantId String         @unique
+  productVariantId String         @unique @map("product_variant_id")
   quantity         Int            @default(0)
   reserved         Int            @default(0)
   location         City           @default(KARACHI)
-  safetyStock      Int            @default(0)
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
+  safetyStock      Int            @default(0) @map("safety_stock")
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt        DateTime       @updatedAt @map("updated_at")
 }
 
 model ProductSpecification {
   id        String   @id @default(uuid())
   product   Product  @relation(fields: [productId], references: [id])
-  productId String
+  productId String   @map("product_id")
   key       String
   value     String
   position  Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([productId])
 }
@@ -281,16 +296,16 @@ model ProductSpecification {
 model Review {
   id        String   @id @default(uuid())
   product   Product  @relation(fields: [productId], references: [id])
-  productId String
+  productId String   @map("product_id")
   user      User?    @relation(fields: [userId], references: [id])
-  userId    String?
+  userId    String?  @map("user_id")
   // rating must be between 1 and 5 (validated by DB CHECK constraint)
   rating    Int
   title     String?
   body      String?
   approved  Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([productId])
 }
@@ -298,10 +313,10 @@ model Review {
 model Wishlist {
   id        String         @id @default(uuid())
   user      User?          @relation(fields: [userId], references: [id])
-  userId    String?
+  userId    String?        @map("user_id")
   items     WishlistItem[]
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
+  createdAt DateTime       @default(now()) @map("created_at")
+  updatedAt DateTime       @updatedAt @map("updated_at")
 
   @@unique([userId])
 }
@@ -309,11 +324,11 @@ model Wishlist {
 model WishlistItem {
   id               String         @id @default(uuid())
   wishlist         Wishlist       @relation(fields: [wishlistId], references: [id])
-  wishlistId       String
+  wishlistId       String         @map("wishlist_id")
   productVariant   ProductVariant @relation(fields: [productVariantId], references: [id])
-  productVariantId String
+  productVariantId String         @map("product_variant_id")
   quantity         Int            @default(1)
-  createdAt        DateTime       @default(now())
+  createdAt        DateTime       @default(now()) @map("created_at")
 
   // Prevent duplicate wishlist entries for the same wishlist + variant
   @@unique([wishlistId, productVariantId])
@@ -324,11 +339,11 @@ model Cart {
   id        String     @id @default(uuid())
   token     String?    @unique
   user      User?      @relation(fields: [userId], references: [id])
-  userId    String?
+  userId    String?    @map("user_id")
   status    CartStatus @default(ACTIVE)
   items     CartItem[]
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
 
   @@index([userId])
 }
@@ -336,12 +351,12 @@ model Cart {
 model CartItem {
   id               String         @id @default(uuid())
   cart             Cart           @relation(fields: [cartId], references: [id])
-  cartId           String
+  cartId           String         @map("cart_id")
   productVariant   ProductVariant @relation(fields: [productVariantId], references: [id])
-  productVariantId String
+  productVariantId String         @map("product_variant_id")
   quantity         Int            @default(1)
-  unitPrice        Int // snapshot of price when added (smallest unit)
-  createdAt        DateTime       @default(now())
+  unitPrice        Int            @map("unit_price") // snapshot of price when added (smallest unit)
+  createdAt        DateTime       @default(now()) @map("created_at")
 
   // Prevent duplicate cart entries for the same cart + variant
   @@unique([cartId, productVariantId])
@@ -350,9 +365,9 @@ model CartItem {
 
 model Order {
   id                String        @id @default(uuid())
-  orderNumber       String        @unique
+  orderNumber       String        @unique @map("order_number")
   user              User?         @relation(fields: [userId], references: [id])
-  userId            String?
+  userId            String?       @map("user_id")
   status            OrderStatus   @default(PENDING)
   subtotal          Int
   shipping          Int
@@ -360,19 +375,19 @@ model Order {
   discount          Int
   total             Int
   currency          Currency      @default(PKR)
-  paymentMethod     String?
-  paymentProvider   String?
-  paymentStatus     String?
+  paymentMethod     String?       @map("payment_method")
+  paymentProvider   String?       @map("payment_provider")
+  paymentStatus     String?       @map("payment_status")
   refundStatus      RefundStatus  @default(NONE)
-  placedAt          DateTime      @default(now())
+  placedAt          DateTime      @default(now()) @map("placed_at")
   items             OrderItem[]
   shippingAddress   OrderAddress? @relation("ShippingAddress", fields: [shippingAddressId], references: [id])
-  shippingAddressId String?
+  shippingAddressId String?       @map("shipping_address_id")
   billingAddress    OrderAddress? @relation("BillingAddress", fields: [billingAddressId], references: [id])
-  billingAddressId  String?
+  billingAddressId  String?       @map("billing_address_id")
   metadata          Json?
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
+  createdAt         DateTime      @default(now()) @map("created_at")
+  updatedAt         DateTime      @updatedAt @map("updated_at")
 
   @@index([orderNumber])
   @@index([userId])
@@ -381,23 +396,23 @@ model Order {
 model OrderItem {
   id           String   @id @default(uuid())
   order        Order    @relation(fields: [orderId], references: [id])
-  orderId      String
-  productId    String? // optional reference to original product
-  productName  String
-  variantTitle String?
+  orderId      String   @map("order_id")
+  productId    String?  @map("product_id") // optional reference to original product
+  productName  String   @map("product_name")
+  variantTitle String?  @map("variant_title")
   sku          String?
-  unitPrice    Int
+  unitPrice    Int      @map("unit_price")
   quantity     Int
   subtotal     Int
   tax          Int?
-  createdAt    DateTime @default(now())
+  createdAt    DateTime @default(now()) @map("created_at")
 
   @@index([orderId])
 }
 
 model OrderAddress {
   id             String   @id @default(uuid())
-  fullName       String
+  fullName       String   @map("full_name")
   phone          String?
   email          String?
   street1        String
@@ -410,18 +425,18 @@ model OrderAddress {
   notes          String?
   shippingOrders Order[]  @relation("ShippingAddress")
   billingOrders  Order[]  @relation("BillingAddress")
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 }
 
 model AuditLog {
   id        String   @id @default(uuid())
-  actorId   String?
+  actorId   String?  @map("actor_id")
   action    String
   model     String?
-  modelId   String?
+  modelId   String?  @map("model_id")
   changes   Json?
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
 }
 
 model HomePageSection {
@@ -433,41 +448,41 @@ model HomePageSection {
   meta      Json?
   position  Int      @default(0)
   active    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 }
 
 model Banner {
   id        String    @id @default(uuid())
   title     String
-  imageUrl  String
+  imageUrl  String    @map("image_url")
   href      String?
-  startAt   DateTime?
-  endAt     DateTime?
+  startAt   DateTime? @map("start_at")
+  endAt     DateTime? @map("end_at")
   active    Boolean   @default(true)
   position  Int       @default(0)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
 }
 
 model DealCampaign {
   id          String                @id @default(uuid())
   name        String
   description String?
-  startsAt    DateTime?
-  endsAt      DateTime?
+  startsAt    DateTime?             @map("starts_at")
+  endsAt      DateTime?             @map("ends_at")
   active      Boolean               @default(true)
   products    DealCampaignProduct[]
-  createdAt   DateTime              @default(now())
-  updatedAt   DateTime              @updatedAt
+  createdAt   DateTime              @default(now()) @map("created_at")
+  updatedAt   DateTime              @updatedAt @map("updated_at")
 }
 
 model DealCampaignProduct {
   id         String       @id @default(uuid())
   campaign   DealCampaign @relation(fields: [campaignId], references: [id])
-  campaignId String
+  campaignId String       @map("campaign_id")
   product    Product      @relation(fields: [productId], references: [id])
-  productId  String
+  productId  String       @map("product_id")
 
   // Prevent duplicate product entries per campaign
   @@unique([campaignId, productId])
