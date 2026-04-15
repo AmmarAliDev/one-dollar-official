@@ -2,12 +2,13 @@
 
 import { useTheme } from "next-themes";
 import type { LucideIcon } from "lucide-react";
-import { Monitor, Moon, SunMedium } from "lucide-react";
+import { Monitor, Moon, SunMedium, Check } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { themeOptions } from "@/config/theme";
 import { useMounted } from "@/hooks/use-mounted";
 import type { AppTheme } from "@/types/app";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const themeIcons: Record<AppTheme, LucideIcon> = {
   system: Monitor,
@@ -20,35 +21,44 @@ export function ThemeToggle() {
   const { resolvedTheme, setTheme, theme } = useTheme();
   const activeTheme = mounted ? ((theme ?? "system") as AppTheme) : "system";
 
-  return (
-    <div
-      role="group"
-      aria-label="Color theme"
-      className="inline-flex items-center gap-1 rounded-full border border-border/80 bg-card/90 p-1 shadow-sm"
-    >
-      {themeOptions.map((option) => {
-        const Icon = themeIcons[option.value];
-        const isActive = activeTheme === option.value;
+  const ActiveIcon = themeIcons[activeTheme];
 
-        return (
-          <Button
-            key={option.value}
-            type="button"
-            size="sm"
-            variant={isActive ? "secondary" : "ghost"}
-            aria-label={option.description}
-            aria-pressed={isActive}
-            className="h-8 rounded-full px-2.5 sm:px-3"
-            onClick={() => setTheme(option.value)}
-          >
-            <Icon className="size-3.5" />
-            <span className="hidden sm:inline">{option.label}</span>
-            {option.value === "system" && mounted ? (
-              <span className="sr-only">Currently following {resolvedTheme ?? "system"} mode</span>
-            ) : null}
-          </Button>
-        );
-      })}
-    </div>
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button aria-label="Color theme" variant="outline" size="icon">
+          <ActiveIcon className="size-4" aria-hidden="true" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="flex flex-col gap-2 bg-card">
+        {themeOptions.map((option) => {
+          const Icon = themeIcons[option.value];
+          const isActive = activeTheme === option.value;
+
+          return (
+            <DropdownMenuItem key={option.value} asChild>
+              <Button
+                type="button"
+                variant={isActive ? "secondary" : "ghost"}
+                size="sm"
+                className="justify-between"
+                onClick={() => setTheme(option.value)}
+                aria-pressed={isActive}
+                aria-label={option.description}
+              >
+                <div className="inline-flex items-center gap-2">
+                  <Icon className="size-3.5" />
+                  <span>{option.label}</span>
+                </div>
+                {option.value === "system" && mounted ? (
+                  <span className="sr-only">Currently following {resolvedTheme ?? "system"} mode</span>
+                ) : null}
+                {isActive ? <Check className="size-4" aria-hidden="true" /> : null}
+              </Button>
+            </DropdownMenuItem>
+          );
+        })}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
