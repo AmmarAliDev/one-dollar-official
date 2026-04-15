@@ -16,8 +16,20 @@ export type TransactionOptions = {
 
 export type TransactionCallback<T> = (db: DatabaseTransactionClient) => Promise<T>;
 
+const DEFAULT_TRANSACTION_OPTIONS: TransactionOptions = {
+  maxWait: 10_000,
+  timeout: 20_000,
+};
+
 function isRootDatabaseClient(db: DatabaseExecutor): db is DatabaseClient {
   return '$transaction' in db;
+}
+
+function resolveTransactionOptions(options?: TransactionOptions): TransactionOptions {
+  return {
+    ...DEFAULT_TRANSACTION_OPTIONS,
+    ...options,
+  };
 }
 
 export async function runInTransaction<T>(
@@ -25,7 +37,10 @@ export async function runInTransaction<T>(
   options?: TransactionOptions,
   client: DatabaseClient = getPrismaClient(),
 ): Promise<T> {
-  return client.$transaction((transaction: DatabaseTransactionClient) => callback(transaction), options);
+  return client.$transaction(
+    (transaction: DatabaseTransactionClient) => callback(transaction),
+    resolveTransactionOptions(options),
+  );
 }
 
 export async function runWithTransaction<T>(
@@ -36,7 +51,10 @@ export async function runWithTransaction<T>(
   const executor = resolveDbExecutor(db);
 
   if (isRootDatabaseClient(executor)) {
-    return executor.$transaction((transaction: DatabaseTransactionClient) => callback(transaction), options);
+    return executor.$transaction(
+      (transaction: DatabaseTransactionClient) => callback(transaction),
+      resolveTransactionOptions(options),
+    );
   }
 
   return callback(executor);
