@@ -12,8 +12,8 @@ export {
   removeCartItemForContext,
   resolveCartSeedSelection,
   updateCartItemQuantityForContext,
-  validateCartStock,
 } from "./service";
+export { validateCartStock } from "./validation";
 export type {
   AddCartItemInput,
   CartItemSummary,

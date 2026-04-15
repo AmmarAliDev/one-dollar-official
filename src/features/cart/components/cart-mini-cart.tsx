@@ -9,7 +9,8 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { InlineSpinner } from "@/components/ui/inline-spinner";
 import { PriceDisplay } from "@/components/ui/price-display";
 import { routes } from "@/config/routes";
-import type { CartSummary } from "@/features/cart";
+import { addCartChangedListener } from "@/features/cart/client-events";
+import type { CartSummary } from "@/features/cart/types";
 import { cn } from "@/lib/utils";
 
 type CartApiPayload = {
@@ -73,15 +74,16 @@ export function CartMiniCart() {
   useEffect(() => {
     void load();
 
-    function handleCartChanged() {
+    return addCartChangedListener((nextCart) => {
+      if (typeof nextCart !== "undefined") {
+        setCart(nextCart ?? null);
+        setErrorMessage(null);
+        setPending(false);
+        return;
+      }
+
       void load();
-    }
-
-    window.addEventListener("cart:changed", handleCartChanged);
-
-    return () => {
-      window.removeEventListener("cart:changed", handleCartChanged);
-    };
+    });
   }, []);
 
   useEffect(() => {

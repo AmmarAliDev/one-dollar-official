@@ -3,6 +3,8 @@
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { dispatchCartChanged } from "@/features/cart/client-events";
+import type { CartSummary } from "@/features/cart/types";
 import { notify } from "@/lib/notify";
 
 type ProductAddToCartProps = {
@@ -10,6 +12,11 @@ type ProductAddToCartProps = {
   optionId?: string | undefined;
   productName: string;
   isAvailable: boolean;
+};
+
+type CartMutationPayload = {
+  cart?: CartSummary | null;
+  error?: string;
 };
 
 export function ProductAddToCart({ productSlug, optionId, productName, isAvailable }: ProductAddToCartProps) {
@@ -33,12 +40,25 @@ export function ProductAddToCart({ productSlug, optionId, productName, isAvailab
         }),
       });
 
+      let payload: CartMutationPayload | null = null;
+
+      try {
+        payload = (await response.json()) as CartMutationPayload | null;
+      } catch {
+        if (response.ok) {
+          throw new Error("Could not add item to cart: invalid server response.");
+        }
+      }
+
       if (!response.ok) {
-        const payload = (await response.json().catch(() => null)) as { error?: string } | null;
         throw new Error(payload?.error ?? "Could not add item to cart.");
       }
 
-      window.dispatchEvent(new CustomEvent("cart:changed"));
+      if (!payload || typeof payload !== "object" || !Object.hasOwn(payload, "cart")) {
+        throw new Error(payload?.error ?? "Could not add item to cart: invalid server response.");
+      }
+
+      dispatchCartChanged(payload.cart ?? null);
       notify.success(`${productName} added to cart`, "Cart updated.");
     } catch (error) {
       notify.error("Could not add to cart", error instanceof Error ? error.message : undefined);

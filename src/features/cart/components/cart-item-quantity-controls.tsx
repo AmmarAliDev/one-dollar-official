@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Minus, Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { dispatchCartChanged } from "@/features/cart/client-events";
+import type { CartSummary } from "@/features/cart/types";
 import { notify } from "@/lib/notify";
 
 type CartItemQuantityControlsProps = {
@@ -12,6 +13,11 @@ type CartItemQuantityControlsProps = {
   productName: string;
   quantity: number;
   availableQuantity: number;
+};
+
+type CartMutationPayload = {
+  cart?: CartSummary | null;
+  error?: string;
 };
 
 async function updateQuantity(cartItemId: string, quantity: number) {
@@ -26,10 +32,13 @@ async function updateQuantity(cartItemId: string, quantity: number) {
     }),
   });
 
+  const payload = (await response.json().catch(() => null)) as CartMutationPayload | null;
+
   if (!response.ok) {
-    const payload = (await response.json().catch(() => null)) as { error?: string } | null;
     throw new Error(payload?.error ?? "Could not update cart quantity.");
   }
+
+  return payload?.cart ?? null;
 }
 
 async function removeItem(cartItemId: string) {
@@ -43,10 +52,13 @@ async function removeItem(cartItemId: string) {
     }),
   });
 
+  const payload = (await response.json().catch(() => null)) as CartMutationPayload | null;
+
   if (!response.ok) {
-    const payload = (await response.json().catch(() => null)) as { error?: string } | null;
     throw new Error(payload?.error ?? "Could not remove cart item.");
   }
+
+  return payload?.cart ?? null;
 }
 
 export function CartItemQuantityControls({
@@ -55,25 +67,38 @@ export function CartItemQuantityControls({
   quantity,
   availableQuantity,
 }: CartItemQuantityControlsProps) {
-  const router = useRouter();
   const [pending, setPending] = useState(false);
+  const [displayQuantity, setDisplayQuantity] = useState(quantity);
 
-  const canDecrease = quantity > 1;
-  const canIncrease = quantity < availableQuantity;
+  useEffect(() => {
+    setDisplayQuantity(quantity);
+  }, [quantity]);
 
-  async function runMutation(action: () => Promise<void>, successMessage: string) {
+  const canDecrease = displayQuantity > 1;
+  const canIncrease = displayQuantity < availableQuantity;
+
+  async function runMutation(
+    action: () => Promise<CartSummary | null>,
+    successMessage: string,
+    optimisticQuantity: number,
+  ) {
     if (pending) {
       return;
     }
 
+    const previousQuantity = displayQuantity;
     setPending(true);
+    setDisplayQuantity(Math.max(0, optimisticQuantity));
 
     try {
-      await action();
-      window.dispatchEvent(new CustomEvent("cart:changed"));
+      const cart = await action();
+      const nextQuantity = cart?.items.find((item) => item.id === cartItemId)?.quantity ?? 0;
+
+      dispatchCartChanged(cart);
+      setDisplayQuantity(nextQuantity);
       notify.success(successMessage, "Cart updated.");
-      router.refresh();
     } catch (error) {
+      setDisplayQuantity(previousQuantity);
       notify.error("Could not update your cart", error instanceof Error ? error.message : undefined);
     } finally {
       setPending(false);
@@ -86,20 +111,24 @@ export function CartItemQuantityControls({
         type="button"
         variant="outline"
         size="icon"
-        onClick={() => runMutation(() => updateQuantity(cartItemId, quantity - 1), `${productName} quantity updated`)}
+        onClick={() =>
+          runMutation(() => updateQuantity(cartItemId, displayQuantity - 1), `${productName} quantity updated`, displayQuantity - 1)
+        }
         disabled={pending || !canDecrease}
         aria-label={`Decrease quantity for ${productName}`}
       >
         <Minus className="size-4" aria-hidden="true" />
       </Button>
 
-      <span className="min-w-10 text-center text-sm font-medium">{quantity}</span>
+      <span className="min-w-10 text-center text-sm font-medium">{displayQuantity}</span>
 
       <Button
         type="button"
         variant="outline"
         size="icon"
-        onClick={() => runMutation(() => updateQuantity(cartItemId, quantity + 1), `${productName} quantity updated`)}
+        onClick={() =>
+          runMutation(() => updateQuantity(cartItemId, displayQuantity + 1), `${productName} quantity updated`, displayQuantity + 1)
+        }
         disabled={pending || !canIncrease}
         aria-label={`Increase quantity for ${productName}`}
       >
@@ -110,12 +139,13 @@ export function CartItemQuantityControls({
         type="button"
         variant="ghost"
         size="sm"
-        onClick={() => runMutation(() => removeItem(cartItemId), `${productName} removed`)}
+        onClick={() => runMutation(() => removeItem(cartItemId), `${productName} removed`, 0)}
         disabled={pending}
         aria-label={`Remove ${productName} from cart`}
       >
         <Trash2 className="size-4" aria-hidden="true" />
         Remove
-      </Button>    </div>
+      </Button>
+    </div>
   );
 }
