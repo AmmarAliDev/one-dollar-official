@@ -628,9 +628,13 @@ export async function addCartItemForContext(context: ResolveCartContextInput, in
   const selection = resolveCartSeedSelection(input);
   const quantity = normalizeQuantity(input.quantity);
 
+  // Keep seed catalog synchronization outside the cart mutation transaction.
+  // On cold serverless starts this removes several upserts from the interactive
+  // transaction window and avoids stale/closed transaction errors.
+  const variant = await ensureSeedCatalogVariant(selection, db);
+
   return runWithTransaction(async (transaction) => {
     const cart = await requireActiveCartForMutation(context, transaction);
-    const variant = await ensureSeedCatalogVariant(selection, transaction);
 
     const inventory = await transaction.inventory.findUnique({
       where: {
