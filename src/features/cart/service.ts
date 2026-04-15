@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
 
-import { Currency, Prisma, ProductStatus } from "@prisma/client";
+import { Currency, ProductStatus } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
 import { routes } from "@/config/routes";
 import { catalogCategorySeeds, catalogProductDetailSeeds, catalogProductSeeds } from "@/features/catalog/data";
@@ -81,7 +83,7 @@ function generateCartToken() {
 }
 
 function isCartTokenConflict(error: unknown) {
-  if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== "P2002") {
+  if (!(error instanceof PrismaClientKnownRequestError) || error.code !== "P2002") {
     return false;
   }
 

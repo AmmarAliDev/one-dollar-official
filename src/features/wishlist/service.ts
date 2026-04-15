@@ -1,4 +1,5 @@
-import { Currency, Prisma, ProductStatus } from "@prisma/client";
+import { Currency, ProductStatus } from "@prisma/client";
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
 import { routes } from "@/config/routes";
 import { catalogCategorySeeds, catalogProductDetailSeeds, catalogProductSeeds } from "@/features/catalog/data";
@@ -122,7 +123,7 @@ async function getOrCreateWishlistForUser(userId: string) {
     });
   } catch (error) {
     if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error instanceof PrismaClientKnownRequestError &&
       error.code === "P2002"
     ) {
       const existingWishlist = await db.wishlist.findFirst({

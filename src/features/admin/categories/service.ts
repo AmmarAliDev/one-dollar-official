@@ -1,4 +1,5 @@
-import { Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
 import { AppError } from "@/lib/errors/app-error";
 import { getPrismaClient } from "@/server/db";
@@ -32,7 +33,7 @@ function isKnownStatus(value: string | undefined): value is "DRAFT" | "PUBLISHED
 }
 
 function buildSlugError(error: unknown): AppError | null {
-  if (!(error instanceof Prisma.PrismaClientKnownRequestError)) {
+  if (!(error instanceof PrismaClientKnownRequestError)) {
     return null;
   }
 
@@ -283,7 +284,7 @@ export async function updateAdminCategory(input: {
       throw slugError;
     }
 
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+    if (error instanceof PrismaClientKnownRequestError && error.code === "P2025") {
       throw new AppError("Category not found during update.", "CATEGORY_NOT_FOUND", {
         statusCode: 404,
         userMessage: "The selected category no longer exists.",
@@ -340,7 +341,7 @@ export async function deleteAdminCategory(input: {
       },
     });
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
+    if (error instanceof PrismaClientKnownRequestError && error.code === "P2003") {
       const meta = (error.meta ?? {}) as any;
       const metaStr = JSON.stringify(meta).toLowerCase();
 
