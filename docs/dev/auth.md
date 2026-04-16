@@ -66,8 +66,14 @@ DATABASE_URL=postgresql://user:password@localhost:5432/one_dollar
 
 ### Sign-out
 
-- Client: call `signOut()` from `next-auth/react` or use a form action pointing to `signOutAction`.
-- The JWT cookie is cleared and the user is redirected to home.
+The app now uses one primary sign-out convention across storefront, account, and admin UI:
+
+- Prefer the shared `SignOutButton` or a plain `<form action={signOutAction}>` submission for logout controls.
+- `signOutAction` performs the trusted-origin check and then redirects to `routes.storefront.home` after the Auth.js session cookie is cleared.
+- This pattern is used in the storefront header dropdown, the mobile drawer, the account profile page, and the admin shell menu.
+- Use client-side `signOut()` from `next-auth/react` only for an explicitly client-driven flow that genuinely cannot use a form submission.
+
+This keeps logout behavior progressively enhanced, CSRF-aware, and consistent across desktop and mobile surfaces.
 
 ## RBAC and Route Protection
 

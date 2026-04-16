@@ -1,14 +1,14 @@
 import Link from "next/link";
-import type { RoleKey } from "@/lib/auth/roles";
-import type { ReactNode } from "react";
 import type { Session } from "next-auth";
-import { ChevronDown, LogOut, Store } from "lucide-react";
+import { ChevronDown, Store } from "lucide-react";
+import type { ReactNode } from "react";
 
 import { routes } from "@/config/routes";
-import { signOutAction } from "@/features/auth/actions/sign-out";
 import { AdminBreadcrumb } from "@/features/admin/components/admin-breadcrumb";
 import { AdminSidebarNav } from "@/features/admin/components/admin-sidebar-nav";
 import { getAdminRoleSummary, getVisibleAdminNavigation } from "@/features/admin/navigation";
+import { SignOutButton } from "@/features/auth/components/sign-out-button";
+import type { RoleKey } from "@/lib/auth/roles";
 
 import { ThemeToggle } from "../theme-toggle";
 import { Badge } from "../ui/badge";
@@ -77,15 +77,13 @@ export function AdminShell({ children, role, user }: AdminShellProps) {
                     >
                       My profile
                     </Link>
-                    <form action={signOutAction} className="mt-1">
-                      <button
-                        type="submit"
-                        className="hover:bg-accent hover:text-foreground flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm text-muted-foreground"
-                      >
-                        <LogOut className="size-4" />
-                        Sign out
-                      </button>
-                    </form>
+                    <SignOutButton
+                      formClassName="mt-1"
+                      variant="ghost"
+                      size="sm"
+                      fullWidth
+                      className="h-auto justify-start px-2 py-1.5 text-muted-foreground hover:text-foreground"
+                    />
                   </div>
                 </details>
               </div>

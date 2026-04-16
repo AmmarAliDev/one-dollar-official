@@ -28,8 +28,8 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `(storefront)/categories/[slug]/[productSlug]` now provides PDP rendering with gallery, variant interactions, specifications, reviews, and related products
 - `(storefront)/wishlist` now renders authenticated wishlist entries and guest sign-in prompts
 - `(storefront)/account/*` now provides customer account routes for profile, addresses, order history, order detail, and reviews
-- `(storefront)` header now includes a customer signout action when authenticated, and account profile also exposes signout directly
-- `(admin)` now uses `AdminShell` with a responsive sidebar, topbar, breadcrumb, and user menu, plus role-aware navigation filtering protected by the RBAC proxy/layout guards
+- `(storefront)` now uses the shared `SignOutButton` convention for authenticated logout controls across the header dropdown, mobile drawer, and account profile surface
+- `(admin)` now uses `AdminShell` with a responsive sidebar, topbar, breadcrumb, and user menu, plus the same form-based sign-out pattern and role-aware navigation filtering protected by the RBAC proxy/layout guards
 - `(admin)/admin/categories` now provides simple category CRUD with search/filter and SEO field controls
 - `(auth)` reserves sign-in and account entry points
 
@@ -51,6 +51,8 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `src/config/feature-flags.ts` derives preview flags from validated env values instead of raw `process.env` access.
 - `getRequiredServerEnv()` should be used when a future integration needs a non-public secret at runtime.
 - `DATABASE_URL` must be available anywhere Prisma queries or CLI workflows run.
+- Prisma CLI commands are routed through `scripts/prisma-cli.mjs`, which respects local env files, falls back `POSTGRES_URL_NON_POOLING` to `DATABASE_URL` for local use, and blocks obvious hosted `migrate dev` mistakes by default.
+- The build workflow is intentionally split: `pnpm build` stays local-safe, while `pnpm build:deploy` is the deploy-time path that runs `prisma migrate deploy` before the production build.
 
 ## RBAC Foundation Strategy
 

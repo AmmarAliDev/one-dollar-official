@@ -13,6 +13,10 @@ describe('Prisma schema', () => {
         DATABASE_URL:
           process.env.DATABASE_URL ??
           'postgresql://postgres:postgres@localhost:5432/one_dollar_test?schema=public',
+        POSTGRES_URL_NON_POOLING:
+          process.env.POSTGRES_URL_NON_POOLING ??
+          process.env.DATABASE_URL ??
+          'postgresql://postgres:postgres@localhost:5432/one_dollar_test?schema=public',
       },
     });
     expect(res.status === 0).toBeTruthy();
@@ -36,6 +40,10 @@ describe('Prisma schema', () => {
         env: {
           ...process.env,
           DATABASE_URL:
+            process.env.DATABASE_URL ??
+            'postgresql://postgres:postgres@localhost:5432/one_dollar_test?schema=public',
+          POSTGRES_URL_NON_POOLING:
+            process.env.POSTGRES_URL_NON_POOLING ??
             process.env.DATABASE_URL ??
             'postgresql://postgres:postgres@localhost:5432/one_dollar_test?schema=public',
         },

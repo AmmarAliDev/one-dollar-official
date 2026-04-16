@@ -75,6 +75,35 @@ export const createProductService = defineService(({ db }) => {
 - Use explicit `QueryResult` helpers only when the caller benefits from a non-throw contract; otherwise throw typed errors.
 - Keep Prisma imports inside `src/server` whenever possible.
 
+## Prisma environment and migration workflow
+
+The repository separates local schema development from deployment-time migration execution:
+
+- `pnpm prisma:migrate:dev` is the default local workflow and now runs through a repo-level safety wrapper.
+- `pnpm prisma:migrate:deploy` is the deployment-safe command for Vercel / production environments.
+- `pnpm build` remains safe for local builds because it does **not** run production migrations.
+- `pnpm build:deploy` exists for environments where migration deployment should happen before the application build.
+
+### Expected Prisma variables
+
+| Variable | Purpose | Notes |
+| --- | --- | --- |
+| `DATABASE_URL` | Primary PostgreSQL connection | Required everywhere Prisma is used |
+| `POSTGRES_URL_NON_POOLING` | Direct non-pooling connection | Recommended for Supabase / hosted Postgres; can match `DATABASE_URL` locally |
+| `SHADOW_DATABASE_URL` | Optional shadow DB | Only needed when `prisma migrate dev` cannot create its own shadow database |
+
+### Safety behavior
+
+- Obvious hosted Supabase / pooled URLs are blocked for `prisma migrate dev` by default.
+- If `POSTGRES_URL_NON_POOLING` is missing locally, the Prisma wrapper falls back to `DATABASE_URL` for that command.
+- To intentionally bypass the hosted-URL block for a remote development database, set `PRISMA_ALLOW_HOSTED_MIGRATE_DEV=true` for the current shell session.
+
+### Troubleshooting
+
+- `Environment variable not found: POSTGRES_URL_NON_POOLING` → add the variable or let the local wrapper fall back by using the repo scripts instead of raw Prisma commands.
+- `prisma migrate dev` blocked against Supabase → switch to a local PostgreSQL database for development, or use `prisma migrate deploy` in deployment environments.
+- Shadow database errors on a hosted development DB → add `SHADOW_DATABASE_URL` pointing to a dedicated shadow database.
+
 ## Deferred items
 
 - model-specific repositories and services will be added with each feature module
