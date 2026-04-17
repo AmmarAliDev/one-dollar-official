@@ -1,11 +1,11 @@
 "use server";
 
 /**
- * Sign-out server action.
+ * Standard sign-out server action.
  *
- * Wraps Auth.js's `signOut` so it can be called from a form action
- * or directly from server context. Auth.js clears the session cookie
- * and redirects to the home page.
+ * Use this through a form submission anywhere the UI needs a logout control.
+ * That keeps CSRF checks intact and makes the post-logout redirect consistent
+ * across storefront, account, and admin surfaces.
  */
 
 import { signOut } from "@/auth";

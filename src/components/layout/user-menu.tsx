@@ -1,12 +1,12 @@
 "use client";
 
-import { LogOut, User } from "lucide-react";
 import Link from "next/link";
+import { User } from "lucide-react";
 
 import { routes } from "@/config/routes";
-import { signOutAction } from "@/features/auth/actions/sign-out";
+import { SignOutButton } from "@/features/auth/components/sign-out-button";
 
-import { Button, buttonVariants } from "../ui/button";
+import { buttonVariants } from "../ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu";
 
 const UserMenu = ({ isSignedIn }: { isSignedIn: boolean }) => {
@@ -27,25 +27,21 @@ const UserMenu = ({ isSignedIn }: { isSignedIn: boolean }) => {
           Profile
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="flex flex-col gap-2 bg-card">
+      <DropdownMenuContent align="end" className="flex min-w-40 flex-col gap-1 bg-card">
         <DropdownMenuItem asChild>
-          <Link href={routes.storefront.account} className={buttonVariants({ variant: "outline", size: "sm" })}>
+          <Link href={routes.storefront.account} className={buttonVariants({ variant: "ghost", size: "sm" })}>
             <User className="size-4" aria-hidden="true" />
             Account
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Button
-            type="button"
-            variant="outline"
+        <div className="px-1 pb-1">
+          <SignOutButton
+            variant="ghost"
             size="sm"
-            className="text-destructive"
-            onClick={() => void signOutAction()}
-          >
-            <LogOut className="size-4" aria-hidden="true" />
-            Sign out
-          </Button>
-        </DropdownMenuItem>
+            fullWidth
+            className="justify-start text-destructive hover:text-destructive"
+          />
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   );

@@ -133,9 +133,15 @@
 - [x] Stock-aware re-order flow added to recreate cart items from prior customer orders
 - [x] Re-order feedback now clearly reports unavailable, out-of-stock, and quantity-adjusted items
 - [x] Re-order helper tests added in `tests/features/orders/reorder.test.ts`
-- [x] Customer sign-out button added in storefront header and account profile page- [x] Admin category management added at `/admin/categories` with create/edit/delete flows, search/filter basics, and status + SEO fields
+- [x] Customer sign-out button added in storefront header and account profile page
+- [x] Sign-out behavior standardized across the storefront header dropdown, mobile drawer, account profile page, and admin shell with one shared server-action form pattern and redirect-to-home behavior
+- [x] Sign-out regression tests added for the auth action and mobile signed-in surface rendering
+- [x] Admin category management added at `/admin/categories` with create/edit/delete flows, search/filter basics, and status + SEO fields
 - [x] Category admin mutations now persist `AuditLog` entries for create/update/delete events
 - [x] Category validation and service tests added for slug and CRUD logic
+- [x] Prisma workflow verified for local PostgreSQL development and hosted Supabase production deployment separation
+- [x] Repo-level Prisma CLI wrapper added so local-safe scripts honor `.env.local`, fall back non-pooling URLs cleanly, and block obvious hosted `migrate dev` usage by default
+- [x] Developer docs updated with local setup, migration safety, deployment commands, and Prisma troubleshooting guidance
 
 ## Deferred by design
 

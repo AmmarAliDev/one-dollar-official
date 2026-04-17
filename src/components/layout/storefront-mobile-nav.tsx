@@ -4,11 +4,11 @@ import { useState } from "react";
 import Link from "next/link";
 import { Heart, Menu, Search, ShoppingCart, User, X } from "lucide-react";
 
-import { signOutAction } from "@/features/auth/actions/sign-out";
+import { SignOutButton } from "@/features/auth/components/sign-out-button";
+import { cn } from "@/lib/utils";
 import type { NavItem } from "@/types/app";
 
 import { Button, buttonVariants } from "../ui/button";
-import UserMenu from "./user-menu";
 
 type StorefrontMobileNavProps = {
   navItems: NavItem[];
@@ -48,7 +48,7 @@ export function StorefrontMobileNav({
           id="mobile-navigation-panel"
           className="border-border/70 bg-background absolute inset-x-0 top-full z-50 border-b px-4 py-4 shadow-lg"
         >
-          <div className="mx-auto flex w-full max-w-[var(--container-width)] flex-col gap-4">
+          <div className="mx-auto flex w-full max-w-(--container-width) flex-col gap-4">
             <Link
               href={searchHref}
               className={buttonVariants({ variant: "outline" })}
@@ -71,28 +71,24 @@ export function StorefrontMobileNav({
               ))}
             </nav>
 
-            <div className="grid grid-cols-3 gap-2">
-              {/* {isSignedIn ? (
-                <form
-                  action={signOutAction}
-                  onSubmit={() => setIsOpen(false)}
-                >
-                  <button type="submit" className={buttonVariants({ variant: "outline", size: "sm" })}>
-                    <User className="size-4" aria-hidden="true" />
-                    Sign out
-                  </button>
-                </form>
-              ) : (
-                <Link
-                  href={accountHref}
-                  className={buttonVariants({ variant: "outline", size: "sm" })}
-                  onClick={() => setIsOpen(false)}
-                >
-                  <User className="size-4" aria-hidden="true" />
-                  Account
-                </Link>
-              )} */}
-              <UserMenu isSignedIn={isSignedIn} />
+            <div className={cn("grid gap-2", isSignedIn ? "grid-cols-2" : "grid-cols-3")}>
+              <Link
+                href={accountHref}
+                className={buttonVariants({ variant: "outline", size: "sm" })}
+                onClick={() => setIsOpen(false)}
+              >
+                <User className="size-4" aria-hidden="true" />
+                Account
+              </Link>
+              {isSignedIn ? (
+                <SignOutButton
+                  variant="outline"
+                  size="sm"
+                  fullWidth
+                  className="text-destructive"
+                  onBeforeSubmit={() => setIsOpen(false)}
+                />
+              ) : null}
               <Link
                 href={wishlistHref}
                 className={buttonVariants({ variant: "outline", size: "sm" })}
