@@ -49,9 +49,23 @@ function collectFormMessages(input: unknown): string[] {
   }
 
   if (typeof input === "object") {
-    return Object.values(input as Record<string, unknown>).flatMap((value) =>
-      collectFormMessages(value),
-    );
+    const record = input as Record<string, unknown>;
+
+    if (typeof record.message === "string" && record.message.trim()) {
+      return [record.message];
+    }
+
+    return Object.entries(record).flatMap(([key, value]) => {
+      if (key === "type" || key === "ref") {
+        return [];
+      }
+
+      if (typeof value === "string") {
+        return [];
+      }
+
+      return collectFormMessages(value);
+    });
   }
 
   return [];

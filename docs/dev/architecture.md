@@ -36,7 +36,8 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 ## UI Foundation Strategy
 
 - Global design tokens live in `src/app/globals.css` and define semantic colors, spacing rhythm, radii, and shadow presets.
-- `src/components/ui` now contains reusable UI-state and presentation primitives like `Badge`, `PriceDisplay`, `SectionHeader`, `EmptyState`, `LoadingState`, `ErrorState`, and `Skeleton`.
+- `src/components/ui` now contains reusable UI-state and presentation primitives like `Badge`, `PriceDisplay`, `SectionHeader`, `EmptyState`, `LoadingState`, `ErrorState`, `Skeleton`, and shared form controls (`Input`, `Textarea`, `Select`, `Checkbox`, `Switch`).
+- `src/components/forms` is the app-wide client form seam. It combines React Hook Form, Zod, and shared field renderers so feature modules can choose schema-driven forms or explicit composition without duplicating validation wiring.
 - `PageContainer` and `PageShell` should be reused for page spacing instead of duplicating wrapper classes.
 - Shared frontend feedback uses `sonner` through `src/components/providers/app-toaster.tsx` and `src/lib/notify.ts`.
 - Catalog listing UI lives in `src/features/catalog/components`; keep product-grid and filter scaffolds there instead of placing listing-specific markup directly in route files.

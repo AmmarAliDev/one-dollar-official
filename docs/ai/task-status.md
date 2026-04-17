@@ -142,6 +142,9 @@
 - [x] Prisma workflow verified for local PostgreSQL development and hosted Supabase production deployment separation
 - [x] Repo-level Prisma CLI wrapper added so local-safe scripts honor `.env.local`, fall back non-pooling URLs cleanly, and block obvious hosted `migrate dev` usage by default
 - [x] Developer docs updated with local setup, migration safety, deployment commands, and Prisma troubleshooting guidance
+- [x] Reusable app-wide form foundation added with React Hook Form + Zod integration, typed dynamic field configs, shadcn-style controls, and on-change validation defaults
+- [x] Shared form primitives now support input, textarea, select, checkbox, switch, hidden values, and custom render escape hatches for future feature modules
+- [x] Focused form-system tests added for validation-on-change, field error rendering, supported field types, and friendly submit-failure handling
 
 ## Deferred by design
 
