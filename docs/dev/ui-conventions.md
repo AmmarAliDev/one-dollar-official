@@ -58,6 +58,15 @@
 	- Error: `PageErrorFallback` for route-level failures and `SectionErrorState` for module-level failures
 - Keep admin actions discoverable in the top-right area (theme toggle, storefront shortcut, user menu) and avoid hidden critical controls.
 
+## Form System Conventions
+
+- Shared app-wide form abstractions now live in `src/components/forms` and should be preferred for new client-side forms.
+- Start new forms with `useAppForm()` so Zod + React Hook Form defaults stay consistent and validation runs on change.
+- Prefer `DynamicForm` / `SchemaForm` for standard CRUD and settings forms; drop down to explicit field composition only when layout or behavior truly needs it.
+- Field-level errors should render under the relevant control, while top-level validation summaries can use `FormErrorSummary` for broader feedback.
+- Reuse the shared shadcn-style form primitives in `src/components/ui` (`Input`, `Textarea`, `Select`, `Checkbox`, `Switch`) instead of raw ad-hoc control markup.
+- Keep form copy short, task-focused, and user-safe. Do not expose raw backend or schema internals in validation messages.
+
 ## Deferred Items
 
 - Product detail pages, cart interactions, and auth forms are intentionally deferred.
