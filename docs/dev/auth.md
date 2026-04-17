@@ -130,6 +130,8 @@ const { data: session, status } = useSession();
 src/
   auth.ts                              # Auth.js config (providers, callbacks, pages)
   proxy.ts                             # Lightweight /admin pre-render redirects using auth/session hints
+  config/
+    routes.ts                          # Site route definitions (exports `routes` with `routes.storefront.home`)
   types/next-auth.d.ts                 # Session/JWT type augmentation
   features/auth/
     validators.ts                      # Zod schemas: signIn, signUp, forgotPassword
@@ -140,6 +142,7 @@ src/
     components/
       sign-in-form.tsx                 # Email/password form (client component)
       sign-up-form.tsx                 # Registration form (client component)
+      sign-out-button.tsx               # Shared `SignOutButton` form submit control (exports `SignOutButton`)
       google-sign-in-button.tsx        # Google SSO button (client component)
   lib/auth/
     session.ts                         # Server-side session helpers
