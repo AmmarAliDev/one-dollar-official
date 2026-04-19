@@ -51,7 +51,7 @@ export default async function EditAdminProductPage({ params, searchParams }: Edi
   }
 
   const noticeMessage = getProductNoticeMessage(query.notice);
-  const errorMessage = getProductErrorMessage(query.error);
+  const errorMessage = getProductErrorMessage(query.error, "The product could not be updated. Please try again.");
 
   return (
     <PageShell className="gap-8">

@@ -148,4 +148,96 @@ describe("checkout form migration", () => {
       paymentMethod: "COD",
     });
   });
+
+  it("prevents duplicate retry submissions while a retry is in flight", async () => {
+    const user = userEvent.setup();
+    let resolveRetry:
+      | ((value: {
+          ok: boolean;
+          json: () => Promise<{
+            order: {
+              confirmationUrl: string;
+              orderNumber: string;
+              payment: { message: string };
+              totals: { total: number };
+            };
+          }>;
+        }) => void)
+      | null = null;
+
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: false,
+        json: async () => ({ error: "Checkout could not be submitted. Please try again." }),
+      })
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveRetry = resolve;
+          }),
+      );
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { CheckoutPageClient } = await import("@/features/checkout/components/checkout-page-client");
+
+    render(
+      <CheckoutPageClient
+        cart={{
+          id: "cart-1",
+          token: "guest-cart-token",
+          items: [],
+          itemCount: 1,
+          subtotal: 1200,
+        }}
+        shipping={150}
+        allowSubmit={true}
+        paymentMethods={[
+          {
+            code: "COD",
+            label: "Cash on delivery",
+            description: "Pay when your order arrives.",
+            type: "offline",
+            enabled: true,
+          },
+        ]}
+        initialCustomer={{
+          fullName: "Ammar Khan",
+          email: "ammar@example.com",
+          phone: "03001234567",
+        }}
+      />,
+    );
+
+    await user.type(screen.getByLabelText(/address line 1/i), "123 Main Street");
+    await user.type(screen.getByLabelText(/postal code/i), "75500");
+    await user.click(screen.getByRole("button", { name: /confirm checkout details/i }));
+
+    const retryButton = await screen.findByRole("button", { name: /retry last attempt/i });
+
+    await user.click(retryButton);
+
+    await waitFor(() => {
+      expect((retryButton as HTMLButtonElement).disabled).toBe(true);
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+
+    resolveRetry?.({
+      ok: true,
+      json: async () => ({
+        order: {
+          confirmationUrl: "/checkout/confirmation/OD-1002",
+          orderNumber: "OD-1002",
+          payment: { message: "Cash on delivery confirmed." },
+          totals: { total: 1350 },
+        },
+      }),
+    });
+
+    await waitFor(() => {
+      expect(pushMock).toHaveBeenCalledWith("/checkout/confirmation/OD-1002");
+    });
+  });
 });

@@ -21,6 +21,7 @@ type AdminProductsPageProps = {
     q?: string;
     status?: string;
     type?: string;
+    page?: string;
     notice?: string;
     error?: string;
   }>;
@@ -48,6 +49,16 @@ function normalizeTypeFilter(value?: string): ProductTypeFilter {
   return "ALL";
 }
 
+function normalizePageParam(value?: string) {
+  const parsed = Number(value);
+
+  if (!Number.isFinite(parsed) || parsed < 1) {
+    return 1;
+  }
+
+  return Math.floor(parsed);
+}
+
 export const metadata = buildMetadata({
   title: "Admin Products",
   path: routes.admin.products,
@@ -64,11 +75,14 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
   const query = params.q?.trim() ?? "";
   const status = normalizeStatusFilter(params.status);
   const type = normalizeTypeFilter(params.type);
+  const page = normalizePageParam(params.page);
 
   const products = await listAdminProducts({
     query,
     status,
     type,
+    page,
+    pageSize: 20,
   });
 
   const noticeMessage = getProductNoticeMessage(params.notice);

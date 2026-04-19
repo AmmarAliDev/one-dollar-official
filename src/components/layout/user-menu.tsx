@@ -40,11 +40,11 @@ const UserMenu = ({ isSignedIn, isAdmin }: { isSignedIn: boolean; isAdmin: boole
             Account
           </Link>
         </DropdownMenuItem>
-        <div className="pb-1 w-full justify-center">
+        <div className="pb-1 w-full">
           <SignOutButton
-            variant="ghost"
             fullWidth={true}
-            className={buttonVariants({ variant: "ghost", size: "sm", className: "cursor-pointer" })}
+            variant="ghost"
+            className={buttonVariants({ variant: "ghost", size: "sm", className: "cursor-pointer rounded-sm" })}
           />
         </div>
       </DropdownMenuContent>

@@ -36,7 +36,7 @@ describe("AdminCategoryFiltersForm", () => {
 
     await waitFor(() => {
       expect(pushMock).toHaveBeenCalledWith("/admin/categories?q=soap&status=PUBLISHED");
-      expect(refreshMock).toHaveBeenCalledTimes(1);
+      expect(refreshMock).not.toHaveBeenCalled();
     });
   });
 });

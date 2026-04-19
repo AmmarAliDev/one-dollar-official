@@ -15,10 +15,8 @@ Key entities
 - `Account` / `Session` — NextAuth-compatible tables are included to make integration straightforward.
 - `Address` — user addresses. Orders use `OrderAddress` snapshots so address changes do not mutate historic orders.
 - `Category` — currently managed as simple categories in admin (no parent assignment), with `name`, `slug`, `description`, `status`, and SEO fields.
-- `Product` — product master record. It now has an admin management flow for both simple products and variant-based products, including content copy, related product links, images, specifications, stock inputs, and SEO fields.
-- `ProductVariant` — SKU-level inventory, pricing, options JSON (color/size). `Inventory` is required per variant and powers both simple-product stock and multi-variant stock.
- - `Product` — product master record. Uses an optional `masterSku`/`product_code` as a parent identifier; it is a catalog-level record that groups variants and carries shared SEO/metadata.
- - `ProductVariant` — SKU-level record used for inventory, pricing and fulfillment. `ProductVariant.sku` is the authoritative SKU for orders and inventory. `Inventory` is required per variant.
+- `Product` — product master record for both simple and variant-based products. Admin management covers content copy, related product links, images, specifications, status, an optional `masterSku`/`product_code` parent identifier, and shared SEO/metadata.
+- `ProductVariant` — SKU-level record used for inventory, pricing, fulfillment, and shopper options JSON such as color/size. `Inventory` is required per variant, and `ProductVariant.sku` is the authoritative SKU for orders and stock.
 - `Inventory` — tracks `quantity`, `reserved`, `safetyStock` and `location` (Karachi by default).
 - `Review`, `Wishlist`, `Cart` (and their items) for UX flows.
 - `Order` / `OrderItem` / `OrderAddress` — orders contain snapshot fields (productName, unitPrice, etc.) so historical data remains stable.
@@ -27,8 +25,7 @@ Key entities
 
 Data and indexing strategy
 - Timestamps: `createdAt` and `updatedAt` are present on most models (`@default(now())` and `@updatedAt`).
-- Unique constraints for `slug`, `sku`, and `orderNumber` to support lookups and safe indexing.
- - Unique constraints for `slug` and `orderNumber` to support lookups and safe indexing. The authoritative SKU lives on `ProductVariant.sku`; the product-level identifier is `masterSku` (optional) and not required to be unique.
+- Unique constraints for `slug`, `ProductVariant.sku`, and `orderNumber` support lookups and safe indexing. The product-level identifier is `masterSku` (optional) and not required to be unique.
 - Indexes on foreign keys (`userId`, `productId`, `categoryId`) to support common queries.
 - Price fields use integer in the smallest currency unit (PKR) to avoid floating point errors.
 

@@ -513,14 +513,14 @@ export function AdminProductForm({ mode, action, returnTo, submitLabel, categori
                         type: "custom",
                         label: "Options",
                         description: "Use a plain format such as Size: Small, Color: Blue.",
-                        render: ({ field, inputId, describedBy, disabled }) => (
+                        render: ({ field, fieldState, inputId, describedBy, disabled }) => (
                           <Input
                             id={inputId}
                             value={formatOptions((field.value as Record<string, string> | undefined) ?? {})}
                             onChange={(event) => field.onChange(parseOptionsInput(event.target.value))}
                             onBlur={field.onBlur}
                             aria-describedby={describedBy}
-                            aria-invalid={false}
+                            aria-invalid={Boolean(fieldState.error)}
                             disabled={disabled}
                             placeholder="Size: Small, Color: Blue"
                           />

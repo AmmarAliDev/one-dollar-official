@@ -58,7 +58,6 @@ export function AdminProductFiltersForm({ query, status, type }: AdminProductFil
       noValidate
       onSubmit={form.handleSubmit((values) => {
         router.push(buildProductFilterHref(values));
-        router.refresh();
       })}
     >
       <DynamicFormField

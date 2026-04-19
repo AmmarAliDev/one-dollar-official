@@ -18,10 +18,17 @@ type AuditActorInput = {
   actorRole?: string | null;
 };
 
+type ProductDbClient = ReturnType<typeof getPrismaClient> | Prisma.TransactionClient;
+
+const DEFAULT_ADMIN_PRODUCT_PAGE_SIZE = 20;
+const MAX_ADMIN_PRODUCT_PAGE_SIZE = 100;
+
 export type AdminProductListFilters = {
   query?: string;
   status?: "ALL" | "DRAFT" | "PUBLISHED" | "ARCHIVED";
   type?: "ALL" | "SIMPLE" | "VARIANT";
+  page?: number;
+  pageSize?: number;
 };
 
 export type AdminProductListItem = {
@@ -155,6 +162,22 @@ function isKnownType(value: string | undefined): value is "SIMPLE" | "VARIANT" {
   return value === "SIMPLE" || value === "VARIANT";
 }
 
+function normalizePage(value: number | undefined) {
+  if (!Number.isFinite(value)) {
+    return 1;
+  }
+
+  return Math.max(1, Math.floor(value ?? 1));
+}
+
+function normalizePageSize(value: number | undefined) {
+  if (!Number.isFinite(value)) {
+    return DEFAULT_ADMIN_PRODUCT_PAGE_SIZE;
+  }
+
+  return Math.min(MAX_ADMIN_PRODUCT_PAGE_SIZE, Math.max(1, Math.floor(value ?? DEFAULT_ADMIN_PRODUCT_PAGE_SIZE)));
+}
+
 function parseProductMetadata(metadata: Prisma.JsonValue | null | undefined) {
   if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
     return {
@@ -190,6 +213,9 @@ function mapVariantOptions(options: Prisma.JsonValue | null | undefined): Record
 
 function buildVariantPayload(data: AdminProductCreateInput | AdminProductUpdateInput): AdminProductVariantRecord[] {
   if (data.variantsEnabled) {
+    const requestedDefaultIndex = data.variants.findIndex((variant) => variant.isDefault);
+    const defaultIndex = requestedDefaultIndex >= 0 ? requestedDefaultIndex : 0;
+
     return data.variants.map((variant, index) => ({
       title: variant.title,
       sku: variant.sku,
@@ -197,7 +223,7 @@ function buildVariantPayload(data: AdminProductCreateInput | AdminProductUpdateI
       comparePrice: variant.comparePrice ?? null,
       stock: variant.stock,
       options: variant.options,
-      isDefault: variant.isDefault || index === 0,
+      isDefault: index === defaultIndex,
     }));
   }
 
@@ -320,9 +346,8 @@ function buildMutationError(error: unknown): AppError | null {
   return null;
 }
 
-async function ensureCategoryExists(categoryId: string) {
-  const db = getPrismaClient();
-  const category = await db.category.findUnique({
+async function ensureCategoryExists(categoryId: string, dbClient: ProductDbClient = getPrismaClient()) {
+  const category = await dbClient.category.findUnique({
     where: { id: categoryId },
     select: { id: true },
   });
@@ -335,15 +360,18 @@ async function ensureCategoryExists(categoryId: string) {
   }
 }
 
-async function normalizeRelatedProductIds(ids: string[], excludeId?: string) {
-  const db = getPrismaClient();
-  const uniqueIds = [...new Set(ids.map((id) => id.trim()).filter(Boolean))].filter((id) => id !== excludeId);
+async function normalizeRelatedProductIds(
+  ids: string[],
+  options: { dbClient?: ProductDbClient; excludeId?: string } = {},
+) {
+  const dbClient = options.dbClient ?? getPrismaClient();
+  const uniqueIds = [...new Set(ids.map((id) => id.trim()).filter(Boolean))].filter((id) => id !== options.excludeId);
 
   if (uniqueIds.length === 0) {
     return [];
   }
 
-  const matches = await db.product.findMany({
+  const matches = await dbClient.product.findMany({
     where: {
       id: {
         in: uniqueIds,
@@ -418,15 +446,89 @@ async function createSpecifications(
   });
 }
 
+async function createVariantRecord(tx: any, productId: string, variant: AdminProductVariantRecord) {
+  const createdVariant = await tx.productVariant.create({
+    data: {
+      productId,
+      sku: variant.sku,
+      title: variant.title,
+      options: Object.keys(variant.options).length > 0 ? variant.options : Prisma.JsonNull,
+      price: variant.price,
+      compareAtPrice: variant.comparePrice,
+      currency: Currency.PKR,
+      isDefault: variant.isDefault,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  await tx.inventory.create({
+    data: {
+      productVariantId: createdVariant.id,
+      quantity: variant.stock,
+    },
+  });
+}
+
 async function createVariants(
   tx: any,
   productId: string,
   variants: AdminProductVariantRecord[],
 ) {
   for (const variant of variants) {
-    const createdVariant = await tx.productVariant.create({
+    await createVariantRecord(tx, productId, variant);
+  }
+}
+
+async function upsertVariants(
+  tx: any,
+  productId: string,
+  variants: AdminProductVariantRecord[],
+) {
+  const existingVariants: Array<{ id: string; sku: string | null }> = await tx.productVariant.findMany({
+    where: { productId },
+    select: {
+      id: true,
+      sku: true,
+    },
+  });
+
+  const existingBySku = new Map<string, { id: string; sku: string | null }>(
+    existingVariants.map((variant) => [variant.sku ?? "", variant]),
+  );
+  const incomingSkus = new Set(variants.map((variant) => variant.sku));
+  const removedVariantIds = existingVariants.filter((variant) => !variant.sku || !incomingSkus.has(variant.sku)).map((variant) => variant.id);
+
+  if (removedVariantIds.length > 0) {
+    await tx.inventory.deleteMany({
+      where: {
+        productVariantId: {
+          in: removedVariantIds,
+        },
+      },
+    });
+
+    await tx.productVariant.deleteMany({
+      where: {
+        id: {
+          in: removedVariantIds,
+        },
+      },
+    });
+  }
+
+  for (const variant of variants) {
+    const existing = existingBySku.get(variant.sku);
+
+    if (!existing) {
+      await createVariantRecord(tx, productId, variant);
+      continue;
+    }
+
+    await tx.productVariant.update({
+      where: { id: existing.id },
       data: {
-        productId,
         sku: variant.sku,
         title: variant.title,
         options: Object.keys(variant.options).length > 0 ? variant.options : Prisma.JsonNull,
@@ -435,14 +537,17 @@ async function createVariants(
         currency: Currency.PKR,
         isDefault: variant.isDefault,
       },
-      select: {
-        id: true,
-      },
     });
 
-    await tx.inventory.create({
-      data: {
-        productVariantId: createdVariant.id,
+    await tx.inventory.upsert({
+      where: {
+        productVariantId: existing.id,
+      },
+      update: {
+        quantity: variant.stock,
+      },
+      create: {
+        productVariantId: existing.id,
         quantity: variant.stock,
       },
     });
@@ -454,65 +559,104 @@ export async function listAdminProducts(filters: AdminProductListFilters = {}): 
   const query = filters.query?.trim();
   const status = isKnownStatus(filters.status) ? filters.status : undefined;
   const type = isKnownType(filters.type) ? filters.type : undefined;
+  const page = normalizePage(filters.page);
+  const pageSize = normalizePageSize(filters.pageSize);
+  const conditions: Prisma.ProductWhereInput[] = [];
+
+  if (status) {
+    conditions.push({ status });
+  }
+
+  if (query) {
+    conditions.push({
+      OR: [
+        {
+          name: {
+            contains: query,
+            mode: "insensitive",
+          },
+        },
+        {
+          slug: {
+            contains: query,
+            mode: "insensitive",
+          },
+        },
+        {
+          shortDescription: {
+            contains: query,
+            mode: "insensitive",
+          },
+        },
+        {
+          masterSku: {
+            contains: query,
+            mode: "insensitive",
+          },
+        },
+      ],
+    });
+  }
+
+  if (type === "VARIANT") {
+    conditions.push({
+      metadata: {
+        path: ["variantsEnabled"],
+        equals: true,
+      },
+    });
+  }
+
+  if (type === "SIMPLE") {
+    conditions.push({
+      OR: [
+        {
+          metadata: {
+            path: ["variantsEnabled"],
+            equals: false,
+          },
+        },
+        {
+          metadata: {
+            equals: Prisma.JsonNull,
+          },
+        },
+        {
+          metadata: {
+            equals: Prisma.DbNull,
+          },
+        },
+      ],
+    });
+  }
 
   const records = await db.product.findMany({
-    where: {
-      ...(status ? { status } : {}),
-      ...(query
-        ? {
-            OR: [
-              {
-                name: {
-                  contains: query,
-                  mode: "insensitive",
-                },
-              },
-              {
-                slug: {
-                  contains: query,
-                  mode: "insensitive",
-                },
-              },
-              {
-                shortDescription: {
-                  contains: query,
-                  mode: "insensitive",
-                },
-              },
-              {
-                masterSku: {
-                  contains: query,
-                  mode: "insensitive",
-                },
-              },
-            ],
-          }
-        : {}),
-    },
+    ...(conditions.length > 0 ? { where: { AND: conditions } } : {}),
     select: adminProductSelect,
     orderBy: [{ updatedAt: "desc" }, { name: "asc" }],
+    skip: (page - 1) * pageSize,
+    take: pageSize,
   });
 
-  return records
-    .map((record) => {
-      const mapped = mapAdminProduct(record);
-      const itemType = mapped.variantsEnabled ? "VARIANT" : "SIMPLE";
-      return {
-        id: mapped.id,
-        title: mapped.title,
-        slug: mapped.slug,
-        shortDescription: mapped.shortDescription || null,
-        status: mapped.status,
-        categoryName: mapped.categoryName,
-        seoTitle: mapped.seoTitle || null,
-        updatedAt: mapped.updatedAt,
-        priceLabel: summarizePriceLabel(mapped.variants),
-        inventoryTotal: mapped.variants.reduce((total, variant) => total + variant.stock, 0),
-        variantCount: mapped.variants.length,
-        type: itemType,
-      } satisfies AdminProductListItem;
-    })
-    .filter((record) => (type ? record.type === type : true));
+  return records.map((record) => {
+    const mapped = mapAdminProduct(record);
+    const itemType = mapped.variantsEnabled ? "VARIANT" : "SIMPLE";
+
+    return {
+      id: mapped.id,
+      title: mapped.title,
+      slug: mapped.slug,
+      shortDescription: mapped.shortDescription || null,
+      status: mapped.status,
+      categoryName: mapped.categoryName,
+      seoTitle: mapped.seoTitle || null,
+      updatedAt: mapped.updatedAt,
+      priceLabel: summarizePriceLabel(mapped.variants),
+      inventoryTotal: mapped.variants.reduce((total, variant) => total + variant.stock, 0),
+      variantCount: mapped.variants.length,
+      type: itemType,
+    } satisfies AdminProductListItem;
+  });
 }
 
 export async function listAdminProductCategories(): Promise<AdminProductCategoryOption[]> {
@@ -577,12 +721,13 @@ export async function createAdminProduct(input: {
   actor: AuditActorInput;
 }): Promise<AdminProductFormRecord> {
   const db = getPrismaClient();
-  await ensureCategoryExists(input.data.categoryId);
-  const relatedProductIds = await normalizeRelatedProductIds(input.data.relatedProductIds);
-  const variants = buildVariantPayload(input.data);
 
   try {
     return await db.$transaction(async (tx) => {
+      await ensureCategoryExists(input.data.categoryId, tx);
+      const relatedProductIds = await normalizeRelatedProductIds(input.data.relatedProductIds, { dbClient: tx });
+      const variants = buildVariantPayload(input.data);
+
       const created = await tx.product.create({
         data: {
           name: input.data.title,
@@ -691,12 +836,15 @@ export async function updateAdminProduct(input: {
     });
   }
 
-  await ensureCategoryExists(input.data.categoryId);
-  const relatedProductIds = await normalizeRelatedProductIds(input.data.relatedProductIds, input.data.id);
-  const variants = buildVariantPayload(input.data);
-
   try {
     return await db.$transaction(async (tx) => {
+      await ensureCategoryExists(input.data.categoryId, tx);
+      const relatedProductIds = await normalizeRelatedProductIds(input.data.relatedProductIds, {
+        dbClient: tx,
+        excludeId: input.data.id,
+      });
+      const variants = buildVariantPayload(input.data);
+
       await tx.product.update({
         where: { id: input.data.id },
         data: {
@@ -723,20 +871,10 @@ export async function updateAdminProduct(input: {
       await tx.productSpecification.deleteMany({
         where: { productId: input.data.id },
       });
-      await tx.inventory.deleteMany({
-        where: {
-          productVariant: {
-            productId: input.data.id,
-          },
-        },
-      });
-      await tx.productVariant.deleteMany({
-        where: { productId: input.data.id },
-      });
 
       await createImages(tx, input.data.id, input.data.images);
       await createSpecifications(tx, input.data.id, input.data.specifications);
-      await createVariants(tx, input.data.id, variants);
+      await upsertVariants(tx, input.data.id, variants);
 
       const updated = await tx.product.findUnique({
         where: { id: input.data.id },

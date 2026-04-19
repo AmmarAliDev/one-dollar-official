@@ -14,6 +14,8 @@ const prismaMock = vi.hoisted(() => ({
   },
   productVariant: {
     create: vi.fn(),
+    findMany: vi.fn(),
+    update: vi.fn(),
     deleteMany: vi.fn(),
   },
   productImage: {
@@ -27,6 +29,7 @@ const prismaMock = vi.hoisted(() => ({
   inventory: {
     deleteMany: vi.fn(),
     create: vi.fn(),
+    upsert: vi.fn(),
   },
   auditLog: {
     create: vi.fn(),
@@ -48,21 +51,37 @@ describe("admin product service", () => {
     vi.clearAllMocks();
   });
 
-  it("applies query and status filters when listing products", async () => {
+  it("applies query, type, and pagination filters when listing products", async () => {
     prismaMock.product.findMany.mockResolvedValue([]);
 
     await listAdminProducts({
       query: "wash",
       status: "PUBLISHED",
       type: "SIMPLE",
+      page: 2,
+      pageSize: 20,
     });
 
     expect(prismaMock.product.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({
-          status: "PUBLISHED",
-          OR: expect.any(Array),
-        }),
+        where: {
+          AND: expect.arrayContaining([
+            { status: "PUBLISHED" },
+            expect.objectContaining({ OR: expect.any(Array) }),
+            {
+              OR: expect.arrayContaining([
+                {
+                  metadata: {
+                    path: ["variantsEnabled"],
+                    equals: false,
+                  },
+                },
+              ]),
+            },
+          ]),
+        },
+        skip: 20,
+        take: 20,
       }),
     );
   });
@@ -291,12 +310,13 @@ describe("admin product service", () => {
         updatedAt: new Date("2026-04-17T12:00:00.000Z"),
       });
     prismaMock.product.update.mockResolvedValue({ id: "product-1" });
-    prismaMock.productVariant.deleteMany.mockResolvedValue({ count: 1 });
-    prismaMock.inventory.deleteMany.mockResolvedValue({ count: 1 });
+    prismaMock.productVariant.findMany.mockResolvedValue([{ id: "variant-2", sku: "TEE-S-BLU" }]);
+    prismaMock.productVariant.deleteMany.mockResolvedValue({ count: 0 });
+    prismaMock.inventory.deleteMany.mockResolvedValue({ count: 0 });
     prismaMock.productImage.deleteMany.mockResolvedValue({ count: 0 });
     prismaMock.productSpecification.deleteMany.mockResolvedValue({ count: 0 });
-    prismaMock.productVariant.create.mockResolvedValue({ id: "variant-2" });
-    prismaMock.inventory.create.mockResolvedValue({ id: "inventory-2" });
+    prismaMock.productVariant.update.mockResolvedValue({ id: "variant-2" });
+    prismaMock.inventory.upsert.mockResolvedValue({ id: "inventory-2" });
     prismaMock.auditLog.create.mockResolvedValue({ id: "audit-2" });
 
     await updateAdminProduct({
@@ -347,9 +367,16 @@ describe("admin product service", () => {
         }),
       }),
     );
-    expect(prismaMock.productVariant.deleteMany).toHaveBeenCalledWith({
-      where: { productId: "product-1" },
-    });
+    expect(prismaMock.productVariant.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: "variant-2" },
+        data: expect.objectContaining({
+          sku: "TEE-S-BLU",
+          isDefault: true,
+        }),
+      }),
+    );
+    expect(prismaMock.productVariant.deleteMany).not.toHaveBeenCalled();
     expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({

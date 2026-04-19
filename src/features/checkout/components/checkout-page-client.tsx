@@ -67,8 +67,9 @@ export function CheckoutPageClient({
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [retryPayload, setRetryPayload] = useState<CheckoutPayload | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [retryPending, setRetryPending] = useState(false);
 
-  const isPending = form.formState.isSubmitting;
+  const isPending = form.formState.isSubmitting || retryPending;
 
   const totals = useMemo(
     () => ({
@@ -79,13 +80,17 @@ export function CheckoutPageClient({
     [cart.subtotal, shipping],
   );
 
-  async function submitCheckout(payload: CheckoutPayload) {
-    if (isPending || submitted) {
+  async function submitCheckout(payload: CheckoutPayload, options: { manual?: boolean } = {}) {
+    if (retryPending || submitted) {
       return;
     }
 
     form.clearErrors("root");
     setSuccessMessage(null);
+
+    if (options.manual) {
+      setRetryPending(true);
+    }
 
     try {
       const response = await fetch("/api/checkout", {
@@ -129,14 +134,25 @@ export function CheckoutPageClient({
       const message = error instanceof Error ? error.message : "Checkout could not be submitted. Please retry.";
       setSuccessMessage(null);
       setRetryPayload(payload);
+      form.setError("root.serverError", {
+        type: "server",
+        message,
+      });
       notify.error("Checkout failed", message);
-      throw new Error(message);
+    } finally {
+      if (options.manual) {
+        setRetryPending(false);
+      }
     }
   }
 
+  const handleCheckoutSubmit = async (payload: CheckoutPayload) => {
+    await submitCheckout(payload);
+  };
+
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
-      <form className="space-y-5" onSubmit={form.handleSubmit(submitCheckout)} noValidate>
+      <form className="space-y-5" onSubmit={form.handleSubmit(handleCheckoutSubmit)} noValidate>
         <FormErrorSummary errors={form.formState.errors} title="Checkout details need attention" />
 
         {successMessage ? (
@@ -341,7 +357,7 @@ export function CheckoutPageClient({
             <Button
               type="button"
               variant="outline"
-              onClick={() => void submitCheckout(retryPayload)}
+              onClick={() => void submitCheckout(retryPayload, { manual: true })}
               disabled={isPending || submitted || !allowSubmit}
             >
               Retry last attempt

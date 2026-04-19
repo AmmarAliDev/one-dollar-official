@@ -40,12 +40,12 @@ export function getProductNoticeMessage(code: string | undefined) {
   return noticeMessages[code as ProductNoticeCode] ?? null;
 }
 
-export function getProductErrorMessage(code: string | undefined) {
+export function getProductErrorMessage(code: string | undefined, fallback: string | null = null) {
   if (!code) {
     return null;
   }
 
-  return errorMessages[code as ProductErrorCode] ?? errorMessages.updateFailed;
+  return errorMessages[code as ProductErrorCode] ?? fallback;
 }
 
 export function getProductErrorCode(error: AppError, fallback: ProductErrorCode): ProductErrorCode {

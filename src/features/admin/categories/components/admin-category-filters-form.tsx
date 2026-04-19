@@ -51,7 +51,6 @@ export function AdminCategoryFiltersForm({ query, status }: AdminCategoryFilters
       noValidate
       onSubmit={form.handleSubmit((values) => {
         router.push(buildCategoryFilterHref(values));
-        router.refresh();
       })}
     >
       <DynamicFormField

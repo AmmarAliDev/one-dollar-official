@@ -1,8 +1,8 @@
 "use client";
 
 import { useTransition } from "react";
+import { unstable_rethrow } from "next/navigation";
 import type { FieldValues, UseFormReturn } from "react-hook-form";
-import { isRedirectError } from "next/dist/client/components/redirect-error";
 
 import { toUserMessage } from "@/lib/errors/error-messages";
 
@@ -36,8 +36,10 @@ export function useServerActionSubmit<TFieldValues extends FieldValues>(
             resolve();
           })
           .catch((error) => {
-            if (isRedirectError(error)) {
-              reject(error);
+            try {
+              unstable_rethrow(error);
+            } catch (redirectError) {
+              reject(redirectError);
               return;
             }
 

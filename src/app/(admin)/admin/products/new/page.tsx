@@ -37,7 +37,7 @@ export default async function NewAdminProductPage({ searchParams }: NewAdminProd
   const categories = await listAdminProductCategories();
   const relatedProducts = await listAdminRelatedProducts();
   const noticeMessage = getProductNoticeMessage(query.notice);
-  const errorMessage = getProductErrorMessage(query.error);
+  const errorMessage = getProductErrorMessage(query.error, "The product could not be created. Please try again.");
 
   return (
     <PageShell className="gap-8">

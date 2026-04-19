@@ -137,6 +137,7 @@
 - [x] Sign-out behavior standardized across the storefront header dropdown, mobile drawer, account profile page, and admin shell with one shared server-action form pattern and redirect-to-home behavior
 - [x] Sign-out regression tests added for the auth action and mobile signed-in surface rendering
 - [x] Admin category management added at `/admin/categories` with create/edit/delete flows, search/filter basics, and status + SEO fields
+- [x] Admin product management added at `/admin/products` with list/create/edit flows, variant stock handling, related-product links, and SEO controls
 - [x] Category admin mutations now persist `AuditLog` entries for create/update/delete events
 - [x] Category validation and service tests added for slug and CRUD logic
 - [x] Prisma workflow verified for local PostgreSQL development and hosted Supabase production deployment separation
@@ -158,7 +159,7 @@
 - [ ] Dedicated CSRF token flow for any future embedded or cross-origin clients
 - [ ] Online gateway provider implementations under checkout payment contract
 - [ ] Live catalog persistence beyond the fallback listing dataset
-- [ ] Broader admin CRUD workflows beyond category and product management
+- [ ] Broader admin CRUD workflows beyond the current category flows and product list/create/edit management (for example product delete, bulk actions, and deeper automation)
 - [ ] Server-side notifications and third-party integrations
 
 ## Recommended Next Prompt

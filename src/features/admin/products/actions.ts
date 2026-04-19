@@ -1,8 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-import { isRedirectError } from "next/dist/client/components/redirect-error";
+import { redirect, unstable_rethrow } from "next/navigation";
 
 import { routes } from "@/config/routes";
 import { requireRouteAccess } from "@/lib/auth/guards";
@@ -140,9 +139,7 @@ export async function createAdminProductAction(formData: FormData) {
     revalidatePath(routes.admin.products);
     redirect(appendFlash(routes.admin.productEdit(created.id), "notice", "created"));
   } catch (error) {
-    if (isRedirectError(error)) {
-      throw error;
-    }
+    unstable_rethrow(error);
 
     const appError = captureServerError(error, "admin:product:create");
     redirect(appendFlash(returnTo, "error", getProductErrorCode(appError, "createFailed")));
@@ -171,9 +168,7 @@ export async function updateAdminProductAction(formData: FormData) {
       });
     }
   } catch (error) {
-    if (isRedirectError(error)) {
-      throw error;
-    }
+    unstable_rethrow(error);
 
     const appError = captureServerError(error, "admin:product:update");
     errorCode = getProductErrorCode(appError, "updateFailed");
