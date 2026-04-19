@@ -495,19 +495,23 @@ export async function createAdminBanner({ data, actor }: { data: AdminBannerInpu
 
   const database = getPrismaClient();
 
-  return database.$transaction(async (tx) => {
-    const created = await tx.banner.create({
-      data: buildBannerWriteData(parsed.data),
-    });
+  try {
+    return await database.$transaction(async (tx) => {
+      const created = await tx.banner.create({
+        data: buildBannerWriteData(parsed.data),
+      });
 
-    await writeAuditLog(tx, actor, "homepage.banner.created", "Banner", created.id, {
-      title: created.title,
-      position: created.position,
-      active: created.active,
-    });
+      await writeAuditLog(tx, actor, "homepage.banner.created", "Banner", created.id, {
+        title: created.title,
+        position: created.position,
+        active: created.active,
+      });
 
-    return mapAdminBannerRecord(created);
-  });
+      return mapAdminBannerRecord(created);
+    });
+  } catch (error) {
+    throw buildMutationError(error) ?? error;
+  }
 }
 
 export async function updateAdminBanner({ data, actor }: { data: AdminBannerInput; actor: AuditActorInput }) {
@@ -522,38 +526,42 @@ export async function updateAdminBanner({ data, actor }: { data: AdminBannerInpu
   const database = getPrismaClient();
   const bannerId = parsed.data.id;
 
-  return database.$transaction(async (tx) => {
-    const existing = await tx.banner.findUnique({
-      where: { id: bannerId },
-    });
-
-    if (!existing) {
-      throw new AppError("Banner not found.", "HOMEPAGE_CONTENT_NOT_FOUND", {
-        statusCode: 404,
-        userMessage: "The selected banner could not be found.",
+  try {
+    return await database.$transaction(async (tx) => {
+      const existing = await tx.banner.findUnique({
+        where: { id: bannerId },
       });
-    }
 
-    const updated = await tx.banner.update({
-      where: { id: bannerId },
-      data: buildBannerWriteData(parsed.data),
+      if (!existing) {
+        throw new AppError("Banner not found.", "HOMEPAGE_CONTENT_NOT_FOUND", {
+          statusCode: 404,
+          userMessage: "The selected banner could not be found.",
+        });
+      }
+
+      const updated = await tx.banner.update({
+        where: { id: bannerId },
+        data: buildBannerWriteData(parsed.data),
+      });
+
+      await writeAuditLog(tx, actor, "homepage.banner.updated", "Banner", updated.id, {
+        before: {
+          title: existing.title,
+          position: existing.position,
+          active: existing.active,
+        },
+        after: {
+          title: updated.title,
+          position: updated.position,
+          active: updated.active,
+        },
+      });
+
+      return mapAdminBannerRecord(updated);
     });
-
-    await writeAuditLog(tx, actor, "homepage.banner.updated", "Banner", updated.id, {
-      before: {
-        title: existing.title,
-        position: existing.position,
-        active: existing.active,
-      },
-      after: {
-        title: updated.title,
-        position: updated.position,
-        active: updated.active,
-      },
-    });
-
-    return mapAdminBannerRecord(updated);
-  });
+  } catch (error) {
+    throw buildMutationError(error) ?? error;
+  }
 }
 
 export async function createAdminDealCampaign({ data, actor }: { data: AdminDealCampaignInput; actor: AuditActorInput }) {
@@ -567,18 +575,22 @@ export async function createAdminDealCampaign({ data, actor }: { data: AdminDeal
 
   const database = getPrismaClient();
 
-  return database.$transaction(async (tx) => {
-    const created = await tx.dealCampaign.create({
-      data: buildDealCampaignWriteData(parsed.data),
-    });
+  try {
+    return await database.$transaction(async (tx) => {
+      const created = await tx.dealCampaign.create({
+        data: buildDealCampaignWriteData(parsed.data),
+      });
 
-    await writeAuditLog(tx, actor, "homepage.campaign.created", "DealCampaign", created.id, {
-      name: created.name,
-      active: created.active,
-    });
+      await writeAuditLog(tx, actor, "homepage.campaign.created", "DealCampaign", created.id, {
+        name: created.name,
+        active: created.active,
+      });
 
-    return mapAdminDealCampaignRecord(created);
-  });
+      return mapAdminDealCampaignRecord(created);
+    });
+  } catch (error) {
+    throw buildMutationError(error) ?? error;
+  }
 }
 
 export async function updateAdminDealCampaign({ data, actor }: { data: AdminDealCampaignInput; actor: AuditActorInput }) {
@@ -593,36 +605,40 @@ export async function updateAdminDealCampaign({ data, actor }: { data: AdminDeal
   const database = getPrismaClient();
   const campaignId = parsed.data.id;
 
-  return database.$transaction(async (tx) => {
-    const existing = await tx.dealCampaign.findUnique({
-      where: { id: campaignId },
-    });
-
-    if (!existing) {
-      throw new AppError("Deal campaign not found.", "HOMEPAGE_CONTENT_NOT_FOUND", {
-        statusCode: 404,
-        userMessage: "The selected deal campaign could not be found.",
+  try {
+    return await database.$transaction(async (tx) => {
+      const existing = await tx.dealCampaign.findUnique({
+        where: { id: campaignId },
       });
-    }
 
-    const updated = await tx.dealCampaign.update({
-      where: { id: campaignId },
-      data: buildDealCampaignWriteData(parsed.data),
+      if (!existing) {
+        throw new AppError("Deal campaign not found.", "HOMEPAGE_CONTENT_NOT_FOUND", {
+          statusCode: 404,
+          userMessage: "The selected deal campaign could not be found.",
+        });
+      }
+
+      const updated = await tx.dealCampaign.update({
+        where: { id: campaignId },
+        data: buildDealCampaignWriteData(parsed.data),
+      });
+
+      await writeAuditLog(tx, actor, "homepage.campaign.updated", "DealCampaign", updated.id, {
+        before: {
+          name: existing.name,
+          active: existing.active,
+        },
+        after: {
+          name: updated.name,
+          active: updated.active,
+        },
+      });
+
+      return mapAdminDealCampaignRecord(updated);
     });
-
-    await writeAuditLog(tx, actor, "homepage.campaign.updated", "DealCampaign", updated.id, {
-      before: {
-        name: existing.name,
-        active: existing.active,
-      },
-      after: {
-        name: updated.name,
-        active: updated.active,
-      },
-    });
-
-    return mapAdminDealCampaignRecord(updated);
-  });
+  } catch (error) {
+    throw buildMutationError(error) ?? error;
+  }
 }
 
 function mapSectionRecordToStorefrontSection(record: HomePageSectionRow, referenceTime: Date): HomepageSection | null {

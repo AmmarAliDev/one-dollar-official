@@ -46,6 +46,7 @@ export function buildDateTimeField<TFieldValues extends FieldValues>({
       <Input
         id={inputId}
         type="datetime-local"
+        ref={field.ref}
         value={toDateTimeLocalInputValue(field.value as Date | string | null | undefined)}
         onChange={(event) => field.onChange(event.target.value)}
         onBlur={field.onBlur}
@@ -53,7 +54,6 @@ export function buildDateTimeField<TFieldValues extends FieldValues>({
         aria-invalid={Boolean(fieldState.error)}
         disabled={disabled}
         className={controlClassName}
-      />
-    ),
+      />    ),
   };
 }

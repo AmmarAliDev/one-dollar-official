@@ -8,6 +8,7 @@ import { buildMetadata } from "@/config/metadata";
 import { routes } from "@/config/routes";
 import { AdminPageHeader } from "@/features/admin/components/admin-page-patterns";
 import { AdminHomepageSectionForm } from "@/features/admin/homepage/components/admin-homepage-section-form";
+import { adminHomepageSectionKindValues, type AdminHomepageSectionType } from "@/features/admin/homepage/validation";
 import {
   createAdminHomepageSectionAction,
   getHomepageContentErrorMessage,
@@ -31,6 +32,10 @@ type AdminHomepageSectionsPageProps = {
 
 function getTypeLabel(value: string) {
   return value.replaceAll("-", " ");
+}
+
+function isAdminHomepageSectionType(value: string): value is AdminHomepageSectionType {
+  return adminHomepageSectionKindValues.some((candidate) => candidate === value);
 }
 
 export default async function AdminHomepageSectionsPage({ searchParams }: AdminHomepageSectionsPageProps) {
@@ -124,8 +129,7 @@ export default async function AdminHomepageSectionsPage({ searchParams }: AdminH
               <CardHeader>
                 <CardTitle>{section.title}</CardTitle>
                 <CardDescription>
-                  {getTypeLabel(section.type)} • Last updated {section.updatedAt.toLocaleString("en-PK", { dateStyle: "medium", timeStyle: "short" })}
-                </CardDescription>
+                  {getTypeLabel(section.type)} • Last updated {section.updatedAt.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}                </CardDescription>
               </CardHeader>
               <CardContent>
                 <AdminHomepageSectionForm
@@ -136,7 +140,7 @@ export default async function AdminHomepageSectionsPage({ searchParams }: AdminH
                   initialValues={{
                     key: section.key,
                     title: section.title,
-                    type: section.type as never,
+                    type: isAdminHomepageSectionType(section.type) ? section.type : "announcement-bar",
                     position: section.position,
                     active: section.active,
                     startAt: section.startAt,

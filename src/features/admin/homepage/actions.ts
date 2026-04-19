@@ -128,8 +128,8 @@ export async function seedAdminHomepageSectionsAction(formData: FormData) {
   } catch (error) {
     unstable_rethrow(error);
 
-    redirect(appendFlash(returnTo, "error", "updateFailed"));
-  }
+    redirect(appendFlash(returnTo, "error", "seedFailed"));
+  }  
 }
 
 export async function createAdminHomepageSectionAction(formData: FormData) {

@@ -10,7 +10,7 @@ export async function fetchHomepageContentFromCms(): Promise<HomepageContent | n
   try {
     const content = await loadHomepageContentForStorefront();
 
-    if (!content || content.sections.length === 0) {
+    if (!content || !content.sections?.length) {
       logger.debug("No admin-managed homepage content is available; using fallback content.");
       return null;
     }
