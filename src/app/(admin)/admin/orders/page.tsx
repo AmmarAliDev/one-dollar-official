@@ -205,20 +205,41 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
               Showing up to {orders.pageSize} orders per page.
             </div>
             <div className="flex gap-2">
-              <Link
-                href={buildOrdersPageHref(Math.max(1, orders.page - 1), query, status)}
-                className={buttonVariants({ variant: "ghost", size: "sm" })}
-                aria-disabled={orders.page <= 1}
-              >
-                Previous
-              </Link>
-              <Link
-                href={buildOrdersPageHref(orders.page + 1, query, status)}
-                className={buttonVariants({ variant: "outline", size: "sm" })}
-                aria-disabled={!orders.hasNextPage}
-              >
-                Next
-              </Link>
+              {orders.page <= 1 ? (
+                <button
+                  type="button"
+                  disabled
+                  className={buttonVariants({ variant: "ghost", size: "sm" })}
+                  aria-disabled="true"
+                >
+                  Previous
+                </button>
+              ) : (
+                <Link
+                  href={buildOrdersPageHref(Math.max(1, orders.page - 1), query, status)}
+                  className={buttonVariants({ variant: "ghost", size: "sm" })}
+                >
+                  Previous
+                </Link>
+              )}
+
+              {!orders.hasNextPage ? (
+                <button
+                  type="button"
+                  disabled
+                  className={buttonVariants({ variant: "outline", size: "sm" })}
+                  aria-disabled="true"
+                >
+                  Next
+                </button>
+              ) : (
+                <Link
+                  href={buildOrdersPageHref(orders.page + 1, query, status)}
+                  className={buttonVariants({ variant: "outline", size: "sm" })}
+                >
+                  Next
+                </Link>
+              )}
             </div>
           </div>
         </CardContent>

@@ -429,26 +429,28 @@ export async function saveAdminOrderInternalNote(input: {
       } satisfies Prisma.InputJsonObject)
     : (Object.fromEntries(Object.entries(rawMetadata).filter(([key]) => key !== "adminInternalNote")) as Prisma.InputJsonObject);
 
-  await db.order.update({
-    where: {
-      id: order.id,
-    },
-    data: {
-      metadata,
-    },
-  });
-
-  await db.auditLog.create({
-    data: {
-      actorId: input.actor.actorId,
-      action: "order.internal_note.updated",
-      model: "Order",
-      modelId: order.id,
-      changes: {
-        previousNote,
-        nextNote,
+  await db.$transaction(async (tx) => {
+    await tx.order.update({
+      where: {
+        id: order.id,
       },
-    },
+      data: {
+        metadata,
+      },
+    });
+
+    await tx.auditLog.create({
+      data: {
+        actorId: input.actor.actorId,
+        action: "order.internal_note.updated",
+        model: "Order",
+        modelId: order.id,
+        changes: {
+          previousNote,
+          nextNote,
+        },
+      },
+    });
   });
 
   return {
