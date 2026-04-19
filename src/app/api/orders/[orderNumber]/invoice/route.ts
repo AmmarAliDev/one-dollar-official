@@ -6,6 +6,7 @@ import {
   buildOrderInvoiceFilename,
   getOrderDetailsForAccess,
 } from "@/features/orders";
+import { hasPermission, rbacPermissions } from "@/lib/auth/rbac";
 import { createRouteHandlerErrorResponse } from "@/lib/errors/handling";
 
 type InvoiceRouteProps = {
@@ -17,11 +18,15 @@ export async function GET(request: Request, { params }: InvoiceRouteProps) {
     const [{ orderNumber }, session] = await Promise.all([params, auth()]);
     const url = new URL(request.url);
     const token = url.searchParams.get("token") ?? undefined;
+    const allowPrivilegedAccess =
+      hasPermission(session?.user?.role, rbacPermissions.adminAccess) &&
+      hasPermission(session?.user?.role, rbacPermissions.ordersRead);
 
     const order = await getOrderDetailsForAccess({
       orderNumber,
       ...(session?.user?.id ? { userId: session.user.id } : {}),
       ...(token ? { accessToken: token } : {}),
+      ...(allowPrivilegedAccess ? { allowPrivilegedAccess: true } : {}),
     });
 
     if (!order) {

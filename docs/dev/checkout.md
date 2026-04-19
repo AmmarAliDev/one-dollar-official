@@ -155,6 +155,28 @@ Access rules:
 	- partially available products are added with adjusted quantity and a clear adjustment message
 	- successful lines are added into the customer's active cart (creating one if needed)
 
+## Admin order management
+
+Admin order operations now live under `src/features/admin/orders` and are designed for non-technical staff.
+
+Routes:
+
+- `/admin/orders`: searchable order queue with status filtering and clear payment / customer summaries
+- `/admin/orders/[orderNumber]`: order detail view with customer snapshot, delivery address, item breakdown, totals, audit history, invoice download, and internal notes
+
+Role behavior:
+
+- `SUPER_ADMIN` and `ORDER_MANAGER` can update fulfillment statuses and save internal notes
+- `PRODUCT_MANAGER` can view orders in read-only mode for cross-team visibility
+
+Audit and notes behavior:
+
+- order status changes continue to persist `order.status.changed` entries in `AuditLog`
+ - order status changes continue to persist `order.status.changed` entries in `AuditLog`
+ - internal staff notes are stored in `Order.metadata.adminInternalNote` (this field holds only the latest internal staff note; it does not accumulate a list of past notes).
+ - every save of `Order.metadata.adminInternalNote` also writes an `order.internal_note.updated` entry into `AuditLog` containing the previous and new values for historical records (see the `order.internal_note.updated` audit entries for the history of internal-note changes).
+ - concurrent edits follow a last-write-wins model: the most recent successful save overwrites `Order.metadata.adminInternalNote`. Use `AuditLog` (the `order.internal_note.updated` entries) to inspect prior versions. The update of `Order.metadata.adminInternalNote` and the corresponding `order.internal_note.updated` audit entry are written together in a single database transaction so the metadata change and its audit record succeed or fail atomically.
+
 ## Next expansion path
 
 Prompt 4.4 should add:
