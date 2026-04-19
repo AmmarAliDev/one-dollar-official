@@ -23,4 +23,13 @@ describe("order status helpers", () => {
     expect(() => assertOrderStatusTransition("PENDING", "SHIPPED")).toThrow(/Invalid order status transition/);
     expect(() => assertOrderStatusTransition("CANCELLED", "DELIVERED")).toThrow(/Invalid order status transition/);
   });
+
+  it("treats delivered and cancelled orders as final states", () => {
+    expect(getNextOrderStatuses("DELIVERED")).toEqual([]);
+    expect(getNextOrderStatuses("CANCELLED")).toEqual([]);
+  });
+
+  it("throws a staff-friendly error when the same status is selected", () => {
+    expect(() => assertOrderStatusTransition("PENDING", "PENDING")).toThrow(/already set to the requested value/);
+  });
 });

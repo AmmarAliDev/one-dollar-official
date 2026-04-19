@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 
-import { CartStatus, City, Country, OrderStatus, ProductStatus } from "@prisma/client";
 import type { Prisma } from "@prisma/client";
+import { CartStatus, City, Country, OrderStatus, ProductStatus } from "@prisma/client";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
 import { mergeGuestCartIntoUserCart } from "@/features/cart";
@@ -703,6 +703,7 @@ export async function getOrderDetailsForAccess(input: {
   orderNumber: string;
   userId?: string | null;
   accessToken?: string | null;
+  allowPrivilegedAccess?: boolean;
 }) {
   const db = getPrismaClient();
   const order = await db.order.findUnique({
@@ -723,7 +724,7 @@ export async function getOrderDetailsForAccess(input: {
     return null;
   }
 
-  if (!hasOrderAccess(order, input.userId, input.accessToken)) {
+  if (!input.allowPrivilegedAccess && !hasOrderAccess(order, input.userId, input.accessToken)) {
     return null;
   }
 

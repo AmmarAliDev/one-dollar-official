@@ -21,6 +21,18 @@ vi.mock("@/lib/notify", () => ({
   },
 }));
 
+type MockCheckoutResponse = {
+  ok: boolean;
+  json: () => Promise<{
+    order: {
+      confirmationUrl: string;
+      orderNumber: string;
+      payment: { message: string };
+      totals: { total: number };
+    };
+  }>;
+};
+
 describe("checkout form migration", () => {
   beforeEach(() => {
     pushMock.mockReset();
@@ -151,19 +163,7 @@ describe("checkout form migration", () => {
 
   it("prevents duplicate retry submissions while a retry is in flight", async () => {
     const user = userEvent.setup();
-    let resolveRetry:
-      | ((value: {
-          ok: boolean;
-          json: () => Promise<{
-            order: {
-              confirmationUrl: string;
-              orderNumber: string;
-              payment: { message: string };
-              totals: { total: number };
-            };
-          }>;
-        }) => void)
-      | null = null;
+    let resolveRetry!: (value: MockCheckoutResponse) => void;
 
     const fetchMock = vi
       .fn()
@@ -173,7 +173,7 @@ describe("checkout form migration", () => {
       })
       .mockImplementationOnce(
         () =>
-          new Promise((resolve) => {
+          new Promise<MockCheckoutResponse>((resolve) => {
             resolveRetry = resolve;
           }),
       );
@@ -224,7 +224,7 @@ describe("checkout form migration", () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
 
-    resolveRetry?.({
+    resolveRetry({
       ok: true,
       json: async () => ({
         order: {

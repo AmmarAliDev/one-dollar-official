@@ -32,6 +32,7 @@ export const routes = {
     categories: "/admin/categories",
     categoryEdit: (categoryId: string) => `/admin/categories/${categoryId}/edit`,
     orders: "/admin/orders",
+    orderDetail: (orderNumber: string) => `/admin/orders/${orderNumber}`,
     revenue: "/admin/revenue",
     inventory: "/admin/inventory",
     activity: "/admin/activity",

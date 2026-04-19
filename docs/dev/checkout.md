@@ -155,6 +155,27 @@ Access rules:
 	- partially available products are added with adjusted quantity and a clear adjustment message
 	- successful lines are added into the customer's active cart (creating one if needed)
 
+## Admin order management
+
+Admin order operations now live under `src/features/admin/orders` and are designed for non-technical staff.
+
+Routes:
+
+- `/admin/orders`: searchable order queue with status filtering and clear payment / customer summaries
+- `/admin/orders/[orderNumber]`: order detail view with customer snapshot, delivery address, item breakdown, totals, audit history, invoice download, and internal notes
+
+Role behavior:
+
+- `SUPER_ADMIN` and `ORDER_MANAGER` can update fulfillment statuses and save internal notes
+- `PRODUCT_MANAGER` can view orders in read-only mode for cross-team visibility
+
+Audit and notes behavior:
+
+- order status changes continue to persist `order.status.changed` entries in `AuditLog`
+- internal staff notes are stored in `Order.metadata.adminInternalNote`
+- every note save also writes `order.internal_note.updated` into `AuditLog`
+- the admin detail page surfaces audit history in reverse chronological order for quick review
+
 ## Next expansion path
 
 Prompt 4.4 should add:

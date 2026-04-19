@@ -138,6 +138,10 @@
 - [x] Sign-out regression tests added for the auth action and mobile signed-in surface rendering
 - [x] Admin category management added at `/admin/categories` with create/edit/delete flows, search/filter basics, and status + SEO fields
 - [x] Admin product management added at `/admin/products` with list/create/edit flows, variant stock handling, related-product links, and SEO controls
+- [x] Admin order management added at `/admin/orders` with searchable filters, fulfillment status controls, invoice access, and clear customer/order breakdowns
+- [x] Admin order detail route added at `/admin/orders/[orderNumber]` with address, items, totals, staff notes, and audit history
+- [x] Order-manager write restrictions now keep product managers in read-only mode for admin order screens
+- [x] Order admin workflows now surface and persist `AuditLog` entries for status changes and internal note updates
 - [x] Category admin mutations now persist `AuditLog` entries for create/update/delete events
 - [x] Category validation and service tests added for slug and CRUD logic
 - [x] Prisma workflow verified for local PostgreSQL development and hosted Supabase production deployment separation
