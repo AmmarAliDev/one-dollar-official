@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { AlertTriangle, ClipboardList, DollarSign, History, PackageOpen } from "lucide-react";
+import { AlertTriangle, ClipboardList, DollarSign, History, LayoutTemplate, PackageOpen } from "lucide-react";
 
 import { PageShell } from "@/components/layout/page-shell";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { buildMetadata } from "@/config/metadata";
 import { routes } from "@/config/routes";
 import {
@@ -41,6 +41,13 @@ const adminCards = [
     href: routes.admin.inventory,
   },
   {
+    title: "Homepage content",
+    value: "CMS-ready",
+    description: "Manage sections, banners, and campaign visibility without code changes.",
+    icon: LayoutTemplate,
+    href: routes.admin.homepage,
+  },
+  {
     title: "Recent Activity",
     value: "No new events",
     description: "Recent changes and staff actions appear in one simple feed.",
@@ -55,10 +62,10 @@ export default function AdminPage() {
       <AdminPageHeader
         eyebrow="Admin dashboard"
         title="Store operations at a glance"
-        description="Use this simple panel to review daily workload, revenue placeholders, inventory health, and recent activity in one place."
+        description="Use this simple panel to review daily workload, content controls, revenue placeholders, inventory health, and recent activity in one place."
         actions={
-          <Link href={routes.admin.orders} className={buttonVariants({ variant: "outline", size: "sm" })}>
-            Open orders board
+          <Link href={routes.admin.homepage} className={buttonVariants({ variant: "outline", size: "sm" })}>
+            Open homepage controls
           </Link>
         }
       />

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const prismaMock = vi.hoisted(() => ({
+  $transaction: vi.fn(async (callback: (tx: typeof prismaMock) => Promise<unknown>) => callback(prismaMock)),
   order: {
     findMany: vi.fn(),
     findUnique: vi.fn(),
@@ -96,6 +97,7 @@ describe("admin order service", () => {
     });
 
     expect(result.internalNote).toBe("Call before dispatch.");
+    expect(prismaMock.$transaction).toHaveBeenCalledTimes(1);
     expect(prismaMock.order.update).toHaveBeenCalledWith({
       where: { id: "order-1" },
       data: {

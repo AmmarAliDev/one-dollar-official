@@ -132,6 +132,7 @@ const form = useAppForm({
 ## Conventions
 
 - Prefer `useAppForm()` for all new interactive client forms.
+- Homepage admin content editors now follow this pattern through the client wrappers in `src/features/admin/homepage/components`.
 - Keep validation rules in Zod schemas close to the owning feature module.
 - Use the shared dynamic field config for routine forms instead of repeating label/description/error markup.
 - Use the `custom` field type only when the standard field set is not enough.

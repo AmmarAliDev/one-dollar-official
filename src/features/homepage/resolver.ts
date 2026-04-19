@@ -2,6 +2,7 @@ import { HOMEPAGE_FALLBACK_SECTIONS } from "./fallback-content";
 import type { HomepageContentResult, HomepageSection, HomepageSectionKind } from "./types";
 
 const SECTION_RENDER_ORDER: HomepageSectionKind[] = [
+  "announcement-bar",
   "hero-banner",
   "featured-categories",
   "featured-products",

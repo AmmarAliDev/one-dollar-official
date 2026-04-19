@@ -1,11 +1,13 @@
 import type { ComponentType } from "react";
 
+import { AnnouncementBarSectionBlock } from "./components/announcement-bar-section";
 import { BlogHighlightsSectionBlock } from "./components/blog-highlights-section";
 import { DealSpotlightSectionBlock } from "./components/deal-spotlight-section";
 import { FeaturedCategoriesSectionBlock } from "./components/featured-categories-section";
 import { FeaturedProductsSectionBlock } from "./components/featured-products-section";
 import { HeroBannerSectionBlock } from "./components/hero-banner-section";
 import type {
+  AnnouncementBarSection,
   BlogHighlightsSection,
   DealSpotlightSection,
   FeaturedCategoriesSection,
@@ -16,6 +18,7 @@ import type {
 } from "./types";
 
 type SectionComponentMap = {
+  "announcement-bar": ComponentType<{ section: AnnouncementBarSection }>;
   "hero-banner": ComponentType<{ section: HeroBannerSection }>;
   "featured-categories": ComponentType<{ section: FeaturedCategoriesSection }>;
   "featured-products": ComponentType<{ section: FeaturedProductsSection }>;
@@ -24,6 +27,7 @@ type SectionComponentMap = {
 };
 
 export const SECTION_COMPONENTS: SectionComponentMap = {
+  "announcement-bar": AnnouncementBarSectionBlock,
   "hero-banner": HeroBannerSectionBlock,
   "featured-categories": FeaturedCategoriesSectionBlock,
   "featured-products": FeaturedProductsSectionBlock,

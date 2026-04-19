@@ -154,6 +154,9 @@
 - [x] Auth, checkout, admin category, admin product, and query-string filter forms migrated onto the shared form conventions without changing business payload shapes
 - [x] Admin category save/filter regressions now have targeted coverage so false validation errors and stale filter navigation do not recur
 - [x] Focused form-system and regression tests now cover shared forms plus auth, checkout, and admin category migration behavior
+- [x] Homepage admin management added at `/admin/homepage` with section ordering, enable/disable toggles, scheduling support, banner and campaign pages, and announcement-bar support
+- [x] Homepage service now resolves validated admin content into the storefront rendering contract with safe fallback behavior
+- [x] Homepage content validation tests added for admin config payloads and storefront resolution flow
 
 ## Deferred by design
 

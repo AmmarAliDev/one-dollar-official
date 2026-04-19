@@ -12,6 +12,7 @@ describe("admin navigation visibility", () => {
       "Products",
       "Categories",
       "Orders",
+      "Homepage",
       "Revenue",
       "Inventory",
       "Recent Activity",

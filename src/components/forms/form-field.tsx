@@ -131,7 +131,7 @@ export function DynamicFormField<TFieldValues extends FieldValues>({
       {...controllerProps}
       render={({ field, fieldState }) => {
         const isDisabled = disabled || Boolean(fieldConfig.disabled);
-        const error = fieldState.error?.message;
+        const error = typeof fieldState.error?.message === "string" ? fieldState.error.message : undefined;
 
         if (fieldConfig.type === "checkbox" || fieldConfig.type === "switch") {
           const descriptionId = fieldConfig.description ? `${inputId}-description` : undefined;

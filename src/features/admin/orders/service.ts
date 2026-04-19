@@ -12,6 +12,22 @@ type AuditActorInput = {
   actorRole?: string | null;
 };
 
+type OrderAuditMutationClient = Pick<Prisma.TransactionClient, "order" | "auditLog">;
+
+async function runOrderAuditMutation<T>(
+  db: ReturnType<typeof getPrismaClient>,
+  callback: (client: OrderAuditMutationClient) => Promise<T>,
+) {
+  if (typeof db.$transaction !== "function") {
+    throw new AppError("Order audit mutations require Prisma transaction support.", "ORDER_TRANSACTION_UNAVAILABLE", {
+      statusCode: 500,
+      userMessage: "This order change could not be saved right now. Please try again.",
+    });
+  }
+
+  return db.$transaction(async (tx) => callback(tx as OrderAuditMutationClient));
+}
+
 export type AdminOrderStatusFilter = "ALL" | OrderStatus;
 
 export type AdminOrderListFilters = {
@@ -429,7 +445,7 @@ export async function saveAdminOrderInternalNote(input: {
       } satisfies Prisma.InputJsonObject)
     : (Object.fromEntries(Object.entries(rawMetadata).filter(([key]) => key !== "adminInternalNote")) as Prisma.InputJsonObject);
 
-  await db.$transaction(async (tx) => {
+  await runOrderAuditMutation(db, async (tx) => {
     await tx.order.update({
       where: {
         id: order.id,

@@ -1,7 +1,6 @@
-import { type RoleKey } from "@/lib/auth/roles";
-
 import { routes } from "@/config/routes";
 import { getRoleLabel, hasPermission, type RbacPermission, rbacPermissions } from "@/lib/auth/rbac";
+import { type RoleKey } from "@/lib/auth/roles";
 
 export type AdminNavigationItem = {
   label: string;
@@ -33,6 +32,12 @@ export const adminNavigationItems: readonly AdminNavigationItem[] = [
     href: routes.admin.orders,
     description: "Track order intake and fulfillment status.",
     requiredPermission: rbacPermissions.ordersRead,
+  },
+  {
+    label: "Homepage",
+    href: routes.admin.homepage,
+    description: "Manage homepage sections, banners, and promotional campaign timing.",
+    requiredPermission: rbacPermissions.settingsManage,
   },
   {
     label: "Revenue",
