@@ -25,7 +25,7 @@ This repository currently implements **Prompt 4.2 — one-page checkout foundati
 - shared frontend toast support through `sonner`, `AppToaster`, and `notify.*()`
 - lazy Prisma singleton access through `src/server/db/client.ts`
 - shared server-side database conventions for repositories, services, transaction orchestration, pagination, and query result typing in `src/server/db`
-- homepage rendering through `src/features/homepage` with CMS-ready fallback sections
+- homepage rendering through `src/features/homepage` with admin-managed sections, announcement support, banner/campaign scheduling, and fallback safety
 - catalog listing routes at `/categories` and `/categories/[slug]` backed by `src/features/catalog`
 - typed filter parsing, basic sorting, and pagination contracts ready to swap from fallback data to Prisma-backed catalog queries later
 - product detail routes at `/categories/[slug]/[productSlug]` with static params, metadata generation, and seeded fallback product detail contracts
@@ -45,6 +45,7 @@ This repository currently implements **Prompt 4.2 — one-page checkout foundati
 - helper tests now also cover PDP service retrieval and related-product behavior
 - helper tests now include wishlist seed-selection behavior and updated storefront route assertions
 - helper tests now include checkout validation, totals, and payment provider selection contracts
+- admin homepage content controls at `/admin/homepage` for sections, banners, and deal campaigns with validation and audit logging
 - updated AI and developer docs for UI conventions and future continuity
 
 ### Intentionally deferred
@@ -53,7 +54,7 @@ This repository currently implements **Prompt 4.2 — one-page checkout foundati
 - online payment gateway integrations
 - live Prisma-backed catalog persistence and admin catalog CRUD
 - analytics and notifications beyond shared frontend toasts
-- CMS persistence beyond the current homepage fallback scaffolds
+- advanced CMS capabilities beyond the current homepage admin content scaffolds
 
 ## Folder Structure Snapshot
 

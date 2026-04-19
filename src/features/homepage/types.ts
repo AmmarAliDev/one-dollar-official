@@ -1,9 +1,20 @@
 export type HomepageSectionKind =
+  | "announcement-bar"
   | "hero-banner"
   | "featured-categories"
   | "featured-products"
   | "deal-spotlight"
   | "blog-highlights";
+
+export type AnnouncementBarSection = {
+  id: string;
+  kind: "announcement-bar";
+  enabled?: boolean;
+  displayOrder?: number;
+  message: string;
+  href?: string;
+  label?: string;
+};
 
 export type HeroBannerSection = {
   id: string;
@@ -88,6 +99,7 @@ export type BlogHighlightsSection = {
 };
 
 export type HomepageSection =
+  | AnnouncementBarSection
   | HeroBannerSection
   | FeaturedCategoriesSection
   | FeaturedProductsSection

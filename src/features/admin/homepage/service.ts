@@ -1,0 +1,884 @@
+import { Prisma } from "@prisma/client";
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
+
+import { routes } from "@/config/routes";
+import { HOMEPAGE_FALLBACK_SECTIONS } from "@/features/homepage/fallback-content";
+import type { AnnouncementBarSection, DealSpotlightSection, HomepageContent, HomepageSection } from "@/features/homepage/types";
+import { logAdminAction } from "@/lib/audit/admin-actions";
+import { AppError } from "@/lib/errors/app-error";
+import { createLogger } from "@/lib/logger";
+import { getPrismaClient } from "@/server/db";
+
+import {
+  type AdminBannerInput,
+  type AdminDealCampaignInput,
+  type AdminHomepageSectionInput,
+  isScheduledWindowActive,
+  validateAdminBannerInput,
+  validateAdminDealCampaignInput,
+  validateAdminHomepageSectionInput,
+} from "./validation";
+
+const logger = createLogger("admin.homepage.service");
+
+type AuditActorInput = {
+  actorId: string;
+  actorRole?: string | null;
+};
+
+type AdminDbClient = ReturnType<typeof getPrismaClient> | Prisma.TransactionClient;
+
+type HomePageSectionRow = Awaited<ReturnType<ReturnType<typeof getPrismaClient>["homePageSection"]["findMany"]>>[number];
+type BannerRow = Awaited<ReturnType<ReturnType<typeof getPrismaClient>["banner"]["findMany"]>>[number];
+type DealCampaignRow = Awaited<ReturnType<ReturnType<typeof getPrismaClient>["dealCampaign"]["findMany"]>>[number];
+
+export type AdminHomepageSectionRecord = {
+  id: string;
+  key: string;
+  title: string;
+  type: string;
+  position: number;
+  active: boolean;
+  startAt: Date | null;
+  endAt: Date | null;
+  contentJson: string;
+  updatedAt: Date;
+};
+
+export type AdminBannerRecord = {
+  id: string;
+  title: string;
+  imageUrl: string;
+  href: string;
+  position: number;
+  active: boolean;
+  startAt: Date | null;
+  endAt: Date | null;
+  updatedAt: Date;
+};
+
+export type AdminDealCampaignRecord = {
+  id: string;
+  name: string;
+  description: string;
+  active: boolean;
+  startsAt: Date | null;
+  endsAt: Date | null;
+  updatedAt: Date;
+};
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+}
+
+function parseOptionalDate(value: unknown): Date | null {
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value;
+  }
+
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const normalized = value.trim();
+  if (normalized.length === 0) {
+    return null;
+  }
+
+  const parsed = new Date(normalized);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function formatDateTimeLocalValue(value: Date | null | undefined) {
+  if (!value) {
+    return "";
+  }
+
+  const localDate = new Date(value.getTime() - value.getTimezoneOffset() * 60_000);
+  return localDate.toISOString().slice(0, 16);
+}
+
+function sanitizeJsonValue(value: unknown): Prisma.InputJsonValue {
+  if (value === null) {
+    return Prisma.JsonNull as unknown as Prisma.InputJsonValue;
+  }
+
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => sanitizeJsonValue(item));
+  }
+
+  if (typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).flatMap(([key, entryValue]) => {
+        if (entryValue === undefined) {
+          return [];
+        }
+
+        return [[key, sanitizeJsonValue(entryValue)]];
+      }),
+    );
+  }
+
+  return `${value ?? ""}`;
+}
+
+function stringifyContent(value: unknown) {
+  return JSON.stringify(value ?? {}, null, 2);
+}
+
+function getSectionSchedule(record: { meta?: Prisma.JsonValue | null }) {
+  const meta = asRecord(record.meta);
+
+  return {
+    startAt: parseOptionalDate(meta.startAt),
+    endAt: parseOptionalDate(meta.endAt),
+  };
+}
+
+function mapAdminHomepageSectionRecord(record: HomePageSectionRow): AdminHomepageSectionRecord {
+  const schedule = getSectionSchedule(record);
+
+  return {
+    id: record.id,
+    key: record.key,
+    title: record.title,
+    type: record.type,
+    position: record.position,
+    active: record.active,
+    startAt: schedule.startAt,
+    endAt: schedule.endAt,
+    contentJson: stringifyContent(record.content),
+    updatedAt: record.updatedAt,
+  };
+}
+
+function mapAdminBannerRecord(record: BannerRow): AdminBannerRecord {
+  return {
+    id: record.id,
+    title: record.title,
+    imageUrl: record.imageUrl,
+    href: record.href ?? "",
+    position: record.position,
+    active: record.active,
+    startAt: record.startAt,
+    endAt: record.endAt,
+    updatedAt: record.updatedAt,
+  };
+}
+
+function mapAdminDealCampaignRecord(record: DealCampaignRow): AdminDealCampaignRecord {
+  return {
+    id: record.id,
+    name: record.name,
+    description: record.description ?? "",
+    active: record.active,
+    startsAt: record.startsAt,
+    endsAt: record.endsAt,
+    updatedAt: record.updatedAt,
+  };
+}
+
+function buildSectionMeta(input: Pick<AdminHomepageSectionInput, "startAt" | "endAt">) {
+  const meta: Record<string, unknown> = {};
+
+  if (input.startAt) {
+    meta.startAt = input.startAt.toISOString();
+  }
+
+  if (input.endAt) {
+    meta.endAt = input.endAt.toISOString();
+  }
+
+  return sanitizeJsonValue(meta);
+}
+
+function buildHomepageSectionWriteData(input: AdminHomepageSectionInput) {
+  return {
+    key: input.key,
+    title: input.title,
+    type: input.type,
+    position: input.position,
+    active: input.active,
+    content: sanitizeJsonValue(input.content),
+    meta: buildSectionMeta(input),
+  };
+}
+
+function buildBannerWriteData(input: AdminBannerInput) {
+  return {
+    title: input.title,
+    imageUrl: input.imageUrl,
+    href: input.href ?? null,
+    position: input.position,
+    active: input.active,
+    startAt: input.startAt ?? null,
+    endAt: input.endAt ?? null,
+  };
+}
+
+function buildDealCampaignWriteData(input: AdminDealCampaignInput) {
+  return {
+    name: input.name,
+    description: input.description ?? null,
+    startsAt: input.startsAt ?? null,
+    endsAt: input.endsAt ?? null,
+    active: input.active,
+  };
+}
+
+async function writeAuditLog(
+  database: AdminDbClient,
+  actor: AuditActorInput,
+  action: string,
+  model: string,
+  modelId: string,
+  changes: Record<string, unknown>,
+) {
+  const sanitizedChanges = sanitizeJsonValue(changes);
+
+  await database.auditLog.create({
+    data: {
+      actorId: actor.actorId,
+      action,
+      model,
+      modelId,
+      changes: sanitizedChanges,
+    },
+  });
+
+  logAdminAction({
+    actorId: actor.actorId,
+    actorRole: actor.actorRole ?? null,
+    action,
+    targetType: model,
+    targetId: modelId,
+    status: "success",
+    metadata: changes,
+  });
+}
+
+function buildMutationError(error: unknown): AppError | null {
+  if (!(error instanceof PrismaClientKnownRequestError)) {
+    return null;
+  }
+
+  if (error.code === "P2002") {
+    return new AppError("Homepage content key must be unique.", "HOMEPAGE_CONTENT_CONFLICT", {
+      statusCode: 409,
+      userMessage: "This homepage key is already being used by another record.",
+    });
+  }
+
+  return null;
+}
+
+export function formatAdminDateTimeLocalValue(value: Date | null | undefined) {
+  return formatDateTimeLocalValue(value);
+}
+
+export async function listAdminHomepageSections() {
+  const database = getPrismaClient();
+  const records = await database.homePageSection.findMany({
+    orderBy: [{ position: "asc" }, { updatedAt: "desc" }],
+  });
+
+  return records.map(mapAdminHomepageSectionRecord);
+}
+
+export async function listAdminBanners() {
+  const database = getPrismaClient();
+  const records = await database.banner.findMany({
+    orderBy: [{ position: "asc" }, { updatedAt: "desc" }],
+  });
+
+  return records.map(mapAdminBannerRecord);
+}
+
+export async function listAdminDealCampaigns() {
+  const database = getPrismaClient();
+  const records = await database.dealCampaign.findMany({
+    orderBy: [{ startsAt: "asc" }, { updatedAt: "desc" }],
+  });
+
+  return records.map(mapAdminDealCampaignRecord);
+}
+
+export async function seedAdminHomepageSections({ actor }: { actor: AuditActorInput }) {
+  const database = getPrismaClient();
+
+  return database.$transaction(async (tx) => {
+    const existing = await tx.homePageSection.findMany({
+      select: { id: true },
+      take: 1,
+    });
+
+    if (existing.length > 0) {
+      return { created: false as const, count: 0 };
+    }
+
+    let createdCount = 0;
+
+    for (const section of HOMEPAGE_FALLBACK_SECTIONS) {
+      const content = (() => {
+        switch (section.kind) {
+          case "hero-banner":
+            return {
+              headline: section.headline,
+              description: section.description,
+              primaryCtaLabel: section.primaryCtaLabel,
+              primaryCtaHref: section.primaryCtaHref,
+              secondaryCta: section.secondaryCta,
+              eyebrow: section.eyebrow,
+            };
+          case "featured-categories":
+            return {
+              description: section.description,
+              categories: section.categories,
+            };
+          case "featured-products":
+            return {
+              description: section.description,
+              products: section.products,
+            };
+          case "deal-spotlight":
+            return {
+              description: section.description,
+              dealLabel: section.dealLabel,
+              price: section.price,
+              compareAt: section.compareAt,
+              ctaLabel: section.ctaLabel,
+              ctaHref: section.ctaHref,
+            };
+          case "blog-highlights":
+            return {
+              description: section.description,
+              placeholderMessage: section.placeholderMessage,
+              articles: section.articles,
+            };
+          case "announcement-bar":
+            return {
+              message: section.message,
+              href: section.href,
+              label: section.label,
+            };
+          default:
+            return {};
+        }
+      })();
+
+      const title =
+        section.kind === "hero-banner"
+          ? section.headline
+          : section.kind === "announcement-bar"
+            ? section.message
+            : section.title;
+
+      await tx.homePageSection.create({
+        data: {
+          key: section.id,
+          title,
+          type: section.kind,
+          position: section.displayOrder ?? 0,
+          active: section.enabled !== false,
+          content: sanitizeJsonValue(content),
+          meta: {},
+        },
+      });
+
+      createdCount += 1;
+    }
+
+    await writeAuditLog(tx, actor, "homepage.section.seeded", "HomePageSection", "seed", {
+      count: createdCount,
+      source: "fallback",
+    });
+
+    return { created: true as const, count: createdCount };
+  });
+}
+
+export async function createAdminHomepageSection({ data, actor }: { data: AdminHomepageSectionInput; actor: AuditActorInput }) {
+  const parsed = validateAdminHomepageSectionInput(data);
+  if (!parsed.success) {
+    throw new AppError("Homepage section input is invalid.", "HOMEPAGE_CONTENT_INVALID", {
+      statusCode: 400,
+      userMessage: "Please review the homepage section content and try again.",
+    });
+  }
+
+  const database = getPrismaClient();
+
+  try {
+    return await database.$transaction(async (tx) => {
+      const created = await tx.homePageSection.create({
+        data: buildHomepageSectionWriteData(parsed.data),
+      });
+
+      await writeAuditLog(tx, actor, "homepage.section.created", "HomePageSection", created.id, {
+        key: created.key,
+        type: created.type,
+        position: created.position,
+        active: created.active,
+      });
+
+      return mapAdminHomepageSectionRecord(created);
+    });
+  } catch (error) {
+    throw buildMutationError(error) ?? error;
+  }
+}
+
+export async function updateAdminHomepageSection({ data, actor }: { data: AdminHomepageSectionInput; actor: AuditActorInput }) {
+  const parsed = validateAdminHomepageSectionInput(data);
+  if (!parsed.success || !parsed.data.id) {
+    throw new AppError("Homepage section input is invalid.", "HOMEPAGE_CONTENT_INVALID", {
+      statusCode: 400,
+      userMessage: "Please review the homepage section content and try again.",
+    });
+  }
+
+  const database = getPrismaClient();
+  const sectionId = parsed.data.id;
+
+  try {
+    return await database.$transaction(async (tx) => {
+      const existing = await tx.homePageSection.findUnique({
+        where: { id: sectionId },
+      });
+
+      if (!existing) {
+        throw new AppError("Homepage section not found.", "HOMEPAGE_CONTENT_NOT_FOUND", {
+          statusCode: 404,
+          userMessage: "The selected homepage section could not be found.",
+        });
+      }
+
+      const updated = await tx.homePageSection.update({
+        where: { id: sectionId },
+        data: buildHomepageSectionWriteData(parsed.data),
+      });
+
+      await writeAuditLog(tx, actor, "homepage.section.updated", "HomePageSection", updated.id, {
+        before: {
+          title: existing.title,
+          type: existing.type,
+          position: existing.position,
+          active: existing.active,
+        },
+        after: {
+          title: updated.title,
+          type: updated.type,
+          position: updated.position,
+          active: updated.active,
+        },
+      });
+
+      return mapAdminHomepageSectionRecord(updated);
+    });
+  } catch (error) {
+    throw buildMutationError(error) ?? error;
+  }
+}
+
+export async function createAdminBanner({ data, actor }: { data: AdminBannerInput; actor: AuditActorInput }) {
+  const parsed = validateAdminBannerInput(data);
+  if (!parsed.success) {
+    throw new AppError("Banner input is invalid.", "HOMEPAGE_CONTENT_INVALID", {
+      statusCode: 400,
+      userMessage: "Please review the banner details and try again.",
+    });
+  }
+
+  const database = getPrismaClient();
+
+  return database.$transaction(async (tx) => {
+    const created = await tx.banner.create({
+      data: buildBannerWriteData(parsed.data),
+    });
+
+    await writeAuditLog(tx, actor, "homepage.banner.created", "Banner", created.id, {
+      title: created.title,
+      position: created.position,
+      active: created.active,
+    });
+
+    return mapAdminBannerRecord(created);
+  });
+}
+
+export async function updateAdminBanner({ data, actor }: { data: AdminBannerInput; actor: AuditActorInput }) {
+  const parsed = validateAdminBannerInput(data);
+  if (!parsed.success || !parsed.data.id) {
+    throw new AppError("Banner input is invalid.", "HOMEPAGE_CONTENT_INVALID", {
+      statusCode: 400,
+      userMessage: "Please review the banner details and try again.",
+    });
+  }
+
+  const database = getPrismaClient();
+  const bannerId = parsed.data.id;
+
+  return database.$transaction(async (tx) => {
+    const existing = await tx.banner.findUnique({
+      where: { id: bannerId },
+    });
+
+    if (!existing) {
+      throw new AppError("Banner not found.", "HOMEPAGE_CONTENT_NOT_FOUND", {
+        statusCode: 404,
+        userMessage: "The selected banner could not be found.",
+      });
+    }
+
+    const updated = await tx.banner.update({
+      where: { id: bannerId },
+      data: buildBannerWriteData(parsed.data),
+    });
+
+    await writeAuditLog(tx, actor, "homepage.banner.updated", "Banner", updated.id, {
+      before: {
+        title: existing.title,
+        position: existing.position,
+        active: existing.active,
+      },
+      after: {
+        title: updated.title,
+        position: updated.position,
+        active: updated.active,
+      },
+    });
+
+    return mapAdminBannerRecord(updated);
+  });
+}
+
+export async function createAdminDealCampaign({ data, actor }: { data: AdminDealCampaignInput; actor: AuditActorInput }) {
+  const parsed = validateAdminDealCampaignInput(data);
+  if (!parsed.success) {
+    throw new AppError("Deal campaign input is invalid.", "HOMEPAGE_CONTENT_INVALID", {
+      statusCode: 400,
+      userMessage: "Please review the campaign details and try again.",
+    });
+  }
+
+  const database = getPrismaClient();
+
+  return database.$transaction(async (tx) => {
+    const created = await tx.dealCampaign.create({
+      data: buildDealCampaignWriteData(parsed.data),
+    });
+
+    await writeAuditLog(tx, actor, "homepage.campaign.created", "DealCampaign", created.id, {
+      name: created.name,
+      active: created.active,
+    });
+
+    return mapAdminDealCampaignRecord(created);
+  });
+}
+
+export async function updateAdminDealCampaign({ data, actor }: { data: AdminDealCampaignInput; actor: AuditActorInput }) {
+  const parsed = validateAdminDealCampaignInput(data);
+  if (!parsed.success || !parsed.data.id) {
+    throw new AppError("Deal campaign input is invalid.", "HOMEPAGE_CONTENT_INVALID", {
+      statusCode: 400,
+      userMessage: "Please review the campaign details and try again.",
+    });
+  }
+
+  const database = getPrismaClient();
+  const campaignId = parsed.data.id;
+
+  return database.$transaction(async (tx) => {
+    const existing = await tx.dealCampaign.findUnique({
+      where: { id: campaignId },
+    });
+
+    if (!existing) {
+      throw new AppError("Deal campaign not found.", "HOMEPAGE_CONTENT_NOT_FOUND", {
+        statusCode: 404,
+        userMessage: "The selected deal campaign could not be found.",
+      });
+    }
+
+    const updated = await tx.dealCampaign.update({
+      where: { id: campaignId },
+      data: buildDealCampaignWriteData(parsed.data),
+    });
+
+    await writeAuditLog(tx, actor, "homepage.campaign.updated", "DealCampaign", updated.id, {
+      before: {
+        name: existing.name,
+        active: existing.active,
+      },
+      after: {
+        name: updated.name,
+        active: updated.active,
+      },
+    });
+
+    return mapAdminDealCampaignRecord(updated);
+  });
+}
+
+function mapSectionRecordToStorefrontSection(record: HomePageSectionRow, referenceTime: Date): HomepageSection | null {
+  const schedule = getSectionSchedule(record);
+
+  if (!record.active || !isScheduledWindowActive(schedule.startAt, schedule.endAt, referenceTime)) {
+    return null;
+  }
+
+  const parsed = validateAdminHomepageSectionInput({
+    id: record.id,
+    key: record.key,
+    title: record.title,
+    type: record.type,
+    position: record.position,
+    active: record.active,
+    startAt: schedule.startAt,
+    endAt: schedule.endAt,
+    content: record.content ?? {},
+  });
+
+  if (!parsed.success) {
+    logger.warn("Skipping invalid homepage section record.", {
+      sectionId: record.id,
+      key: record.key,
+      type: record.type,
+      errors: parsed.errors,
+    });
+    return null;
+  }
+
+  const base = {
+    id: record.key || record.id,
+    enabled: parsed.data.active,
+    displayOrder: parsed.data.position,
+  };
+
+  switch (parsed.data.type) {
+    case "announcement-bar": {
+      const content = parsed.data.content as { message: string; href?: string; label?: string };
+      return {
+        ...base,
+        kind: "announcement-bar",
+        message: content.message,
+        ...(content.href ? { href: content.href } : {}),
+        ...(content.label ? { label: content.label } : {}),
+      };
+    }
+    case "hero-banner": {
+      const content = parsed.data.content as {
+        headline: string;
+        description: string;
+        primaryCtaLabel: string;
+        primaryCtaHref: string;
+        secondaryCta?: { label: string; href: string };
+        eyebrow?: string;
+      };
+      return {
+        ...base,
+        kind: "hero-banner",
+        headline: content.headline,
+        description: content.description,
+        primaryCtaLabel: content.primaryCtaLabel,
+        primaryCtaHref: content.primaryCtaHref,
+        ...(content.secondaryCta ? { secondaryCta: content.secondaryCta } : {}),
+        ...(content.eyebrow ? { eyebrow: content.eyebrow } : {}),
+      };
+    }
+    case "featured-categories": {
+      const content = parsed.data.content as {
+        description?: string;
+        categories: Array<{ id: string; title: string; description: string; href: string }>;
+      };
+      return {
+        ...base,
+        kind: "featured-categories",
+        title: parsed.data.title,
+        ...(content.description ? { description: content.description } : {}),
+        categories: content.categories,
+      };
+    }
+    case "featured-products": {
+      const content = parsed.data.content as {
+        description?: string;
+        products: Array<{
+          id: string;
+          name: string;
+          description?: string;
+          href: string;
+          price: number;
+          compareAt?: number;
+          badge?: string;
+        }>;
+      };
+      return {
+        ...base,
+        kind: "featured-products",
+        title: parsed.data.title,
+        ...(content.description ? { description: content.description } : {}),
+        products: content.products,
+      };
+    }
+    case "deal-spotlight": {
+      const content = parsed.data.content as {
+        description: string;
+        dealLabel: string;
+        price: number;
+        compareAt: number;
+        ctaLabel: string;
+        ctaHref: string;
+      };
+      return {
+        ...base,
+        kind: "deal-spotlight",
+        title: parsed.data.title,
+        description: content.description,
+        dealLabel: content.dealLabel,
+        price: content.price,
+        compareAt: content.compareAt,
+        ctaLabel: content.ctaLabel,
+        ctaHref: content.ctaHref,
+      };
+    }
+    case "blog-highlights": {
+      const content = parsed.data.content as {
+        description?: string;
+        placeholderMessage: string;
+        articles: Array<{ id: string; title: string; excerpt: string; href: string }>;
+      };
+      return {
+        ...base,
+        kind: "blog-highlights",
+        title: parsed.data.title,
+        ...(content.description ? { description: content.description } : {}),
+        placeholderMessage: content.placeholderMessage,
+        articles: content.articles,
+      };
+    }
+    default:
+      return null;
+  }
+}
+
+function mapBannerToStorefrontSection(record: BannerRow, referenceTime: Date): AnnouncementBarSection | null {
+  if (!record.active || !isScheduledWindowActive(record.startAt, record.endAt, referenceTime)) {
+    return null;
+  }
+
+  return {
+    id: `banner-${record.id}`,
+    kind: "announcement-bar",
+    enabled: true,
+    displayOrder: record.position,
+    message: record.title,
+    ...(record.href ? { href: record.href, label: "View offer" } : {}),
+  };
+}
+
+function mapCampaignToStorefrontSection(
+  record: DealCampaignRow & {
+    products?: Array<{
+      product: {
+        slug: string;
+        category: { slug: string } | null;
+        variants: Array<{ price: number; compareAtPrice: number | null }>;
+      };
+    }>;
+  },
+  index: number,
+  referenceTime: Date,
+): DealSpotlightSection | null {
+  if (!record.active || !isScheduledWindowActive(record.startsAt, record.endsAt, referenceTime)) {
+    return null;
+  }
+
+  const featuredProduct = record.products?.[0]?.product;
+  const featuredVariant = featuredProduct?.variants?.[0];
+  const price = featuredVariant?.price ?? 999;
+  const compareAt = Math.max(featuredVariant?.compareAtPrice ?? price, price);
+  const ctaHref = featuredProduct?.category?.slug
+    ? routes.storefront.product(featuredProduct.category.slug, featuredProduct.slug)
+    : routes.storefront.categories;
+
+  return {
+    id: `campaign-${record.id}`,
+    kind: "deal-spotlight",
+    enabled: true,
+    displayOrder: 40 + index,
+    title: record.name,
+    description: record.description ?? "Short-term campaign promotion managed from admin.",
+    dealLabel: "Active campaign",
+    price,
+    compareAt,
+    ctaLabel: "Shop campaign",
+    ctaHref,
+  };
+}
+
+export async function loadHomepageContentForStorefront(referenceTime = new Date()): Promise<HomepageContent | null> {
+  const database = getPrismaClient();
+
+  try {
+    const [sectionRecords, bannerRecords, campaignRecords] = await Promise.all([
+      database.homePageSection.findMany({
+        orderBy: [{ position: "asc" }, { updatedAt: "desc" }],
+      }),
+      database.banner.findMany({
+        where: { active: true },
+        orderBy: [{ position: "asc" }, { updatedAt: "desc" }],
+      }),
+      database.dealCampaign.findMany({
+        where: { active: true },
+        orderBy: [{ startsAt: "asc" }, { updatedAt: "desc" }],
+        include: {
+          products: {
+            take: 1,
+            include: {
+              product: {
+                select: {
+                  slug: true,
+                  category: {
+                    select: {
+                      slug: true,
+                    },
+                  },
+                  variants: {
+                    take: 1,
+                    orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }],
+                    select: {
+                      price: true,
+                      compareAtPrice: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      }),
+    ]);
+
+    const sections: HomepageSection[] = [
+      ...bannerRecords
+        .map((record) => mapBannerToStorefrontSection(record, referenceTime))
+        .filter((record): record is AnnouncementBarSection => record !== null),
+      ...sectionRecords
+        .map((record) => mapSectionRecordToStorefrontSection(record, referenceTime))
+        .filter((record): record is HomepageSection => record !== null),
+      ...campaignRecords
+        .map((record, index) => mapCampaignToStorefrontSection(record, index, referenceTime))
+        .filter((record): record is DealSpotlightSection => record !== null),
+    ];
+
+    return sections.length > 0 ? { sections } : null;
+  } catch (error) {
+    logger.error("Failed to load admin-managed homepage content.", error);
+    return null;
+  }
+}

@@ -1,6 +1,6 @@
 # Homepage Section Contract
 
-This project now uses a section-based homepage foundation that is ready for CMS/admin wiring.
+This project now uses a section-based homepage foundation backed by admin-managed database content with fallback safety.
 
 ## Purpose
 
@@ -10,6 +10,7 @@ This project now uses a section-based homepage foundation that is ready for CMS/
 
 ## Current Section Kinds
 
+- `announcement-bar`
 - `hero-banner`
 - `featured-categories`
 - `featured-products`
@@ -32,6 +33,13 @@ Each section includes:
 - `enabled?`: optional admin toggle.
 - `displayOrder?`: optional ordering hint.
 
+Admin management entrypoints now live under `/admin/homepage` with dedicated pages for:
+
+- section content editing and ordering
+- banners
+- deal campaigns
+- announcement-bar content via the section type or active banners
+
 ## Resolution Rules
 
 Resolution logic is in `src/features/homepage/resolver.ts`.
@@ -40,11 +48,15 @@ Resolution logic is in `src/features/homepage/resolver.ts`.
 - If all CMS sections are disabled (`enabled: false`), fallback content is used.
 - Otherwise, only enabled CMS sections render.
 - Sections are sorted by `displayOrder` first, then by static kind order:
-  1. `hero-banner`
-  2. `featured-categories`
-  3. `featured-products`
-  4. `deal-spotlight`
-  5. `blog-highlights`
+  1. `announcement-bar`
+  2. `hero-banner`
+  3. `featured-categories`
+  4. `featured-products`
+  5. `deal-spotlight`
+  6. `blog-highlights`
+- Invalid content payloads are skipped safely and do not break storefront rendering.
+- Scheduled records render only when the current time is inside their active window.
+- Banner and deal-campaign records can contribute storefront-visible promotional blocks alongside directly managed homepage sections.
 
 ## Rendering Model
 
@@ -56,11 +68,16 @@ Rendering map is in `src/features/homepage/section-components.tsx`.
 
 Section components are located in `src/features/homepage/components/`.
 
-## Service Layer Stub
+## Service Layer
 
-`src/features/homepage/service.ts` defines the server-side loading seam:
+`src/features/homepage/service.ts` now resolves admin-managed content through the homepage admin module.
 
-- `fetchHomepageContentFromCms()`: currently returns `null` and logs that CMS is not yet configured.
-- `getHomepageContent()`: resolves CMS payload through fallback-aware rules.
+- `fetchHomepageContentFromCms()`: loads validated section records, active banners, and scheduled deal campaigns.
+- `getHomepageContent()`: resolves those records through the fallback-aware rules.
 
-When CMS/admin module is added, replace the internals of `fetchHomepageContentFromCms()` while preserving `HomepageContent` contract.
+Implementation notes:
+
+- persistent admin records are managed from `src/features/admin/homepage`
+- section config validation uses Zod before writes and again when records are read back for storefront use
+- audit entries are written on section, banner, and campaign mutations
+- fallback content still protects storefront availability if admin content is absent or fully disabled

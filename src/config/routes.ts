@@ -26,6 +26,10 @@ export const routes = {
   },
   admin: {
     dashboard: "/admin",
+    homepage: "/admin/homepage",
+    homepageSections: "/admin/homepage/sections",
+    homepageBanners: "/admin/homepage/banners",
+    homepageCampaigns: "/admin/homepage/campaigns",
     products: "/admin/products",
     productCreate: "/admin/products/new",
     productEdit: (productId: string) => `/admin/products/${productId}/edit`,

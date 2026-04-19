@@ -1,0 +1,431 @@
+import { z } from "zod";
+
+import { validateWithSchema } from "@/lib/security/validation";
+
+const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+export const adminHomepageSectionKindValues = [
+  "announcement-bar",
+  "hero-banner",
+  "featured-categories",
+  "featured-products",
+  "deal-spotlight",
+  "blog-highlights",
+] as const;
+
+export type AdminHomepageSectionType = (typeof adminHomepageSectionKindValues)[number];
+
+function parseNumberish(value: unknown) {
+  if (typeof value === "number") {
+    return value;
+  }
+
+  if (typeof value !== "string") {
+    return value;
+  }
+
+  const normalized = value.trim().replaceAll(",", "");
+  if (normalized.length === 0) {
+    return undefined;
+  }
+
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : value;
+}
+
+function parseBooleanish(value: unknown) {
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  const normalized = `${value ?? ""}`.trim().toLowerCase();
+  return normalized === "true" || normalized === "1" || normalized === "on" || normalized === "yes";
+}
+
+function parseDateish(value: unknown) {
+  if (value === null || value === undefined) {
+    return undefined;
+  }
+
+  if (value instanceof Date) {
+    return value;
+  }
+
+  if (typeof value !== "string") {
+    return value;
+  }
+
+  const normalized = value.trim();
+  if (normalized.length === 0) {
+    return undefined;
+  }
+
+  const parsed = new Date(normalized);
+  return Number.isNaN(parsed.getTime()) ? value : parsed;
+}
+
+function parseJsonish(value: unknown) {
+  if (typeof value !== "string") {
+    return value ?? {};
+  }
+
+  const normalized = value.trim();
+  if (normalized.length === 0) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(normalized);
+  } catch {
+    return value;
+  }
+}
+
+function isValidHref(value: string) {
+  return value.startsWith("/") || /^https?:\/\//i.test(value);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+const optionalShortText = z
+  .string()
+  .trim()
+  .max(160, "This field must be 160 characters or fewer.")
+  .optional()
+  .transform((value) => (value && value.length > 0 ? value : undefined));
+
+const optionalText = z
+  .string()
+  .trim()
+  .max(2000, "This field must be 2000 characters or fewer.")
+  .optional()
+  .transform((value) => (value && value.length > 0 ? value : undefined));
+
+const optionalHref = z
+  .string()
+  .trim()
+  .max(500, "Links must be 500 characters or fewer.")
+  .optional()
+  .transform((value) => (value && value.length > 0 ? value : undefined))
+  .refine((value) => value === undefined || isValidHref(value), {
+    message: "Please enter a valid relative path or URL.",
+  });
+
+const optionalDateTime = z.preprocess(
+  parseDateish,
+  z.date({ error: "Please enter a valid date and time." }).optional(),
+);
+
+const requiredWholeNumber = (label: string) =>
+  z.preprocess(
+    parseNumberish,
+    z
+      .number({ error: `${label} is required.` })
+      .int(`${label} must be a whole number.`)
+      .min(0, `${label} cannot be negative.`),
+  );
+
+const announcementBarContentSchema = z.object({
+  message: z.string().trim().min(2, "Announcement message is required.").max(180, "Announcement message is too long."),
+  href: optionalHref,
+  label: optionalShortText,
+});
+
+const heroBannerContentSchema = z.object({
+  headline: z.string().trim().min(2, "Hero headline is required.").max(140, "Hero headline is too long."),
+  description: z.string().trim().min(2, "Hero description is required.").max(400, "Hero description is too long."),
+  primaryCtaLabel: z.string().trim().min(1, "Primary CTA label is required.").max(80, "Primary CTA label is too long."),
+  primaryCtaHref: z
+    .string()
+    .trim()
+    .min(1, "Primary CTA link is required.")
+    .refine((value) => isValidHref(value), {
+      message: "Please enter a valid relative path or URL for the primary CTA.",
+    }),
+  secondaryCta: z
+    .object({
+      label: z.string().trim().min(1, "Secondary CTA label is required.").max(80, "Secondary CTA label is too long."),
+      href: z
+        .string()
+        .trim()
+        .min(1, "Secondary CTA link is required.")
+        .refine((value) => isValidHref(value), {
+          message: "Please enter a valid relative path or URL for the secondary CTA.",
+        }),
+    })
+    .optional(),
+  eyebrow: optionalShortText,
+});
+
+const featuredCategorySchema = z.object({
+  id: z.string().trim().min(1, "Category item ID is required."),
+  title: z.string().trim().min(1, "Category title is required.").max(120, "Category title is too long."),
+  description: z.string().trim().min(1, "Category description is required.").max(240, "Category description is too long."),
+  href: z
+    .string()
+    .trim()
+    .min(1, "Category link is required.")
+    .refine((value) => isValidHref(value), {
+      message: "Please enter a valid relative path or URL for the category link.",
+    }),
+});
+
+const featuredProductSchema = z.object({
+  id: z.string().trim().min(1, "Product item ID is required."),
+  name: z.string().trim().min(1, "Product name is required.").max(120, "Product name is too long."),
+  description: optionalText,
+  href: z
+    .string()
+    .trim()
+    .min(1, "Product link is required.")
+    .refine((value) => isValidHref(value), {
+      message: "Please enter a valid relative path or URL for the product link.",
+    }),
+  price: requiredWholeNumber("Product price"),
+  compareAt: z.preprocess(
+    parseNumberish,
+    z
+      .number({ error: "Product compare-at price must be a valid number." })
+      .int("Product compare-at price must be a whole number.")
+      .min(0, "Product compare-at price cannot be negative.")
+      .optional(),
+  ),
+  badge: optionalShortText,
+});
+
+const featuredCategoriesContentSchema = z.object({
+  description: optionalText,
+  categories: z.array(featuredCategorySchema).default([]),
+});
+
+const featuredProductsContentSchema = z.object({
+  description: optionalText,
+  products: z.array(featuredProductSchema).default([]),
+});
+
+const dealSpotlightContentSchema = z
+  .object({
+    description: z.string().trim().min(2, "Deal description is required.").max(400, "Deal description is too long."),
+    dealLabel: z.string().trim().min(1, "Deal label is required.").max(80, "Deal label is too long."),
+    price: requiredWholeNumber("Deal price"),
+    compareAt: requiredWholeNumber("Deal compare-at price"),
+    ctaLabel: z.string().trim().min(1, "Deal CTA label is required.").max(80, "Deal CTA label is too long."),
+    ctaHref: z
+      .string()
+      .trim()
+      .min(1, "Deal CTA link is required.")
+      .refine((value) => isValidHref(value), {
+        message: "Please enter a valid relative path or URL for the deal CTA.",
+      }),
+  })
+  .superRefine((input, ctx) => {
+    if (input.compareAt < input.price) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["compareAt"],
+        message: "Compare-at price must be greater than or equal to the active price.",
+      });
+    }
+  });
+
+const blogHighlightSchema = z.object({
+  id: z.string().trim().min(1, "Article ID is required."),
+  title: z.string().trim().min(1, "Article title is required.").max(120, "Article title is too long."),
+  excerpt: z.string().trim().min(1, "Article excerpt is required.").max(300, "Article excerpt is too long."),
+  href: z
+    .string()
+    .trim()
+    .min(1, "Article link is required.")
+    .refine((value) => isValidHref(value), {
+      message: "Please enter a valid relative path or URL for the article link.",
+    }),
+});
+
+const blogHighlightsContentSchema = z.object({
+  description: optionalText,
+  placeholderMessage: z.string().trim().min(2, "Placeholder message is required.").max(240, "Placeholder message is too long."),
+  articles: z.array(blogHighlightSchema).default([]),
+});
+
+const homepageSectionContentSchemas = {
+  "announcement-bar": announcementBarContentSchema,
+  "hero-banner": heroBannerContentSchema,
+  "featured-categories": featuredCategoriesContentSchema,
+  "featured-products": featuredProductsContentSchema,
+  "deal-spotlight": dealSpotlightContentSchema,
+  "blog-highlights": blogHighlightsContentSchema,
+} satisfies Record<AdminHomepageSectionType, z.ZodTypeAny>;
+
+export const adminHomepageSectionMutationSchema = z
+  .object({
+    id: z.string().trim().min(1, "Section ID is required.").optional(),
+    key: z
+      .string()
+      .trim()
+      .min(2, "Section key must be at least 2 characters.")
+      .max(80, "Section key must be 80 characters or fewer.")
+      .regex(slugRegex, "Section key must use lowercase letters, numbers, and single hyphens."),
+    title: z.string().trim().min(2, "Section title must be at least 2 characters.").max(120, "Section title is too long."),
+    type: z.enum(adminHomepageSectionKindValues, {
+      error: "Choose a supported homepage section type.",
+    }),
+    position: requiredWholeNumber("Display order"),
+    active: z.preprocess(parseBooleanish, z.boolean()).default(true),
+    startAt: optionalDateTime,
+    endAt: optionalDateTime,
+    content: z.preprocess(parseJsonish, z.unknown()),
+  })
+  .superRefine((input, ctx) => {
+    if (input.startAt && input.endAt && input.endAt < input.startAt) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["endAt"],
+        message: "Schedule end time must be later than the start time.",
+      });
+    }
+
+    if (!isRecord(input.content)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["content"],
+        message: "Section content must be a valid JSON object.",
+      });
+      return;
+    }
+
+    const contentSchema = homepageSectionContentSchemas[input.type];
+    const parsedContent = contentSchema.safeParse(input.content);
+
+    if (!parsedContent.success) {
+      const issues = parsedContent.error.issues;
+      for (const issue of issues) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["content", ...issue.path],
+          message: issue.message,
+        });
+      }
+    }
+  })
+  .transform((input) => ({
+    ...input,
+    content: homepageSectionContentSchemas[input.type].parse(input.content),
+  }));
+
+export const adminBannerMutationSchema = z
+  .object({
+    id: z.string().trim().min(1, "Banner ID is required.").optional(),
+    title: z.string().trim().min(2, "Banner title must be at least 2 characters.").max(140, "Banner title is too long."),
+    imageUrl: z.string().trim().min(1, "Banner image URL is required.").url("Please enter a valid banner image URL."),
+    href: optionalHref,
+    position: requiredWholeNumber("Banner order"),
+    active: z.preprocess(parseBooleanish, z.boolean()).default(true),
+    startAt: optionalDateTime,
+    endAt: optionalDateTime,
+  })
+  .superRefine((input, ctx) => {
+    if (input.startAt && input.endAt && input.endAt < input.startAt) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["endAt"],
+        message: "Banner end time must be later than the start time.",
+      });
+    }
+  });
+
+export const adminDealCampaignMutationSchema = z
+  .object({
+    id: z.string().trim().min(1, "Campaign ID is required.").optional(),
+    name: z.string().trim().min(2, "Campaign name must be at least 2 characters.").max(140, "Campaign name is too long."),
+    description: optionalText,
+    startsAt: optionalDateTime,
+    endsAt: optionalDateTime,
+    active: z.preprocess(parseBooleanish, z.boolean()).default(true),
+  })
+  .superRefine((input, ctx) => {
+    if (input.startsAt && input.endsAt && input.endsAt < input.startsAt) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["endsAt"],
+        message: "Campaign end time must be later than the start time.",
+      });
+    }
+  });
+
+export type AdminHomepageSectionInput = z.infer<typeof adminHomepageSectionMutationSchema>;
+export type AdminBannerInput = z.infer<typeof adminBannerMutationSchema>;
+export type AdminDealCampaignInput = z.infer<typeof adminDealCampaignMutationSchema>;
+
+const homepageSectionContentTemplates: Record<AdminHomepageSectionType, Record<string, unknown>> = {
+  "announcement-bar": {
+    message: "Free delivery on orders over PKR 2,000",
+    href: "/categories",
+    label: "Browse deals",
+  },
+  "hero-banner": {
+    headline: "Fresh arrivals and everyday deals",
+    description: "Keep hero content concise and action-oriented.",
+    primaryCtaLabel: "Browse categories",
+    primaryCtaHref: "/categories",
+    secondaryCta: {
+      label: "View preview",
+      href: "/preview",
+    },
+    eyebrow: "Homepage highlight",
+  },
+  "featured-categories": {
+    description: "Highlight key shopping categories.",
+    categories: [],
+  },
+  "featured-products": {
+    description: "Feature products or hero SKUs.",
+    products: [],
+  },
+  "deal-spotlight": {
+    description: "Short-term campaign block with a clear CTA.",
+    dealLabel: "Weekend deal",
+    price: 999,
+    compareAt: 1299,
+    ctaLabel: "View deal",
+    ctaHref: "/categories",
+  },
+  "blog-highlights": {
+    description: "Optional editorial updates.",
+    placeholderMessage: "New highlights will appear soon.",
+    articles: [],
+  },
+};
+
+export function getHomepageSectionContentTemplate(type: AdminHomepageSectionType) {
+  return JSON.stringify(homepageSectionContentTemplates[type], null, 2);
+}
+
+export function isScheduledWindowActive(
+  startAt?: Date | null | undefined,
+  endAt?: Date | null | undefined,
+  referenceTime = new Date(),
+) {
+  if (startAt && referenceTime < startAt) {
+    return false;
+  }
+
+  if (endAt && referenceTime > endAt) {
+    return false;
+  }
+
+  return true;
+}
+
+export function validateAdminHomepageSectionInput(input: unknown) {
+  return validateWithSchema(adminHomepageSectionMutationSchema, input);
+}
+
+export function validateAdminBannerInput(input: unknown) {
+  return validateWithSchema(adminBannerMutationSchema, input);
+}
+
+export function validateAdminDealCampaignInput(input: unknown) {
+  return validateWithSchema(adminDealCampaignMutationSchema, input);
+}
