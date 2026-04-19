@@ -44,6 +44,11 @@ export const adminNav: NavItem[] = [
     description: "Daily operations summary and quick actions.",
   },
   {
+    title: "Products",
+    href: routes.admin.products,
+    description: "Manage product content, pricing, stock, and SEO.",
+  },
+  {
     title: "Orders",
     href: routes.admin.orders,
     description: "Order queue and fulfillment placeholder.",

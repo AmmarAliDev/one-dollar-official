@@ -1,6 +1,7 @@
 "use client";
 
 import type { FormHTMLAttributes, ReactNode } from "react";
+import { unstable_rethrow } from "next/navigation";
 import type { FieldValues, SubmitErrorHandler, SubmitHandler, UseFormReturn } from "react-hook-form";
 import { type z, type ZodTypeAny } from "zod";
 
@@ -53,6 +54,8 @@ export function DynamicForm<TFieldValues extends FieldValues>({
         try {
           await onSubmit(values);
         } catch (error) {
+          unstable_rethrow(error);
+
           form.setError("root.serverError", {
             type: "server",
             message: toUserMessage(error),

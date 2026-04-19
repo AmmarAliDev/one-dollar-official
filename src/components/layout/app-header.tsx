@@ -11,6 +11,7 @@ import { buttonVariants } from "../ui/button";
 import { PageContainer } from "../ui/page-container";
 import { StorefrontMobileNav } from "./storefront-mobile-nav";
 import UserMenu from "./user-menu";
+import { RoleKey } from "@/lib/auth/roles";
 
 export async function AppHeader() {
   const session = await auth();
@@ -70,7 +71,7 @@ export async function AppHeader() {
             </Link>
             <CartMiniCart />
             <ThemeToggle />
-            <UserMenu isSignedIn={isSignedIn} />
+            <UserMenu isSignedIn={isSignedIn} isAdmin={Boolean(session?.user?.role === RoleKey.SUPER_ADMIN)} />
           </div>
         </div>
 

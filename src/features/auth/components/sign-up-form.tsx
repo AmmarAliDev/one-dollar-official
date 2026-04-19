@@ -1,96 +1,120 @@
 "use client";
 
-/**
- * Sign-up form — credentials (email + password) account creation.
- *
- * Uses React 19's `useActionState` for inline validation errors.
- */
+import { useActionState, useTransition } from "react";
 
-import { useActionState } from "react";
-
+import { DynamicFormField, useAppForm } from "@/components/forms";
 import { Button } from "@/components/ui/button";
+import { FormErrorSummary } from "@/components/ui/form-error-summary";
 import { InlineSpinner } from "@/components/ui/inline-spinner";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { signUpAction, type SignUpActionState } from "@/features/auth/actions/sign-up";
+import { type SignUpInput,signUpValidator } from "@/features/auth/validators";
 
 export function SignUpForm() {
   const [state, dispatch, isPending] = useActionState<SignUpActionState | null, FormData>(
     signUpAction,
     null,
   );
+  const [, startTransition] = useTransition();
 
   const errors = state?.errors ?? [];
 
+  const form = useAppForm<SignUpInput>({
+    schema: signUpValidator,
+    defaultValues: {
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    },
+  });
+
   return (
-    <form action={dispatch} className="space-y-4" noValidate>
-      {/* Error summary */}
-      {errors.length > 0 && (
+    <form
+      className="space-y-4"
+      noValidate
+      onSubmit={form.handleSubmit((values) => {
+        const formData = new FormData();
+        formData.set("name", values.name ?? "");
+        formData.set("email", values.email);
+        formData.set("password", values.password);
+        formData.set("confirmPassword", values.confirmPassword);
+
+        startTransition(() => {
+          dispatch(formData);
+        });
+      })}
+    >
+      <FormErrorSummary errors={form.formState.errors} title="Please review your account details" />
+
+      {errors.length > 0 ? (
         <div
           role="alert"
           className="rounded-[calc(var(--radius)-2px)] border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive"
         >
           {errors.map((error, index) => (
             <p key={`${error}-${index}`}>{error}</p>
-          ))}        </div>
-      )}
+          ))}
+        </div>
+      ) : null}
 
-      {/* Name (optional) */}
-      <div className="space-y-1.5">
-        <Label htmlFor="sign-up-name">
-          Full name <span className="text-muted-foreground">(optional)</span>
-        </Label>
-        <Input
-          id="sign-up-name"
-          name="name"
-          type="text"
-          autoComplete="name"
-          placeholder="Your name"
-        />
-      </div>
+      <DynamicFormField
+        control={form.control}
+        disabled={isPending}
+        fieldConfig={{
+          id: "sign-up-name",
+          name: "name",
+          type: "text",
+          label: "Full name",
+          description: "Optional",
+          autoComplete: "name",
+          placeholder: "Your name",
+        }}
+      />
 
-      {/* Email */}
-      <div className="space-y-1.5">
-        <Label htmlFor="sign-up-email">Email address</Label>
-        <Input
-          id="sign-up-email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          placeholder="you@example.com"
-          required
-        />
-      </div>
+      <DynamicFormField
+        control={form.control}
+        disabled={isPending}
+        fieldConfig={{
+          id: "sign-up-email",
+          name: "email",
+          type: "email",
+          label: "Email address",
+          autoComplete: "email",
+          placeholder: "you@example.com",
+          required: true,
+        }}
+      />
 
-      {/* Password */}
-      <div className="space-y-1.5">
-        <Label htmlFor="sign-up-password">Password</Label>
-        <Input
-          id="sign-up-password"
-          name="password"
-          type="password"
-          autoComplete="new-password"
-          placeholder="At least 8 characters"
-          required
-        />
-      </div>
+      <DynamicFormField
+        control={form.control}
+        disabled={isPending}
+        fieldConfig={{
+          id: "sign-up-password",
+          name: "password",
+          type: "password",
+          label: "Password",
+          autoComplete: "new-password",
+          placeholder: "At least 8 characters",
+          required: true,
+        }}
+      />
 
-      {/* Confirm password */}
-      <div className="space-y-1.5">
-        <Label htmlFor="sign-up-confirm">Confirm password</Label>
-        <Input
-          id="sign-up-confirm"
-          name="confirmPassword"
-          type="password"
-          autoComplete="new-password"
-          placeholder="Repeat password"
-          required
-        />
-      </div>
+      <DynamicFormField
+        control={form.control}
+        disabled={isPending}
+        fieldConfig={{
+          id: "sign-up-confirm",
+          name: "confirmPassword",
+          type: "password",
+          label: "Confirm password",
+          autoComplete: "new-password",
+          placeholder: "Repeat password",
+          required: true,
+        }}
+      />
 
-      {/* Submit */}
       <Button type="submit" className="w-full" disabled={isPending}>
-        {isPending && <InlineSpinner />}
+        {isPending ? <InlineSpinner /> : null}
         {isPending ? "Creating account…" : "Create account"}
       </Button>
     </form>

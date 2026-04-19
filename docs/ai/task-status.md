@@ -137,6 +137,7 @@
 - [x] Sign-out behavior standardized across the storefront header dropdown, mobile drawer, account profile page, and admin shell with one shared server-action form pattern and redirect-to-home behavior
 - [x] Sign-out regression tests added for the auth action and mobile signed-in surface rendering
 - [x] Admin category management added at `/admin/categories` with create/edit/delete flows, search/filter basics, and status + SEO fields
+- [x] Admin product management added at `/admin/products` with list/create/edit flows, variant stock handling, related-product links, and SEO controls
 - [x] Category admin mutations now persist `AuditLog` entries for create/update/delete events
 - [x] Category validation and service tests added for slug and CRUD logic
 - [x] Prisma workflow verified for local PostgreSQL development and hosted Supabase production deployment separation
@@ -144,7 +145,11 @@
 - [x] Developer docs updated with local setup, migration safety, deployment commands, and Prisma troubleshooting guidance
 - [x] Reusable app-wide form foundation added with React Hook Form + Zod integration, typed dynamic field configs, shadcn-style controls, and on-change validation defaults
 - [x] Shared form primitives now support input, textarea, select, checkbox, switch, hidden values, and custom render escape hatches for future feature modules
-- [x] Focused form-system tests added for validation-on-change, field error rendering, supported field types, and friendly submit-failure handling
+- [x] Shared server-action submit helper added so RHF forms can preserve existing Next server action redirects and error handling safely
+- [x] Shared submit handling now lets successful redirects bubble correctly and supports optional close/reset callbacks for modal-style admin saves
+- [x] Auth, checkout, admin category, admin product, and query-string filter forms migrated onto the shared form conventions without changing business payload shapes
+- [x] Admin category save/filter regressions now have targeted coverage so false validation errors and stale filter navigation do not recur
+- [x] Focused form-system and regression tests now cover shared forms plus auth, checkout, and admin category migration behavior
 
 ## Deferred by design
 
@@ -154,7 +159,7 @@
 - [ ] Dedicated CSRF token flow for any future embedded or cross-origin clients
 - [ ] Online gateway provider implementations under checkout payment contract
 - [ ] Live catalog persistence beyond the fallback listing dataset
-- [ ] Broader admin CRUD workflows beyond category management
+- [ ] Broader admin CRUD workflows beyond the current category flows and product list/create/edit management (for example product delete, bulk actions, and deeper automation)
 - [ ] Server-side notifications and third-party integrations
 
 ## Recommended Next Prompt

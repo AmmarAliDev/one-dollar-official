@@ -45,15 +45,17 @@ DATABASE_URL=postgresql://user:password@localhost:5432/one_dollar
 ### Sign-up (credentials)
 
 1. User fills the sign-up form at `/auth/sign-up`.
-2. `signUpAction` verifies trusted request origin, validates input with Zod, rate-limits the attempt, hashes the password, and creates the `User` with the `CUSTOMER` role.
-3. Immediately calls `signIn("credentials")` → creates JWT session → redirects to home.
+2. The client form uses the shared RHF + Zod layer for on-change validation and consistent field-level error placement.
+3. `signUpAction` verifies trusted request origin, validates input with Zod again on the server, rate-limits the attempt, hashes the password, and creates the `User` with the `CUSTOMER` role.
+4. Immediately calls `signIn("credentials")` → creates JWT session → redirects to home.
 
 ### Sign-in (credentials)
 
 1. User fills the sign-in form at `/auth/sign-in`.
-2. `signInAction` verifies trusted request origin, validates input, rate-limits the attempt, and calls Auth.js `signIn("credentials")`.
-3. Auth.js `authorize()` in `src/auth.ts` fetches the user, verifies bcrypt hash.
-4. On success → JWT cookie set → redirected to home.
+2. The client form uses the shared RHF + Zod layer for on-change validation and consistent field-level error placement.
+3. `signInAction` verifies trusted request origin, validates input again on the server, rate-limits the attempt, and calls Auth.js `signIn("credentials")`.
+4. Auth.js `authorize()` in `src/auth.ts` fetches the user, verifies bcrypt hash.
+5. On success → JWT cookie set → redirected to home.
 
 ### Sign-in (Google)
 
@@ -74,6 +76,13 @@ The app now uses one primary sign-out convention across storefront, account, and
 - Use client-side `signOut()` from `next-auth/react` only for an explicitly client-driven flow that genuinely cannot use a form submission.
 
 This keeps logout behavior progressively enhanced, CSRF-aware, and consistent across desktop and mobile surfaces.
+
+## Auth Form UI Standard
+
+- `src/features/auth/components/sign-in-form.tsx` and `sign-up-form.tsx` should use the shared form primitives from `src/components/forms`.
+- Validate on `onChange` with Zod on the client, then keep the server action as the authoritative second pass.
+- Preserve the original field names and `FormData` payload shape so auth flows, redirects, and rate limiting continue to work without adapter code changes.
+- Keep server-returned auth errors in a top-level alert, and client validation errors directly under each relevant field.
 
 ## RBAC and Route Protection
 

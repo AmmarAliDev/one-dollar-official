@@ -1,8 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-import { isRedirectError } from "next/dist/client/components/redirect-error";
+import { redirect, unstable_rethrow } from "next/navigation";
 
 import { routes } from "@/config/routes";
 import { requireRouteAccess } from "@/lib/auth/guards";
@@ -85,9 +84,7 @@ export async function createAdminCategoryAction(formData: FormData) {
       actor,
     });
   } catch (error) {
-    if (isRedirectError(error)) {
-      throw error;
-    }
+    unstable_rethrow(error);
 
     const appError = captureServerError(error, "admin:category:create");
     redirect(appendFlash(returnTo, "error", getCategoryErrorCode(appError, "createFailed")));
@@ -119,9 +116,7 @@ export async function updateAdminCategoryAction(formData: FormData) {
       });
     }
   } catch (error) {
-    if (isRedirectError(error)) {
-      throw error;
-    }
+    unstable_rethrow(error);
 
     const appError = captureServerError(error, "admin:category:update");
     errorCode = getCategoryErrorCode(appError, "updateFailed");
@@ -152,9 +147,7 @@ export async function deleteAdminCategoryAction(formData: FormData) {
       actor,
     });
   } catch (error) {
-    if (isRedirectError(error)) {
-      throw error;
-    }
+    unstable_rethrow(error);
 
     const appError = captureServerError(error, "admin:category:delete");
     redirect(appendFlash(returnTo, "error", getCategoryErrorCode(appError, "deleteFailed")));
