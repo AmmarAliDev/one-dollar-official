@@ -26,6 +26,9 @@ export const routes = {
   },
   admin: {
     dashboard: "/admin",
+    products: "/admin/products",
+    productCreate: "/admin/products/new",
+    productEdit: (productId: string) => `/admin/products/${productId}/edit`,
     categories: "/admin/categories",
     categoryEdit: (categoryId: string) => `/admin/categories/${categoryId}/edit`,
     orders: "/admin/orders",

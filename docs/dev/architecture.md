@@ -30,14 +30,15 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `(storefront)/account/*` now provides customer account routes for profile, addresses, order history, order detail, and reviews
 - `(storefront)` now uses the shared `SignOutButton` convention for authenticated logout controls across the header dropdown, mobile drawer, and account profile surface
 - `(admin)` now uses `AdminShell` with a responsive sidebar, topbar, breadcrumb, and user menu, plus the same form-based sign-out pattern and role-aware navigation filtering protected by the RBAC proxy/layout guards
-- `(admin)/admin/categories` now provides simple category CRUD with search/filter and SEO field controls
-- `(auth)` reserves sign-in and account entry points
+- `(admin)/admin/categories` now provides category CRUD with shared typed create/edit/filter forms and SEO field controls
+- `(admin)/admin/products` now provides product CRUD with reusable RHF + Zod form composition for simple and variant-based catalog entries
+- `(auth)` now uses the same shared form foundation for sign-in and sign-up while preserving the existing server-action flows
 
 ## UI Foundation Strategy
 
 - Global design tokens live in `src/app/globals.css` and define semantic colors, spacing rhythm, radii, and shadow presets.
 - `src/components/ui` now contains reusable UI-state and presentation primitives like `Badge`, `PriceDisplay`, `SectionHeader`, `EmptyState`, `LoadingState`, `ErrorState`, `Skeleton`, and shared form controls (`Input`, `Textarea`, `Select`, `Checkbox`, `Switch`).
-- `src/components/forms` is the app-wide client form seam. It combines React Hook Form, Zod, and shared field renderers so feature modules can choose schema-driven forms or explicit composition without duplicating validation wiring.
+- `src/components/forms` is the app-wide client form seam. It combines React Hook Form, Zod, shared field renderers, and a small server-action submit bridge so feature modules can choose schema-driven forms or explicit composition without duplicating validation wiring.
 - `PageContainer` and `PageShell` should be reused for page spacing instead of duplicating wrapper classes.
 - Shared frontend feedback uses `sonner` through `src/components/providers/app-toaster.tsx` and `src/lib/notify.ts`.
 - Catalog listing UI lives in `src/features/catalog/components`; keep product-grid and filter scaffolds there instead of placing listing-specific markup directly in route files.
@@ -75,7 +76,7 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `service.ts` owns listing + PDP assembly (`getCatalogCategoryListing`, `getProductBySlug`, `getRelatedProducts`) and should be the handoff point when real Prisma-backed category/product repositories are added later.
 - `src/app/(storefront)/categories/page.tsx` is the category index. `src/app/(storefront)/categories/[slug]/page.tsx` is the SEO-friendly category listing route.
 - `src/app/(storefront)/categories/[slug]/[productSlug]/page.tsx` is the SEO-friendly PDP route that validates category/product pairing before rendering.
-- Variant-aware attribute filtering is intentionally a visible scaffold only in this phase; real structured variant filters should extend the existing query/filter contracts rather than replacing them.
+- Variant-aware attribute filtering is still a visible scaffold, but the storefront filter surface now uses the shared form layer and should keep extending the existing query/filter contracts rather than replacing them.
 
 ## Search Strategy
 

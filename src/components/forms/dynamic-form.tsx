@@ -1,6 +1,7 @@
 "use client";
 
 import type { FormHTMLAttributes, ReactNode } from "react";
+import { isRedirectError } from "next/dist/client/components/redirect-error";
 import type { FieldValues, SubmitErrorHandler, SubmitHandler, UseFormReturn } from "react-hook-form";
 import { type z, type ZodTypeAny } from "zod";
 
@@ -53,6 +54,10 @@ export function DynamicForm<TFieldValues extends FieldValues>({
         try {
           await onSubmit(values);
         } catch (error) {
+          if (isRedirectError(error)) {
+            throw error;
+          }
+
           form.setError("root.serverError", {
             type: "server",
             message: toUserMessage(error),

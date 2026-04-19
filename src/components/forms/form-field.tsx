@@ -229,7 +229,7 @@ export function DynamicFormField<TFieldValues extends FieldValues>({
                     >
                       <SelectValue placeholder={fieldConfig.placeholder ?? "Select an option"} />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-card">
                       {fieldConfig.options.map((option) => (
                         <SelectItem
                           key={option.value}

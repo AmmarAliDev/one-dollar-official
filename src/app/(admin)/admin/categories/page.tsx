@@ -1,15 +1,16 @@
 import Link from "next/link";
-import { Pencil, Search } from "lucide-react";
+import { Pencil } from "lucide-react";
 
 import { PageShell } from "@/components/layout/page-shell";
 import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { buildMetadata } from "@/config/metadata";
 import { routes } from "@/config/routes";
 import { listAdminCategories } from "@/features/admin/categories";
 import { createAdminCategoryAction } from "@/features/admin/categories/actions";
+import { AdminCategoryFiltersForm } from "@/features/admin/categories/components/admin-category-filters-form";
+import { AdminCategoryForm } from "@/features/admin/categories/components/admin-category-form";
 import { DeleteCategoryButton } from "@/features/admin/categories/components/delete-category-button";
 import { getCategoryErrorMessage, getCategoryNoticeMessage } from "@/features/admin/categories/flash";
 import { AdminPageHeader, AdminTablePattern } from "@/features/admin/components/admin-page-patterns";
@@ -98,76 +99,7 @@ export default async function AdminCategoriesPage({ searchParams }: AdminCategor
           <CardTitle>Create category</CardTitle>
         </CardHeader>
         <CardContent>
-          <form action={createAdminCategoryAction} className="grid gap-4 md:grid-cols-2" noValidate>
-            <input type="hidden" name="returnTo" value={returnTo} />
-
-            <div className="space-y-1.5">
-              <label htmlFor="category-name" className="text-sm font-medium">
-                Name
-              </label>
-              <Input id="category-name" name="name" placeholder="Home Care" required minLength={2} maxLength={80} />
-            </div>
-
-            <div className="space-y-1.5">
-              <label htmlFor="category-slug" className="text-sm font-medium">
-                Slug
-              </label>
-              <Input id="category-slug" name="slug" placeholder="home-care" required minLength={2} maxLength={100} />
-            </div>
-
-            <div className="space-y-1.5 md:col-span-2">
-              <label htmlFor="category-description" className="text-sm font-medium">
-                Description
-              </label>
-              <textarea
-                id="category-description"
-                name="description"
-                maxLength={500}
-                className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-24 w-full rounded-[calc(var(--radius)-2px)] border px-3 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-                placeholder="Short summary shown in admin and listings."
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label htmlFor="category-status" className="text-sm font-medium">
-                Status
-              </label>
-              <select
-                id="category-status"
-                name="status"
-                defaultValue="DRAFT"
-                className="border-input bg-background ring-offset-background focus-visible:ring-ring h-10 w-full rounded-[calc(var(--radius)-2px)] border px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-              >
-                <option value="DRAFT">Draft</option>
-                <option value="PUBLISHED">Published</option>
-                <option value="ARCHIVED">Archived</option>
-              </select>
-            </div>
-
-            <div className="space-y-1.5">
-              <label htmlFor="category-seo-title" className="text-sm font-medium">
-                SEO title
-              </label>
-              <Input id="category-seo-title" name="seoTitle" maxLength={70} placeholder="Shop Home Care Essentials" />
-            </div>
-
-            <div className="space-y-1.5 md:col-span-2">
-              <label htmlFor="category-seo-description" className="text-sm font-medium">
-                SEO description
-              </label>
-              <textarea
-                id="category-seo-description"
-                name="seoDescription"
-                maxLength={160}
-                className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-20 w-full rounded-[calc(var(--radius)-2px)] border px-3 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-                placeholder="Search snippet summary for this category page."
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <Button type="submit">Create category</Button>
-            </div>
-          </form>
+          <AdminCategoryForm action={createAdminCategoryAction} returnTo={returnTo} submitLabel="Create category" />
         </CardContent>
       </Card>
 
@@ -176,49 +108,7 @@ export default async function AdminCategoriesPage({ searchParams }: AdminCategor
           <CardTitle>Category list</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <form method="get" className="grid gap-3 md:grid-cols-[1fr_180px_auto] md:items-end">
-            <div className="space-y-1.5">
-              <label htmlFor="categories-search" className="text-sm font-medium">
-                Search
-              </label>
-              <div className="relative">
-                <Search className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2" />
-                <Input
-                  id="categories-search"
-                  name="q"
-                  defaultValue={query}
-                  placeholder="Name, slug, or description"
-                  className="pl-9"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <label htmlFor="categories-status" className="text-sm font-medium">
-                Status
-              </label>
-              <select
-                id="categories-status"
-                name="status"
-                defaultValue={status}
-                className="border-input bg-background ring-offset-background focus-visible:ring-ring h-10 w-full rounded-[calc(var(--radius)-2px)] border px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-              >
-                <option value="ALL">All statuses</option>
-                <option value="DRAFT">Draft</option>
-                <option value="PUBLISHED">Published</option>
-                <option value="ARCHIVED">Archived</option>
-              </select>
-            </div>
-
-            <div className="flex gap-2">
-              <Button type="submit" variant="outline">
-                Apply
-              </Button>
-              <Link href={routes.admin.categories} className={buttonVariants({ variant: "ghost" })}>
-                Reset
-              </Link>
-            </div>
-          </form>
+          <AdminCategoryFiltersForm query={query} status={status} />
 
           {categories.length === 0 ? (
             <AdminTablePattern

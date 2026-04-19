@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { User } from "lucide-react";
+import { LayoutDashboard, User } from "lucide-react";
 
 import { routes } from "@/config/routes";
 import { SignOutButton } from "@/features/auth/components/sign-out-button";
@@ -9,7 +9,7 @@ import { SignOutButton } from "@/features/auth/components/sign-out-button";
 import { buttonVariants } from "../ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu";
 
-const UserMenu = ({ isSignedIn }: { isSignedIn: boolean }) => {
+const UserMenu = ({ isSignedIn, isAdmin }: { isSignedIn: boolean; isAdmin: boolean }) => {
   if (!isSignedIn) {
     return (
       <Link href={routes.storefront.account} className={buttonVariants({ variant: "outline", size: "sm" })}>
@@ -28,18 +28,23 @@ const UserMenu = ({ isSignedIn }: { isSignedIn: boolean }) => {
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="flex min-w-40 flex-col gap-1 bg-card">
+        {isAdmin && <DropdownMenuItem asChild>
+          <Link href={routes.admin.dashboard} className={buttonVariants({ variant: "ghost", size: "sm", className: "cursor-pointer" })}>
+            <LayoutDashboard className="size-4" aria-hidden="true" />
+            Admin Panel
+          </Link>
+        </DropdownMenuItem>}
         <DropdownMenuItem asChild>
-          <Link href={routes.storefront.account} className={buttonVariants({ variant: "ghost", size: "sm" })}>
+          <Link href={routes.storefront.account} className={buttonVariants({ variant: "ghost", size: "sm", className: "cursor-pointer" })}>
             <User className="size-4" aria-hidden="true" />
             Account
           </Link>
         </DropdownMenuItem>
-        <div className="px-1 pb-1">
+        <div className="pb-1 w-full justify-center">
           <SignOutButton
             variant="ghost"
-            size="sm"
-            fullWidth
-            className="justify-start text-destructive hover:text-destructive"
+            fullWidth={true}
+            className={buttonVariants({ variant: "ghost", size: "sm", className: "cursor-pointer" })}
           />
         </div>
       </DropdownMenuContent>

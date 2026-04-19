@@ -1,25 +1,27 @@
 "use client";
 
-/**
- * Sign-in form — credentials (email + password) provider.
- *
- * Uses React 19's `useActionState` to handle the server action response
- * and display inline validation errors without a full page reload.
- */
-
-import { useActionState } from "react";
+import { useActionState, useTransition } from "react";
 import Link from "next/link";
+import { z } from "zod";
 
+import { DynamicFormField, useAppForm } from "@/components/forms";
 import { Button } from "@/components/ui/button";
+import { FormErrorSummary } from "@/components/ui/form-error-summary";
 import { InlineSpinner } from "@/components/ui/inline-spinner";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { routes } from "@/config/routes";
 import { signInAction, type SignInActionState } from "@/features/auth/actions/sign-in";
+import { signInValidator } from "@/features/auth/validators";
 
 type SignInFormProps = {
   redirectTo?: string;
 };
+
+const signInFormSchema = signInValidator.extend({
+  redirectTo: z.string(),
+});
+
+type SignInFormValues = z.infer<typeof signInFormSchema>;
 
 function isSafeRelativePath(value: string) {
   let candidate = value.trim();
@@ -58,64 +60,96 @@ export function SignInForm({ redirectTo = routes.storefront.home }: SignInFormPr
     signInAction,
     null,
   );
+  const [, startTransition] = useTransition();
 
   const errors = state?.errors ?? [];
   const safeRedirectTo = isSafeRelativePath(redirectTo) ? redirectTo.trim() : routes.storefront.home;
 
-  return (
-    <form action={dispatch} className="space-y-4" noValidate>
-      <input type="hidden" name="redirectTo" value={safeRedirectTo} />
+  const form = useAppForm<SignInFormValues>({
+    schema: signInFormSchema,
+    defaultValues: {
+      email: "",
+      password: "",
+      redirectTo: safeRedirectTo,
+    },
+  });
 
-      {/* Error summary */}
-      {errors.length > 0 && (
+  return (
+    <form
+      className="space-y-4"
+      noValidate
+      onSubmit={form.handleSubmit((values) => {
+        const formData = new FormData();
+        formData.set("email", values.email);
+        formData.set("password", values.password);
+        formData.set("redirectTo", values.redirectTo);
+
+        startTransition(() => {
+          dispatch(formData);
+        });
+      })}
+    >
+      <FormErrorSummary errors={form.formState.errors} title="Please review your sign-in details" />
+
+      {errors.length > 0 ? (
         <div
           id="sign-in-errors"
           role="alert"
           className="rounded-[calc(var(--radius)-2px)] border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive"
         >
           {errors.map((error, index) => (
-            <p key={index}>{error}</p>
+            <p key={`${error}-${index}`}>{error}</p>
           ))}
         </div>
-      )}
-      {/* Email */}
-      <div className="space-y-1.5">
-        <Label htmlFor="sign-in-email">Email address</Label>
-        <Input
-          id="sign-in-email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          placeholder="you@example.com"
-          required
-          aria-describedby={errors.length > 0 ? "sign-in-errors" : undefined}
-        />
-      </div>
+      ) : null}
 
-      {/* Password */}
+      <DynamicFormField
+        control={form.control}
+        disabled={isPending}
+        fieldConfig={{
+          id: "sign-in-email",
+          name: "email",
+          type: "email",
+          label: "Email address",
+          autoComplete: "email",
+          placeholder: "you@example.com",
+          required: true,
+        }}
+      />
+
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
           <Label htmlFor="sign-in-password">Password</Label>
-          <Link
-            href={routes.auth.forgotPassword}
-            className="text-xs text-muted-foreground underline-offset-4 hover:underline"
-          >
+          <Link href={routes.auth.forgotPassword} className="text-xs text-muted-foreground underline-offset-4 hover:underline">
             Forgot password?
           </Link>
         </div>
-        <Input
-          id="sign-in-password"
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          placeholder="••••••••"
-          required
+
+        <DynamicFormField
+          control={form.control}
+          disabled={isPending}
+          fieldConfig={{
+            id: "sign-in-password",
+            name: "password",
+            type: "password",
+            autoComplete: "current-password",
+            placeholder: "••••••••",
+            required: true,
+          }}
         />
       </div>
 
-      {/* Submit */}
+      <DynamicFormField
+        control={form.control}
+        disabled={isPending}
+        fieldConfig={{
+          name: "redirectTo",
+          type: "hidden",
+        }}
+      />
+
       <Button type="submit" className="w-full" disabled={isPending}>
-        {isPending && <InlineSpinner />}
+        {isPending ? <InlineSpinner /> : null}
         {isPending ? "Signing in…" : "Sign in"}
       </Button>
     </form>

@@ -41,7 +41,7 @@
 
 - Category discovery lives at `/categories`, while individual listing pages live at `/categories/[slug]` for clean, SEO-friendly storefront URLs.
 - `src/features/catalog/components/product-grid-card.tsx` is the reusable catalog card; keep product price, compare price, stock badge, and review summary placeholder logic there.
-- Listing filter UI should remain server-render-friendly and query-string-based until a later prompt requires richer client interactivity.
+- Listing filter UI should remain query-string-based, but it should now use the shared form layer for consistent labels, validation, and reset/apply actions.
 - Use the shared empty and loading primitives for listing states instead of bespoke skeleton or empty-state markup.
 - Treat variant-aware attributes as an additive scaffold for now; future implementation should extend the current filter contract instead of replacing it.
 
@@ -63,11 +63,27 @@
 - Shared app-wide form abstractions now live in `src/components/forms` and should be preferred for new client-side forms.
 - Start new forms with `useAppForm()` so Zod + React Hook Form defaults stay consistent and validation runs on change.
 - Prefer `DynamicForm` / `SchemaForm` for standard CRUD and settings forms; drop down to explicit field composition only when layout or behavior truly needs it.
-- Field-level errors should render under the relevant control, while top-level validation summaries can use `FormErrorSummary` for broader feedback.
+- Use `useServerActionSubmit()` when a client-side RHF form still needs to submit through a Next server action and redirect safely afterward.
+- Do not swallow redirect-style server action responses inside client submit helpers. Let Next handle the navigation, and use the helper's optional success callback when a dialog or drawer form needs to close and reset after a non-redirect save.
+- Field-level errors should render under the relevant control, while top-level validation summaries should use `FormErrorSummary` for broader feedback.
 - Reuse the shared shadcn-style form primitives in `src/components/ui` (`Input`, `Textarea`, `Select`, `Checkbox`, `Switch`) instead of raw ad-hoc control markup.
+- Current baseline: auth forms, checkout, admin category/product forms, and query-string filter forms should all follow this shared pattern.
 - Keep form copy short, task-focused, and user-safe. Do not expose raw backend or schema internals in validation messages.
+
+## Product Content Entry Guidelines
+
+- Titles should be shopper-facing and specific. Prefer names like "Daily Face Wash" or "Classic Tee" over internal codes.
+- Slugs must stay lowercase with single hyphens only. Keep them stable after publishing for SEO consistency.
+- Short descriptions should answer "What is this and why should someone buy it?" in one or two lines.
+- Use the full description for benefits, usage instructions, size details, or care notes.
+- For simple products, fill the standard SKU, price, and stock fields and leave the variant rows empty.
+- For variant-based products, turn on the variant toggle and enter one row per sellable option combination with its own SKU, price, and stock.
+- Variant titles should be human-friendly, such as "Small / Blue" or "500ml / Lemon".
+- Specifications should use plain labels customers recognize, such as Material, Size, or Fragrance.
+- Add alt text for important images so listings remain accessible and easier to manage later.
+- Keep SEO titles under 70 characters and SEO descriptions under 160 characters. Reuse the strongest shopper-facing language instead of keyword stuffing.
 
 ## Deferred Items
 
-- Product detail pages, cart interactions, and auth forms are intentionally deferred.
+- File uploads, multi-step wizards, and async remote field validation are still intentionally deferred.
 - Future features should compose the current primitives instead of duplicating layout and state styling.
