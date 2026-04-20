@@ -17,7 +17,7 @@ export function BlogPostContent({ blocks }: BlogPostContentProps) {
         }
 
         if (block.type === "heading") {
-          const HeadingTag = `h${block.level}` as keyof JSX.IntrinsicElements;
+          const HeadingTag = `h${block.level}` as keyof import("react").JSX.IntrinsicElements;
           return (
             <HeadingTag key={`${block.type}-${index}`} className="text-xl font-semibold tracking-tight sm:text-2xl">
               {block.text}
