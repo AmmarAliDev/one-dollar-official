@@ -46,6 +46,7 @@ This repository currently implements **Prompt 4.2 — one-page checkout foundati
 - helper tests now include wishlist seed-selection behavior and updated storefront route assertions
 - helper tests now include checkout validation, totals, and payment provider selection contracts
 - admin homepage content controls at `/admin/homepage` for sections, banners, and deal campaigns with validation and audit logging
+- analytics implementation using GA4 and Meta Pixel for core e-commerce events
 - updated AI and developer docs for UI conventions and future continuity
 
 ### Intentionally deferred
@@ -53,7 +54,7 @@ This repository currently implements **Prompt 4.2 — one-page checkout foundati
 - order placement lifecycle and invoice generation
 - online payment gateway integrations
 - live Prisma-backed catalog persistence and admin catalog CRUD
-- analytics and notifications beyond shared frontend toasts
+- notifications beyond shared frontend toasts
 - advanced CMS capabilities beyond the current homepage admin content scaffolds
 
 ## Folder Structure Snapshot

@@ -5,6 +5,7 @@ import { AppToaster } from "@/components/providers/app-toaster";
 import { AuthProvider } from "@/components/providers/auth-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { buildMetadata } from "@/config/metadata";
+import { AnalyticsProvider } from "@/features/analytics/components/analytics-provider";
 
 import "./globals.css";
 
@@ -33,6 +34,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
           <ThemeProvider>
             {children}
             <AppToaster />
+            <AnalyticsProvider />
           </ThemeProvider>
         </AuthProvider>
       </body>
