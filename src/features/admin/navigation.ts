@@ -22,6 +22,12 @@ export const adminNavigationItems: readonly AdminNavigationItem[] = [
     requiredPermission: rbacPermissions.catalogRead,
   },
   {
+    label: "Reviews",
+    href: routes.admin.reviews,
+    description: "Moderate customer feedback and storefront visibility.",
+    requiredPermission: rbacPermissions.catalogRead,
+  },
+  {
     label: "Categories",
     href: routes.admin.categories,
     description: "Create and maintain storefront category taxonomy.",

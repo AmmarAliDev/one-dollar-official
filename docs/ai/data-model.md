@@ -16,7 +16,11 @@ Models (summary)
 -- `ProductImage`: { id, productId?, productVariantId?, url, alt, position }
 	- Rule: A `ProductImage` must reference at least one of `productId` or `productVariantId`. This is enforced by a DB CHECK constraint (`product_id IS NOT NULL OR product_variant_id IS NOT NULL`).
 - `ProductSpecification`: { id, productId, key, value }
-- `Review`: { id, productId, userId?, rating, title?, body?, approved }
+- `Review`: { id, productId, userId?, rating, title?, body?, approved (deprecated compatibility mirror), status (canonical, default `PENDING`), moderationReason?, moderatedAt?, moderatedById? }
+  - Canonical source of truth: `status` is authoritative for moderation and storefront visibility. Keep the legacy `approved` boolean synced as `status = 'APPROVED'` for backward compatibility until all consumers migrate.
+  - Moderation status is one of `PENDING`, `APPROVED`, `REJECTED`, or `HIDDEN`; storefront-visible reviews require `status = 'APPROVED'`. If a legacy reader still consumes `approved`, it should treat `approved = true` only as a compatibility mirror of the approved status.
+  - Default and migration plan: new reviews default to `PENDING`. Backfill existing rows deterministically from the legacy boolean and moderation metadata: `approved = true -> APPROVED`; `approved = false` stays `PENDING` unless existing moderation evidence in `moderatedAt` or `moderatedById` indicates a staff rejection or hide action, in which case set `status` accordingly and populate `moderationReason` when needed.
+  - Safe rollout steps: 1) deploy `status` with a default or a temporary nullable period if the table is large; 2) backfill rows in one pass by reading `approved`, `moderatedAt`, and `moderatedById`; 3) verify counts before switching readers and writers to `status`; 4) keep `approved` synced as a deprecated compatibility field until old consumers are retired. Example SQL/ORM backfill: `update Review set status = case when approved = true then 'APPROVED' when moderatedAt is not null or moderatedById is not null then 'REJECTED' else 'PENDING' end, moderationReason = coalesce(moderationReason, 'Backfilled during review status migration') where status = 'PENDING'` followed by verification comparing approved rows with `status = 'APPROVED'`.
 - `Wishlist` / `WishlistItem`: wishlist per user, items reference variants
 - `Cart` / `CartItem`: carts accept optional userId and a `token` for guest sessions
 - `Order` / `OrderItem` / `OrderAddress`: order snapshots contain productName, unitPrice, quantity and address snapshot fields

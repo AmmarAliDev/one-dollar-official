@@ -157,6 +157,8 @@
 - [x] Homepage admin management added at `/admin/homepage` with section ordering, enable/disable toggles, scheduling support, banner and campaign pages, and announcement-bar support
 - [x] Homepage service now resolves validated admin content into the storefront rendering contract with safe fallback behavior
 - [x] Homepage content validation tests added for admin config payloads and storefront resolution flow
+- [x] Admin review moderation added at `/admin/reviews` with status/product filters, safe reviewer masking, approve/reject/hide actions, and persisted `AuditLog` entries
+- [x] Review moderation service coverage added for filter behavior, audit logging, and storefront visibility rules
 
 ## Deferred by design
 
