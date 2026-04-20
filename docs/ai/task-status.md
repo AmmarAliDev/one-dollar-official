@@ -159,6 +159,8 @@
 - [x] Homepage content validation tests added for admin config payloads and storefront resolution flow
 - [x] Admin review moderation added at `/admin/reviews` with status/product filters, safe reviewer masking, approve/reject/hide actions, and persisted `AuditLog` entries
 - [x] Review moderation service coverage added for filter behavior, audit logging, and storefront visibility rules
+- [x] Reusable admin SEO management section added for categories and products with preview cards, advanced metadata fields, slug guidance, clear conflict handling, and targeted SEO helper tests
+- [x] AI and developer SEO workflow docs added so future blog-post and key-page admin work can reuse the same pattern cleanly
 
 ## Deferred by design
 
