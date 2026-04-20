@@ -1,4 +1,4 @@
-import { AppError } from "@/lib/errors/app-error";
+import type { AppError } from "@/lib/errors/app-error";
 
 export type ProductErrorCode =
   | "createFailed"
@@ -25,7 +25,7 @@ const errorMessages: Record<ProductErrorCode, string> = {
   invalidInput: "Please review the form and fix the highlighted information.",
   missingId: "The selected product is missing or no longer available.",
   notFound: "The selected product could not be found.",
-  slugTaken: "This slug is already being used by another product.",
+  slugTaken: "That product URL is already in use. Update the slug so the page address stays unique.",
   skuTaken: "This SKU is already being used by another product or variant.",
   invalidCategory: "Choose a valid category before saving the product.",
   invalidRelated: "One or more related products are no longer available.",

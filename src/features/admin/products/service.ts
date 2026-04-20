@@ -77,7 +77,12 @@ export type AdminProductFormRecord = {
   relatedProductIds: string[];
   seoTitle: string;
   seoDescription: string;
+  seoCanonicalUrl: string;
+  seoOgTitle: string;
+  seoOgDescription: string;
   seoImageUrl: string;
+  seoNoIndex: boolean;
+  seoSchemaNotes: string;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -106,7 +111,12 @@ const adminProductSelect = {
   masterSku: true,
   seoTitle: true,
   seoDescription: true,
+  seoCanonicalUrl: true,
+  seoOgTitle: true,
+  seoOgDescription: true,
   seoImageUrl: true,
+  seoNoIndex: true,
+  seoSchemaNotes: true,
   metadata: true,
   createdAt: true,
   updatedAt: true,
@@ -295,7 +305,12 @@ function mapAdminProduct(record: SelectedAdminProduct): AdminProductFormRecord {
     relatedProductIds: metadata.relatedProductIds,
     seoTitle: record.seoTitle ?? "",
     seoDescription: record.seoDescription ?? "",
+    seoCanonicalUrl: record.seoCanonicalUrl ?? "",
+    seoOgTitle: record.seoOgTitle ?? "",
+    seoOgDescription: record.seoOgDescription ?? "",
     seoImageUrl: record.seoImageUrl ?? "",
+    seoNoIndex: record.seoNoIndex ?? false,
+    seoSchemaNotes: record.seoSchemaNotes ?? "",
     createdAt: record.createdAt,
     updatedAt: record.updatedAt,
   };
@@ -739,7 +754,12 @@ export async function createAdminProduct(input: {
           masterSku: input.data.sku,
           seoTitle: input.data.seoTitle ?? null,
           seoDescription: input.data.seoDescription ?? null,
+          seoCanonicalUrl: input.data.seoCanonicalUrl ?? null,
+          seoOgTitle: input.data.seoOgTitle ?? null,
+          seoOgDescription: input.data.seoOgDescription ?? null,
           seoImageUrl: input.data.seoImageUrl ?? null,
+          seoNoIndex: input.data.seoNoIndex,
+          seoSchemaNotes: input.data.seoSchemaNotes ?? null,
           metadata: {
             variantsEnabled: input.data.variantsEnabled,
             relatedProductIds,
@@ -801,7 +821,12 @@ export async function createAdminProduct(input: {
           relatedProductIds,
           seoTitle: input.data.seoTitle ?? "",
           seoDescription: input.data.seoDescription ?? "",
+          seoCanonicalUrl: input.data.seoCanonicalUrl ?? "",
+          seoOgTitle: input.data.seoOgTitle ?? "",
+          seoOgDescription: input.data.seoOgDescription ?? "",
           seoImageUrl: input.data.seoImageUrl ?? "",
+          seoNoIndex: input.data.seoNoIndex,
+          seoSchemaNotes: input.data.seoSchemaNotes ?? "",
           createdAt: new Date(),
           updatedAt: new Date(),
         };
@@ -857,7 +882,12 @@ export async function updateAdminProduct(input: {
           masterSku: input.data.sku,
           seoTitle: input.data.seoTitle ?? null,
           seoDescription: input.data.seoDescription ?? null,
+          seoCanonicalUrl: input.data.seoCanonicalUrl ?? null,
+          seoOgTitle: input.data.seoOgTitle ?? null,
+          seoOgDescription: input.data.seoOgDescription ?? null,
           seoImageUrl: input.data.seoImageUrl ?? null,
+          seoNoIndex: input.data.seoNoIndex,
+          seoSchemaNotes: input.data.seoSchemaNotes ?? null,
           metadata: {
             variantsEnabled: input.data.variantsEnabled,
             relatedProductIds,

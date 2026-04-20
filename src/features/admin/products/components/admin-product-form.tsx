@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Eye, Images, Layers3, Plus, SearchCheck, Sparkles, Trash2 } from "lucide-react";
+import { Eye, Images, Layers3, Plus, SearchCheck, Trash2 } from "lucide-react";
 import { Controller, type FieldPath, useFieldArray, useWatch } from "react-hook-form";
 
 import { DynamicFormField, useAppForm, useServerActionSubmit } from "@/components/forms";
@@ -13,6 +13,7 @@ import { Field, FieldContent, FieldError } from "@/components/ui/field";
 import { FormErrorSummary } from "@/components/ui/form-error-summary";
 import { Input } from "@/components/ui/input";
 import { routes } from "@/config/routes";
+import { AdminSeoSection } from "@/features/admin/components/admin-seo-section";
 import { formatPrice } from "@/lib/currency";
 
 import type { AdminProductCategoryOption, AdminProductFormRecord, AdminRelatedProductOption } from "../service";
@@ -82,7 +83,12 @@ function buildDefaultValues(categories: AdminProductCategoryOption[], product?: 
       relatedProductIds: [],
       seoTitle: "",
       seoDescription: "",
+      seoCanonicalUrl: "",
+      seoOgTitle: "",
+      seoOgDescription: "",
       seoImageUrl: "",
+      seoNoIndex: false,
+      seoSchemaNotes: "",
     };
   }
 
@@ -120,7 +126,12 @@ function buildDefaultValues(categories: AdminProductCategoryOption[], product?: 
     relatedProductIds: product.relatedProductIds,
     seoTitle: product.seoTitle,
     seoDescription: product.seoDescription,
+    seoCanonicalUrl: product.seoCanonicalUrl,
+    seoOgTitle: product.seoOgTitle,
+    seoOgDescription: product.seoOgDescription,
     seoImageUrl: product.seoImageUrl,
+    seoNoIndex: product.seoNoIndex,
+    seoSchemaNotes: product.seoSchemaNotes,
   };
 }
 
@@ -175,7 +186,15 @@ function buildProductFormData(values: AdminProductFormValues, input: { returnTo:
 
   formData.set("seoTitle", values.seoTitle ?? "");
   formData.set("seoDescription", values.seoDescription ?? "");
+  formData.set("seoCanonicalUrl", values.seoCanonicalUrl ?? "");
+  formData.set("seoOgTitle", values.seoOgTitle ?? "");
+  formData.set("seoOgDescription", values.seoOgDescription ?? "");
   formData.set("seoImageUrl", values.seoImageUrl ?? "");
+  formData.set("seoSchemaNotes", values.seoSchemaNotes ?? "");
+
+  if (values.seoNoIndex) {
+    formData.set("seoNoIndex", "on");
+  }
 
   return formData;
 }
@@ -245,19 +264,6 @@ export function AdminProductForm({ mode, action, returnTo, submitLabel, categori
                 }}
               />
             </div>
-
-            <DynamicFormField
-              control={form.control}
-              disabled={isPending}
-              fieldConfig={{
-                id: "product-slug",
-                name: "slug",
-                type: "text",
-                label: "Slug",
-                placeholder: "daily-face-wash",
-                required: true,
-              }}
-            />
 
             <DynamicFormField
               control={form.control}
@@ -777,60 +783,23 @@ export function AdminProductForm({ mode, action, returnTo, submitLabel, categori
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Sparkles className="size-4" />
-              SEO fields
-            </CardTitle>
-            <CardDescription>Keep titles concise and descriptions helpful so search previews stay readable.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <DynamicFormField
-              control={form.control}
-              disabled={isPending}
-              fieldConfig={{
-                id: "product-seo-title",
-                name: "seoTitle",
-                type: "text",
-                label: "SEO title",
-                placeholder: "Daily Face Wash | One Dollar",
-              }}
-            />
-
-            <DynamicFormField
-              control={form.control}
-              disabled={isPending}
-              fieldConfig={{
-                id: "product-seo-description",
-                name: "seoDescription",
-                type: "textarea",
-                label: "SEO description",
-                placeholder: "Search result summary for this product page.",
-                rows: 4,
-              }}
-            />
-
-            <DynamicFormField
-              control={form.control}
-              disabled={isPending}
-              fieldConfig={{
-                id: "product-seo-image-url",
-                name: "seoImageUrl",
-                type: "text",
-                label: "SEO image URL",
-                placeholder: "https://example.com/seo-image.jpg",
-              }}
-            />
-
-            <div className="rounded-xl border bg-muted/30 p-4 text-sm">
-              <p className="font-medium text-sky-700">Search preview</p>
-              <p className="mt-2 text-base font-semibold text-sky-950">{watchedValues.seoTitle || watchedValues.title || "Product SEO title"}</p>
-              <p className="text-emerald-700">/{watchedValues.slug || "product-slug"}</p>
-              <p className="text-muted-foreground mt-1">{watchedValues.seoDescription || watchedValues.shortDescription || "A concise search snippet will appear here after saving."}</p>
-            </div>
-          </CardContent>
-        </Card>
+        <AdminSeoSection
+          form={form}
+          disabled={isPending}
+          entityLabel="Product"
+          titleField="title"
+          slugField="slug"
+          descriptionField="shortDescription"
+          previewBasePath={selectedCategory?.slug ? `/categories/${selectedCategory.slug}` : "/categories"}
+          seoTitleField="seoTitle"
+          seoDescriptionField="seoDescription"
+          seoCanonicalUrlField="seoCanonicalUrl"
+          seoOgTitleField="seoOgTitle"
+          seoOgDescriptionField="seoOgDescription"
+          seoImageUrlField="seoImageUrl"
+          seoNoIndexField="seoNoIndex"
+          seoSchemaNotesField="seoSchemaNotes"
+        />
       </div>
     </form>
   );

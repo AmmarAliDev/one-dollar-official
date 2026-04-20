@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 
-import { DynamicForm, type DynamicFormFieldConfig, useAppForm, useServerActionSubmit } from "@/components/forms";
+import { DynamicFormField, useAppForm, useServerActionSubmit } from "@/components/forms";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { FormErrorSummary } from "@/components/ui/form-error-summary";
 import { routes } from "@/config/routes";
+import { AdminSeoSection } from "@/features/admin/components/admin-seo-section";
 
-import { type CategoryCreateInput,categoryMutationSchema } from "../validation";
+import { type CategoryCreateInput, categoryMutationSchema } from "../validation";
 
 type AdminCategoryFormProps = {
   action: (formData: FormData) => void | Promise<void>;
@@ -18,63 +20,6 @@ type AdminCategoryFormProps = {
 };
 
 type AdminCategoryFormValues = CategoryCreateInput;
-
-const categoryFields: DynamicFormFieldConfig<AdminCategoryFormValues>[] = [
-  {
-    id: "category-name",
-    name: "name",
-    type: "text",
-    label: "Name",
-    placeholder: "Home Care",
-    required: true,
-  },
-  {
-    id: "category-slug",
-    name: "slug",
-    type: "text",
-    label: "Slug",
-    placeholder: "home-care",
-    required: true,
-  },
-  {
-    id: "category-description",
-    name: "description",
-    type: "textarea",
-    label: "Description",
-    placeholder: "Short summary shown in admin and listings.",
-    rows: 4,
-    controlClassName: "md:col-span-2",
-    containerClassName: "md:col-span-2",
-  },
-  {
-    id: "category-status",
-    name: "status",
-    type: "select",
-    label: "Status",
-    options: [
-      { value: "DRAFT", label: "Draft" },
-      { value: "PUBLISHED", label: "Published" },
-      { value: "ARCHIVED", label: "Archived" },
-    ],
-    required: true,
-  },
-  {
-    id: "category-seo-title",
-    name: "seoTitle",
-    type: "text",
-    label: "SEO title",
-    placeholder: "Shop Home Care Essentials",
-  },
-  {
-    id: "category-seo-description",
-    name: "seoDescription",
-    type: "textarea",
-    label: "SEO description",
-    placeholder: "Search snippet summary for this category page.",
-    rows: 3,
-    containerClassName: "md:col-span-2",
-  },
-];
 
 function buildCategoryFormData(values: AdminCategoryFormValues, input: { returnTo: string; categoryId?: string }) {
   const formData = new FormData();
@@ -90,6 +35,15 @@ function buildCategoryFormData(values: AdminCategoryFormValues, input: { returnT
   formData.set("status", values.status);
   formData.set("seoTitle", values.seoTitle ?? "");
   formData.set("seoDescription", values.seoDescription ?? "");
+  formData.set("seoCanonicalUrl", values.seoCanonicalUrl ?? "");
+  formData.set("seoOgTitle", values.seoOgTitle ?? "");
+  formData.set("seoOgDescription", values.seoOgDescription ?? "");
+  formData.set("seoImageUrl", values.seoImageUrl ?? "");
+  formData.set("seoSchemaNotes", values.seoSchemaNotes ?? "");
+
+  if (values.seoNoIndex) {
+    formData.set("seoNoIndex", "on");
+  }
 
   return formData;
 }
@@ -111,31 +65,101 @@ export function AdminCategoryForm({
       status: initialValues?.status ?? "DRAFT",
       seoTitle: initialValues?.seoTitle ?? "",
       seoDescription: initialValues?.seoDescription ?? "",
+      seoCanonicalUrl: initialValues?.seoCanonicalUrl ?? "",
+      seoOgTitle: initialValues?.seoOgTitle ?? "",
+      seoOgDescription: initialValues?.seoOgDescription ?? "",
+      seoImageUrl: initialValues?.seoImageUrl ?? "",
+      seoNoIndex: initialValues?.seoNoIndex ?? false,
+      seoSchemaNotes: initialValues?.seoSchemaNotes ?? "",
     },
   });
 
   const { isPending, submitWithAction } = useServerActionSubmit(form);
 
   return (
-    <DynamicForm
-      form={form}
-      fields={categoryFields}
-      fieldsClassName="grid gap-4 md:grid-cols-2"
-      formErrorTitle="Please review the category details"
-      onSubmit={async (values) => {
+    <form
+      className="space-y-6"
+      noValidate
+      onSubmit={form.handleSubmit(async (values) => {
         const submitTarget = categoryId ? { returnTo, categoryId } : { returnTo };
         await submitWithAction(action, buildCategoryFormData(values, submitTarget));
-      }}
-      actions={
-        <div className="flex items-center gap-2">
-          <Button type="submit" disabled={isPending}>
-            {isPending ? "Saving..." : submitLabel}
-          </Button>
-          <Link href={cancelHref} className={buttonVariants({ variant: "ghost" })}>
-            Back to categories
-          </Link>
+      })}
+    >
+      <FormErrorSummary errors={form.formState.errors} title="Please review the category details" />
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <DynamicFormField
+          control={form.control}
+          disabled={isPending}
+          fieldConfig={{
+            id: "category-name",
+            name: "name",
+            type: "text",
+            label: "Name",
+            placeholder: "Home Care",
+            required: true,
+          }}
+        />
+
+        <DynamicFormField
+          control={form.control}
+          disabled={isPending}
+          fieldConfig={{
+            id: "category-status",
+            name: "status",
+            type: "select",
+            label: "Status",
+            options: [
+              { value: "DRAFT", label: "Draft" },
+              { value: "PUBLISHED", label: "Published" },
+              { value: "ARCHIVED", label: "Archived" },
+            ],
+            required: true,
+          }}
+        />
+
+        <div className="md:col-span-2">
+          <DynamicFormField
+            control={form.control}
+            disabled={isPending}
+            fieldConfig={{
+              id: "category-description",
+              name: "description",
+              type: "textarea",
+              label: "Description",
+              placeholder: "Short summary shown in admin and listings.",
+              rows: 4,
+            }}
+          />
         </div>
-      }
-    />
+      </div>
+
+      <AdminSeoSection
+        form={form}
+        disabled={isPending}
+        entityLabel="Category"
+        titleField="name"
+        slugField="slug"
+        descriptionField="description"
+        previewBasePath="/categories"
+        seoTitleField="seoTitle"
+        seoDescriptionField="seoDescription"
+        seoCanonicalUrlField="seoCanonicalUrl"
+        seoOgTitleField="seoOgTitle"
+        seoOgDescriptionField="seoOgDescription"
+        seoImageUrlField="seoImageUrl"
+        seoNoIndexField="seoNoIndex"
+        seoSchemaNotesField="seoSchemaNotes"
+      />
+
+      <div className="flex items-center gap-2">
+        <Button type="submit" disabled={isPending}>
+          {isPending ? "Saving..." : submitLabel}
+        </Button>
+        <Link href={cancelHref} className={buttonVariants({ variant: "ghost" })}>
+          Back to categories
+        </Link>
+      </div>
+    </form>
   );
 }
