@@ -18,9 +18,10 @@ Key entities
 - `Product` — product master record for both simple and variant-based products. Admin management covers content copy, related product links, images, specifications, status, an optional `masterSku`/`product_code` parent identifier, and shared SEO/metadata.
 - `ProductVariant` — SKU-level record used for inventory, pricing, fulfillment, and shopper options JSON such as color/size. `Inventory` is required per variant, and `ProductVariant.sku` is the authoritative SKU for orders and stock.
 - `Inventory` — tracks `quantity`, `reserved`, `safetyStock` and `location` (Karachi by default).
-- `Review`, `Wishlist`, `Cart` (and their items) for UX flows.
+- `Review` — customer product feedback now includes moderation-aware state (`PENDING`, `APPROVED`, `REJECTED`, `HIDDEN`) plus optional moderation reason/timestamps so admins can safely control storefront visibility without deleting the original text.
+- `Wishlist`, `Cart` (and their items) support shopper intent and purchase flows.
 - `Order` / `OrderItem` / `OrderAddress` — orders contain snapshot fields (productName, unitPrice, etc.) so historical data remains stable.
-- `AuditLog` — simple auditing table to store actor, action and JSON diffs.
+- `AuditLog` — simple auditing table to store actor, action and JSON diffs, including admin review moderation events.
 - `HomePageSection`, `Banner`, `DealCampaign` — lightweight CMS / marketing placeholders.
 
 Data and indexing strategy
@@ -47,5 +48,6 @@ Seeding and migrations
 Notes and next steps
 - Add full-text search indices for product search (Postgres `GIN`/`tsvector`).
 - Add reporting materialized views or analytics tables as traffic grows.
+- Add customer-facing review submission/edit flows on top of the new moderation statuses; for now, admin moderation is implemented and storefront review rendering still relies on the fallback catalog dataset where live review persistence has not yet been fully introduced.
 - Add admin UI pages to manage `DealCampaign` and `HomePageSection` objects.
 - Wishlist currently supports a seed-bridge write path: when a storefront item comes from the temporary catalog seed layer (`src/features/catalog/data`) rather than a fully persisted catalog record, the wishlist flow creates or reuses a `Wishlist` for the user, then upserts only the minimum relational shell needed for `WishlistItem` to stay valid. In practice this means `Category` gets `slug`, `name`, and a placeholder `description`; `Product` gets `slug`, `name`, `shortDescription`, `description`, `categoryId`, and `status`; `ProductVariant` gets `productId`, `sku`, `title`, `price`, `compareAtPrice`, `currency`, and `isDefault`; `Wishlist` stores `userId`; and `WishlistItem` stores `wishlistId`, `productVariantId`, and `quantity`. Fields outside that bridge path, such as richer product metadata/SEO, master identifiers, variant `options`, images, reviews, specifications, and `Inventory`, are left empty or absent until full catalog persistence exists. FIXME: this is technical debt. While it preserves foreign-key integrity for `WishlistItem`, consistency still depends on seed slugs/SKUs remaining stable and on the bridge rows not diverging from the eventual source of truth; until full catalog persistence is in place, `WishlistItem` relations point at catalog-lite records that may be incomplete for downstream flows that expect full `Product`/`ProductVariant` data.

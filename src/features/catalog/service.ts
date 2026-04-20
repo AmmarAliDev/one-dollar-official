@@ -1,11 +1,12 @@
 import { routes } from "@/config/routes";
+import { isReviewVisibleOnStorefront } from "@/lib/reviews/moderation";
 import { createPaginatedResult } from "@/server/db/pagination";
 
 import { catalogCategorySeeds, catalogProductDetailSeeds, catalogProductSeeds } from "./data";
 import type { CatalogSearchParams } from "./filters";
 import { parseCatalogSearchParams } from "./filters";
 import { getCatalogSearchAdapter } from "./search-adapter";
-import type { CatalogCategory, CatalogCategoryListing, CatalogProductCard, CatalogProductDetail } from "./types";
+import type { CatalogCategory, CatalogCategoryListing, CatalogProductCard, CatalogProductDetail, ProductReview, ProductReviewSummary } from "./types";
 
 type CategoryListingInput = {
   slug: string;
@@ -101,6 +102,52 @@ function applyFilters(products: typeof catalogProductSeeds, filters: ReturnType<
   });
 }
 
+function getVisibleReviewData(reviews: ProductReview[], summary: ProductReviewSummary) {
+  const visibleReviews = reviews.filter((review) => isReviewVisibleOnStorefront(review.status ?? "APPROVED"));
+
+  if (visibleReviews.length === reviews.length) {
+    return {
+      reviews: visibleReviews,
+      summary,
+    };
+  }
+
+  const distribution: ProductReviewSummary["distribution"] = {
+    1: 0,
+    2: 0,
+    3: 0,
+    4: 0,
+    5: 0,
+  };
+
+  if (visibleReviews.length === 0) {
+    return {
+      reviews: [],
+      summary: {
+        averageRating: 0,
+        totalCount: 0,
+        distribution,
+      },
+    };
+  }
+
+  const totalRating = visibleReviews.reduce((sum, review) => sum + review.rating, 0);
+
+  for (const review of visibleReviews) {
+    const normalizedRating = Math.max(1, Math.min(5, Math.round(review.rating))) as 1 | 2 | 3 | 4 | 5;
+    distribution[normalizedRating] += 1;
+  }
+
+  return {
+    reviews: visibleReviews,
+    summary: {
+      averageRating: Number((totalRating / visibleReviews.length).toFixed(1)),
+      totalCount: visibleReviews.length,
+      distribution,
+    },
+  };
+}
+
 export async function getCatalogCategories() {
   return catalogCategorySeeds.map(mapCategory);
 }
@@ -158,6 +205,7 @@ export async function getProductBySlug(slug: string): Promise<CatalogProductDeta
   }
 
   const card = mapProduct(seed);
+  const visibleReviewData = getVisibleReviewData(detail.reviews, detail.reviewSummary);
 
   return {
     ...card,
@@ -167,8 +215,8 @@ export async function getProductBySlug(slug: string): Promise<CatalogProductDeta
     images: detail.images,
     specifications: detail.specifications,
     variantGroups: detail.variantGroups,
-    reviews: detail.reviews,
-    reviewSummary: detail.reviewSummary,
+    reviews: visibleReviewData.reviews,
+    reviewSummary: visibleReviewData.summary,
   };
 }
 

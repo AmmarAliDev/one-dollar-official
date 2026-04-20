@@ -33,6 +33,7 @@ export const routes = {
     products: "/admin/products",
     productCreate: "/admin/products/new",
     productEdit: (productId: string) => `/admin/products/${productId}/edit`,
+    reviews: "/admin/reviews",
     categories: "/admin/categories",
     categoryEdit: (categoryId: string) => `/admin/categories/${categoryId}/edit`,
     orders: "/admin/orders",

@@ -1,3 +1,4 @@
+import type { ReviewModerationStatus } from "@/lib/reviews/moderation";
 import type { PaginationMeta } from "@/server/db/pagination";
 
 // ---------------------------------------------------------------------------
@@ -50,6 +51,7 @@ export type ProductReview = {
   comment: string;
   date: string; // ISO 8601 date string
   verified: boolean;
+  status?: ReviewModerationStatus;
 };
 
 export type ProductReviewSummary = {

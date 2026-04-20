@@ -50,6 +50,15 @@ enum ProductStatus {
   @@map("product_status")
 }
 
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  HIDDEN
+
+  @@map("review_status")
+}
+
 enum CategoryStatus {
   DRAFT
   PUBLISHED
@@ -117,10 +126,11 @@ model User {
   roleId        String?    @map("role_id")
   accounts      Account[]
   sessions      Session[]
-  addresses     Address[]
-  reviews       Review[]
-  wishlists     Wishlist[]
-  carts         Cart[]
+  addresses        Address[]
+  reviews          Review[]   @relation("AuthorReviews")
+  moderatedReviews Review[]   @relation("ModeratedReviews")
+  wishlists        Wishlist[]
+  carts            Cart[]
   orders        Order[]
   createdAt     DateTime   @default(now()) @map("created_at")
   updatedAt     DateTime   @updatedAt @map("updated_at")
@@ -294,20 +304,29 @@ model ProductSpecification {
 }
 
 model Review {
-  id        String   @id @default(uuid())
-  product   Product  @relation(fields: [productId], references: [id])
-  productId String   @map("product_id")
-  user      User?    @relation(fields: [userId], references: [id])
-  userId    String?  @map("user_id")
+  id               String       @id @default(uuid())
+  product          Product      @relation(fields: [productId], references: [id])
+  productId        String       @map("product_id")
+  user             User?        @relation("AuthorReviews", fields: [userId], references: [id])
+  userId           String?      @map("user_id")
   // rating must be between 1 and 5 (validated by DB CHECK constraint)
-  rating    Int
-  title     String?
-  body      String?
-  approved  Boolean  @default(false)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  rating           Int
+  title            String?
+  body             String?
+  // Deprecated compatibility mirror. Canonical moderation state lives in `status`,
+  // and writers must keep this synced as `status == APPROVED`.
+  approved         Boolean      @default(false)
+  status           ReviewStatus @default(PENDING)
+  moderationReason String?      @map("moderation_reason")
+  moderatedAt      DateTime?    @map("moderated_at")
+  moderatedById    String?      @map("moderated_by_id")
+  moderatedBy      User?        @relation("ModeratedReviews", fields: [moderatedById], references: [id])
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
 
   @@index([productId])
+  @@index([status])
+  @@index([productId, status])
 }
 
 model Wishlist {
