@@ -161,6 +161,11 @@
 - [x] Review moderation service coverage added for filter behavior, audit logging, and storefront visibility rules
 - [x] Reusable admin SEO management section added for categories and products with preview cards, advanced metadata fields, slug guidance, clear conflict handling, and targeted SEO helper tests
 - [x] AI and developer SEO workflow docs added so future blog-post and key-page admin work can reuse the same pattern cleanly
+- [x] SEO-ready blog foundation added with storefront routes at `/blog` and `/blog/[slug]`
+- [x] Blog feature module added in `src/features/blog` with typed content model (`title`, `slug`, `excerpt`, `content`, `cover image`, `status`, `publish date`, `SEO fields`)
+- [x] Blog listing and article pages now emit structured data (`CollectionPage`, `ItemList`, `BlogPosting`, and `BreadcrumbList`)
+- [x] Blog helper tests added for listing/page data flow, metadata inputs, and structured data generation
+- [x] AI and developer docs added for blog content modeling and future admin editing path
 
 ## Deferred by design
 
@@ -172,6 +177,8 @@
 - [ ] Live catalog persistence beyond the fallback listing dataset
 - [ ] Broader admin CRUD workflows beyond the current category flows and product list/create/edit management (for example product delete, bulk actions, and deeper automation)
 - [ ] Server-side notifications and third-party integrations
+- [ ] Admin-manageable blog CRUD and persistence-backed publishing workflow
+- [ ] Urdu blog route strategy and locale-aware storefront rendering
 
 ## Recommended Next Prompt
 

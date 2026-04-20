@@ -1,6 +1,8 @@
 export const routes = {
   storefront: {
     home: "/",
+    blog: "/blog",
+    blogPost: (slug: string) => `/blog/${slug}`,
     categories: "/categories",
     category: (slug: string) => `/categories/${slug}`,
     preview: "/preview",

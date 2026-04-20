@@ -5,6 +5,10 @@ import { loadSiteConfig } from "@/config/site";
 
 describe("storefront shell navigation", () => {
   it("exposes required primary action routes", () => {
+    expect(routes.storefront.blog).toBe("/blog");
+    expect(routes.storefront.blogPost("weekly-budget-grocery-basket-karachi")).toBe(
+      "/blog/weekly-budget-grocery-basket-karachi",
+    );
     expect(routes.storefront.categories).toBe("/categories");
     expect(routes.storefront.category("home-care")).toBe("/categories/home-care");
     expect(routes.storefront.search).toBe("/search");
@@ -32,6 +36,7 @@ describe("storefront shell navigation", () => {
     const navHrefs = site.storefrontNav.map((item) => item.href);
 
     expect(navHrefs).toContain(routes.storefront.home);
+    expect(navHrefs).toContain(routes.storefront.blog);
     expect(navHrefs).toContain(routes.storefront.categories);
     expect(navHrefs).toContain(routes.storefront.about);
     expect(navHrefs).toContain(routes.storefront.contact);

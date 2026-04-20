@@ -47,4 +47,6 @@ Support the following whenever the content model allows it:
 
 Catalog storefront pages are still using seeded fallback data in this milestone.
 
-The admin SEO structure is therefore persistence-ready and reusable now, while direct live storefront wiring should be added later as part of persisted catalog integration rather than through ad-hoc shortcuts.
+The storefront blog foundation is now live with metadata and JSON-LD wiring, but admin blog CRUD and persistence-backed publishing remain deferred.
+
+Reuse the same SEO field contract when admin blog editing is introduced.
