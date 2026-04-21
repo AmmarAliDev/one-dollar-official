@@ -1,23 +1,33 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-import { db } from "@/lib/prisma";
-import { notificationService } from "@/features/notifications";
 import { submitContactForm } from "@/features/contact/actions";
 
-// Mock dependencies
-vi.mock("@/lib/prisma", () => ({
-  db: {
-    contactSubmission: {
-      create: vi.fn(),
-    },
+// ---------------------------------------------------------------------------
+// Mocks
+// ---------------------------------------------------------------------------
+
+const prismaMock = vi.hoisted(() => ({
+  contactSubmission: {
+    create: vi.fn(),
   },
+}));
+
+vi.mock("@/lib/prisma", () => ({
+  getPrismaClient: () => prismaMock,
+}));
+
+const notificationServiceMock = vi.hoisted(() => ({
+  dispatch: vi.fn(),
 }));
 
 vi.mock("@/features/notifications", () => ({
-  notificationService: {
-    dispatch: vi.fn(),
-  },
+  getNotificationService: () => notificationServiceMock,
+  notificationEventTypes: { contactFormSubmitted: "contact.form-submitted" },
 }));
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
 
 describe("submitContactForm", () => {
   beforeEach(() => {
@@ -38,8 +48,8 @@ describe("submitContactForm", () => {
       createdAt: new Date(),
     };
 
-    vi.mocked(db.contactSubmission.create).mockResolvedValue(mockSubmission);
-    vi.mocked(notificationService.dispatch).mockResolvedValue({
+    prismaMock.contactSubmission.create.mockResolvedValue(mockSubmission);
+    notificationServiceMock.dispatch.mockResolvedValue({
       delivered: 2,
       failures: [],
     });
@@ -56,7 +66,7 @@ describe("submitContactForm", () => {
       expect(result.message).toContain("Thank you");
     }
 
-    expect(db.contactSubmission.create).toHaveBeenCalledWith({
+    expect(prismaMock.contactSubmission.create).toHaveBeenCalledWith({
       data: {
         fullName: "John Doe",
         email: "john@example.com",
@@ -65,7 +75,7 @@ describe("submitContactForm", () => {
       },
     });
 
-    expect(notificationService.dispatch).toHaveBeenCalledWith({
+    expect(notificationServiceMock.dispatch).toHaveBeenCalledWith({
       type: "contact.form-submitted",
       payload: {
         fullName: "John Doe",
@@ -88,8 +98,8 @@ describe("submitContactForm", () => {
       createdAt: new Date(),
     };
 
-    vi.mocked(db.contactSubmission.create).mockResolvedValue(mockSubmission);
-    vi.mocked(notificationService.dispatch).mockResolvedValue({
+    prismaMock.contactSubmission.create.mockResolvedValue(mockSubmission);
+    notificationServiceMock.dispatch.mockResolvedValue({
       delivered: 2,
       failures: [],
     });
@@ -101,13 +111,13 @@ describe("submitContactForm", () => {
       message: longMessage,
     });
 
-    expect(notificationService.dispatch).toHaveBeenCalledWith({
+    expect(notificationServiceMock.dispatch).toHaveBeenCalledWith({
       type: "contact.form-submitted",
       payload: {
         fullName: "John Doe",
         email: "john@example.com",
         subject: "Product inquiry",
-        messagePreview: "a".repeat(150), // Truncated to 150
+        messagePreview: "a".repeat(150),
       },
     });
   });
@@ -125,7 +135,7 @@ describe("submitContactForm", () => {
       expect(result.error).toBeTruthy();
     }
 
-    expect(db.contactSubmission.create).not.toHaveBeenCalled();
+    expect(prismaMock.contactSubmission.create).not.toHaveBeenCalled();
   });
 
   it("succeeds even if notification dispatch fails", async () => {
@@ -138,8 +148,8 @@ describe("submitContactForm", () => {
       createdAt: new Date(),
     };
 
-    vi.mocked(db.contactSubmission.create).mockResolvedValue(mockSubmission);
-    vi.mocked(notificationService.dispatch).mockRejectedValue(new Error("Notification failed"));
+    prismaMock.contactSubmission.create.mockResolvedValue(mockSubmission);
+    notificationServiceMock.dispatch.mockRejectedValue(new Error("Notification failed"));
 
     const result = await submitContactForm({
       fullName: "John Doe",
@@ -150,11 +160,11 @@ describe("submitContactForm", () => {
 
     // Submission should still succeed
     expect(result.success).toBe(true);
-    expect(db.contactSubmission.create).toHaveBeenCalled();
+    expect(prismaMock.contactSubmission.create).toHaveBeenCalled();
   });
 
   it("handles database errors gracefully", async () => {
-    vi.mocked(db.contactSubmission.create).mockRejectedValue(new Error("Database error"));
+    prismaMock.contactSubmission.create.mockRejectedValue(new Error("Database error"));
 
     const result = await submitContactForm({
       fullName: "John Doe",

@@ -91,6 +91,29 @@ enum CartStatus {
   @@map("cart_status")
 }
 
+// Email subscriber lifecycle — drives double opt-in and list hygiene.
+enum SubscriberStatus {
+  PENDING      // Awaiting confirmation (double opt-in flow — deferred)
+  ACTIVE       // Confirmed, actively subscribed
+  UNSUBSCRIBED // User opted out via unsubscribe link or preference centre
+  BOUNCED      // Hard bounce reported by sending provider; do not re-send
+
+  @@map("subscriber_status")
+}
+
+// Append-only event types for the abandoned cart detection pipeline.
+// The background job that evaluates these events is deferred (future automation).
+enum AbandonedCartEventType {
+  CART_CREATED     // First item added — starts the abandonment clock
+  CART_UPDATED     // Item added, removed, or quantity changed
+  REMINDER_QUEUED  // Recovery email job has been queued for delivery
+  REMINDER_SENT    // Recovery email was successfully delivered
+  CART_RECOVERED   // Customer returned and completed checkout
+  CART_EXPIRED     // Cart was archived without recovery
+
+  @@map("abandoned_cart_event_type")
+}
+
 // Currency (Pakistan Rupee only for now)
 enum Currency {
   PKR
@@ -372,6 +395,11 @@ model Cart {
   userId    String?    @map("user_id")
   status    CartStatus @default(ACTIVE)
   items     CartItem[]
+  // Abandonment tracking fields — populated by the abandoned-cart service.
+  // The background job that sends recovery emails is deferred (future automation).
+  abandonedAt         DateTime? @map("abandoned_at")
+  recoveryToken       String?   @unique @map("recovery_token")
+  recoveryEmailSentAt DateTime? @map("recovery_email_sent_at")
   createdAt DateTime   @default(now()) @map("created_at")
   updatedAt DateTime   @updatedAt @map("updated_at")
 
@@ -532,6 +560,74 @@ model ContactSubmission {
   @@index([createdAt])
   @@index([email])
   @@map("contact_submission")
+}
+
+// --------------------
+// Email marketing
+// --------------------
+
+// Standalone subscriber list — not linked to User so guest/anonymous
+// subscribers are fully supported without requiring an account.
+// Double opt-in (email confirmation) is deferred; new rows land as PENDING.
+model EmailSubscriber {
+  id    String @id @default(uuid())
+  email String @unique
+
+  firstName String? @map("first_name")
+
+  // Where the subscriber was captured.
+  // Known values: "checkout", "newsletter_popup", "account_signup", "order_completion".
+  // Stored as a plain string so new sources can be added without schema changes.
+  source String
+
+  status SubscriberStatus @default(PENDING)
+
+  // Tags for campaign segmentation, e.g. ["newsletter", "restock_alerts"].
+  tags String[]
+
+  // Opaque one-time token used in unsubscribe links.
+  // NEVER embed the subscriber's email in an unsubscribe URL — always use this token.
+  unsubscribeToken String @unique @map("unsubscribe_token")
+
+  confirmedAt    DateTime? @map("confirmed_at")
+  unsubscribedAt DateTime? @map("unsubscribed_at")
+
+  // Provider-specific sync metadata (e.g. Mailchimp member ID, Brevo contact ID).
+  // Populated by the campaign provider adapter when a live provider is configured.
+  providerMeta Json? @map("provider_meta")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("email_subscriber")
+}
+
+// Append-only event log for the abandoned cart detection pipeline.
+// Intentionally denormalized: cartId, cartToken, userId, and email are all
+// stored so this table stays useful even after the Cart row is archived/deleted.
+// The background recovery job (cron/queue) that reads and acts on these events
+// is deferred — this table provides the data foundation it will need.
+model AbandonedCartEvent {
+  id        String                 @id @default(uuid())
+  cartId    String                 @map("cart_id")
+  cartToken String                 @map("cart_token")
+  userId    String?                @map("user_id")
+  // Customer email when available (guest checkout form or authenticated user profile).
+  email     String?
+  eventType AbandonedCartEventType @map("event_type")
+  // Snapshot metadata: item count, subtotal (paisa), first product name, etc.
+  // Allows the recovery job to render a personalized email without re-querying the cart.
+  metadata  Json?
+  createdAt DateTime               @default(now()) @map("created_at")
+
+  @@index([cartToken])
+  @@index([userId])
+  @@index([email])
+  @@index([eventType])
+  @@index([createdAt])
+  @@map("abandoned_cart_event")
 }
 
 // --------------------
