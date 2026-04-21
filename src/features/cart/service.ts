@@ -101,11 +101,21 @@ async function createActiveCartWithUniqueToken(
   },
   db: DatabaseExecutor,
 ) {
+  // Validate user exists if userId is provided
+  let validatedUserId: string | null = null;
+  if (input.userId) {
+    const userExists = await db.user.findUnique({
+      where: { id: input.userId },
+      select: { id: true },
+    });
+    validatedUserId = userExists ? input.userId : null;
+  }
+
   for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
       return await db.cart.create({
         data: {
-          userId: input.userId ?? null,
+          userId: validatedUserId,
           token: generateCartToken(),
           status: "ACTIVE",
         },
@@ -343,6 +353,18 @@ async function ensureSeedCatalogVariant(selection: CartSeedSelection, db: Databa
 }
 
 async function getOrCreateActiveCartForUser(userId: string, db: DatabaseExecutor) {
+  // Validate user exists
+  const userExists = await db.user.findUnique({
+    where: { id: userId },
+    select: { id: true },
+  });
+
+  if (!userExists) {
+    // User doesn't exist - return a guest cart instead
+    // This can happen if sessions persist after DB reset
+    return createActiveCartWithUniqueToken({}, db);
+  }
+
   const existing = await db.cart.findFirst({
     where: {
       userId,

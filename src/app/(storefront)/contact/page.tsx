@@ -1,18 +1,27 @@
-import { StaticPagePlaceholder } from "@/components/layout/static-page-placeholder";
+import { ContactForm } from "@/features/contact";
 import { buildMetadata } from "@/config/metadata";
 
 export const metadata = buildMetadata({
-  title: "Contact",
+  title: "Contact Us",
   path: "/contact",
-  description: "Contact page placeholder for the storefront.",
+  description: "Get in touch with our customer support team. We're here to help with your questions and inquiries.",
 });
 
 export default function ContactPage() {
   return (
-    <StaticPagePlaceholder
-      pageTag="Support"
-      title="Contact Us"
-      description="A placeholder page for customer support channels and contact form details."
-    />
+    <div className="container py-12">
+      <div className="max-w-4xl mx-auto">
+        <div className="text-center mb-12">
+          <h1 className="text-3xl font-bold tracking-tight mb-4">Contact Us</h1>
+          <p className="text-muted-foreground text-lg">
+            Have a question or need assistance? Send us a message and we'll get back to you within
+            1-2 business days.
+          </p>
+        </div>
+
+        <ContactForm />
+      </div>
+    </div>
   );
 }
+

@@ -520,6 +520,20 @@ model DealCampaignProduct {
   @@index([productId])
 }
 
+// Contact form submissions (lead capture)
+model ContactSubmission {
+  id        String   @id @default(uuid())
+  fullName  String   @map("full_name")
+  email     String
+  subject   String
+  message   String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@index([email])
+  @@map("contact_submission")
+}
+
 // --------------------
 // Indexes & notes
 // --------------------
