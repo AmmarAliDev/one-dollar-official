@@ -26,6 +26,15 @@ Models (summary)
 - `Order` / `OrderItem` / `OrderAddress`: order snapshots contain productName, unitPrice, quantity and address snapshot fields
 - `AuditLog`: generic audit trail with JSON changes
 - `HomePageSection` / `Banner` / `DealCampaign`: marketing placeholders with `content`/`meta` JSON
+- `ContactSubmission`: { id, fullName, email, subject, message, createdAt }
+- `EmailSubscriber`: { id, email (unique, lowercase), firstName?, source, status (PENDING/ACTIVE/UNSUBSCRIBED/BOUNCED), tags: string[], unsubscribeToken (unique, opaque), confirmedAt?, unsubscribedAt?, providerMeta?: JSON }
+  - New subscribers land as PENDING. Double opt-in (confirmation email) is deferred.
+  - `unsubscribeToken` is used in all unsubscribe URLs — never embed raw email.
+  - `source` is a plain slug string (e.g. "checkout", "newsletter_popup") — no enum to avoid schema churn.
+- `AbandonedCartEvent`: append-only event log for the recovery pipeline. { id, cartId, cartToken, userId?, email?, eventType (CART_CREATED/CART_UPDATED/REMINDER_QUEUED/REMINDER_SENT/CART_RECOVERED/CART_EXPIRED), metadata?: JSON, createdAt }
+  - Denormalized by design — cartToken and email are stored alongside cartId so events remain useful after the Cart row is archived.
+  - The background recovery job (cron/queue) that reads events and sends recovery emails is **deferred**.
+- `Cart` model has three new fields: `abandonedAt` (DateTime?), `recoveryToken` (String? unique), `recoveryEmailSentAt` (DateTime?).
 
 Field types notes
 - Monetary values are integers in the smallest currency unit to keep calculations precise.

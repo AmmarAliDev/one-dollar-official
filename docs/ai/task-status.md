@@ -166,20 +166,36 @@
 - [x] Blog listing and article pages now emit structured data (`CollectionPage`, `ItemList`, `BlogPosting`, and `BreadcrumbList`)
 - [x] Blog helper tests added for listing/page data flow, metadata inputs, and structured data generation
 - [x] AI and developer docs added for blog content modeling and future admin editing path
+- [x] Contact form persistence added — submissions saved to `ContactSubmission` table
+- [x] Contact form server action sends admin notification email + Telegram alert (non-blocking)
+- [x] `EmailSubscriber` data model added with status lifecycle (PENDING/ACTIVE/UNSUBSCRIBED/BOUNCED), source capture, tags, and opaque unsubscribe token
+- [x] `AbandonedCartEvent` append-only event log added with CART_CREATED/CART_UPDATED/REMINDER_QUEUED/REMINDER_SENT/CART_RECOVERED/CART_EXPIRED types
+- [x] Cart model extended with `abandonedAt`, `recoveryToken`, and `recoveryEmailSentAt` fields
+- [x] Email marketing feature module added at `src/features/email-marketing` with repository, service, and pluggable provider abstraction
+- [x] Abandoned cart event helpers added at `src/features/cart/abandoned-cart-events.ts`
+- [x] Subscribe API at `POST /api/email/subscribe` (rate-limited 5/10 min, CSRF-checked)
+- [x] Unsubscribe API at `GET /api/email/unsubscribe?token=` and `POST /api/email/unsubscribe`
+- [x] PII utilities added at `src/lib/security/pii.ts` (`maskEmail`, `stripControlChars`) and shared across contact and email-marketing modules
+- [x] Tests added for validation schemas, subscribe/unsubscribe business logic, abandoned cart events, and PII helpers
+- [x] Developer docs added at `docs/dev/email-marketing.md`
 
 ## Deferred by design
 
-- [ ] Email-based password reset (requires email provider — deferred to Prompt 4.4)
+- [ ] Email-based password reset (requires email provider — deferred)
 - [ ] Email verification for credentials accounts
 - [ ] Nonce-based CSP hardening once all inline/script requirements are audited
 - [ ] Dedicated CSRF token flow for any future embedded or cross-origin clients
 - [ ] Online gateway provider implementations under checkout payment contract
 - [ ] Live catalog persistence beyond the fallback listing dataset
-- [ ] Broader admin CRUD workflows beyond the current category flows and product list/create/edit management (for example product delete, bulk actions, and deeper automation)
+- [ ] Broader admin CRUD workflows beyond the current category flows and product list/create/edit management
 - [ ] Server-side notifications and third-party integrations
 - [ ] Admin-manageable blog CRUD and persistence-backed publishing workflow
 - [ ] Urdu blog route strategy and locale-aware storefront rendering
+- [ ] **Double opt-in confirmation email** — new subscribers land as PENDING; confirmation email and `GET /api/email/confirm?token=` route are deferred
+- [ ] **Abandoned cart recovery job** — the cron/queue worker that reads AbandonedCartEvent rows, sends recovery emails, and records REMINDER_QUEUED/REMINDER_SENT events is deferred
+- [ ] **Recovery email template** — the cart recovery deep-link email with item snapshot and `/cart?recover=<token>` link is deferred
+- [ ] **Live campaign provider** — Mailchimp/Brevo/Klaviyo adapter is deferred; stub provider is active
 
 ## Recommended Next Prompt
 
-Proceed with **Phase 4 / Prompt 4.4 — email notifications and Telegram alerts**.
+Proceed with **Phase 4 / Prompt 4.5 — admin subscriber list view and notifications integration**.

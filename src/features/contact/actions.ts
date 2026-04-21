@@ -3,33 +3,13 @@
 import { getPrismaClient } from "@/lib/prisma";
 import { createLogger } from "@/lib/logger";
 import { AppError } from "@/lib/errors/app-error";
+import { maskEmail, stripControlChars } from "@/lib/security/pii";
 import { getNotificationService } from "@/features/notifications";
 import { notificationEventTypes } from "@/features/notifications/contracts";
 
 import { contactFormSchema, type ContactFormValues } from "./validation";
 
 const contactLogger = createLogger("contact.actions");
-
-/**
- * Mask email for logging to protect PII
- * Converts "user@example.com" to "u***@example.com"
- */
-function maskEmail(email: string): string {
-  const [local, domain] = email.split("@");
-  if (!local || !domain) return "***@***";
-  const masked = local[0] + "***";
-  return `${masked}@${domain}`;
-}
-
-/**
- * Sanitize email for logging to prevent log injection
- * Removes control characters (CR, LF, etc.)
- */
-function sanitizeEmail(email: unknown): string | undefined {
-  if (typeof email !== "string") return undefined;
-  // Remove all control characters (0x00-0x1F and 0x7F-0x9F)
-  return email.replace(/[\x00-\x1F\x7F-\x9F]/g, "");
-}
 
 export type ContactFormResult =
   | { success: true; message: string }
@@ -109,7 +89,7 @@ export async function submitContactForm(
   } catch (error) {
     contactLogger.error("contact form submission failed", {
       error,
-      email: sanitizeEmail(values.email),
+      email: typeof values.email === "string" ? maskEmail(stripControlChars(values.email)) : undefined,
     });
 
     if (error instanceof AppError) {
