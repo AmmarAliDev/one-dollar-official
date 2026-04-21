@@ -124,13 +124,18 @@ function buildContactAdminMessage(
   const { payload } = event;
 
   return {
-    subject: `Contact: ${payload.subject}`,
+    subject: `New Contact: ${payload.subject}`,
     text: [
-      "Contact form placeholder event fired.",
+      "New contact form submission received.",
+      "",
       `Name: ${payload.fullName}`,
       `Email: ${payload.email}`,
       `Subject: ${payload.subject}`,
-      `Preview: ${payload.messagePreview}`,
+      "",
+      "Message preview:",
+      payload.messagePreview,
+      "",
+      "Check the database for the full message details.",
     ].join("\n"),
   };
 }

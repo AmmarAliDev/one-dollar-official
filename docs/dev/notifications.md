@@ -11,7 +11,7 @@ Notifications are triggered by these events:
 - `order.new` → admin (email + Telegram) + customer (email)
 - `order.confirmed` → admin (email + Telegram) + customer (email)
 - `inventory.low-stock` → admin only (email + Telegram) — placeholder
-- `contact.form-submitted` → admin only (email + Telegram) — placeholder
+- `contact.form-submitted` → admin only (email + Telegram)
 
 ### Channels
 
