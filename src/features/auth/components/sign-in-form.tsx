@@ -11,6 +11,7 @@ import { InlineSpinner } from "@/components/ui/inline-spinner";
 import { Label } from "@/components/ui/label";
 import { routes } from "@/config/routes";
 import { signInAction, type SignInActionState } from "@/features/auth/actions/sign-in";
+import { testIds } from "@/lib/test-selectors";
 import { signInValidator } from "@/features/auth/validators";
 
 type SignInFormProps = {
@@ -63,7 +64,9 @@ export function SignInForm({ redirectTo = routes.storefront.home }: SignInFormPr
   const [, startTransition] = useTransition();
 
   const errors = state?.errors ?? [];
-  const safeRedirectTo = isSafeRelativePath(redirectTo) ? redirectTo.trim() : routes.storefront.home;
+  const safeRedirectTo = isSafeRelativePath(redirectTo)
+    ? redirectTo.trim()
+    : routes.storefront.home;
 
   const form = useAppForm<SignInFormValues>({
     schema: signInFormSchema,
@@ -78,6 +81,7 @@ export function SignInForm({ redirectTo = routes.storefront.home }: SignInFormPr
     <form
       className="space-y-4"
       noValidate
+      data-testid={testIds.auth.signInForm}
       onSubmit={form.handleSubmit((values) => {
         const formData = new FormData();
         formData.set("email", values.email);
@@ -95,7 +99,7 @@ export function SignInForm({ redirectTo = routes.storefront.home }: SignInFormPr
         <div
           id="sign-in-errors"
           role="alert"
-          className="rounded-[calc(var(--radius)-2px)] border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive"
+          className="border-destructive/40 bg-destructive/5 text-destructive rounded-[calc(var(--radius)-2px)] border px-4 py-3 text-sm"
         >
           {errors.map((error, index) => (
             <p key={`${error}-${index}`}>{error}</p>
@@ -120,7 +124,10 @@ export function SignInForm({ redirectTo = routes.storefront.home }: SignInFormPr
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
           <Label htmlFor="sign-in-password">Password</Label>
-          <Link href={routes.auth.forgotPassword} className="text-xs text-muted-foreground underline-offset-4 hover:underline">
+          <Link
+            href={routes.auth.forgotPassword}
+            className="text-muted-foreground text-xs underline-offset-4 hover:underline"
+          >
             Forgot password?
           </Link>
         </div>
@@ -148,7 +155,12 @@ export function SignInForm({ redirectTo = routes.storefront.home }: SignInFormPr
         }}
       />
 
-      <Button type="submit" className="w-full" disabled={isPending}>
+      <Button
+        type="submit"
+        className="w-full"
+        disabled={isPending}
+        data-testid={testIds.auth.signInSubmit}
+      >
         {isPending ? <InlineSpinner /> : null}
         {isPending ? "Signing in…" : "Sign in"}
       </Button>
