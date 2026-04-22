@@ -7,6 +7,8 @@ import { buildMetadata } from "@/config/metadata";
 import { CategoryOverviewCard, getCatalogCategories } from "@/features/catalog";
 import { testIds } from "@/lib/test-selectors";
 
+export const revalidate = 900;
+
 export const metadata = buildMetadata({
   title: "Categories",
   path: "/categories",

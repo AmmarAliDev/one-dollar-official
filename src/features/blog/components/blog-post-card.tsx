@@ -19,6 +19,7 @@ export function BlogPostCard({ post }: BlogPostCardProps) {
         alt={post.coverImage.alt}
         width={post.coverImage.width}
         height={post.coverImage.height}
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
         className="bg-muted h-48 w-full object-cover"
       />
 

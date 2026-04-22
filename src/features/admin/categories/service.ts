@@ -170,7 +170,7 @@ export async function createAdminCategory(input: {
   actor: AuditActorInput;
 }): Promise<AdminCategoryRecord> {
   const db = getPrismaClient();
-  const createData: Prisma.CategoryUncheckedCreateInput = {
+  const createData = {
     name: input.data.name,
     slug: input.data.slug,
     description: input.data.description ?? null,
@@ -184,7 +184,7 @@ export async function createAdminCategory(input: {
     seoNoIndex: input.data.seoNoIndex,
     seoSchemaNotes: input.data.seoSchemaNotes ?? null,
     parentId: null,
-  };
+  } as Prisma.CategoryUncheckedCreateInput;
 
   try {
     const created = await db.category.create({
@@ -239,7 +239,7 @@ export async function updateAdminCategory(input: {
 }): Promise<AdminCategoryRecord> {
   const db = getPrismaClient();
   const parentInput = input.data as CategoryUpdateInput & { parentId?: string | null };
-  const updateData: Prisma.CategoryUncheckedUpdateInput = {
+  const updateData = {
     name: input.data.name,
     slug: input.data.slug,
     description: input.data.description ?? null,
@@ -253,7 +253,7 @@ export async function updateAdminCategory(input: {
     seoNoIndex: input.data.seoNoIndex,
     seoSchemaNotes: input.data.seoSchemaNotes ?? null,
     ...(parentInput.parentId === undefined ? {} : { parentId: parentInput.parentId }),
-  };
+  } as Prisma.CategoryUncheckedUpdateInput;
 
   const previous = await db.category.findUnique({
     where: { id: input.data.id },

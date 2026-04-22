@@ -16,6 +16,8 @@ import {
 } from "@/features/catalog";
 import { testIds } from "@/lib/test-selectors";
 
+export const revalidate = 900;
+
 type CategoryPageProps = {
   params: Promise<{ slug: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;

@@ -5,6 +5,10 @@ import { getSecurityHeaders, getServerActionAllowedOrigins } from "./src/config/
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
+  images: {
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 86_400,
+  },
   experimental: {
     serverActions: {
       allowedOrigins: getServerActionAllowedOrigins(),
