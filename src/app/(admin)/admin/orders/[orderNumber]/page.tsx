@@ -1,7 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Download, FileText, History, MapPin, MessageSquare, PackageCheck, ShieldCheck, UserRound } from "lucide-react";
+import {
+  ArrowLeft,
+  Download,
+  FileText,
+  History,
+  MapPin,
+  MessageSquare,
+  PackageCheck,
+  ShieldCheck,
+  UserRound,
+} from "lucide-react";
 
 import { PageShell } from "@/components/layout/page-shell";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +33,7 @@ import {
 } from "@/features/admin/orders/actions";
 import { AdminOrderSubmitButton } from "@/features/admin/orders/components/admin-order-submit-button";
 import { buildOrderInvoiceUrl, getOrderStatusVariant } from "@/features/orders";
+import { testIds } from "@/lib/test-selectors";
 import { requireRouteAccess } from "@/lib/auth/guards";
 import { hasPermission, rbacPermissions } from "@/lib/auth/rbac";
 
@@ -40,11 +51,15 @@ export async function generateMetadata({ params }: AdminOrderDetailPageProps): P
   return buildMetadata({
     title: `Admin Order ${orderNumber}`,
     path: routes.admin.orderDetail(orderNumber),
-    description: "Review customer details, fulfillment progress, invoice access, and audit history.",
+    description:
+      "Review customer details, fulfillment progress, invoice access, and audit history.",
   });
 }
 
-export default async function AdminOrderDetailPage({ params, searchParams }: AdminOrderDetailPageProps) {
+export default async function AdminOrderDetailPage({
+  params,
+  searchParams,
+}: AdminOrderDetailPageProps) {
   const [{ orderNumber }, query, access] = await Promise.all([
     params,
     searchParams,
@@ -73,11 +88,17 @@ export default async function AdminOrderDetailPage({ params, searchParams }: Adm
         description="Give staff one clear place to review customer details, update fulfillment, and check history."
         actions={
           <div className="flex flex-wrap gap-2">
-            <Link href={buildOrderInvoiceUrl(order.orderNumber)} className={buttonVariants({ variant: "outline", size: "sm" })}>
+            <Link
+              href={buildOrderInvoiceUrl(order.orderNumber)}
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+            >
               <Download className="size-4" />
               Download invoice
             </Link>
-            <Link href={routes.admin.orders} className={buttonVariants({ variant: "ghost", size: "sm" })}>
+            <Link
+              href={routes.admin.orders}
+              className={buttonVariants({ variant: "ghost", size: "sm" })}
+            >
               <ArrowLeft className="size-4" />
               Back to orders
             </Link>
@@ -92,7 +113,7 @@ export default async function AdminOrderDetailPage({ params, searchParams }: Adm
       ) : null}
 
       {errorMessage ? (
-        <div className="rounded-md border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+        <div className="border-destructive/40 bg-destructive/5 text-destructive rounded-md border px-4 py-3 text-sm">
           {errorMessage}
         </div>
       ) : null}
@@ -107,7 +128,11 @@ export default async function AdminOrderDetailPage({ params, searchParams }: Adm
                   Order overview
                 </CardTitle>
                 <p className="text-muted-foreground text-sm">
-                  Placed {order.placedAt.toLocaleString("en-PK", { dateStyle: "medium", timeStyle: "short" })}
+                  Placed{" "}
+                  {order.placedAt.toLocaleString("en-PK", {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  })}
                 </p>
               </div>
               <Badge variant={getOrderStatusVariant(order.status)}>{order.statusLabel}</Badge>
@@ -125,7 +150,9 @@ export default async function AdminOrderDetailPage({ params, searchParams }: Adm
               </div>
               <div className="rounded-md border p-3">
                 <p className="text-muted-foreground text-xs">Items</p>
-                <p className="mt-1 font-medium">{order.itemCount} line{order.itemCount === 1 ? "" : "s"}</p>
+                <p className="mt-1 font-medium">
+                  {order.itemCount} line{order.itemCount === 1 ? "" : "s"}
+                </p>
                 <p className="text-muted-foreground text-xs">{order.paymentMethodLabel}</p>
               </div>
               <div className="rounded-md border p-3">
@@ -147,7 +174,7 @@ export default async function AdminOrderDetailPage({ params, searchParams }: Adm
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="overflow-auto rounded-md border">
-                <table className="min-w-full divide-y divide-muted-foreground/20 text-sm">
+                <table className="divide-muted-foreground/20 min-w-full divide-y text-sm">
                   <thead className="bg-muted/40 text-left">
                     <tr>
                       <th className="px-4 py-3 font-medium">Item</th>
@@ -157,14 +184,18 @@ export default async function AdminOrderDetailPage({ params, searchParams }: Adm
                       <th className="px-4 py-3 font-medium">Subtotal</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-muted-foreground/10">
+                  <tbody className="divide-muted-foreground/10 divide-y">
                     {order.items.map((item) => (
                       <tr key={item.id} className="align-top">
                         <td className="px-4 py-3">
                           <p className="font-medium">{item.productName}</p>
-                          <p className="text-muted-foreground mt-1 text-xs">{item.variantTitle ?? "Standard item"}</p>
+                          <p className="text-muted-foreground mt-1 text-xs">
+                            {item.variantTitle ?? "Standard item"}
+                          </p>
                         </td>
-                        <td className="text-muted-foreground px-4 py-3 text-xs">{item.sku ?? "N/A"}</td>
+                        <td className="text-muted-foreground px-4 py-3 text-xs">
+                          {item.sku ?? "N/A"}
+                        </td>
                         <td className="px-4 py-3">{item.quantity}</td>
                         <td className="px-4 py-3">
                           <PriceDisplay amount={item.unitPrice} size="sm" />
@@ -181,7 +212,9 @@ export default async function AdminOrderDetailPage({ params, searchParams }: Adm
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="rounded-md border p-3 text-sm">
                   <p className="text-muted-foreground">Customer note</p>
-                  <p className="mt-1">{order.customerNote ?? "No delivery note left by the customer."}</p>
+                  <p className="mt-1">
+                    {order.customerNote ?? "No delivery note left by the customer."}
+                  </p>
                 </div>
                 <div className="rounded-md border p-3 text-sm">
                   <div className="flex items-center justify-between gap-3">
@@ -200,7 +233,7 @@ export default async function AdminOrderDetailPage({ params, searchParams }: Adm
                     <span className="text-muted-foreground">Discount</span>
                     <PriceDisplay amount={order.discount} size="sm" />
                   </div>
-                  <div className="mt-3 flex items-center justify-between gap-3 border-t border-border/60 pt-3 font-semibold">
+                  <div className="border-border/60 mt-3 flex items-center justify-between gap-3 border-t pt-3 font-semibold">
                     <span>Total</span>
                     <PriceDisplay amount={order.total} size="sm" />
                   </div>
@@ -245,14 +278,19 @@ export default async function AdminOrderDetailPage({ params, searchParams }: Adm
               </CardHeader>
               <CardContent>
                 {order.history.length === 0 ? (
-                  <p className="text-muted-foreground text-sm">No order history has been recorded yet.</p>
+                  <p className="text-muted-foreground text-sm">
+                    No order history has been recorded yet.
+                  </p>
                 ) : (
                   <div className="space-y-3">
                     {order.history.map((entry) => (
                       <div key={entry.id} className="rounded-md border p-3 text-sm">
                         <p className="font-medium">{entry.summary}</p>
                         <p className="text-muted-foreground mt-1 text-xs">
-                          {entry.createdAt.toLocaleString("en-PK", { dateStyle: "medium", timeStyle: "short" })}
+                          {entry.createdAt.toLocaleString("en-PK", {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          })}
                           {entry.actorId ? ` · Staff ${entry.actorId}` : ""}
                         </p>
                       </div>
@@ -282,7 +320,11 @@ export default async function AdminOrderDetailPage({ params, searchParams }: Adm
 
               {canManage ? (
                 order.nextStatuses.length > 0 ? (
-                  <form action={updateAdminOrderStatusAction} className="space-y-3">
+                  <form
+                    action={updateAdminOrderStatusAction}
+                    className="space-y-3"
+                    data-testid={testIds.admin.orderStatusForm}
+                  >
                     <input type="hidden" name="orderId" value={order.id} />
                     <input type="hidden" name="orderNumber" value={order.orderNumber} />
                     <input type="hidden" name="returnTo" value={returnTo} />
@@ -293,7 +335,8 @@ export default async function AdminOrderDetailPage({ params, searchParams }: Adm
                       id="nextStatus"
                       name="nextStatus"
                       defaultValue={order.nextStatuses[0]}
-                      className="border-input bg-background ring-offset-background focus-visible:ring-ring flex h-10 w-full rounded-[calc(var(--radius)-2px)] border px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                      className="border-input bg-background ring-offset-background focus-visible:ring-ring flex h-10 w-full rounded-[calc(var(--radius)-2px)] border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                      data-testid={testIds.admin.orderStatusSelect}
                     >
                       {order.nextStatuses.map((status) => (
                         <option key={status} value={status}>
@@ -304,10 +347,17 @@ export default async function AdminOrderDetailPage({ params, searchParams }: Adm
                     <p className="text-muted-foreground text-xs">
                       Staff can move this order only through the approved fulfillment steps.
                     </p>
-                    <AdminOrderSubmitButton label="Update status" pendingLabel="Updating status..." className="w-full" />
+                    <AdminOrderSubmitButton
+                      label="Update status"
+                      pendingLabel="Updating status..."
+                      className="w-full"
+                      data-testid={testIds.admin.orderStatusSubmit}
+                    />
                   </form>
                 ) : (
-                  <p className="text-muted-foreground">This order is already in a final state and cannot be changed further.</p>
+                  <p className="text-muted-foreground">
+                    This order is already in a final state and cannot be changed further.
+                  </p>
                 )
               ) : (
                 <p className="text-muted-foreground">Your role has read-only order access.</p>
@@ -324,7 +374,8 @@ export default async function AdminOrderDetailPage({ params, searchParams }: Adm
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               <p className="text-muted-foreground">
-                Use this space for staff-only handling notes, courier context, or follow-up reminders.
+                Use this space for staff-only handling notes, courier context, or follow-up
+                reminders.
               </p>
               {canManage ? (
                 <form action={updateAdminOrderInternalNoteAction} className="space-y-3">
@@ -338,10 +389,16 @@ export default async function AdminOrderDetailPage({ params, searchParams }: Adm
                     defaultValue={order.internalNote ?? ""}
                     placeholder="Example: Customer requested afternoon delivery window."
                   />
-                  <AdminOrderSubmitButton label="Save internal note" pendingLabel="Saving note..." className="w-full" />
+                  <AdminOrderSubmitButton
+                    label="Save internal note"
+                    pendingLabel="Saving note..."
+                    className="w-full"
+                  />
                 </form>
               ) : (
-                <div className="rounded-md border p-3 text-sm">{order.internalNote ?? "No internal note recorded."}</div>
+                <div className="rounded-md border p-3 text-sm">
+                  {order.internalNote ?? "No internal note recorded."}
+                </div>
               )}
             </CardContent>
           </Card>

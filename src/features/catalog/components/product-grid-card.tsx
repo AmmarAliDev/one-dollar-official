@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { PriceDisplay } from "@/components/ui/price-display";
+import { testIds } from "@/lib/test-selectors";
 
 import type { CatalogProductCard, CatalogProductImageTone } from "../types";
 
@@ -40,47 +41,56 @@ export function ProductGridCard({ product }: { product: CatalogProductCard }) {
   return (
     <Link
       href={product.href}
-      className="group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-[var(--radius-card)]"
+      className="group focus-visible:ring-primary rounded-[var(--radius-card)] focus-visible:ring-2 focus-visible:outline-none"
+      data-testid={testIds.storefront.productCard(product.slug)}
     >
-    <Card className="overflow-hidden border-border/70 shadow-[var(--shadow-soft)] transition-shadow group-hover:shadow-md">
-      <div
-        role="img"
-        aria-label={`${product.name} image placeholder`}
-        className={`flex aspect-[4/3] items-end justify-between bg-gradient-to-br p-5 ${imageToneClasses[product.imageTone]}`}
-      >
-        <div>
-          <p className="text-xs font-medium uppercase tracking-[0.24em] opacity-75">Catalog image</p>
-          <p className="mt-2 text-lg font-semibold tracking-tight">{product.imageLabel}</p>
-        </div>
-        <Badge variant="secondary" className="bg-white/80 text-slate-900">
-          {product.attributeSummary.join(" | ")}
-        </Badge>
-      </div>
-
-      <CardContent className="space-y-4 p-5">
-        <div className="space-y-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant={stockBadge.variant}>{stockBadge.label}</Badge>
-            {product.compareAt && product.compareAt > product.price ? (
-              <Badge variant="info">Discount available</Badge>
-            ) : null}
+      <Card className="border-border/70 overflow-hidden shadow-[var(--shadow-soft)] transition-shadow group-hover:shadow-md">
+        <div
+          role="img"
+          aria-label={`${product.name} image placeholder`}
+          className={`flex aspect-[4/3] items-end justify-between bg-gradient-to-br p-5 ${imageToneClasses[product.imageTone]}`}
+        >
+          <div>
+            <p className="text-xs font-medium tracking-[0.24em] uppercase opacity-75">
+              Catalog image
+            </p>
+            <p className="mt-2 text-lg font-semibold tracking-tight">{product.imageLabel}</p>
           </div>
-          <h3 className="text-lg font-semibold tracking-tight group-hover:text-primary transition-colors">{product.name}</h3>
-          <p className="text-muted-foreground text-sm">{product.description}</p>
+          <Badge variant="secondary" className="bg-white/80 text-slate-900">
+            {product.attributeSummary.join(" | ")}
+          </Badge>
         </div>
 
-        <PriceDisplay
-          amount={product.price}
-          {...(typeof product.compareAt === "number" ? { compareAt: product.compareAt } : {})}
-          size="sm"
-        />
+        <CardContent className="space-y-4 p-5">
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant={stockBadge.variant}>{stockBadge.label}</Badge>
+              {product.compareAt && product.compareAt > product.price ? (
+                <Badge variant="info">Discount available</Badge>
+              ) : null}
+            </div>
+            <h3 className="group-hover:text-primary text-lg font-semibold tracking-tight transition-colors">
+              {product.name}
+            </h3>
+            <p className="text-muted-foreground text-sm">{product.description}</p>
+          </div>
 
-        <div className="text-muted-foreground flex items-center justify-between gap-3 text-xs sm:text-sm">
-          <span>{getReviewSummary(product)}</span>
-          <span>{product.inventoryQuantity > 0 ? `${product.inventoryQuantity} available` : "Notify me later"}</span>
-        </div>
-      </CardContent>
-    </Card>
+          <PriceDisplay
+            amount={product.price}
+            {...(typeof product.compareAt === "number" ? { compareAt: product.compareAt } : {})}
+            size="sm"
+          />
+
+          <div className="text-muted-foreground flex items-center justify-between gap-3 text-xs sm:text-sm">
+            <span>{getReviewSummary(product)}</span>
+            <span>
+              {product.inventoryQuantity > 0
+                ? `${product.inventoryQuantity} available`
+                : "Notify me later"}
+            </span>
+          </div>
+        </CardContent>
+      </Card>
     </Link>
   );
 }

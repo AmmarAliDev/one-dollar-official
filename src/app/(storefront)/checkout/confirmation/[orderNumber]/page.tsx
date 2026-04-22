@@ -18,6 +18,7 @@ import {
   getOrderDetailsForAccess,
   getOrderStatusVariant,
 } from "@/features/orders";
+import { testIds } from "@/lib/test-selectors";
 
 type OrderConfirmationPageProps = {
   params: Promise<{ orderNumber: string }>;
@@ -34,8 +35,15 @@ export async function generateMetadata({ params }: OrderConfirmationPageProps): 
   });
 }
 
-export default async function OrderConfirmationPage({ params, searchParams }: OrderConfirmationPageProps) {
-  const [{ orderNumber }, rawSearchParams, session] = await Promise.all([params, searchParams, auth()]);
+export default async function OrderConfirmationPage({
+  params,
+  searchParams,
+}: OrderConfirmationPageProps) {
+  const [{ orderNumber }, rawSearchParams, session] = await Promise.all([
+    params,
+    searchParams,
+    auth(),
+  ]);
   const token = typeof rawSearchParams.token === "string" ? rawSearchParams.token : undefined;
   const order = await getOrderDetailsForAccess({
     orderNumber,
@@ -47,10 +55,13 @@ export default async function OrderConfirmationPage({ params, searchParams }: Or
     notFound();
   }
 
-  const invoiceUrl = buildOrderInvoiceUrl(order.orderNumber, token ?? order.confirmationAccessToken);
+  const invoiceUrl = buildOrderInvoiceUrl(
+    order.orderNumber,
+    token ?? order.confirmationAccessToken,
+  );
 
   return (
-    <PageShell className="gap-8">
+    <PageShell className="gap-8" data-testid={testIds.storefront.checkoutConfirmation}>
       <SectionHeader
         eyebrow="Order confirmed"
         title={`Order ${order.orderNumber}`}
@@ -79,14 +90,23 @@ export default async function OrderConfirmationPage({ params, searchParams }: Or
                   Order summary
                 </CardTitle>
                 <p className="text-muted-foreground text-sm">
-                  Placed {order.placedAt.toLocaleString("en-PK", { dateStyle: "medium", timeStyle: "short" })}
+                  Placed{" "}
+                  {order.placedAt.toLocaleString("en-PK", {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  })}
                 </p>
               </div>
-              <Badge variant={getOrderStatusVariant(order.status)}>{formatOrderStatusLabel(order.status)}</Badge>
+              <Badge variant={getOrderStatusVariant(order.status)}>
+                {formatOrderStatusLabel(order.status)}
+              </Badge>
             </CardHeader>
             <CardContent className="space-y-4">
               {order.items.map((item) => (
-                <div key={item.id} className="flex items-start justify-between gap-4 border-b border-border/60 pb-4 last:border-b-0 last:pb-0">
+                <div
+                  key={item.id}
+                  className="border-border/60 flex items-start justify-between gap-4 border-b pb-4 last:border-b-0 last:pb-0"
+                >
                   <div className="space-y-1">
                     <p className="font-medium">{item.productName}</p>
                     <p className="text-muted-foreground text-sm">
@@ -148,7 +168,7 @@ export default async function OrderConfirmationPage({ params, searchParams }: Or
               <span className="text-muted-foreground">Shipping</span>
               <PriceDisplay amount={order.shipping} size="sm" />
             </div>
-            <div className="flex items-center justify-between gap-3 border-t border-border/60 pt-3 font-semibold">
+            <div className="border-border/60 flex items-center justify-between gap-3 border-t pt-3 font-semibold">
               <span>Total</span>
               <PriceDisplay amount={order.total} size="sm" />
             </div>

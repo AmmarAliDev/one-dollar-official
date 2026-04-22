@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { dispatchCartChanged } from "@/features/cart/client-events";
 import type { CartSummary } from "@/features/cart/types";
 import { notify } from "@/lib/notify";
+import { testIds } from "@/lib/test-selectors";
 
 type ProductAddToCartProps = {
   productSlug: string;
@@ -19,7 +20,12 @@ type CartMutationPayload = {
   error?: string;
 };
 
-export function ProductAddToCart({ productSlug, optionId, productName, isAvailable }: ProductAddToCartProps) {
+export function ProductAddToCart({
+  productSlug,
+  optionId,
+  productName,
+  isAvailable,
+}: ProductAddToCartProps) {
   const [pending, setPending] = useState(false);
 
   async function handleAddToCart() {
@@ -75,12 +81,15 @@ export function ProductAddToCart({ productSlug, optionId, productName, isAvailab
         disabled={!isAvailable || pending}
         onClick={handleAddToCart}
         aria-busy={pending}
+        data-testid={testIds.storefront.addToCart}
       >
         {pending ? "Adding..." : isAvailable ? "Add to Cart" : "Out of Stock"}
       </Button>
 
       {isAvailable ? (
-        <p className="text-muted-foreground text-center text-xs">Free delivery on orders over PKR 1,500 in Karachi.</p>
+        <p className="text-muted-foreground text-center text-xs">
+          Free delivery on orders over PKR 1,500 in Karachi.
+        </p>
       ) : (
         <p className="text-muted-foreground text-center text-xs">
           This item is currently unavailable. Check back soon.

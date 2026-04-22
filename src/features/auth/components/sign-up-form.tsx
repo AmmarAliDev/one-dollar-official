@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { FormErrorSummary } from "@/components/ui/form-error-summary";
 import { InlineSpinner } from "@/components/ui/inline-spinner";
 import { signUpAction, type SignUpActionState } from "@/features/auth/actions/sign-up";
-import { type SignUpInput,signUpValidator } from "@/features/auth/validators";
+import { testIds } from "@/lib/test-selectors";
+import { type SignUpInput, signUpValidator } from "@/features/auth/validators";
 
 export function SignUpForm() {
   const [state, dispatch, isPending] = useActionState<SignUpActionState | null, FormData>(
@@ -32,6 +33,7 @@ export function SignUpForm() {
     <form
       className="space-y-4"
       noValidate
+      data-testid={testIds.auth.signUpForm}
       onSubmit={form.handleSubmit((values) => {
         const formData = new FormData();
         formData.set("name", values.name ?? "");
@@ -49,7 +51,7 @@ export function SignUpForm() {
       {errors.length > 0 ? (
         <div
           role="alert"
-          className="rounded-[calc(var(--radius)-2px)] border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive"
+          className="border-destructive/40 bg-destructive/5 text-destructive rounded-[calc(var(--radius)-2px)] border px-4 py-3 text-sm"
         >
           {errors.map((error, index) => (
             <p key={`${error}-${index}`}>{error}</p>
@@ -113,7 +115,12 @@ export function SignUpForm() {
         }}
       />
 
-      <Button type="submit" className="w-full" disabled={isPending}>
+      <Button
+        type="submit"
+        className="w-full"
+        disabled={isPending}
+        data-testid={testIds.auth.signUpSubmit}
+      >
         {isPending ? <InlineSpinner /> : null}
         {isPending ? "Creating account…" : "Create account"}
       </Button>
