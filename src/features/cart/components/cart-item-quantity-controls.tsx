@@ -6,6 +6,8 @@ import { Minus, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { dispatchCartChanged } from "@/features/cart/client-events";
 import type { CartSummary } from "@/features/cart/types";
+import { AppError } from "@/lib/errors/app-error";
+import { toUserMessage } from "@/lib/errors/error-messages";
 import { notify } from "@/lib/notify";
 
 type CartItemQuantityControlsProps = {
@@ -35,7 +37,9 @@ async function updateQuantity(cartItemId: string, quantity: number) {
   const payload = (await response.json().catch(() => null)) as CartMutationPayload | null;
 
   if (!response.ok) {
-    throw new Error(payload?.error ?? "Could not update cart quantity.");
+    throw new AppError("Cart quantity request failed.", "INTERNAL_ERROR", {
+      userMessage: payload?.error ?? "Could not update cart quantity right now. Please try again.",
+    });
   }
 
   return payload?.cart ?? null;
@@ -55,7 +59,9 @@ async function removeItem(cartItemId: string) {
   const payload = (await response.json().catch(() => null)) as CartMutationPayload | null;
 
   if (!response.ok) {
-    throw new Error(payload?.error ?? "Could not remove cart item.");
+    throw new AppError("Cart remove request failed.", "INTERNAL_ERROR", {
+      userMessage: payload?.error ?? "Could not remove this item right now. Please try again.",
+    });
   }
 
   return payload?.cart ?? null;
@@ -99,7 +105,7 @@ export function CartItemQuantityControls({
       notify.success(successMessage, "Cart updated.");
     } catch (error) {
       setDisplayQuantity(previousQuantity);
-      notify.error("Could not update your cart", error instanceof Error ? error.message : undefined);
+      notify.error("Could not update your cart", toUserMessage(error));
     } finally {
       setPending(false);
     }

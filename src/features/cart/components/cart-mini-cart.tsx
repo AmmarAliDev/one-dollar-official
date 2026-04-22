@@ -8,9 +8,12 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { InlineSpinner } from "@/components/ui/inline-spinner";
 import { PriceDisplay } from "@/components/ui/price-display";
+import { SectionErrorState } from "@/components/ui/section-error-state";
 import { routes } from "@/config/routes";
 import { addCartChangedListener } from "@/features/cart/client-events";
 import type { CartSummary } from "@/features/cart/types";
+import { AppError } from "@/lib/errors/app-error";
+import { toUserMessage } from "@/lib/errors/error-messages";
 import { cn } from "@/lib/utils";
 
 type CartApiPayload = {
@@ -26,7 +29,9 @@ async function fetchCart() {
 
   if (!response.ok) {
     const payload = (await response.json().catch(() => null)) as { error?: string } | null;
-    throw new Error(payload?.error ?? "Could not load cart preview.");
+    throw new AppError("Cart preview request failed.", "INTERNAL_ERROR", {
+      userMessage: payload?.error ?? "Could not load your cart preview right now. Please try again.",
+    });
   }
 
   const payload = (await response.json()) as CartApiPayload;
@@ -65,7 +70,7 @@ export function CartMiniCart() {
       const nextCart = await fetchCart();
       setCart(nextCart);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Could not load cart preview.");
+      setErrorMessage(toUserMessage(error));
     } finally {
       setPending(false);
     }
@@ -221,12 +226,13 @@ export function CartMiniCart() {
           ) : null}
 
           {!pending && errorMessage ? (
-            <div className="space-y-3 py-2">
-              <p className="text-sm text-destructive">{errorMessage}</p>
-              <Button type="button" variant="outline" size="sm" onClick={() => void load()}>
-                Retry
-              </Button>
-            </div>
+            <SectionErrorState
+              title="Cart preview is unavailable"
+              description={errorMessage}
+              onRetry={() => void load()}
+              retryLabel="Retry cart preview"
+              className="py-2"
+            />
           ) : null}
 
           {!pending && !errorMessage && (!cart || cart.items.length === 0) ? (

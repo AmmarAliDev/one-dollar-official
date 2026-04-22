@@ -5,6 +5,9 @@ import { unstable_rethrow } from "next/navigation";
 import type { FieldValues, UseFormReturn } from "react-hook-form";
 
 import { toUserMessage } from "@/lib/errors/error-messages";
+import { createLogger } from "@/lib/logger";
+
+const serverActionSubmitLogger = createLogger("forms.use-server-action-submit");
 
 /**
  * Small helper for client-side RHF forms that still submit through Next server actions.
@@ -32,7 +35,13 @@ export function useServerActionSubmit<TFieldValues extends FieldValues>(
       startTransition(() => {
         void Promise.resolve(action(formData))
           .then(() => {
-            options?.onSuccess?.();
+            try {
+              options?.onSuccess?.();
+            } catch (callbackError) {
+              serverActionSubmitLogger.warn("post-submit callback failed", {
+                error: callbackError,
+              });
+            }
             resolve();
           })
           .catch((error) => {

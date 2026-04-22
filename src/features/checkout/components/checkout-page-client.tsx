@@ -18,6 +18,8 @@ import { FormErrorSummary } from "@/components/ui/form-error-summary";
 import { PriceDisplay } from "@/components/ui/price-display";
 import type { CartSummary } from "@/features/cart/types";
 import { testIds } from "@/lib/test-selectors";
+import { AppError } from "@/lib/errors/app-error";
+import { toUserMessage } from "@/lib/errors/error-messages";
 import {
   CHECKOUT_FIXED_PROVINCE,
   CHECKOUT_SUPPORTED_CITY,
@@ -119,9 +121,10 @@ export function CheckoutPageClient({
       } | null;
 
       if (!response.ok) {
-        throw new Error(
-          responsePayload?.error ?? "Checkout could not be submitted. Please try again.",
-        );
+        throw new AppError("Checkout request failed.", "INTERNAL_ERROR", {
+          userMessage:
+            responsePayload?.error ?? "Checkout could not be submitted. Please try again.",
+        });
       }
 
       const paymentMessage = responsePayload?.order?.payment?.message ?? "Order placed.";
@@ -138,8 +141,7 @@ export function CheckoutPageClient({
         router.push(confirmationUrl);
       }
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Checkout could not be submitted. Please retry.";
+      const message = toUserMessage(error);
       setSuccessMessage(null);
       setRetryPayload(payload);
       form.setError("root.serverError", {

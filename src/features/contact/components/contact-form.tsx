@@ -6,6 +6,7 @@ import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { SchemaForm, type DynamicFormFieldConfig } from "@/components/forms";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { toUserMessage } from "@/lib/errors/error-messages";
 
 import { contactFormSchema, type ContactFormValues } from "../validation";
 import { submitContactForm } from "../actions";
@@ -64,9 +65,7 @@ export function ContactForm() {
       }
     } catch (error) {
       setFormState("error");
-      setResultMessage(
-        error instanceof Error ? error.message : "An unexpected error occurred"
-      );
+      setResultMessage(toUserMessage(error));
     }
   };
 

@@ -9,9 +9,11 @@ const routeErrorLogger = createLogger("route-error-boundary");
 
 export default function Error({
   error,
+  unstable_retry,
   reset,
 }: {
   error: Error & { digest?: string };
+  unstable_retry?: () => void;
   reset: () => void;
 }) {
   useEffect(() => {
@@ -21,5 +23,7 @@ export default function Error({
     });
   }, [error]);
 
-  return <PageErrorFallback error={error} title="We hit a recoverable error" onRetry={reset} />;
+  const retry = unstable_retry ?? reset;
+
+  return <PageErrorFallback error={error} title="We hit a recoverable error" onRetry={retry} />;
 }

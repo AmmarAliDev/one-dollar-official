@@ -178,6 +178,7 @@
 - [x] PII utilities added at `src/lib/security/pii.ts` (`maskEmail`, `stripControlChars`) and shared across contact and email-marketing modules
 - [x] Tests added for validation schemas, subscribe/unsubscribe business logic, abandoned cart events, and PII helpers
 - [x] Developer docs added at `docs/dev/email-marketing.md`
+- [x] User-facing resilience pass completed across storefront/admin boundaries and interactive flows with standardized safe messaging, retry-safe recovery, and stronger fallback states
 
 ## Deferred by design
 
