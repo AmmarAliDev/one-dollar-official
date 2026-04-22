@@ -6,6 +6,12 @@ import { submitContactForm } from "@/features/contact/actions";
 // Mocks
 // ---------------------------------------------------------------------------
 
+const headersMock = vi.hoisted(() => vi.fn());
+
+vi.mock("next/headers", () => ({
+  headers: headersMock,
+}));
+
 const prismaMock = vi.hoisted(() => ({
   contactSubmission: {
     create: vi.fn(),
@@ -25,6 +31,20 @@ vi.mock("@/features/notifications", () => ({
   notificationEventTypes: { contactFormSubmitted: "contact.form-submitted" },
 }));
 
+const checkRateLimitMock = vi.hoisted(() => vi.fn());
+
+vi.mock("@/lib/rate-limit", () => ({
+  checkRateLimit: checkRateLimitMock,
+}));
+
+const assertTrustedOriginMock = vi.hoisted(() => vi.fn());
+const getClientIpMock = vi.hoisted(() => vi.fn());
+
+vi.mock("@/lib/security/csrf", () => ({
+  assertTrustedOrigin: assertTrustedOriginMock,
+  getClientIp: getClientIpMock,
+}));
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -32,6 +52,12 @@ vi.mock("@/features/notifications", () => ({
 describe("submitContactForm", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    headersMock.mockResolvedValue({
+      get: vi.fn().mockReturnValue(null),
+    });
+    assertTrustedOriginMock.mockResolvedValue(undefined);
+    getClientIpMock.mockReturnValue("127.0.0.1");
+    checkRateLimitMock.mockResolvedValue({ success: true });
   });
 
   afterEach(() => {
@@ -135,6 +161,40 @@ describe("submitContactForm", () => {
       expect(result.error).toBeTruthy();
     }
 
+    expect(prismaMock.contactSubmission.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects requests that fail trusted-origin validation", async () => {
+    assertTrustedOriginMock.mockRejectedValueOnce(new Error("forbidden"));
+
+    const result = await submitContactForm({
+      fullName: "John Doe",
+      email: "john@example.com",
+      subject: "Product inquiry",
+      message: "I have a question about your products.",
+    });
+
+    expect(result).toEqual({
+      success: false,
+      error: "Failed to submit your message. Please try again.",
+    });
+    expect(prismaMock.contactSubmission.create).not.toHaveBeenCalled();
+  });
+
+  it("rate-limits repeated contact submissions", async () => {
+    checkRateLimitMock.mockResolvedValueOnce({ success: false });
+
+    const result = await submitContactForm({
+      fullName: "John Doe",
+      email: "john@example.com",
+      subject: "Product inquiry",
+      message: "I have a question about your products.",
+    });
+
+    expect(result).toEqual({
+      success: false,
+      error: "Too many messages were sent from this network. Please wait a few minutes and try again.",
+    });
     expect(prismaMock.contactSubmission.create).not.toHaveBeenCalled();
   });
 

@@ -77,7 +77,6 @@ describe("contact form notifications", () => {
 
     const plan = buildNotificationPlan(event, {
       adminEmails: [],
-      telegramChatId: undefined,
     });
 
     expect(plan.deliveries).toHaveLength(0);
@@ -96,7 +95,6 @@ describe("contact form notifications", () => {
 
     const plan = buildNotificationPlan(event, {
       adminEmails: ["admin@example.com"],
-      telegramChatId: undefined,
     });
 
     expect(plan.deliveries).toHaveLength(1);

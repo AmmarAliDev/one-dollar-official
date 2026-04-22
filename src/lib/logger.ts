@@ -2,7 +2,13 @@ type LogLevel = "debug" | "info" | "warn" | "error";
 
 const REDACTED_VALUE = "[REDACTED]";
 const MAX_DEPTH = 4;
-const sensitiveKeyPattern = /(pass(word)?|token|secret|authorization|cookie|session|api[-_]?key)/i;
+const sensitiveKeyPattern =
+  /(pass(word)?|token|secret|authorization|cookie|session|api[-_]?key|csrf|otp|code[-_]?verifier)/i;
+const sensitiveStringPatterns = [
+  /^Bearer\s+\S+$/i,
+  /^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/,
+  /(?:^|[;\s])(?:session|token|secret|csrf|auth)[^=\s]{0,32}=\S+/i,
+];
 
 export function sanitizeForLogging(value: unknown, depth = 0): unknown {
   if (value == null || typeof value === "number" || typeof value === "boolean") {
@@ -10,7 +16,7 @@ export function sanitizeForLogging(value: unknown, depth = 0): unknown {
   }
 
   if (typeof value === "string") {
-    return value;
+    return sensitiveStringPatterns.some((pattern) => pattern.test(value)) ? REDACTED_VALUE : value;
   }
 
   if (value instanceof Error) {
