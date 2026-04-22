@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { AppError } from "@/lib/errors/app-error";
+import { toUserMessage } from "@/lib/errors/error-messages";
 import { notify } from "@/lib/notify";
 
 type WishlistRemoveButtonProps = {
@@ -33,13 +35,15 @@ export function WishlistRemoveButton({ sku, productName }: WishlistRemoveButtonP
 
         if (!response.ok) {
           const payload = (await response.json().catch(() => null)) as { error?: string } | null;
-          throw new Error(payload?.error ?? "Wishlist remove request failed.");
+          throw new AppError("Wishlist remove request failed.", "INTERNAL_ERROR", {
+            userMessage: payload?.error ?? "Could not remove this wishlist item right now. Please try again.",
+          });
         }
 
         notify.success(`${productName} removed`, "Wishlist updated.");
         router.refresh();
       } catch (error) {
-        notify.error("Could not remove wishlist item", error instanceof Error ? error.message : undefined);
+        notify.error("Could not remove wishlist item", toUserMessage(error));
       }
     });
   }

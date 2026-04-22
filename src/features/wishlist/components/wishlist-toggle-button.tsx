@@ -6,6 +6,8 @@ import { Heart } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { routes } from "@/config/routes";
+import { AppError } from "@/lib/errors/app-error";
+import { toUserMessage } from "@/lib/errors/error-messages";
 import { notify } from "@/lib/notify";
 import { cn } from "@/lib/utils";
 
@@ -57,7 +59,9 @@ export function WishlistToggleButton({
         }
 
         const errorPayload = (await response.json().catch(() => null)) as { error?: string } | null;
-        throw new Error(errorPayload?.error ?? "Wishlist request failed.");
+        throw new AppError("Wishlist request failed.", "INTERNAL_ERROR", {
+          userMessage: errorPayload?.error ?? "Could not update wishlist right now. Please try again.",
+        });
       }
 
       const nextValue = !wishlisted;
@@ -65,7 +69,7 @@ export function WishlistToggleButton({
       notify.success(nextValue ? `${productName} saved` : `${productName} removed`, "Wishlist updated.");
       router.refresh();
     } catch (error) {
-      notify.error("Could not update wishlist", error instanceof Error ? error.message : undefined);
+      notify.error("Could not update wishlist", toUserMessage(error));
     } finally {
       setPending(false);
     }
