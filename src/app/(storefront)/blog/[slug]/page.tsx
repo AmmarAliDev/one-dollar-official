@@ -117,6 +117,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           width={post.coverImage.width}
           height={post.coverImage.height}
           className="bg-muted rounded-(--radius-card) border object-cover"
+          sizes="(max-width: 1024px) 100vw, 1024px"
+          quality={85}
           priority
         />
 

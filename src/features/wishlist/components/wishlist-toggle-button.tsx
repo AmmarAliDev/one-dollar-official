@@ -6,7 +6,6 @@ import { Heart } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { routes } from "@/config/routes";
-import { useSession } from "@/lib/auth/client";
 import { notify } from "@/lib/notify";
 import { cn } from "@/lib/utils";
 
@@ -27,19 +26,12 @@ export function WishlistToggleButton({
 }: WishlistToggleButtonProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { status } = useSession();
 
   const [pending, setPending] = useState(false);
   const [wishlisted, setWishlisted] = useState(initiallyWishlisted);
 
   async function handleToggle() {
-    if (pending || status === "loading") {
-      return;
-    }
-
-    if (status === "unauthenticated") {
-      notify.info("Sign in required", "Please sign in to save products to your wishlist.");
-      router.push(`${routes.auth.signIn}?from=${encodeURIComponent(pathname || routes.storefront.wishlist)}`);
+    if (pending) {
       return;
     }
 
@@ -58,6 +50,12 @@ export function WishlistToggleButton({
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          notify.info("Sign in required", "Please sign in to save products to your wishlist.");
+          router.push(`${routes.auth.signIn}?from=${encodeURIComponent(pathname || routes.storefront.wishlist)}`);
+          return;
+        }
+
         const errorPayload = (await response.json().catch(() => null)) as { error?: string } | null;
         throw new Error(errorPayload?.error ?? "Wishlist request failed.");
       }
@@ -80,7 +78,7 @@ export function WishlistToggleButton({
       size="lg"
       className="w-full"
       onClick={handleToggle}
-      disabled={status === "loading" || pending || !sku}
+      disabled={pending || !sku}
       aria-busy={pending}
       aria-pressed={wishlisted}
     >

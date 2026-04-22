@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "pnpm prisma:generate",
     "build": "next build",
     "build:deploy": "pnpm prisma:generate && pnpm prisma:migrate:deploy && next build",
     "build:production": "pnpm build:deploy",

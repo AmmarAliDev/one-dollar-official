@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(result, {
       headers: {
-        "Cache-Control": "no-store",
+        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=600",
       },
     });
   } catch (error) {
