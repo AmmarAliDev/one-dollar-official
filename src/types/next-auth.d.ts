@@ -23,5 +23,7 @@ declare module "next-auth/jwt" {
     id?: string;
     /** Role key propagated into the JWT payload for fast RBAC checks. */
     role?: RoleKey | null;
+    /** Last time the role snapshot was refreshed from the database. */
+    roleRefreshedAt?: number;
   }
 }

@@ -28,6 +28,46 @@ import { signInValidator } from "./features/auth/validators";
 import { comparePassword } from "./lib/auth/password";
 
 const db = getPrismaClient();
+const ROLE_REFRESH_WINDOW_MS = 5 * 60 * 1000;
+
+async function refreshTokenRole(input: {
+  tokenId?: unknown;
+  roleFromUser?: RoleKey | null;
+  existingRole?: RoleKey | null;
+  refreshedAt?: number | null;
+}) {
+  const now = Date.now();
+
+  if (input.roleFromUser) {
+    return {
+      role: input.roleFromUser,
+      refreshedAt: now,
+    };
+  }
+
+  const tokenUserId = typeof input.tokenId === "string" && input.tokenId.length > 0 ? input.tokenId : null;
+  const lastRefreshedAt =
+    typeof input.refreshedAt === "number" && Number.isFinite(input.refreshedAt) ? input.refreshedAt : null;
+  const shouldRefreshRole =
+    !input.existingRole || !lastRefreshedAt || now - lastRefreshedAt >= ROLE_REFRESH_WINDOW_MS;
+
+  if (!tokenUserId || !shouldRefreshRole) {
+    return {
+      role: input.existingRole ?? RoleKey.CUSTOMER,
+      refreshedAt: lastRefreshedAt ?? now,
+    };
+  }
+
+  const dbUser = await db.user.findUnique({
+    where: { id: tokenUserId },
+    include: { role: true },
+  });
+
+  return {
+    role: dbUser ? dbUser.role?.key ?? RoleKey.CUSTOMER : null,
+    refreshedAt: now,
+  };
+}
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   // Attach to Prisma so OAuth accounts + users are persisted.
@@ -93,22 +133,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-
-        const roleFromUser = (user as { role?: RoleKey | null }).role;
-        if (roleFromUser) {
-          // Credentials path — role already resolved by authorize().
-          token.role = roleFromUser;
-        } else if (user.id) {
-          // OAuth path — look up the role relation for this user.
-          const dbUser = await db.user.findUnique({
-            where: { id: user.id },
-            include: { role: true },
-          });
-          token.role = dbUser?.role?.key ?? RoleKey.CUSTOMER;
-        } else {
-          token.role = RoleKey.CUSTOMER;
-        }
       }
+
+      const roleFromUser = user ? (user as { role?: RoleKey | null }).role : undefined;
+      const roleSnapshot = await refreshTokenRole({
+        tokenId: token.id,
+        existingRole: (token.role as RoleKey | null | undefined) ?? null,
+        refreshedAt:
+          typeof token.roleRefreshedAt === "number" ? token.roleRefreshedAt : null,
+        ...(roleFromUser !== undefined ? { roleFromUser } : {}),
+      });
+
+      token.role = roleSnapshot.role;
+      token.roleRefreshedAt = roleSnapshot.refreshedAt;
 
       return token;
     },

@@ -1,15 +1,21 @@
 "use server";
 
+import { headers } from "next/headers";
+
 import { getPrismaClient } from "@/lib/prisma";
 import { createLogger } from "@/lib/logger";
 import { AppError } from "@/lib/errors/app-error";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { assertTrustedOrigin, getClientIp } from "@/lib/security/csrf";
 import { maskEmail, stripControlChars } from "@/lib/security/pii";
+import { validateWithSchema } from "@/lib/security/validation";
 import { getNotificationService } from "@/features/notifications";
 import { notificationEventTypes } from "@/features/notifications/contracts";
 
 import { contactFormSchema, type ContactFormValues } from "./validation";
 
 const contactLogger = createLogger("contact.actions");
+const CONTACT_RATE_LIMIT_MESSAGE = "Too many messages were sent from this network. Please wait a few minutes and try again.";
 
 export type ContactFormResult =
   | { success: true; message: string }
@@ -33,27 +39,50 @@ export async function submitContactForm(
   const notificationService = getNotificationService();
 
   try {
-    // Validate input
-    const validated = contactFormSchema.parse(values);
+    await assertTrustedOrigin({ action: "contact:submit" });
+
+    const validated = validateWithSchema(contactFormSchema, values);
+    if (!validated.success) {
+      return {
+        success: false,
+        error: validated.errors[0] ?? "Please check your message and try again.",
+      };
+    }
+
+    const headerList = await headers();
+    const ip = getClientIp(headerList);
+    const rateLimitResult = await checkRateLimit({
+      identifier: `${ip}:${validated.data.email.toLowerCase()}`,
+      action: "contact:submit",
+      limit: 5,
+      windowMs: 10 * 60_000,
+    });
+
+    if (!rateLimitResult.success) {
+      return {
+        success: false,
+        error: CONTACT_RATE_LIMIT_MESSAGE,
+      };
+    }
 
     contactLogger.info("contact form submission started", {
-      email: maskEmail(validated.email),
-      subject: validated.subject,
+      email: maskEmail(validated.data.email),
+      subject: validated.data.subject,
     });
 
     // Save to database
     const submission = await db.contactSubmission.create({
       data: {
-        fullName: validated.fullName,
-        email: validated.email,
-        subject: validated.subject,
-        message: validated.message,
+        fullName: validated.data.fullName,
+        email: validated.data.email,
+        subject: validated.data.subject,
+        message: validated.data.message,
       },
     });
 
     contactLogger.info("contact submission saved", {
       id: submission.id,
-      email: maskEmail(validated.email),
+      email: maskEmail(validated.data.email),
     });
 
     // Send notifications (non-blocking)
@@ -61,10 +90,10 @@ export async function submitContactForm(
       const notificationResult = await notificationService.dispatch({
         type: notificationEventTypes.contactFormSubmitted,
         payload: {
-          fullName: validated.fullName,
-          email: validated.email,
-          subject: validated.subject,
-          messagePreview: validated.message.substring(0, 150),
+          fullName: validated.data.fullName,
+          email: validated.data.email,
+          subject: validated.data.subject,
+          messagePreview: validated.data.message.substring(0, 150),
         },
       });
 
