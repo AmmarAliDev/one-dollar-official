@@ -9,7 +9,7 @@ import { rbacPermissions } from "@/lib/auth/rbac";
 import { captureServerError } from "@/lib/errors/handling";
 import { assertTrustedOrigin } from "@/lib/security/csrf";
 
-import { type ProductErrorCode, getProductErrorCode } from "./flash";
+import { getProductErrorCode, type ProductErrorCode } from "./flash";
 import { createAdminProduct, updateAdminProduct } from "./service";
 import { validateAdminProductCreateInput, validateAdminProductUpdateInput } from "./validation";
 
@@ -103,7 +103,12 @@ function readProductPayload(formData: FormData) {
     relatedProductIds: formData.getAll("relatedProductIds").map((value) => `${value ?? ""}`),
     seoTitle: `${formData.get("seoTitle") ?? ""}`,
     seoDescription: `${formData.get("seoDescription") ?? ""}`,
+    seoCanonicalUrl: `${formData.get("seoCanonicalUrl") ?? ""}`,
+    seoOgTitle: `${formData.get("seoOgTitle") ?? ""}`,
+    seoOgDescription: `${formData.get("seoOgDescription") ?? ""}`,
     seoImageUrl: `${formData.get("seoImageUrl") ?? ""}`,
+    seoNoIndex: formData.get("seoNoIndex") !== null,
+    seoSchemaNotes: `${formData.get("seoSchemaNotes") ?? ""}`,
   };
 }
 

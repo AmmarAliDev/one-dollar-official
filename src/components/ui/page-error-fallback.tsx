@@ -27,7 +27,7 @@ export function PageErrorFallback({
   action,
   className,
   fullPage = true,
-  showDetails = process.env.NODE_ENV === "development",
+  showDetails = false,
 }: PageErrorFallbackProps) {
   const safeDescription = description ?? toUserMessage(error);
   const debugMessage = error instanceof Error ? error.message : null;
@@ -51,7 +51,7 @@ export function PageErrorFallback({
       />
 
       {showDetails && debugMessage ? (
-        <pre className="bg-muted text-muted-foreground overflow-x-auto rounded-[var(--radius)] p-3 text-xs">
+        <pre className="bg-muted text-muted-foreground overflow-x-auto rounded-(--radius) p-3 text-xs">
           {debugMessage}
         </pre>
       ) : null}

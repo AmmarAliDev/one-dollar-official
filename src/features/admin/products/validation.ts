@@ -1,8 +1,7 @@
 import { z } from "zod";
 
+import { adminSeoFieldsSchema, adminSlugSchema } from "@/features/admin/seo/schema";
 import { validateWithSchema } from "@/lib/security/validation";
-
-const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 function parseNumberish(value: unknown) {
   if (typeof value === "number") {
@@ -71,27 +70,6 @@ const optionalShortText = z
   .optional()
   .transform((value) => (value && value.length > 0 ? value : undefined));
 
-const optionalSeoTitle = z
-  .string()
-  .trim()
-  .max(70, "SEO title must be 70 characters or fewer.")
-  .optional()
-  .transform((value) => (value && value.length > 0 ? value : undefined));
-
-const optionalSeoDescription = z
-  .string()
-  .trim()
-  .max(160, "SEO description must be 160 characters or fewer.")
-  .optional()
-  .transform((value) => (value && value.length > 0 ? value : undefined));
-
-const optionalUrl = z
-  .string()
-  .trim()
-  .url("Please enter a valid URL.")
-  .optional()
-  .or(z.literal(""))
-  .transform((value) => (value && value.length > 0 ? value : undefined));
 
 const requiredMoney = (label: string) =>
   z.preprocess(
@@ -151,12 +129,7 @@ export const adminProductStatusValues = ["DRAFT", "PUBLISHED", "ARCHIVED"] as co
 export const adminProductMutationSchema = z
   .object({
     title: z.string().trim().min(2, "Title must be at least 2 characters.").max(120, "Title must be 120 characters or fewer."),
-    slug: z
-      .string()
-      .trim()
-      .min(2, "Slug must be at least 2 characters.")
-      .max(100, "Slug must be 100 characters or fewer.")
-      .regex(slugRegex, "Slug must use lowercase letters, numbers, and single hyphens."),
+    slug: adminSlugSchema,
     shortDescription: optionalShortText,
     description: optionalText,
     categoryId: z.string({ error: "Category is required." }).trim().min(1, "Category is required."),
@@ -172,10 +145,8 @@ export const adminProductMutationSchema = z
     images: z.array(adminProductImageSchema).default([]),
     specifications: z.array(adminProductSpecificationSchema).default([]),
     relatedProductIds: z.array(z.string().trim().min(1)).default([]).transform((ids) => [...new Set(ids)]),
-    seoTitle: optionalSeoTitle,
-    seoDescription: optionalSeoDescription,
-    seoImageUrl: optionalUrl,
   })
+  .extend(adminSeoFieldsSchema.shape)
   .superRefine((input, ctx) => {
     if (input.comparePrice !== undefined && input.comparePrice < input.price) {
       ctx.addIssue({

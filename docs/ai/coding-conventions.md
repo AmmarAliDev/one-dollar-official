@@ -33,6 +33,15 @@
 - Use `checkRateLimit()` for auth and other abuse-prone mutations; production should provide Upstash Redis credentials, while local/test can rely on the built-in memory fallback.
 - Normalize unexpected server failures with `toAppError()` / `toActionErrorState()` / `createRouteHandlerErrorResponse()` instead of leaking raw exceptions to UI callers.
 
+## Error Handling Standards
+
+- User-facing copy must be friendly, actionable, and non-technical; never surface raw stacks, SQL errors, or internal exception details.
+- Client catch blocks should map unknown errors through `toUserMessage()` and use `AppError` with `userMessage` when surfacing known-safe server responses.
+- Route segment error boundaries should prefer `unstable_retry()` (with `reset()` fallback only when needed) for recoverable failures.
+- Non-critical async side effects (notifications, analytics, post-submit callbacks) must be isolated so their failures do not fail the primary user flow.
+- Every async UI surface should define one of the shared fallback states: `PageErrorFallback`, `SectionErrorState`, `FormErrorSummary`, or `EmptyState`.
+- Retry UX should be idempotent and safe to repeat; avoid duplicate writes by guarding pending state and preserving retry payloads when practical.
+
 ## Database Access Conventions
 
 - Use `getPrismaClient()` from `src/server/db` for the root Prisma singleton when a repository or service needs direct access.

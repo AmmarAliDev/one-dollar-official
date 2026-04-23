@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/badge";
+import { isReviewVisibleOnStorefront } from "@/lib/reviews/moderation";
 
 import type { ProductReview, ProductReviewSummary } from "../types";
 
@@ -32,6 +33,26 @@ function RatingBar({ count, total, label }: { count: number; total: number; labe
 }
 
 export function ProductReviews({ reviews, summary }: ProductReviewsProps) {
+  const visibleReviews = reviews.filter((review) => isReviewVisibleOnStorefront(review.status ?? "APPROVED"));
+  const visibleTotal = visibleReviews.length;
+  const visibleAverage =
+    visibleTotal > 0
+      ? visibleReviews.reduce((sum, review) => sum + (review.rating ?? 0), 0) / visibleTotal
+      : 0;
+  const visibleDistribution = {
+    ...summary.distribution,
+    5: 0,
+    4: 0,
+    3: 0,
+    2: 0,
+    1: 0,
+  };
+
+  for (const review of visibleReviews) {
+    const star = Math.max(1, Math.min(5, Math.round(review.rating ?? 0))) as 1 | 2 | 3 | 4 | 5;
+    visibleDistribution[star] += 1;
+  }
+
   return (
     <section aria-labelledby="reviews-heading">
       <div className="mb-6 space-y-3">
@@ -41,17 +62,17 @@ export function ProductReviews({ reviews, summary }: ProductReviewsProps) {
         </h2>
       </div>
 
-      {summary.totalCount === 0 ? (
-        <p className="text-muted-foreground text-sm">No reviews yet. Be the first to review this product.</p>
+      {visibleTotal === 0 ? (
+        <p className="text-muted-foreground text-sm">No approved reviews are visible for this product yet.</p>
       ) : (
         <div className="grid gap-8 lg:grid-cols-[240px_1fr]">
           {/* Summary panel */}
           <div className="space-y-4">
             <div className="flex items-end gap-2">
-              <span className="text-5xl font-bold tracking-tight">{summary.averageRating.toFixed(1)}</span>
+              <span className="text-5xl font-bold tracking-tight">{visibleAverage.toFixed(1)}</span>
               <div className="pb-1">
-                <StarRating rating={summary.averageRating} />
-                <p className="text-muted-foreground text-xs mt-1">{summary.totalCount} reviews</p>
+                <StarRating rating={visibleAverage} />
+                <p className="text-muted-foreground text-xs mt-1">{visibleTotal} reviews</p>
               </div>
             </div>
             <div className="space-y-1.5">
@@ -59,8 +80,8 @@ export function ProductReviews({ reviews, summary }: ProductReviewsProps) {
                 <RatingBar
                   key={star}
                   label={`${star}★`}
-                  count={summary.distribution[star]}
-                  total={summary.totalCount}
+                  count={visibleDistribution[star]}
+                  total={visibleTotal}
                 />
               ))}
             </div>
@@ -68,10 +89,10 @@ export function ProductReviews({ reviews, summary }: ProductReviewsProps) {
 
           {/* Review list */}
           <div className="space-y-5">
-            {reviews.map((review) => (
+            {visibleReviews.map((review) => (
               <article
                 key={review.id}
-                className="rounded-[var(--radius-card)] border border-border/70 p-5 space-y-3"
+                className="rounded-lg border border-border/70 p-5 space-y-3"
               >
                 <div className="flex items-start justify-between gap-4 flex-wrap">
                   <div>

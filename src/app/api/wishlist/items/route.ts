@@ -9,6 +9,7 @@ import {
 import { guardRouteHandlerAccess } from "@/lib/auth/guards";
 import { AppError } from "@/lib/errors/app-error";
 import { createRouteHandlerErrorResponse, createValidationAppError } from "@/lib/errors/handling";
+import { assertTrustedRouteHandlerRequest } from "@/lib/security/csrf";
 
 const wishlistSelectionSchema = z.object({
   productSlug: z.string().trim().min(1),
@@ -35,6 +36,8 @@ function requireUserId(userId: string | undefined) {
 
 export async function POST(request: Request) {
   try {
+    assertTrustedRouteHandlerRequest(request, { action: "wishlist:add" });
+
     const access = await guardRouteHandlerAccess();
     if (!access.ok) {
       return access.response;
@@ -65,6 +68,8 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    assertTrustedRouteHandlerRequest(request, { action: "wishlist:remove" });
+
     const access = await guardRouteHandlerAccess();
     if (!access.ok) {
       return access.response;

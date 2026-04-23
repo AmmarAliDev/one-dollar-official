@@ -14,6 +14,9 @@ import {
   getCatalogCategorySlugs,
   ProductGridCard,
 } from "@/features/catalog";
+import { testIds } from "@/lib/test-selectors";
+
+export const revalidate = 900;
 
 type CategoryPageProps = {
   params: Promise<{ slug: string }>;
@@ -26,7 +29,9 @@ export async function generateStaticParams() {
   return slugs.map((slug) => ({ slug }));
 }
 
-export async function generateMetadata({ params }: Pick<CategoryPageProps, "params">): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: Pick<CategoryPageProps, "params">): Promise<Metadata> {
   const { slug } = await params;
   const category = await getCatalogCategory(slug);
 
@@ -81,7 +86,10 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
               eyebrow="Empty state"
             />
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            <div
+              className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
+              data-testid={testIds.storefront.productGrid}
+            >
               {listing.products.map((product) => (
                 <ProductGridCard key={product.id} product={product} />
               ))}

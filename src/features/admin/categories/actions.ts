@@ -52,6 +52,12 @@ function readCategoryPayload(formData: FormData) {
     status: `${formData.get("status") ?? ""}`,
     seoTitle: `${formData.get("seoTitle") ?? ""}`,
     seoDescription: `${formData.get("seoDescription") ?? ""}`,
+    seoCanonicalUrl: `${formData.get("seoCanonicalUrl") ?? ""}`,
+    seoOgTitle: `${formData.get("seoOgTitle") ?? ""}`,
+    seoOgDescription: `${formData.get("seoOgDescription") ?? ""}`,
+    seoImageUrl: `${formData.get("seoImageUrl") ?? ""}`,
+    seoNoIndex: formData.get("seoNoIndex") !== null,
+    seoSchemaNotes: `${formData.get("seoSchemaNotes") ?? ""}`,
   };
 }
 

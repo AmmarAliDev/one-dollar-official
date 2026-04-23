@@ -6,7 +6,8 @@ import { Heart } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { routes } from "@/config/routes";
-import { useSession } from "@/lib/auth/client";
+import { AppError } from "@/lib/errors/app-error";
+import { toUserMessage } from "@/lib/errors/error-messages";
 import { notify } from "@/lib/notify";
 import { cn } from "@/lib/utils";
 
@@ -27,19 +28,12 @@ export function WishlistToggleButton({
 }: WishlistToggleButtonProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { status } = useSession();
 
   const [pending, setPending] = useState(false);
   const [wishlisted, setWishlisted] = useState(initiallyWishlisted);
 
   async function handleToggle() {
-    if (pending || status === "loading") {
-      return;
-    }
-
-    if (status === "unauthenticated") {
-      notify.info("Sign in required", "Please sign in to save products to your wishlist.");
-      router.push(`${routes.auth.signIn}?from=${encodeURIComponent(pathname || routes.storefront.wishlist)}`);
+    if (pending) {
       return;
     }
 
@@ -58,8 +52,16 @@ export function WishlistToggleButton({
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          notify.info("Sign in required", "Please sign in to save products to your wishlist.");
+          router.push(`${routes.auth.signIn}?from=${encodeURIComponent(pathname || routes.storefront.wishlist)}`);
+          return;
+        }
+
         const errorPayload = (await response.json().catch(() => null)) as { error?: string } | null;
-        throw new Error(errorPayload?.error ?? "Wishlist request failed.");
+        throw new AppError("Wishlist request failed.", "INTERNAL_ERROR", {
+          userMessage: errorPayload?.error ?? "Could not update wishlist right now. Please try again.",
+        });
       }
 
       const nextValue = !wishlisted;
@@ -67,7 +69,7 @@ export function WishlistToggleButton({
       notify.success(nextValue ? `${productName} saved` : `${productName} removed`, "Wishlist updated.");
       router.refresh();
     } catch (error) {
-      notify.error("Could not update wishlist", error instanceof Error ? error.message : undefined);
+      notify.error("Could not update wishlist", toUserMessage(error));
     } finally {
       setPending(false);
     }
@@ -80,7 +82,7 @@ export function WishlistToggleButton({
       size="lg"
       className="w-full"
       onClick={handleToggle}
-      disabled={status === "loading" || pending || !sku}
+      disabled={pending || !sku}
       aria-busy={pending}
       aria-pressed={wishlisted}
     >

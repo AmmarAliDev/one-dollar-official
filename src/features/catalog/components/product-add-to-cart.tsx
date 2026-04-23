@@ -5,7 +5,10 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { dispatchCartChanged } from "@/features/cart/client-events";
 import type { CartSummary } from "@/features/cart/types";
+import { AppError } from "@/lib/errors/app-error";
+import { toUserMessage } from "@/lib/errors/error-messages";
 import { notify } from "@/lib/notify";
+import { testIds } from "@/lib/test-selectors";
 
 type ProductAddToCartProps = {
   productSlug: string;
@@ -19,7 +22,12 @@ type CartMutationPayload = {
   error?: string;
 };
 
-export function ProductAddToCart({ productSlug, optionId, productName, isAvailable }: ProductAddToCartProps) {
+export function ProductAddToCart({
+  productSlug,
+  optionId,
+  productName,
+  isAvailable,
+}: ProductAddToCartProps) {
   const [pending, setPending] = useState(false);
 
   async function handleAddToCart() {
@@ -46,22 +54,28 @@ export function ProductAddToCart({ productSlug, optionId, productName, isAvailab
         payload = (await response.json()) as CartMutationPayload | null;
       } catch {
         if (response.ok) {
-          throw new Error("Could not add item to cart: invalid server response.");
+          throw new AppError("Invalid cart response.", "INTERNAL_ERROR", {
+            userMessage: "Could not add item to cart right now. Please try again.",
+          });
         }
       }
 
       if (!response.ok) {
-        throw new Error(payload?.error ?? "Could not add item to cart.");
+        throw new AppError("Cart add request failed.", "INTERNAL_ERROR", {
+          userMessage: payload?.error ?? "Could not add item to cart right now. Please try again.",
+        });
       }
 
       if (!payload || typeof payload !== "object" || !Object.hasOwn(payload, "cart")) {
-        throw new Error(payload?.error ?? "Could not add item to cart: invalid server response.");
+        throw new AppError("Invalid cart response.", "INTERNAL_ERROR", {
+          userMessage: payload?.error ?? "Could not add item to cart right now. Please try again.",
+        });
       }
 
       dispatchCartChanged(payload.cart ?? null);
       notify.success(`${productName} added to cart`, "Cart updated.");
     } catch (error) {
-      notify.error("Could not add to cart", error instanceof Error ? error.message : undefined);
+      notify.error("Could not add to cart", toUserMessage(error));
     } finally {
       setPending(false);
     }
@@ -75,12 +89,15 @@ export function ProductAddToCart({ productSlug, optionId, productName, isAvailab
         disabled={!isAvailable || pending}
         onClick={handleAddToCart}
         aria-busy={pending}
+        data-testid={testIds.storefront.addToCart}
       >
         {pending ? "Adding..." : isAvailable ? "Add to Cart" : "Out of Stock"}
       </Button>
 
       {isAvailable ? (
-        <p className="text-muted-foreground text-center text-xs">Free delivery on orders over PKR 1,500 in Karachi.</p>
+        <p className="text-muted-foreground text-center text-xs">
+          Free delivery on orders over PKR 1,500 in Karachi.
+        </p>
       ) : (
         <p className="text-muted-foreground text-center text-xs">
           This item is currently unavailable. Check back soon.

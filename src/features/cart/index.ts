@@ -14,6 +14,16 @@ export {
   updateCartItemQuantityForContext,
 } from "./service";
 export { validateCartStock } from "./validation";
+export {
+  generateCartRecoveryToken,
+  markCartAbandoned,
+  markCartRecovered,
+  recordCartActivity,
+} from "./abandoned-cart-events";
+export type {
+  CartEventMetadata,
+  RecordCartActivityInput,
+} from "./abandoned-cart-events";
 export type {
   AddCartItemInput,
   CartItemSummary,

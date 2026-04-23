@@ -6,6 +6,14 @@ Provide a baseline, production-minded security layer that future features can re
 
 ## What is now in place
 
+This review pass confirmed and tightened the current baseline in five areas:
+
+- Authentication and session handling
+- Admin authorization boundaries
+- Input validation coverage
+- Route handler and Server Action mutation safety
+- Logging redaction for sensitive values
+
 ### 1. Global security headers
 
 `next.config.ts` now applies a shared header strategy sourced from `src/config/security.ts`.
@@ -34,6 +42,15 @@ There are **two layers**:
 
 These helpers live in `src/lib/security/csrf.ts` and validate that mutating requests come from a trusted first-party origin.
 
+Implemented coverage in this pass:
+
+- Auth Server Actions (`signInAction`, `signUpAction`, `signOutAction`)
+- Checkout, cart, and email subscribe route handlers
+- Contact form Server Action
+- Wishlist add/remove route handlers
+
+This closes a gap where wishlist mutations were authenticated but not same-origin validated.
+
 ### 3. Rate limiting
 
 `src/lib/rate-limit/index.ts` now supports a **Redis-first** foundation with a safe in-memory fallback:
@@ -54,6 +71,13 @@ Optional extra trusted origins for reverse proxies or custom domains:
 APP_ALLOWED_ORIGINS=https://app.example.com,https://admin.example.com
 ```
 
+Implemented coverage in this pass:
+
+- Sign-in: IP + email bucket
+- Sign-up: IP bucket plus per-email bucket
+- Email subscribe: per-IP bucket
+- Contact form submission: IP + email bucket
+
 ### 4. Validation conventions
 
 Use shared helpers from `src/lib/security/validation.ts`:
@@ -66,6 +90,12 @@ Use shared helpers from `src/lib/security/validation.ts`:
 
 These keep validation rules and error messages consistent across Server Actions, forms, and future APIs.
 
+Implemented coverage in this pass:
+
+- Auth inputs validate on both client and server
+- Contact submission now uses the shared validation helper instead of raw schema parsing
+- Cart, checkout, wishlist, and admin feature mutations continue to validate request payloads before side effects
+
 ### 5. Safe error handling
 
 For new mutation code:
@@ -74,6 +104,31 @@ For new mutation code:
 - Log server-side failures with `captureServerError()`
 - Return user-safe Server Action feedback with `toActionErrorState()`
 - Return typed API errors with `createRouteHandlerErrorResponse()`
+
+### 6. Session and admin authorization hardening
+
+Auth.js still uses JWT sessions, but the JWT callback now refreshes the role snapshot from the database on a short interval.
+
+Why this matters:
+
+- A user whose admin role is downgraded no longer keeps stale admin privileges for the full JWT lifetime.
+- The app keeps the performance benefits of JWT sessions while reducing the window for stale authorization.
+
+Admin boundary review result:
+
+- `/admin` preflight redirects remain optimistic only
+- `src/app/(admin)/layout.tsx` remains the authoritative admin gate
+- Permission-specific admin pages and Server Actions continue to require explicit RBAC permissions
+- Route-handler helpers still return clean `401` / `403` responses for API callers
+
+### 7. Logging redaction
+
+`src/lib/logger.ts` already redacted common sensitive object keys. This pass tightened it further by:
+
+- expanding key-based redaction to additional secret-bearing fields such as CSRF and code verifier values
+- redacting standalone bearer tokens and JWT-like strings even when they are logged as plain strings rather than nested object properties
+
+Operationally, this reduces the chance of leaking session or integration secrets through ad-hoc error logs.
 
 ## Recommended conventions for future mutations
 
@@ -100,11 +155,25 @@ Wrap unexpected failures with:
 return createRouteHandlerErrorResponse(error, "order:create");
 ```
 
+## Operational recommendations
+
+Use this checklist for production deployments and incident response:
+
+1. Set a strong `AUTH_SECRET` and rotate it through your secret manager rather than committing or sharing it manually.
+2. Configure `APP_ALLOWED_ORIGINS` only for first-party origins you control. Do not use wildcards.
+3. Configure Upstash Redis in production so rate limits apply consistently across all instances.
+4. Review logs for any custom `logger.*()` call sites that still pass raw request bodies or third-party payloads; prefer explicit allowlisted metadata.
+5. Treat role changes for staff accounts as privileged operations and verify they propagate within the JWT role refresh window.
+6. Keep admin actions behind the shared RBAC helpers instead of hand-rolled role checks.
+7. Re-run focused auth, admin, and mutation tests after adding any new Route Handler or Server Action.
+
 ## Deferred on purpose
 
+- **Email-based password reset** with token rotation and replay protection
 - **Nonce-based CSP** for even stricter script execution controls
 - **Dedicated double-submit CSRF tokens** for any future embedded/cross-origin client integrations
+- **Centralized route-handler request schema helpers** to reduce repeated inline `safeParse()` usage
 - **WAF / bot mitigation / abuse analytics** above the application layer
-- **Per-feature audit persistence** for high-risk admin mutations
+- **Per-feature audit persistence** for every high-risk admin mutation path
 
 These are intentionally deferred so the current baseline stays lightweight, compatible, and easy to extend.

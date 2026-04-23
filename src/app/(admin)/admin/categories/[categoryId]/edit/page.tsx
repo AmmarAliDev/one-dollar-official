@@ -81,6 +81,12 @@ export default async function EditAdminCategoryPage({ params, searchParams }: Ed
               status: category.status,
               seoTitle: category.seoTitle ?? "",
               seoDescription: category.seoDescription ?? "",
+              seoCanonicalUrl: category.seoCanonicalUrl ?? "",
+              seoOgTitle: category.seoOgTitle ?? "",
+              seoOgDescription: category.seoOgDescription ?? "",
+              seoImageUrl: category.seoImageUrl ?? "",
+              seoNoIndex: category.seoNoIndex,
+              seoSchemaNotes: category.seoSchemaNotes ?? "",
             }}
           />
         </CardContent>

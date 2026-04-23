@@ -45,17 +45,21 @@ describe("shared UX infrastructure", () => {
       sanitizeForLogging({
         password: "secret",
         token: "abc123",
+        codeVerifier: "verifier-value",
         nested: {
           authorization: "Bearer 123",
         },
+        bearer: "Bearer test-token",
         error: new Error("Unexpected failure"),
       }),
     ).toEqual({
       password: "[REDACTED]",
       token: "[REDACTED]",
+      codeVerifier: "[REDACTED]",
       nested: {
         authorization: "[REDACTED]",
       },
+      bearer: "[REDACTED]",
       error: {
         name: "Error",
         message: "Unexpected failure",

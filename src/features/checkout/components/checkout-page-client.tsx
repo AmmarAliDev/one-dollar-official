@@ -7,10 +7,19 @@ import { Controller } from "react-hook-form";
 import { DynamicFormField, useAppForm } from "@/components/forms";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Field, FieldContent, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+} from "@/components/ui/field";
 import { FormErrorSummary } from "@/components/ui/form-error-summary";
 import { PriceDisplay } from "@/components/ui/price-display";
 import type { CartSummary } from "@/features/cart/types";
+import { testIds } from "@/lib/test-selectors";
+import { AppError } from "@/lib/errors/app-error";
+import { toUserMessage } from "@/lib/errors/error-messages";
 import {
   CHECKOUT_FIXED_PROVINCE,
   CHECKOUT_SUPPORTED_CITY,
@@ -101,20 +110,21 @@ export function CheckoutPageClient({
         body: JSON.stringify(payload),
       });
 
-      const responsePayload = (await response.json().catch(() => null)) as
-        | {
-            error?: string;
-            order?: {
-              confirmationUrl: string;
-              orderNumber: string;
-              payment: { message: string };
-              totals: { total: number };
-            };
-          }
-        | null;
+      const responsePayload = (await response.json().catch(() => null)) as {
+        error?: string;
+        order?: {
+          confirmationUrl: string;
+          orderNumber: string;
+          payment: { message: string };
+          totals: { total: number };
+        };
+      } | null;
 
       if (!response.ok) {
-        throw new Error(responsePayload?.error ?? "Checkout could not be submitted. Please try again.");
+        throw new AppError("Checkout request failed.", "INTERNAL_ERROR", {
+          userMessage:
+            responsePayload?.error ?? "Checkout could not be submitted. Please try again.",
+        });
       }
 
       const paymentMessage = responsePayload?.order?.payment?.message ?? "Order placed.";
@@ -131,7 +141,7 @@ export function CheckoutPageClient({
         router.push(confirmationUrl);
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Checkout could not be submitted. Please retry.";
+      const message = toUserMessage(error);
       setSuccessMessage(null);
       setRetryPayload(payload);
       form.setError("root.serverError", {
@@ -152,12 +162,19 @@ export function CheckoutPageClient({
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
-      <form className="space-y-5" onSubmit={form.handleSubmit(handleCheckoutSubmit)} noValidate>
+      <form
+        className="space-y-5"
+        onSubmit={form.handleSubmit(handleCheckoutSubmit)}
+        noValidate
+        data-testid={testIds.storefront.checkoutForm}
+      >
         <FormErrorSummary errors={form.formState.errors} title="Checkout details need attention" />
 
         {successMessage ? (
           <Card className="border-emerald-500/40 bg-emerald-500/5">
-            <CardContent className="p-4 text-sm text-emerald-800 dark:text-emerald-200">{successMessage}</CardContent>
+            <CardContent className="p-4 text-sm text-emerald-800 dark:text-emerald-200">
+              {successMessage}
+            </CardContent>
           </Card>
         ) : null}
 
@@ -310,7 +327,10 @@ export function CheckoutPageClient({
                   <FieldLabel>Payment method</FieldLabel>
                   <FieldContent className="space-y-3">
                     {paymentMethods.map((method) => (
-                      <label key={method.code} className="flex cursor-pointer items-start gap-3 rounded-lg border border-border/70 p-3">
+                      <label
+                        key={method.code}
+                        className="border-border/70 flex cursor-pointer items-start gap-3 rounded-lg border p-3"
+                      >
                         <input
                           type="radio"
                           name={field.name}
@@ -321,12 +341,16 @@ export function CheckoutPageClient({
                           disabled={isPending || submitted}
                         />
                         <span className="space-y-0.5 text-sm">
-                          <span className="block font-medium text-foreground">{method.label}</span>
-                          <span className="block text-muted-foreground">{method.description}</span>
+                          <span className="text-foreground block font-medium">{method.label}</span>
+                          <span className="text-muted-foreground block">{method.description}</span>
                         </span>
                       </label>
                     ))}
-                    <FieldError {...(fieldState.error?.message ? { errors: [{ message: fieldState.error.message }] } : {})} />
+                    <FieldError
+                      {...(fieldState.error?.message
+                        ? { errors: [{ message: fieldState.error.message }] }
+                        : {})}
+                    />
                   </FieldContent>
                 </Field>
               )}
@@ -349,7 +373,12 @@ export function CheckoutPageClient({
         </Card>
 
         <div className="flex flex-wrap items-center gap-3">
-          <Button type="submit" size="lg" disabled={isPending || submitted || !allowSubmit}>
+          <Button
+            type="submit"
+            size="lg"
+            disabled={isPending || submitted || !allowSubmit}
+            data-testid={testIds.storefront.checkoutSubmit}
+          >
             {isPending ? "Submitting..." : "Confirm checkout details"}
           </Button>
 
@@ -365,7 +394,9 @@ export function CheckoutPageClient({
           ) : null}
 
           {!allowSubmit ? (
-            <FieldDescription>Checkout is temporarily unavailable for the current cart.</FieldDescription>
+            <FieldDescription>
+              Checkout is temporarily unavailable for the current cart.
+            </FieldDescription>
           ) : null}
         </div>
       </form>
@@ -387,11 +418,13 @@ export function CheckoutPageClient({
             <span className="text-muted-foreground">Shipping</span>
             <PriceDisplay amount={totals.shipping} size="sm" />
           </div>
-          <div className="flex items-center justify-between border-t border-border/70 pt-3 font-semibold">
+          <div className="border-border/70 flex items-center justify-between border-t pt-3 font-semibold">
             <span>Total</span>
             <PriceDisplay amount={totals.total} size="sm" />
           </div>
-          <p className="text-xs text-muted-foreground">Shipping is fixed at PKR 150 for Karachi deliveries.</p>
+          <p className="text-muted-foreground text-xs">
+            Shipping is fixed at PKR 150 for Karachi deliveries.
+          </p>
         </CardContent>
       </Card>
     </div>

@@ -10,6 +10,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { PriceDisplay } from "@/components/ui/price-display";
 import { SectionErrorState } from "@/components/ui/section-error-state";
 import { routes } from "@/config/routes";
+import { testIds } from "@/lib/test-selectors";
 import type { CartSummary } from "@/features/cart/types";
 import { validateCartStock } from "@/features/cart/validation";
 
@@ -55,16 +56,17 @@ export function CartPageContent({ initialCart }: CartPageContentProps) {
   }
 
   return (
-    <>
+    <div className="space-y-6" data-testid={testIds.storefront.cartContent}>
       {!stockValidation.ok ? (
         <SectionErrorState
           title="Some items need attention"
           description="One or more items exceed available stock. Reduce quantity to continue to checkout."
           action={
-            <div className="space-y-1 text-xs text-muted-foreground">
+            <div className="text-muted-foreground space-y-1 text-xs">
               {stockValidation.issues.slice(0, 3).map((issue) => (
                 <p key={issue.cartItemId}>
-                  {issue.productName}: requested {issue.requestedQuantity}, available {issue.availableQuantity}
+                  {issue.productName}: requested {issue.requestedQuantity}, available{" "}
+                  {issue.availableQuantity}
                 </p>
               ))}
             </div>
@@ -82,25 +84,32 @@ export function CartPageContent({ initialCart }: CartPageContentProps) {
                 <CardContent className="flex flex-col gap-4 p-5">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                     <div className="space-y-1">
-                      <Link href={item.href} className="text-base font-semibold tracking-tight hover:text-primary">
+                      <Link
+                        href={item.href}
+                        className="hover:text-primary text-base font-semibold tracking-tight"
+                      >
                         {item.productName}
                       </Link>
                       <p className="text-muted-foreground text-sm">
                         SKU: {item.sku}
                         {item.optionLabel ? ` | ${item.optionLabel}` : ""}
                       </p>
-                      <p className="text-muted-foreground text-xs">In stock: {item.availableQuantity}</p>
+                      <p className="text-muted-foreground text-xs">
+                        In stock: {item.availableQuantity}
+                      </p>
                     </div>
 
                     <PriceDisplay
                       amount={item.unitPrice}
-                      {...(typeof item.compareAtPrice === "number" ? { compareAt: item.compareAtPrice } : {})}
+                      {...(typeof item.compareAtPrice === "number"
+                        ? { compareAt: item.compareAtPrice }
+                        : {})}
                       size="sm"
                     />
                   </div>
 
                   {hasStockIssue ? (
-                    <p className="inline-flex items-center gap-1 text-xs text-destructive">
+                    <p className="text-destructive inline-flex items-center gap-1 text-xs">
                       <AlertTriangle className="size-3.5" aria-hidden="true" />
                       Requested quantity exceeds available stock.
                     </p>
@@ -122,7 +131,7 @@ export function CartPageContent({ initialCart }: CartPageContentProps) {
           })}
         </div>
 
-        <Card className="h-fit">
+        <Card className="h-fit" data-testid={testIds.storefront.cartSummary}>
           <CardContent className="space-y-4 p-5">
             <h2 className="text-base font-semibold tracking-tight">Order summary</h2>
 
@@ -131,7 +140,7 @@ export function CartPageContent({ initialCart }: CartPageContentProps) {
               <span>{cart.itemCount}</span>
             </div>
 
-            <div className="flex items-center justify-between border-t border-border/70 pt-3">
+            <div className="border-border/70 flex items-center justify-between border-t pt-3">
               <span className="font-medium">Subtotal</span>
               <PriceDisplay amount={cart.subtotal} size="sm" />
             </div>
@@ -147,15 +156,17 @@ export function CartPageContent({ initialCart }: CartPageContentProps) {
             )}
 
             {!stockValidation.ok ? (
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 Checkout is temporarily disabled until stock quantities are adjusted.
               </p>
             ) : (
-              <p className="text-xs text-muted-foreground">Shipping and taxes are calculated at checkout.</p>
+              <p className="text-muted-foreground text-xs">
+                Shipping and taxes are calculated at checkout.
+              </p>
             )}
           </CardContent>
         </Card>
       </div>
-    </>
+    </div>
   );
 }

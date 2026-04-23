@@ -1,4 +1,4 @@
-import { AppError } from "@/lib/errors/app-error";
+import type { AppError } from "@/lib/errors/app-error";
 
 export const CATEGORY_NOTICE_MESSAGES = {
   created: "Category created.",
@@ -9,7 +9,7 @@ export const CATEGORY_NOTICE_MESSAGES = {
 export const CATEGORY_ERROR_MESSAGES = {
   invalidInput: "Invalid category input.",
   missingId: "Category ID is missing.",
-  slugTaken: "This slug is already used by another category.",
+  slugTaken: "That category URL is already in use. Change the slug to a more specific page address and try again.",
   hasProducts: "Move products out of this category before deleting it.",
   hasRelatedRecords: "This category has related records preventing deletion. Remove or reassign them before deleting.",
   notFound: "The selected category no longer exists.",

@@ -8,7 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PriceDisplay } from "@/components/ui/price-display";
 import { buildMetadata } from "@/config/metadata";
 import { routes } from "@/config/routes";
-import { AdminPageHeader, AdminTablePattern } from "@/features/admin/components/admin-page-patterns";
+import {
+  AdminPageHeader,
+  AdminTablePattern,
+} from "@/features/admin/components/admin-page-patterns";
 import {
   type AdminOrderStatusFilter,
   getAdminOrderErrorMessage,
@@ -17,6 +20,7 @@ import {
 } from "@/features/admin/orders";
 import { AdminOrderFiltersForm } from "@/features/admin/orders/components/admin-order-filters-form";
 import { getOrderStatusVariant } from "@/features/orders";
+import { testIds } from "@/lib/test-selectors";
 import { requireRouteAccess } from "@/lib/auth/guards";
 import { rbacPermissions } from "@/lib/auth/rbac";
 
@@ -116,7 +120,7 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
       ) : null}
 
       {errorMessage ? (
-        <div className="rounded-md border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+        <div className="border-destructive/40 bg-destructive/5 text-destructive rounded-md border px-4 py-3 text-sm">
           {errorMessage}
         </div>
       ) : null}
@@ -133,9 +137,7 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-4">
           <CardTitle>Order list</CardTitle>
-          <div className="text-muted-foreground text-sm">
-            Page {orders.page}
-          </div>
+          <div className="text-muted-foreground text-sm">Page {orders.page}</div>
         </CardHeader>
         <CardContent className="space-y-4">
           {orders.items.length === 0 ? (
@@ -147,7 +149,10 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
             />
           ) : (
             <div className="overflow-auto rounded-md border">
-              <table className="min-w-full divide-y divide-muted-foreground/20 text-sm">
+              <table
+                className="divide-muted-foreground/20 min-w-full divide-y text-sm"
+                data-testid={testIds.admin.ordersTable}
+              >
                 <thead className="bg-muted/40 text-left">
                   <tr>
                     <th className="px-4 py-3 font-medium">Order</th>
@@ -159,24 +164,38 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
                     <th className="px-4 py-3 font-medium">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-muted-foreground/10">
+                <tbody className="divide-muted-foreground/10 divide-y">
                   {orders.items.map((order) => (
-                    <tr key={order.id} className="align-top">
+                    <tr
+                      key={order.id}
+                      className="align-top"
+                      data-testid={testIds.admin.orderRow(order.orderNumber)}
+                    >
                       <td className="px-4 py-3">
                         <p className="font-medium">{order.orderNumber}</p>
-                        <p className="text-muted-foreground mt-1 text-xs">{order.itemCount} item line{order.itemCount === 1 ? "" : "s"}</p>
+                        <p className="text-muted-foreground mt-1 text-xs">
+                          {order.itemCount} item line{order.itemCount === 1 ? "" : "s"}
+                        </p>
                       </td>
                       <td className="px-4 py-3">
                         <p className="font-medium">{order.customerName}</p>
-                        <p className="text-muted-foreground mt-1 text-xs">{order.customerEmail ?? order.customerPhone ?? "No contact provided"}</p>
-                        <p className="text-muted-foreground mt-1 text-xs">{order.city ?? "City not provided"}</p>
+                        <p className="text-muted-foreground mt-1 text-xs">
+                          {order.customerEmail ?? order.customerPhone ?? "No contact provided"}
+                        </p>
+                        <p className="text-muted-foreground mt-1 text-xs">
+                          {order.city ?? "City not provided"}
+                        </p>
                       </td>
                       <td className="px-4 py-3">
-                        <Badge variant={getOrderStatusVariant(order.status)}>{order.statusLabel}</Badge>
+                        <Badge variant={getOrderStatusVariant(order.status)}>
+                          {order.statusLabel}
+                        </Badge>
                       </td>
                       <td className="px-4 py-3">
                         <p className="font-medium">{order.paymentMethodLabel}</p>
-                        <p className="text-muted-foreground mt-1 text-xs">{order.paymentStatus ?? "Pending"}</p>
+                        <p className="text-muted-foreground mt-1 text-xs">
+                          {order.paymentStatus ?? "Pending"}
+                        </p>
                       </td>
                       <td className="px-4 py-3">
                         <PriceDisplay amount={order.total} size="sm" />
@@ -188,7 +207,10 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
                         })}
                       </td>
                       <td className="px-4 py-3">
-                        <Link href={routes.admin.orderDetail(order.orderNumber)} className={buttonVariants({ variant: "outline", size: "sm" })}>
+                        <Link
+                          href={routes.admin.orderDetail(order.orderNumber)}
+                          className={buttonVariants({ variant: "outline", size: "sm" })}
+                        >
                           Review
                           <ArrowRight className="size-4" />
                         </Link>
@@ -246,10 +268,11 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
       </Card>
 
       <Card className="border-dashed">
-        <CardContent className="flex items-start gap-3 p-4 text-sm text-muted-foreground">
+        <CardContent className="text-muted-foreground flex items-start gap-3 p-4 text-sm">
           <ReceiptText className="mt-0.5 size-4" />
           <p>
-            Staff tip: open an order to review the address, invoice, items, customer note, internal note, and full status history in one place.
+            Staff tip: open an order to review the address, invoice, items, customer note, internal
+            note, and full status history in one place.
           </p>
         </CardContent>
       </Card>

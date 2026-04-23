@@ -24,6 +24,12 @@ export type AdminCategoryRecord = {
   status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
   seoTitle: string | null;
   seoDescription: string | null;
+  seoCanonicalUrl: string | null;
+  seoOgTitle: string | null;
+  seoOgDescription: string | null;
+  seoImageUrl: string | null;
+  seoNoIndex: boolean;
+  seoSchemaNotes: string | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -122,6 +128,12 @@ export async function listAdminCategories(filters: AdminCategoryListFilters = {}
       status: true,
       seoTitle: true,
       seoDescription: true,
+      seoCanonicalUrl: true,
+      seoOgTitle: true,
+      seoOgDescription: true,
+      seoImageUrl: true,
+      seoNoIndex: true,
+      seoSchemaNotes: true,
       createdAt: true,
       updatedAt: true,
     },
@@ -141,6 +153,12 @@ export async function getAdminCategoryById(categoryId: string): Promise<AdminCat
       status: true,
       seoTitle: true,
       seoDescription: true,
+      seoCanonicalUrl: true,
+      seoOgTitle: true,
+      seoOgDescription: true,
+      seoImageUrl: true,
+      seoNoIndex: true,
+      seoSchemaNotes: true,
       createdAt: true,
       updatedAt: true,
     },
@@ -152,15 +170,21 @@ export async function createAdminCategory(input: {
   actor: AuditActorInput;
 }): Promise<AdminCategoryRecord> {
   const db = getPrismaClient();
-  const createData: Prisma.CategoryUncheckedCreateInput = {
+  const createData = {
     name: input.data.name,
     slug: input.data.slug,
     description: input.data.description ?? null,
     status: input.data.status,
     seoTitle: input.data.seoTitle ?? null,
     seoDescription: input.data.seoDescription ?? null,
+    seoCanonicalUrl: input.data.seoCanonicalUrl ?? null,
+    seoOgTitle: input.data.seoOgTitle ?? null,
+    seoOgDescription: input.data.seoOgDescription ?? null,
+    seoImageUrl: input.data.seoImageUrl ?? null,
+    seoNoIndex: input.data.seoNoIndex,
+    seoSchemaNotes: input.data.seoSchemaNotes ?? null,
     parentId: null,
-  };
+  } as Prisma.CategoryUncheckedCreateInput;
 
   try {
     const created = await db.category.create({
@@ -173,6 +197,12 @@ export async function createAdminCategory(input: {
         status: true,
         seoTitle: true,
         seoDescription: true,
+        seoCanonicalUrl: true,
+        seoOgTitle: true,
+        seoOgDescription: true,
+        seoImageUrl: true,
+        seoNoIndex: true,
+        seoSchemaNotes: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -209,15 +239,21 @@ export async function updateAdminCategory(input: {
 }): Promise<AdminCategoryRecord> {
   const db = getPrismaClient();
   const parentInput = input.data as CategoryUpdateInput & { parentId?: string | null };
-  const updateData: Prisma.CategoryUncheckedUpdateInput = {
+  const updateData = {
     name: input.data.name,
     slug: input.data.slug,
     description: input.data.description ?? null,
     status: input.data.status,
     seoTitle: input.data.seoTitle ?? null,
     seoDescription: input.data.seoDescription ?? null,
+    seoCanonicalUrl: input.data.seoCanonicalUrl ?? null,
+    seoOgTitle: input.data.seoOgTitle ?? null,
+    seoOgDescription: input.data.seoOgDescription ?? null,
+    seoImageUrl: input.data.seoImageUrl ?? null,
+    seoNoIndex: input.data.seoNoIndex,
+    seoSchemaNotes: input.data.seoSchemaNotes ?? null,
     ...(parentInput.parentId === undefined ? {} : { parentId: parentInput.parentId }),
-  };
+  } as Prisma.CategoryUncheckedUpdateInput;
 
   const previous = await db.category.findUnique({
     where: { id: input.data.id },
@@ -253,6 +289,12 @@ export async function updateAdminCategory(input: {
         status: true,
         seoTitle: true,
         seoDescription: true,
+        seoCanonicalUrl: true,
+        seoOgTitle: true,
+        seoOgDescription: true,
+        seoImageUrl: true,
+        seoNoIndex: true,
+        seoSchemaNotes: true,
         createdAt: true,
         updatedAt: true,
       },

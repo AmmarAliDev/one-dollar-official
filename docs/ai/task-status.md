@@ -157,18 +157,52 @@
 - [x] Homepage admin management added at `/admin/homepage` with section ordering, enable/disable toggles, scheduling support, banner and campaign pages, and announcement-bar support
 - [x] Homepage service now resolves validated admin content into the storefront rendering contract with safe fallback behavior
 - [x] Homepage content validation tests added for admin config payloads and storefront resolution flow
+- [x] Admin review moderation added at `/admin/reviews` with status/product filters, safe reviewer masking, approve/reject/hide actions, and persisted `AuditLog` entries
+- [x] Review moderation service coverage added for filter behavior, audit logging, and storefront visibility rules
+- [x] Reusable admin SEO management section added for categories and products with preview cards, advanced metadata fields, slug guidance, clear conflict handling, and targeted SEO helper tests
+- [x] AI and developer SEO workflow docs added so future blog-post and key-page admin work can reuse the same pattern cleanly
+- [x] SEO-ready blog foundation added with storefront routes at `/blog` and `/blog/[slug]`
+- [x] Blog feature module added in `src/features/blog` with typed content model (`title`, `slug`, `excerpt`, `content`, `cover image`, `status`, `publish date`, `SEO fields`)
+- [x] Blog listing and article pages now emit structured data (`CollectionPage`, `ItemList`, `BlogPosting`, and `BreadcrumbList`)
+- [x] Blog helper tests added for listing/page data flow, metadata inputs, and structured data generation
+- [x] AI and developer docs added for blog content modeling and future admin editing path
+- [x] Contact form persistence added — submissions saved to `ContactSubmission` table
+- [x] Contact form server action sends admin notification email + Telegram alert (non-blocking)
+- [x] `EmailSubscriber` data model added with status lifecycle (PENDING/ACTIVE/UNSUBSCRIBED/BOUNCED), source capture, tags, and opaque unsubscribe token
+- [x] `AbandonedCartEvent` append-only event log added with CART_CREATED/CART_UPDATED/REMINDER_QUEUED/REMINDER_SENT/CART_RECOVERED/CART_EXPIRED types
+- [x] Cart model extended with `abandonedAt`, `recoveryToken`, and `recoveryEmailSentAt` fields
+- [x] Email marketing feature module added at `src/features/email-marketing` with repository, service, and pluggable provider abstraction
+- [x] Abandoned cart event helpers added at `src/features/cart/abandoned-cart-events.ts`
+- [x] Subscribe API at `POST /api/email/subscribe` (rate-limited 5/10 min, CSRF-checked)
+- [x] Unsubscribe API at `GET /api/email/unsubscribe?token=` and `POST /api/email/unsubscribe`
+- [x] PII utilities added at `src/lib/security/pii.ts` (`maskEmail`, `stripControlChars`) and shared across contact and email-marketing modules
+- [x] Tests added for validation schemas, subscribe/unsubscribe business logic, abandoned cart events, and PII helpers
+- [x] Developer docs added at `docs/dev/email-marketing.md`
+- [x] User-facing resilience pass completed across storefront/admin boundaries and interactive flows with standardized safe messaging, retry-safe recovery, and stronger fallback states
+- [x] Production deployment documentation added at `docs/dev/deployment.md` (Vercel, PostgreSQL, Redis, auth providers, SMTP email, Telegram, analytics)
+- [x] Health/readiness endpoint added at `GET /api/health` (checks env vars + database, returns 200/503)
+- [x] Operations guide added at `docs/dev/operations.md` (backups, monitoring, maintenance, incident response, secrets rotation)
+- [x] Release and launch checklists added at `docs/dev/release-checklist.md` (pre-launch, per-release, post-launch, rollback procedure)
+- [x] `.env.example` updated with Redis, analytics, security, and dev-override sections
+- [x] AI deployment assumptions documented at `docs/ai/deployment.md`
 
 ## Deferred by design
 
-- [ ] Email-based password reset (requires email provider — deferred to Prompt 4.4)
+- [ ] Email-based password reset (requires email provider — deferred)
 - [ ] Email verification for credentials accounts
 - [ ] Nonce-based CSP hardening once all inline/script requirements are audited
 - [ ] Dedicated CSRF token flow for any future embedded or cross-origin clients
 - [ ] Online gateway provider implementations under checkout payment contract
 - [ ] Live catalog persistence beyond the fallback listing dataset
-- [ ] Broader admin CRUD workflows beyond the current category flows and product list/create/edit management (for example product delete, bulk actions, and deeper automation)
+- [ ] Broader admin CRUD workflows beyond the current category flows and product list/create/edit management
 - [ ] Server-side notifications and third-party integrations
+- [ ] Admin-manageable blog CRUD and persistence-backed publishing workflow
+- [ ] Urdu blog route strategy and locale-aware storefront rendering
+- [ ] **Double opt-in confirmation email** — new subscribers land as PENDING; confirmation email and `GET /api/email/confirm?token=` route are deferred
+- [ ] **Abandoned cart recovery job** — the cron/queue worker that reads AbandonedCartEvent rows, sends recovery emails, and records REMINDER_QUEUED/REMINDER_SENT events is deferred
+- [ ] **Recovery email template** — the cart recovery deep-link email with item snapshot and `/cart?recover=<token>` link is deferred
+- [ ] **Live campaign provider** — Mailchimp/Brevo/Klaviyo adapter is deferred; stub provider is active
 
 ## Recommended Next Prompt
 
-Proceed with **Phase 4 / Prompt 4.4 — email notifications and Telegram alerts**.
+Proceed with **Phase 4 / Prompt 4.5 — admin subscriber list view and notifications integration**.

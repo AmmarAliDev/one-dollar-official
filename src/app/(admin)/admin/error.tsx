@@ -9,9 +9,11 @@ import { logger } from "@/lib/logger";
 
 export default function AdminErrorPage({
   error,
+  unstable_retry,
   reset,
 }: {
   error: Error & { digest?: string };
+  unstable_retry?: () => void;
   reset: () => void;
 }) {
   useEffect(() => {
@@ -21,6 +23,8 @@ export default function AdminErrorPage({
     });
   }, [error]);
 
+  const retry = unstable_retry ?? reset;
+
   return (
     <PageShell>
       <PageErrorFallback
@@ -28,7 +32,7 @@ export default function AdminErrorPage({
         title="The admin workspace hit an issue"
         description="Please try again. If this continues, contact your technical support contact."
         action={
-          <Button variant="outline" onClick={() => reset()}>
+          <Button variant="outline" onClick={() => retry()}>
             Reload admin page
           </Button>
         }

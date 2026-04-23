@@ -57,6 +57,11 @@ DATABASE_URL=postgresql://user:password@localhost:5432/one_dollar
 4. Auth.js `authorize()` in `src/auth.ts` fetches the user, verifies bcrypt hash.
 5. On success → JWT cookie set → redirected to home.
 
+Session hardening note:
+
+- The JWT keeps a cached role snapshot for fast RBAC checks.
+- `src/auth.ts` now refreshes that role from the database on a short interval so admin role changes are applied without waiting for a full sign-out/sign-in cycle.
+
 ### Sign-in (Google)
 
 1. User clicks "Continue with Google" at `/auth/sign-in` or `/auth/sign-up`.
@@ -103,6 +108,8 @@ This keeps logout behavior progressively enhanced, CSRF-aware, and consistent ac
 - `src/lib/auth/guards.ts` exposes a route-handler-safe `guardRouteHandlerAccess()` helper that returns a typed `NextResponse` for `401`/`403` API responses.
 - `src/lib/auth/rbac.ts` owns the typed role/permission matrix and reusable permission helpers.
 - `src/app/unauthorized/page.tsx` and `src/app/forbidden/page.tsx` provide the user-facing recovery screens.
+
+Practical rule: layout gating alone is not sufficient for mutations. Admin Server Actions and route handlers should continue to require explicit RBAC permission checks even when their pages already sit under the admin layout.
 
 ## Session Access
 

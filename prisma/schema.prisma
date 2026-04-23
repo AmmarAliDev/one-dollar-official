@@ -50,6 +50,15 @@ enum ProductStatus {
   @@map("product_status")
 }
 
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  HIDDEN
+
+  @@map("review_status")
+}
+
 enum CategoryStatus {
   DRAFT
   PUBLISHED
@@ -80,6 +89,29 @@ enum CartStatus {
   ABANDONED
 
   @@map("cart_status")
+}
+
+// Email subscriber lifecycle — drives double opt-in and list hygiene.
+enum SubscriberStatus {
+  PENDING      // Awaiting confirmation (double opt-in flow — deferred)
+  ACTIVE       // Confirmed, actively subscribed
+  UNSUBSCRIBED // User opted out via unsubscribe link or preference centre
+  BOUNCED      // Hard bounce reported by sending provider; do not re-send
+
+  @@map("subscriber_status")
+}
+
+// Append-only event types for the abandoned cart detection pipeline.
+// The background job that evaluates these events is deferred (future automation).
+enum AbandonedCartEventType {
+  CART_CREATED     // First item added — starts the abandonment clock
+  CART_UPDATED     // Item added, removed, or quantity changed
+  REMINDER_QUEUED  // Recovery email job has been queued for delivery
+  REMINDER_SENT    // Recovery email was successfully delivered
+  CART_RECOVERED   // Customer returned and completed checkout
+  CART_EXPIRED     // Cart was archived without recovery
+
+  @@map("abandoned_cart_event_type")
 }
 
 // Currency (Pakistan Rupee only for now)
@@ -117,10 +149,11 @@ model User {
   roleId        String?    @map("role_id")
   accounts      Account[]
   sessions      Session[]
-  addresses     Address[]
-  reviews       Review[]
-  wishlists     Wishlist[]
-  carts         Cart[]
+  addresses        Address[]
+  reviews          Review[]   @relation("AuthorReviews")
+  moderatedReviews Review[]   @relation("ModeratedReviews")
+  wishlists        Wishlist[]
+  carts            Cart[]
   orders        Order[]
   createdAt     DateTime   @default(now()) @map("created_at")
   updatedAt     DateTime   @updatedAt @map("updated_at")
@@ -188,11 +221,17 @@ model Category {
   parentId       String?        @map("parent_id")
   parent         Category?      @relation("CategoryToCategory", fields: [parentId], references: [id])
   children       Category[]     @relation("CategoryToCategory")
-  products       Product[]
-  seoTitle       String?        @map("seo_title")
-  seoDescription String?        @map("seo_description")
-  createdAt      DateTime       @default(now()) @map("created_at")
-  updatedAt      DateTime       @updatedAt @map("updated_at")
+  products         Product[]
+  seoTitle         String?        @map("seo_title")
+  seoDescription   String?        @map("seo_description")
+  seoCanonicalUrl  String?        @map("seo_canonical_url")
+  seoOgTitle       String?        @map("seo_og_title")
+  seoOgDescription String?        @map("seo_og_description")
+  seoImageUrl      String?        @map("seo_image_url")
+  seoNoIndex       Boolean        @default(false) @map("seo_no_index")
+  seoSchemaNotes   String?        @map("seo_schema_notes")
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt        DateTime       @updatedAt @map("updated_at")
 
   @@index([slug])
   @@index([status])
@@ -222,7 +261,12 @@ model Product {
   metadata         Json?
   seoTitle         String?                @map("seo_title")
   seoDescription   String?                @map("seo_description")
+  seoCanonicalUrl  String?                @map("seo_canonical_url")
+  seoOgTitle       String?                @map("seo_og_title")
+  seoOgDescription String?                @map("seo_og_description")
   seoImageUrl      String?                @map("seo_image_url")
+  seoNoIndex       Boolean                @default(false) @map("seo_no_index")
+  seoSchemaNotes   String?                @map("seo_schema_notes")
   createdAt        DateTime               @default(now()) @map("created_at")
   updatedAt        DateTime               @updatedAt @map("updated_at")
 
@@ -294,20 +338,29 @@ model ProductSpecification {
 }
 
 model Review {
-  id        String   @id @default(uuid())
-  product   Product  @relation(fields: [productId], references: [id])
-  productId String   @map("product_id")
-  user      User?    @relation(fields: [userId], references: [id])
-  userId    String?  @map("user_id")
+  id               String       @id @default(uuid())
+  product          Product      @relation(fields: [productId], references: [id])
+  productId        String       @map("product_id")
+  user             User?        @relation("AuthorReviews", fields: [userId], references: [id])
+  userId           String?      @map("user_id")
   // rating must be between 1 and 5 (validated by DB CHECK constraint)
-  rating    Int
-  title     String?
-  body      String?
-  approved  Boolean  @default(false)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  rating           Int
+  title            String?
+  body             String?
+  // Deprecated compatibility mirror. Canonical moderation state lives in `status`,
+  // and writers must keep this synced as `status == APPROVED`.
+  approved         Boolean      @default(false)
+  status           ReviewStatus @default(PENDING)
+  moderationReason String?      @map("moderation_reason")
+  moderatedAt      DateTime?    @map("moderated_at")
+  moderatedById    String?      @map("moderated_by_id")
+  moderatedBy      User?        @relation("ModeratedReviews", fields: [moderatedById], references: [id])
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
 
   @@index([productId])
+  @@index([status])
+  @@index([productId, status])
 }
 
 model Wishlist {
@@ -342,6 +395,11 @@ model Cart {
   userId    String?    @map("user_id")
   status    CartStatus @default(ACTIVE)
   items     CartItem[]
+  // Abandonment tracking fields — populated by the abandoned-cart service.
+  // The background job that sends recovery emails is deferred (future automation).
+  abandonedAt         DateTime? @map("abandoned_at")
+  recoveryToken       String?   @unique @map("recovery_token")
+  recoveryEmailSentAt DateTime? @map("recovery_email_sent_at")
   createdAt DateTime   @default(now()) @map("created_at")
   updatedAt DateTime   @updatedAt @map("updated_at")
 
@@ -488,6 +546,88 @@ model DealCampaignProduct {
   @@unique([campaignId, productId])
   @@index([campaignId])
   @@index([productId])
+}
+
+// Contact form submissions (lead capture)
+model ContactSubmission {
+  id        String   @id @default(uuid())
+  fullName  String   @map("full_name")
+  email     String
+  subject   String
+  message   String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@index([email])
+  @@map("contact_submission")
+}
+
+// --------------------
+// Email marketing
+// --------------------
+
+// Standalone subscriber list — not linked to User so guest/anonymous
+// subscribers are fully supported without requiring an account.
+// Double opt-in (email confirmation) is deferred; new rows land as PENDING.
+model EmailSubscriber {
+  id    String @id @default(uuid())
+  email String @unique
+
+  firstName String? @map("first_name")
+
+  // Where the subscriber was captured.
+  // Known values: "checkout", "newsletter_popup", "account_signup", "order_completion".
+  // Stored as a plain string so new sources can be added without schema changes.
+  source String
+
+  status SubscriberStatus @default(PENDING)
+
+  // Tags for campaign segmentation, e.g. ["newsletter", "restock_alerts"].
+  tags String[]
+
+  // Opaque one-time token used in unsubscribe links.
+  // NEVER embed the subscriber's email in an unsubscribe URL — always use this token.
+  unsubscribeToken String @unique @map("unsubscribe_token")
+
+  confirmedAt    DateTime? @map("confirmed_at")
+  unsubscribedAt DateTime? @map("unsubscribed_at")
+
+  // Provider-specific sync metadata (e.g. Mailchimp member ID, Brevo contact ID).
+  // Populated by the campaign provider adapter when a live provider is configured.
+  providerMeta Json? @map("provider_meta")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("email_subscriber")
+}
+
+// Append-only event log for the abandoned cart detection pipeline.
+// Intentionally denormalized: cartId, cartToken, userId, and email are all
+// stored so this table stays useful even after the Cart row is archived/deleted.
+// The background recovery job (cron/queue) that reads and acts on these events
+// is deferred — this table provides the data foundation it will need.
+model AbandonedCartEvent {
+  id        String                 @id @default(uuid())
+  cartId    String                 @map("cart_id")
+  cartToken String                 @map("cart_token")
+  userId    String?                @map("user_id")
+  // Customer email when available (guest checkout form or authenticated user profile).
+  email     String?
+  eventType AbandonedCartEventType @map("event_type")
+  // Snapshot metadata: item count, subtotal (paisa), first product name, etc.
+  // Allows the recovery job to render a personalized email without re-querying the cart.
+  metadata  Json?
+  createdAt DateTime               @default(now()) @map("created_at")
+
+  @@index([cartToken])
+  @@index([userId])
+  @@index([email])
+  @@index([eventType])
+  @@index([createdAt])
+  @@map("abandoned_cart_event")
 }
 
 // --------------------

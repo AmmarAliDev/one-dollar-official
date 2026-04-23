@@ -11,6 +11,11 @@ export const storefrontNav: NavItem[] = [
     description: "Storefront landing page.",
   },
   {
+    title: "Blog",
+    href: routes.storefront.blog,
+    description: "English-first storefront blog and buying guides.",
+  },
+  {
     title: "Categories",
     href: routes.storefront.categories,
     description: "Browse storefront category listing pages.",

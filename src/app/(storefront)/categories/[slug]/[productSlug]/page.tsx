@@ -3,7 +3,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronRight, Home } from "lucide-react";
 
-import { auth } from "@/auth";
 import { PageShell } from "@/components/layout/page-shell";
 import { SectionErrorState } from "@/components/ui/section-error-state";
 import { buildMetadata } from "@/config/metadata";
@@ -19,7 +18,9 @@ import { ProductPanel } from "@/features/catalog/components/product-panel";
 import { ProductRelatedGrid } from "@/features/catalog/components/product-related-grid";
 import { ProductReviews } from "@/features/catalog/components/product-reviews";
 import { ProductSpecifications } from "@/features/catalog/components/product-specifications";
-import { getWishlistSkusForUser } from "@/features/wishlist";
+import { testIds } from "@/lib/test-selectors";
+
+export const revalidate = 900;
 
 type ProductPageProps = {
   params: Promise<{ slug: string; productSlug: string }>;
@@ -48,13 +49,11 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug, productSlug } = await params;
-  const session = await auth();
 
-  const [product, category, relatedProducts, wishlistSkus] = await Promise.all([
+  const [product, category, relatedProducts] = await Promise.all([
     getProductBySlug(productSlug),
     getCatalogCategory(slug),
     getRelatedProducts(slug, productSlug),
-    session?.user?.id ? getWishlistSkusForUser(session.user.id) : Promise.resolve([]),
   ]);
 
   // Guard: product must exist and belong to this category
@@ -72,7 +71,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
       <nav aria-label="Breadcrumb">
         <ol className="text-muted-foreground flex flex-wrap items-center gap-1.5 text-sm">
           <li>
-            <Link href={routes.storefront.home} className="hover:text-foreground transition-colors flex items-center gap-1">
+            <Link
+              href={routes.storefront.home}
+              className="hover:text-foreground flex items-center gap-1 transition-colors"
+            >
               <Home className="h-3.5 w-3.5" />
               <span className="sr-only">Home</span>
             </Link>
@@ -81,23 +83,33 @@ export default async function ProductPage({ params }: ProductPageProps) {
             <ChevronRight className="h-3.5 w-3.5" />
           </li>
           <li>
-            <Link href={routes.storefront.category(category.slug)} className="hover:text-foreground transition-colors">
+            <Link
+              href={routes.storefront.category(category.slug)}
+              className="hover:text-foreground transition-colors"
+            >
               {category.name}
             </Link>
           </li>
           <li aria-hidden>
             <ChevronRight className="h-3.5 w-3.5" />
           </li>
-          <li aria-current="page" className="text-foreground font-medium truncate max-w-[200px] sm:max-w-xs">
+          <li
+            aria-current="page"
+            className="text-foreground max-w-[200px] truncate font-medium sm:max-w-xs"
+          >
             {product.name}
           </li>
         </ol>
       </nav>
 
       {/* Hero: gallery + product panel */}
-      <section aria-label="Product overview" className="grid gap-10 lg:grid-cols-2">
+      <section
+        aria-label="Product overview"
+        className="grid gap-10 lg:grid-cols-2"
+        data-testid={testIds.storefront.productOverview}
+      >
         <ProductImageGallery images={product.images} productName={product.name} />
-        <ProductPanel product={product} initialWishlistedSkus={wishlistSkus} />
+        <ProductPanel product={product} />
       </section>
 
       {/* Specifications */}

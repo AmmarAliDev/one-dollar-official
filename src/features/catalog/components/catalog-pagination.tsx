@@ -29,6 +29,8 @@ export function CatalogPagination({ listing }: { listing: CatalogCategoryListing
               href={buildCategoryListingHref(category.slug, filters, {
                 page: Math.max(1, pagination.currentPage - 1),
               })}
+              prefetch={false}
+              rel="prev"
               className={buttonVariants({ variant: "outline" })}
             >
               Previous
@@ -40,6 +42,8 @@ export function CatalogPagination({ listing }: { listing: CatalogCategoryListing
               href={buildCategoryListingHref(category.slug, filters, {
                 page: pagination.currentPage + 1,
               })}
+              prefetch={false}
+              rel="next"
               className={buttonVariants({ variant: "default" })}
             >
               Next page

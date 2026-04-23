@@ -5,11 +5,15 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { SectionHeader } from "@/components/ui/section-header";
 import { buildMetadata } from "@/config/metadata";
 import { CategoryOverviewCard, getCatalogCategories } from "@/features/catalog";
+import { testIds } from "@/lib/test-selectors";
+
+export const revalidate = 900;
 
 export const metadata = buildMetadata({
   title: "Categories",
   path: "/categories",
-  description: "Browse our product categories to find deals and items you love — all at one-dollar prices.",
+  description:
+    "Browse our product categories to find deals and items you love — all at one-dollar prices.",
 });
 
 export default async function CategoriesPage() {
@@ -30,7 +34,10 @@ export default async function CategoriesPage() {
           description="Catalog categories will appear here once the product catalog is connected to real data."
         />
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div
+          className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
+          data-testid={testIds.storefront.categoryGrid}
+        >
           {categories.map((category) => (
             <CategoryOverviewCard key={category.id} category={category} />
           ))}
