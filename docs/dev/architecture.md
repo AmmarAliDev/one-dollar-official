@@ -46,6 +46,20 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - Customer account shell UI lives in `src/features/account/components/account-shell.tsx` and should be reused for future account sections.
 - Wishlist client controls live in `src/features/wishlist/components` and call the dedicated wishlist API route.
 
+## Shared Table Strategy
+
+- `src/components/data-table` is the shared abstraction for reusable, typed TanStack-powered tables.
+- `data-table.tsx` is the composable UI layer that integrates app-standard loading, empty, and error-compatible states with shadcn-style table wrappers.
+- `use-data-table.ts` centralizes TanStack state wiring (sorting, global filter seam, and pagination-ready behavior) so feature modules avoid repeated table plumbing.
+- `types.ts` defines stable shared contracts (`DataTablePaginationOptions`, empty/error state shapes) that make future feature integrations predictable.
+- `src/components/ui/table.tsx` provides the low-level table primitives for consistent styling and responsive overflow behavior.
+- Integration seams:
+	- search/filter: feature-owned controls passed through `toolbar`
+	- row actions: `rowActions(row)` slot
+	- pagination: local by default, server-ready through controlled `pagination`
+	- error handling: `errorState` or custom `renderErrorState`
+- Non-goal in this step: replacing existing feature tables. Migration should be delivered as a separate prompt to reduce regression risk.
+
 ## Config and Environment Strategy
 
 - `src/config/env.ts` validates public env input with a typed schema and throws readable `CONFIG_ERROR` messages.

@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-**Phase 4 / Prompt 4.3 — Order placement and lifecycle**
+**Phase 4 / Prompt 4.4 — Shared reusable TanStack table foundation**
 
 ## Completed
 
@@ -185,6 +185,14 @@
 - [x] Release and launch checklists added at `docs/dev/release-checklist.md` (pre-launch, per-release, post-launch, rollback procedure)
 - [x] `.env.example` updated with Redis, analytics, security, and dev-override sections
 - [x] AI deployment assumptions documented at `docs/ai/deployment.md`
+- [x] Shared TanStack table foundation added in `src/components/data-table` with reusable typed API (`DataTable`, `useDataTable`, `createDataTableColumnHelper`)
+- [x] Shared table UI primitives added in `src/components/ui/table.tsx` to keep styling and responsive overflow behavior consistent with app conventions
+- [x] Data table supports columns, sorting, loading state, empty state, row actions slot, and error-compatible render patterns
+- [x] Pagination-ready architecture added with local pagination defaults and controlled server pagination integration seam (`pagination` + `renderPagination`)
+- [x] Optional search/filter integration seam added via composable `toolbar` slot and global filter-ready table state wiring
+- [x] Focused tests added for shared table rendering and behavior (`tests/components/data-table/data-table.test.tsx`)
+- [x] Type-oriented helper coverage added for column and pagination contracts (`tests/components/data-table/types.test.ts`)
+- [x] Developer docs updated for shared table usage and architecture (`docs/dev/ui-conventions.md`, `docs/dev/architecture.md`)
 
 ## Deferred by design
 
@@ -202,6 +210,7 @@
 - [ ] **Abandoned cart recovery job** — the cron/queue worker that reads AbandonedCartEvent rows, sends recovery emails, and records REMINDER_QUEUED/REMINDER_SENT events is deferred
 - [ ] **Recovery email template** — the cart recovery deep-link email with item snapshot and `/cart?recover=<token>` link is deferred
 - [ ] **Live campaign provider** — Mailchimp/Brevo/Klaviyo adapter is deferred; stub provider is active
+- [ ] Existing feature/admin tables migration to the shared `DataTable` foundation (intentionally deferred to a dedicated migration step)
 
 ## Recommended Next Prompt
 

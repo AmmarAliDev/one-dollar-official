@@ -22,17 +22,24 @@ export function CatalogSearchInput({
   const hasValue = value.trim().length > 0;
 
   return (
-    <div className="border-border/70 bg-card/90 flex items-center gap-2 rounded-xl border p-2 shadow-[var(--shadow-soft)]">
+    <div
+      className="border-border/70 bg-background flex items-center gap-2 rounded-xl border p-2 shadow-(--shadow-soft) cursor-pointer"
+      onClick={() => {
+        const input = document.getElementById("search-input");
+        input?.focus();
+      }}
+    >
       <div className="text-muted-foreground px-2" aria-hidden="true">
         <Search className="size-4" />
       </div>
 
       <Input
+        id="search-input"
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         aria-label="Search products"
-        className="h-10 border-none px-0 shadow-none focus-visible:ring-0"
+        className="h-10 border-none px-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
       />
 
       {isLoading ? (

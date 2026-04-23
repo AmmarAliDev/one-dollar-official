@@ -70,6 +70,24 @@
 - Current baseline: auth forms, checkout, admin category/product forms, and query-string filter forms should all follow this shared pattern.
 - Keep form copy short, task-focused, and user-safe. Do not expose raw backend or schema internals in validation messages.
 
+## Shared Data Table Conventions
+
+- Use the shared TanStack table system in `src/components/data-table` for all new tabular UIs in admin and storefront-support tooling.
+- Start with `DataTable` and `createDataTableColumnHelper<T>()` from `@/components/data-table` to keep column typing consistent.
+- Keep feature-specific search/filter controls outside the table and pass them into the `toolbar` prop so query/filter concerns stay modular.
+- Use built-in state patterns instead of custom table placeholders:
+	- loading: `loading` + optional `loadingRows`/`loadingColumns`
+	- empty: `emptyState`
+	- module error: `errorState` or `renderErrorState`
+- Use `rowActions` for per-row controls (edit/delete/view) and avoid embedding action buttons directly into every feature table body.
+- Keep pagination architecture table-driven:
+	- local pagination works by default
+	- server pagination can be wired by providing `pagination` (`state`, `onPaginationChange`, `pageCount`)
+	- custom pagination UI can be injected via `renderPagination`
+- For responsive behavior, keep wide tables inside the default horizontal overflow wrapper provided by `src/components/ui/table.tsx`.
+- Keep column headers descriptive and plain-language so sorting labels remain accessible.
+- Do not migrate existing feature tables in-place without a dedicated migration task; this prompt only adds the shared foundation.
+
 ## Product Content Entry Guidelines
 
 - Titles should be shopper-facing and specific. Prefer names like "Daily Face Wash" or "Classic Tee" over internal codes.
