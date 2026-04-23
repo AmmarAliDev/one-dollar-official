@@ -179,6 +179,12 @@
 - [x] Tests added for validation schemas, subscribe/unsubscribe business logic, abandoned cart events, and PII helpers
 - [x] Developer docs added at `docs/dev/email-marketing.md`
 - [x] User-facing resilience pass completed across storefront/admin boundaries and interactive flows with standardized safe messaging, retry-safe recovery, and stronger fallback states
+- [x] Production deployment documentation added at `docs/dev/deployment.md` (Vercel, PostgreSQL, Redis, auth providers, SMTP email, Telegram, analytics)
+- [x] Health/readiness endpoint added at `GET /api/health` (checks env vars + database, returns 200/503)
+- [x] Operations guide added at `docs/dev/operations.md` (backups, monitoring, maintenance, incident response, secrets rotation)
+- [x] Release and launch checklists added at `docs/dev/release-checklist.md` (pre-launch, per-release, post-launch, rollback procedure)
+- [x] `.env.example` updated with Redis, analytics, security, and dev-override sections
+- [x] AI deployment assumptions documented at `docs/ai/deployment.md`
 
 ## Deferred by design
 
