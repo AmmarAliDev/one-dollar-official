@@ -96,6 +96,8 @@ export async function createAdminCategoryAction(formData: FormData) {
     redirect(appendFlash(returnTo, "error", getCategoryErrorCode(appError, "createFailed")));
   }
 
+  // Revalidate storefront category index so new published categories appear without delay
+  revalidatePath(routes.storefront.categories);
   revalidatePath(routes.admin.categories);
   redirect(appendFlash(returnTo, "notice", "created"));
 }
@@ -132,6 +134,8 @@ export async function updateAdminCategoryAction(formData: FormData) {
     redirect(appendFlash(returnTo, "error", errorCode));
   }
 
+  // Revalidate storefront category index so status changes appear without delay
+  revalidatePath(routes.storefront.categories);
   revalidatePath(routes.admin.categories);
   redirect(appendFlash(returnTo, "notice", "updated"));
 }
@@ -159,6 +163,8 @@ export async function deleteAdminCategoryAction(formData: FormData) {
     redirect(appendFlash(returnTo, "error", getCategoryErrorCode(appError, "deleteFailed")));
   }
 
+  // Revalidate storefront so deleted/unpublished categories are removed
+  revalidatePath(routes.storefront.categories);
   revalidatePath(routes.admin.categories);
   redirect(appendFlash(returnTo, "notice", "deleted"));
 }

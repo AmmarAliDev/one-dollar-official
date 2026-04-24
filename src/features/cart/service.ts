@@ -24,6 +24,11 @@ type ResolveCartSelectionInput = {
   optionId?: string | undefined;
 };
 
+type ResolvedCartSelection = {
+  selection: CartSeedSelection;
+  variantId: string;
+};
+
 type CartSeedSelection = {
   categorySlug: string;
   categoryName: string;
@@ -255,6 +260,106 @@ export function resolveCartSeedSelection(input: ResolveCartSelectionInput): Cart
     price: selectedOption?.price ?? product.price,
     compareAt: selectedOption?.compareAt ?? product.compareAt ?? null,
     inventoryQuantity: selectedOption?.inventoryQuantity ?? product.inventoryQuantity,
+  };
+}
+
+async function resolveCartSelection(
+  input: ResolveCartSelectionInput,
+  db: DatabaseExecutor,
+): Promise<ResolvedCartSelection> {
+  const product = await db.product.findFirst({
+    where: {
+      slug: input.productSlug,
+      status: ProductStatus.PUBLISHED,
+      category: {
+        status: "PUBLISHED",
+      },
+    },
+    select: {
+      name: true,
+      slug: true,
+      shortDescription: true,
+      description: true,
+      masterSku: true,
+      category: {
+        select: {
+          name: true,
+          slug: true,
+        },
+      },
+      variants: {
+        orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }],
+        select: {
+          id: true,
+          title: true,
+          sku: true,
+          price: true,
+          compareAtPrice: true,
+          isDefault: true,
+          inventory: {
+            select: {
+              quantity: true,
+              reserved: true,
+              safetyStock: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!product) {
+    const selection = resolveCartSeedSelection(input);
+    const variant = await ensureSeedCatalogVariant(selection, db);
+
+    return {
+      selection,
+      variantId: variant.id,
+    };
+  }
+
+  if (product.variants.length === 0) {
+    throw toMissingProductError(input.productSlug);
+  }
+
+  const selectedVariant = input.optionId
+    ? product.variants.find((variant) => variant.id === input.optionId)
+    : product.variants.find((variant) => variant.isDefault) ??
+      product.variants.find((variant) => getAvailableInventoryQuantity(variant.inventory) > 0) ??
+      product.variants[0];
+
+  if (!selectedVariant) {
+    if (input.optionId) {
+      throw toMissingVariantError(input.optionId);
+    }
+
+    throw toMissingProductError(input.productSlug);
+  }
+
+  const resolvedSku = selectedVariant.sku ?? product.masterSku ?? "";
+  if (!resolvedSku) {
+    throw new AppError(`Cart SKU missing for product: ${input.productSlug}`, "CART_SKU_MISSING", {
+      statusCode: 500,
+      userMessage: "This product cannot be added right now. Please try again.",
+    });
+  }
+
+  return {
+    variantId: selectedVariant.id,
+    selection: {
+      categorySlug: product.category?.slug ?? "",
+      categoryName: product.category?.name ?? "",
+      productSlug: product.slug,
+      productName: product.name,
+      shortDescription: product.shortDescription ?? "",
+      longDescription: product.description ?? "",
+      optionId: selectedVariant.id,
+      optionLabel: selectedVariant.title,
+      sku: resolvedSku,
+      price: selectedVariant.price,
+      compareAt: selectedVariant.compareAtPrice,
+      inventoryQuantity: Math.max(0, selectedVariant.inventory?.quantity ?? 0),
+    },
   };
 }
 
@@ -652,20 +757,16 @@ async function requireActiveCartForMutation(input: ResolveCartContextInput, db: 
 
 export async function addCartItemForContext(context: ResolveCartContextInput, input: AddCartItemInput) {
   const db = getPrismaClient();
-  const selection = resolveCartSeedSelection(input);
+  const resolvedSelection = await resolveCartSelection(input, db);
+  const { selection } = resolvedSelection;
   const quantity = normalizeQuantity(input.quantity);
-
-  // Keep seed catalog synchronization outside the cart mutation transaction.
-  // On cold serverless starts this removes several upserts from the interactive
-  // transaction window and avoids stale/closed transaction errors.
-  const variant = await ensureSeedCatalogVariant(selection, db);
 
   return runWithTransaction(async (transaction) => {
     const cart = await requireActiveCartForMutation(context, transaction);
 
     const inventory = await transaction.inventory.findUnique({
       where: {
-        productVariantId: variant.id,
+        productVariantId: resolvedSelection.variantId,
       },
     });
 
@@ -679,7 +780,7 @@ export async function addCartItemForContext(context: ResolveCartContextInput, in
       where: {
         cartId_productVariantId: {
           cartId: cart.id,
-          productVariantId: variant.id,
+          productVariantId: resolvedSelection.variantId,
         },
       },
     });
@@ -693,7 +794,7 @@ export async function addCartItemForContext(context: ResolveCartContextInput, in
       where: {
         cartId_productVariantId: {
           cartId: cart.id,
-          productVariantId: variant.id,
+          productVariantId: resolvedSelection.variantId,
         },
       },
       update: {
@@ -702,7 +803,7 @@ export async function addCartItemForContext(context: ResolveCartContextInput, in
       },
       create: {
         cartId: cart.id,
-        productVariantId: variant.id,
+        productVariantId: resolvedSelection.variantId,
         quantity,
         unitPrice: selection.price,
       },

@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-**Phase 4 / Prompt 4.4 — Shared reusable TanStack table foundation**
+**Phase 4 / Prompt 4.5 — Storefront catalog connected to database**
 
 ## Completed
 
@@ -200,6 +200,15 @@
 - [x] All admin table migrations preserve existing business logic: filters, search, sorting, row actions, status badges, and permissions-based UI
 - [x] Table rendering standardized across admin product, category, order, and inventory pages using feature-specific table components wrapping the shared DataTable
 - [x] Table components follow the pattern: typed columns definition, cell rendering logic, row actions/callbacks, and feature-specific UI (badges, links, moderation forms)
+- [x] **Storefront catalog connected to PostgreSQL database** — `src/server/db/catalog-queries.ts` added as the Prisma query layer enforcing PUBLISHED-only visibility for categories, products, and APPROVED-only reviews
+- [x] `src/features/catalog/service.ts` fully rewritten to use DB-backed catalog queries; seed data no longer read at runtime
+- [x] `src/features/catalog/search-adapter.ts` rewritten to use `searchPublishedProducts()` (PostgreSQL ILIKE); `source` changed from `"seed"` to `"db"`
+- [x] `src/features/catalog/components/product-image-gallery.tsx` updated to render real image URLs via `next/image` when available, falling back to gradient placeholders
+- [x] Admin product and category server actions now call `revalidatePath('/categories')` after mutations for on-demand ISR cache invalidation
+- [x] Catalog visibility tests added in `tests/features/catalog/catalog-visibility.test.ts`
+- [x] All catalog service and search tests rewritten to mock `@/server/db/catalog-queries` instead of importing seed data
+- [x] Related products on PDP now prioritize admin-curated `relatedProductIds` from product metadata, then fall back to same-category published products
+- [x] Cart add-to-cart now resolves published products/variants from the live DB first (with legacy seed fallback), fixing add failures for newly created and published catalog items
 
 ## Deferred by design
 
@@ -208,7 +217,6 @@
 - [ ] Nonce-based CSP hardening once all inline/script requirements are audited
 - [ ] Dedicated CSRF token flow for any future embedded or cross-origin clients
 - [ ] Online gateway provider implementations under checkout payment contract
-- [ ] Live catalog persistence beyond the fallback listing dataset
 - [ ] Broader admin CRUD workflows beyond the current category flows and product list/create/edit management
 - [ ] Server-side notifications and third-party integrations
 - [ ] Admin-manageable blog CRUD and persistence-backed publishing workflow
@@ -221,4 +229,4 @@
 
 ## Recommended Next Prompt
 
-Proceed with **Phase 4 / Prompt 4.5 — admin subscriber list view and notifications integration**.
+Proceed with **Phase 4 / Prompt 4.6 — admin subscriber list view and notifications integration**.

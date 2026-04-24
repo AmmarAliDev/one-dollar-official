@@ -4,14 +4,15 @@
 
 Provide a fast and simple storefront product search while keeping implementation easy to upgrade to dedicated search infrastructure.
 
-## Current Flow (Phase 3 Foundation)
+## Current Flow (Live DB-Backed Search)
 
 1. Client UI lives in `src/features/catalog/components/catalog-search-experience.tsx`.
 2. Input updates are debounced (280ms) through a lightweight local hook before network requests.
 3. Debounced queries call `GET /api/catalog/search`.
 4. API handler validates inputs with Zod and calls `searchCatalogProducts()`.
 5. `searchCatalogProducts()` delegates to a search adapter seam via `getCatalogSearchAdapter()`.
-6. The default adapter uses seeded catalog data and score-based matching for now.
+6. The default `dbCatalogSearchAdapter` queries published products from PostgreSQL using a case-insensitive `ILIKE` match over `name`, `shortDescription`, and `description`.
+7. Results carry `source: "db"` in the response so callers and tests can verify the active backend.
 
 ## Why This Is Upgrade-Ready
 

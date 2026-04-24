@@ -12,6 +12,7 @@ const mockDb = vi.hoisted(() => ({
     upsert: vi.fn(),
   },
   product: {
+    findFirst: vi.fn(),
     upsert: vi.fn(),
   },
   productVariant: {
@@ -167,6 +168,8 @@ describe("cart context resolution", () => {
   });
 
   it("reuses existing seeded catalog records during add-to-cart", async () => {
+    mockDb.product.findFirst.mockResolvedValue(null);
+
     mockDb.cart.findFirst.mockImplementation(async (args?: { where?: Record<string, unknown> }) => {
       if (args?.where?.token === "guest-token") {
         return {
@@ -262,6 +265,127 @@ describe("cart context resolution", () => {
       id: "cart-existing",
       itemCount: 1,
       subtotal: 499,
+    });
+
+    expect(mockDb.category.upsert).not.toHaveBeenCalled();
+    expect(mockDb.product.upsert).not.toHaveBeenCalled();
+    expect(mockDb.productVariant.upsert).not.toHaveBeenCalled();
+    expect(mockDb.inventory.upsert).not.toHaveBeenCalled();
+  });
+
+  it("adds a newly published DB product without relying on seed upserts", async () => {
+    mockDb.product.findFirst.mockResolvedValue({
+      name: "Fresh Product",
+      slug: "fresh-product",
+      shortDescription: "Freshly published.",
+      description: "Freshly published product description.",
+      masterSku: "FP-001",
+      category: {
+        slug: "fresh-category",
+        name: "Fresh Category",
+      },
+      variants: [
+        {
+          id: "variant-db-1",
+          title: "Default",
+          sku: "FP-001",
+          price: 1299,
+          compareAtPrice: null,
+          isDefault: true,
+          inventory: {
+            quantity: 15,
+            reserved: 0,
+            safetyStock: 0,
+          },
+        },
+      ],
+    });
+
+    mockDb.cart.findFirst.mockImplementation(async (args?: { where?: Record<string, unknown> }) => {
+      if (args?.where?.token === "guest-token") {
+        return {
+          id: "cart-existing",
+          token: "guest-token",
+          userId: null,
+          status: "ACTIVE",
+        };
+      }
+
+      return null;
+    });
+
+    mockDb.inventory.findUnique.mockResolvedValue({
+      productVariantId: "variant-db-1",
+      quantity: 15,
+      reserved: 0,
+      safetyStock: 0,
+    });
+
+    mockDb.cartItem.findUnique.mockResolvedValue(null);
+    mockDb.cartItem.upsert.mockResolvedValue({
+      id: "item-1",
+      cartId: "cart-existing",
+      productVariantId: "variant-db-1",
+      quantity: 1,
+      unitPrice: 1299,
+    });
+
+    mockDb.cart.findUnique.mockImplementation(async (args?: { include?: Record<string, unknown> }) => {
+      if (args?.include) {
+        return {
+          id: "cart-existing",
+          token: "guest-token",
+          items: [
+            {
+              id: "item-1",
+              quantity: 1,
+              unitPrice: 1299,
+              productVariant: {
+                sku: "FP-001",
+                title: "Default",
+                compareAtPrice: null,
+                inventory: {
+                  quantity: 15,
+                  reserved: 0,
+                  safetyStock: 0,
+                },
+                product: {
+                  name: "Fresh Product",
+                  slug: "fresh-product",
+                  category: {
+                    slug: "fresh-category",
+                  },
+                },
+              },
+            },
+          ],
+        };
+      }
+
+      return {
+        id: "cart-existing",
+        token: "guest-token",
+        userId: null,
+        status: "ACTIVE",
+      };
+    });
+
+    const { addCartItemForContext } = await import("@/features/cart");
+
+    await expect(
+      addCartItemForContext(
+        {
+          guestToken: "guest-token",
+        },
+        {
+          productSlug: "fresh-product",
+          quantity: 1,
+        },
+      ),
+    ).resolves.toMatchObject({
+      id: "cart-existing",
+      itemCount: 1,
+      subtotal: 1299,
     });
 
     expect(mockDb.category.upsert).not.toHaveBeenCalled();

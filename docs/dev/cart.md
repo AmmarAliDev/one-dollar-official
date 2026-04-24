@@ -48,14 +48,16 @@ Mutation routes use trusted-origin CSRF checks via `assertTrustedRouteHandlerReq
 
 ## Variant and non-variant products
 
-Catalog data is currently seed-backed. Cart mutations:
+Cart mutations now resolve products from the live catalog database first:
 
-- resolve requested product from seed detail by slug
-- resolve requested option when `optionId` is provided
-- otherwise select first in-stock variant option or fallback default SKU for non-variant products
-- upsert minimal category/product/variant/inventory records for referential integrity before cart item writes
+- query product by slug with `status=PUBLISHED` and `category.status=PUBLISHED`
+- resolve requested variant when `optionId` is provided
+- otherwise select default variant (or first in-stock variant fallback)
+- add cart line items directly against resolved `ProductVariant` rows
 
-This keeps cart flows functional before full catalog persistence is complete.
+Legacy seed resolution is kept as a compatibility fallback only when a product
+is not found in the database. In that fallback path, seed-backed upserts still
+run to preserve local/dev behavior.
 
 ## Stock-aware validation
 

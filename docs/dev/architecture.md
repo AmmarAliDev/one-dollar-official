@@ -99,14 +99,22 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `src/app/unauthorized/page.tsx` and `src/app/forbidden/page.tsx` provide explicit recovery screens instead of raw auth errors.
 - `src/lib/audit/admin-actions.ts` prepares structured admin action records for future `AuditLog` persistence.
 
-## Catalog Listing Strategy
+## Catalog Data Strategy
 
-- `src/features/catalog` is the storefront catalog seam for this phase. It currently uses typed fallback seeds so routes can render without a live database dependency.
-- `filters.ts` owns query-string parsing and href rebuilding for sorting, filtering, and pagination.
-- `service.ts` owns listing + PDP assembly (`getCatalogCategoryListing`, `getProductBySlug`, `getRelatedProducts`) and should be the handoff point when real Prisma-backed category/product repositories are added later.
-- `src/app/(storefront)/categories/page.tsx` is the category index. `src/app/(storefront)/categories/[slug]/page.tsx` is the SEO-friendly category listing route.
-- `src/app/(storefront)/categories/[slug]/[productSlug]/page.tsx` is the SEO-friendly PDP route that validates category/product pairing before rendering.
-- Variant-aware attribute filtering is still a visible scaffold, but the storefront filter surface now uses the shared form layer and should keep extending the existing query/filter contracts rather than replacing them.
+- `src/features/catalog` is the storefront catalog feature module. It reads exclusively from the PostgreSQL database via Prisma.
+- `src/server/db/catalog-queries.ts` is the Prisma query layer for the storefront. It enforces all publish-state visibility rules: only PUBLISHED categories and products are returned, and only APPROVED reviews reach the storefront.
+- `src/features/catalog/service.ts` owns listing + PDP assembly (`getCatalogCategoryListing`, `getProductBySlug`, `getRelatedProducts`) by calling the query layer and mapping DB records to storefront types.
+- `filters.ts` owns query-string parsing and href rebuilding for sorting, filtering, and pagination (unchanged).
+- The admin mutation layer (`src/features/admin/products/actions.ts`, `src/features/admin/categories/actions.ts`) now calls `revalidatePath('/categories')` after any create/update/delete so the storefront ISR cache is invalidated and reflects changes within the next request.
+- `src/app/(storefront)/categories/page.tsx` is the category index (ISR: 900s). `src/app/(storefront)/categories/[slug]/page.tsx` is the SEO-friendly category listing route. `src/app/(storefront)/categories/[slug]/[productSlug]/page.tsx` is the SEO-friendly PDP route.
+- `generateStaticParams` in both listing and PDP routes fetches from the DB so newly published products are picked up on next ISR/build cycle.
+- `data.ts` (legacy seed file) still exists for local reference but is no longer used by the storefront service.
+
+## Cache Strategy
+
+- ISR with `revalidate = 900` (15 minutes) is declared on all three storefront category routes.
+- On-demand ISR is triggered by admin server actions: publishing or updating a product/category calls `revalidatePath('/categories')`, immediately clearing the cache for the affected path tree.
+- For faster individual product page invalidation, the admin product update action can additionally call `revalidatePath('/categories/[slug]/[productSlug]', 'page')` once product-slug tracking is added to the action.
 
 ## Search Strategy
 
@@ -114,7 +122,7 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - Debounced client requests call `GET /api/catalog/search` for fast perceived responsiveness without hammering the server on every keypress.
 - Route-handler validation happens in `src/app/api/catalog/search/route.ts` and delegates to feature-level service logic.
 - `searchCatalogProducts()` in `src/features/catalog/service.ts` is the stable entrypoint used by API/UI layers.
-- `src/features/catalog/search-adapter.ts` is the upgrade seam. The current seed-backed scoring logic can be replaced by a dedicated search provider while preserving API and UI contracts.
+- `src/features/catalog/search-adapter.ts` is the upgrade seam. The current DB-backed ILIKE search can be replaced by a dedicated search provider (Algolia, Typesense) while preserving API and UI contracts.
 - See `docs/dev/search-architecture.md` for flow details and phased upgrade guidance.
 
 ## Wishlist + Account Strategy

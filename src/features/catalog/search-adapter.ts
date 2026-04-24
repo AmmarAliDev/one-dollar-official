@@ -1,6 +1,6 @@
 import { routes } from "@/config/routes";
 
-import { catalogCategorySeeds, catalogProductSeeds } from "./data";
+import { searchPublishedProducts } from "@/server/db/catalog-queries";
 import type { CatalogProductCard } from "./types";
 
 export type CatalogSearchRequest = {
@@ -12,101 +12,105 @@ export type CatalogSearchResult = {
   query: string;
   total: number;
   items: CatalogProductCard[];
-  source: "seed" | "external";
+  source: "db" | "seed" | "external";
 };
 
 export interface CatalogSearchAdapter {
   searchProducts(request: CatalogSearchRequest): Promise<CatalogSearchResult>;
 }
 
-function normalizeQuery(query: string) {
-  return query.trim().toLowerCase();
-}
+// ---------------------------------------------------------------------------
+// DB-backed adapter (default for production)
+// ---------------------------------------------------------------------------
 
-function tokenizeQuery(query: string) {
-  return normalizeQuery(query)
-    .split(/\s+/)
-    .filter(Boolean);
-}
-
-function mapProduct(seed: (typeof catalogProductSeeds)[number]): CatalogProductCard {
-  return {
-    ...seed,
-    href: routes.storefront.product(seed.categorySlug, seed.slug),
-  };
-}
-
-function getSeedSearchScore(product: (typeof catalogProductSeeds)[number], categoryName: string, tokens: string[]) {
-  const name = product.name.toLowerCase();
-  const description = product.description.toLowerCase();
-  const category = categoryName.toLowerCase();
-  const attributes = product.attributeSummary.join(" ").toLowerCase();
-
-  return tokens.reduce((score, token) => {
-    if (name.startsWith(token)) {
-      return score + 6;
-    }
-
-    if (name.includes(token)) {
-      return score + 4;
-    }
-
-    if (attributes.includes(token)) {
-      return score + 3;
-    }
-
-    if (description.includes(token)) {
-      return score + 2;
-    }
-
-    if (category.includes(token)) {
-      return score + 1;
-    }
-
-    return score;
-  }, 0);
-}
-
-const seedCatalogSearchAdapter: CatalogSearchAdapter = {
+/**
+ * Searches PUBLISHED products in the database using a case-insensitive
+ * keyword match over name, shortDescription, and description.
+ *
+ * Results are ordered by createdAt DESC (newest first).
+ * For a dedicated search engine (Algolia, Typesense), replace this adapter
+ * by returning a different implementation from getCatalogSearchAdapter().
+ */
+const dbCatalogSearchAdapter: CatalogSearchAdapter = {
   async searchProducts({ query, limit = 12 }) {
-    const normalizedQuery = normalizeQuery(query);
+    const normalizedQuery = query.trim();
 
     if (!normalizedQuery) {
       return {
         query: normalizedQuery,
         total: 0,
         items: [],
-        source: "seed",
+        source: "db",
       };
     }
 
-    const tokens = tokenizeQuery(normalizedQuery);
-    const categoryNamesBySlug = new Map(catalogCategorySeeds.map((category) => [category.slug, category.name]));
+    // Fetch up to `limit` matches; the query layer applies the ILIKE filter.
+    const records = await searchPublishedProducts(normalizedQuery, limit);
 
-    const matched = catalogProductSeeds
-      .map((product) => {
-        const categoryName = categoryNamesBySlug.get(product.categorySlug) ?? "";
-        const score = getSeedSearchScore(product, categoryName, tokens);
+    const items: CatalogProductCard[] = records.map((record) => {
+      const categorySlug = record.category?.slug ?? "";
+      const defaultVariant =
+        record.variants.find((v) => v.isDefault) ?? record.variants[0] ?? null;
+      const price = defaultVariant?.price ?? 0;
+      const compareAtRaw = defaultVariant?.compareAtPrice ?? null;
+      const compareAt =
+        typeof compareAtRaw === "number" && compareAtRaw > price
+          ? compareAtRaw
+          : undefined;
+      const reviewRatings = record.reviews;
+      const reviewCount = reviewRatings.length;
+      const averageRating =
+        reviewCount > 0
+          ? Number(
+              (
+                reviewRatings.reduce((sum, r) => sum + r.rating, 0) / reviewCount
+              ).toFixed(1),
+            )
+          : 0;
+      const inventoryQuantity = record.variants.reduce(
+        (total, v) => total + (v.inventory?.quantity ?? 0),
+        0,
+      );
+      const primaryImage = record.images[0];
+      const imageLabel = primaryImage?.alt?.trim() || record.name;
 
-        return {
-          product,
-          score,
-        };
-      })
-      .filter((item) => item.score > 0)
-      .sort((left, right) => right.score - left.score || left.product.featuredRank - right.product.featuredRank);
+      return {
+        id: record.id,
+        slug: record.slug,
+        name: record.name,
+        description: record.shortDescription ?? record.description ?? "",
+        categorySlug,
+        price,
+        ...(compareAt !== undefined ? { compareAt } : {}),
+        inventoryQuantity,
+        averageRating,
+        reviewCount,
+        imageLabel,
+        imageTone: "slate",
+        attributeSummary: record.specifications.slice(0, 2).map((s) => s.value),
+        href: routes.storefront.product(categorySlug, record.slug),
+      };
+    });
 
     return {
       query: normalizedQuery,
-      total: matched.length,
-      items: matched.slice(0, Math.max(1, limit)).map((item) => mapProduct(item.product)),
-      source: "seed",
+      total: items.length,
+      items,
+      source: "db",
     };
   },
 };
 
-// This seam is intentionally centralized so dedicated search services can replace
-// the seed implementation without changing page/API contracts.
+// ---------------------------------------------------------------------------
+// Adapter factory — replace this return value to swap search backends.
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns the active catalog search adapter.
+ *
+ * Default: DB-backed adapter using Prisma full-text-like search.
+ * Future: swap for an Algolia/Typesense adapter without changing call sites.
+ */
 export function getCatalogSearchAdapter(): CatalogSearchAdapter {
-  return seedCatalogSearchAdapter;
+  return dbCatalogSearchAdapter;
 }

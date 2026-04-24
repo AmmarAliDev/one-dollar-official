@@ -1,78 +1,430 @@
-import { describe, expect, it } from "vitest";
+/**
+ * Product detail service tests.
+ *
+ * Mocks the catalog-queries module so no real DB connection is needed.
+ * Verifies product detail mapping, variant groups, reviews, and related products.
+ */
+import { describe, expect, it, vi } from "vitest";
 
 import { getProductBySlug, getProductSlugsWithCategory, getRelatedProducts } from "@/features/catalog";
 
+// ---------------------------------------------------------------------------
+// Fixtures
+// ---------------------------------------------------------------------------
+
+function makeDetailRecord(overrides: Partial<{
+  id: string;
+  slug: string;
+  categorySlug: string;
+  masterSku: string | null;
+  variantsEnabled: boolean;
+  reviews: Array<{ id: string; rating: number; title: string | null; body: string | null; status: string; createdAt: Date; user: { name: string | null } | null }>;
+}> = {}) {
+  const {
+    id = "prod-face-wash",
+    slug = "hydra-care-face-wash",
+    categorySlug = "personal-care",
+    masterSku = "HCF-001",
+    variantsEnabled = false,
+    reviews = [],
+  } = overrides;
+
+  return {
+    id,
+    name: "Hydra Care Face Wash",
+    slug,
+    shortDescription: "Gentle daily cleanser.",
+    description: "A long description of the face wash.",
+    masterSku,
+    metadata: { variantsEnabled },
+    createdAt: new Date("2025-01-01"),
+    updatedAt: new Date("2025-01-01"),
+    category: { id: "cat-pc", name: "Personal Care", slug: categorySlug },
+    images: [
+      { id: "img-1", url: "https://example.com/face-wash.jpg", alt: "Face wash bottle", position: 0 },
+    ],
+    specifications: [
+      { id: "spec-1", key: "Volume", value: "100ml" },
+      { id: "spec-2", key: "Type", value: "Daily care" },
+    ],
+    variants: [
+      {
+        id: "var-1",
+        title: "Default",
+        sku: "HCF-001",
+        options: null,
+        price: 699,
+        compareAtPrice: null,
+        isDefault: true,
+        inventory: { quantity: 22 },
+      },
+    ],
+    reviews,
+  };
+}
+
+function makeVariantProductRecord() {
+  return {
+    id: "prod-detergent",
+    name: "Ultra Wash Detergent",
+    slug: "ultra-wash-detergent-1kg",
+    shortDescription: "Strong stain removal.",
+    description: null,
+    masterSku: "UWD-MASTER",
+    metadata: { variantsEnabled: true },
+    createdAt: new Date("2025-01-01"),
+    updatedAt: new Date("2025-01-01"),
+    category: { id: "cat-hc", name: "Home Care", slug: "home-care" },
+    images: [],
+    specifications: [],
+    variants: [
+      {
+        id: "var-500g",
+        title: "500g",
+        sku: "UWD-500G",
+        options: { Size: "500g" },
+        price: 499,
+        compareAtPrice: null,
+        isDefault: false,
+        inventory: { quantity: 5 },
+      },
+      {
+        id: "var-1kg",
+        title: "1kg",
+        sku: "UWD-1KG",
+        options: { Size: "1kg" },
+        price: 899,
+        compareAtPrice: 1099,
+        isDefault: true,
+        inventory: { quantity: 18 },
+      },
+      {
+        id: "var-2kg",
+        title: "2kg",
+        sku: "UWD-2KG",
+        options: { Size: "2kg" },
+        price: 1599,
+        compareAtPrice: null,
+        isDefault: false,
+        inventory: { quantity: 8 },
+      },
+    ],
+    reviews: [],
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Mocks
+// ---------------------------------------------------------------------------
+
+const mockGetPublishedProductBySlug = vi.fn();
+const mockGetRelatedPublishedProducts = vi.fn();
+const mockGetAllPublishedProductSlugsWithCategories = vi.fn();
+const mockListPublishedProductsByIds = vi.fn().mockResolvedValue([]);
+
+vi.mock("@/server/db/catalog-queries", () => ({
+  listPublishedCategories: vi.fn().mockResolvedValue([]),
+  getPublishedCategoryBySlug: vi.fn().mockResolvedValue(null),
+  listPublishedProductsByCategory: vi.fn().mockResolvedValue([]),
+  listPublishedProductsByIds: (...args: unknown[]) => mockListPublishedProductsByIds(...args),
+  getPublishedProductBySlug: (...args: unknown[]) => mockGetPublishedProductBySlug(...args),
+  getRelatedPublishedProducts: (...args: unknown[]) => mockGetRelatedPublishedProducts(...args),
+  getAllPublishedProductSlugsWithCategories: (...args: unknown[]) =>
+    mockGetAllPublishedProductSlugsWithCategories(...args),
+  searchPublishedProducts: vi.fn().mockResolvedValue([]),
+}));
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
 describe("product detail service", () => {
   it("returns full product detail for a valid slug", async () => {
-    const product = await getProductBySlug("ultra-wash-detergent-1kg");
+    mockGetPublishedProductBySlug.mockResolvedValue(makeDetailRecord());
+
+    const product = await getProductBySlug("hydra-care-face-wash");
 
     expect(product).not.toBeNull();
-    expect(product?.slug).toBe("ultra-wash-detergent-1kg");
-    expect(product?.sku).toBe("UWD-1KG-001");
+    expect(product?.slug).toBe("hydra-care-face-wash");
+    expect(product?.sku).toBe("HCF-001");
     expect(product?.images.length).toBeGreaterThan(0);
     expect(product?.specifications.length).toBeGreaterThan(0);
   });
 
   it("includes the resolved product URL", async () => {
+    mockGetPublishedProductBySlug.mockResolvedValue(makeDetailRecord());
+
     const product = await getProductBySlug("hydra-care-face-wash");
 
     expect(product?.href).toBe("/categories/personal-care/hydra-care-face-wash");
   });
 
   it("returns null for an unknown slug", async () => {
+    mockGetPublishedProductBySlug.mockResolvedValue(null);
+
     const product = await getProductBySlug("does-not-exist");
 
     expect(product).toBeNull();
   });
 
-  it("includes variant groups for products with variants", async () => {
+  it("includes variant groups for products with variants enabled", async () => {
+    mockGetPublishedProductBySlug.mockResolvedValue(makeVariantProductRecord());
+
     const product = await getProductBySlug("ultra-wash-detergent-1kg");
-    const firstGroup = product?.variantGroups[0];
 
     expect(product?.variantGroups.length).toBe(1);
-    expect(firstGroup?.name).toBe("Size");
-    expect(firstGroup?.options.length).toBe(3);
+    expect(product?.variantGroups[0]?.name).toBe("Size");
+    expect(product?.variantGroups[0]?.options.length).toBe(3);
   });
 
-  it("has empty variant groups for products without variants", async () => {
-    const product = await getProductBySlug("premium-basmati-rice-5kg");
+  it("has empty variant groups for simple products", async () => {
+    mockGetPublishedProductBySlug.mockResolvedValue(makeDetailRecord({ variantsEnabled: false }));
+
+    const product = await getProductBySlug("hydra-care-face-wash");
 
     expect(product?.variantGroups).toHaveLength(0);
   });
 
-  it("includes review summary data", async () => {
-    const product = await getProductBySlug("olive-blend-cooking-oil-1l");
+  it("includes review summary data from APPROVED reviews", async () => {
+    const reviews = [
+      { id: "r1", rating: 5, title: "Great", body: "Loved it!", status: "APPROVED", createdAt: new Date(), user: { name: "Alice" } },
+      { id: "r2", rating: 4, title: "Good", body: "Pretty good.", status: "APPROVED", createdAt: new Date(), user: null },
+      { id: "r3", rating: 3, title: "OK", body: "Average.", status: "APPROVED", createdAt: new Date(), user: { name: "Bob" } },
+    ];
+    mockGetPublishedProductBySlug.mockResolvedValue(makeDetailRecord({ reviews }));
 
-    expect(product?.reviewSummary.totalCount).toBe(45);
-    expect(product?.reviewSummary.averageRating).toBe(4.8);
-    expect(product?.reviewSummary.distribution[5]).toBe(38);
+    const product = await getProductBySlug("hydra-care-face-wash");
+
+    expect(product?.reviewSummary.totalCount).toBe(3);
+    expect(product?.reviewSummary.averageRating).toBe(4);
+    expect(product?.reviews.every((r) => r.status === "APPROVED")).toBe(true);
+  });
+
+  it("returns empty review summary when no reviews exist", async () => {
+    mockGetPublishedProductBySlug.mockResolvedValue(makeDetailRecord({ reviews: [] }));
+
+    const product = await getProductBySlug("hydra-care-face-wash");
+
+    expect(product?.reviewSummary.totalCount).toBe(0);
+    expect(product?.reviewSummary.averageRating).toBe(0);
+  });
+
+  it("sets Anonymous as author when user is null", async () => {
+    const reviews = [
+      { id: "r1", rating: 5, title: null, body: "Nice!", status: "APPROVED", createdAt: new Date(), user: null },
+    ];
+    mockGetPublishedProductBySlug.mockResolvedValue(makeDetailRecord({ reviews }));
+
+    const product = await getProductBySlug("hydra-care-face-wash");
+
+    expect(product?.reviews[0]?.author).toBe("Anonymous");
+  });
+
+  it("maps real image url onto the images array", async () => {
+    mockGetPublishedProductBySlug.mockResolvedValue(makeDetailRecord());
+
+    const product = await getProductBySlug("hydra-care-face-wash");
+
+    expect(product?.images[0]?.url).toBe("https://example.com/face-wash.jpg");
   });
 
   it("returns related products from the same category excluding self", async () => {
-    const related = await getRelatedProducts("home-care", "ultra-wash-detergent-1kg");
+    mockGetRelatedPublishedProducts.mockResolvedValue([
+      {
+        id: "p2",
+        name: "Silk Soft Lotion",
+        slug: "silk-soft-lotion",
+        shortDescription: null,
+        description: null,
+        masterSku: null,
+        metadata: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        category: { id: "cat-pc", name: "Personal Care", slug: "personal-care" },
+        images: [],
+        specifications: [],
+        variants: [{ id: "v1", title: "Default", sku: "SSL-001", options: null, price: 849, compareAtPrice: 999, isDefault: true, inventory: { quantity: 5 } }],
+        reviews: [],
+      },
+    ]);
 
-    expect(related.length).toBeGreaterThan(0);
-    expect(related.every((p) => p.categorySlug === "home-care")).toBe(true);
-    expect(related.some((p) => p.slug === "ultra-wash-detergent-1kg")).toBe(false);
-  });
-
-  it("caps related products at 4", async () => {
-    // grocery has 3 products, home-care has 3; this validates the max-4 cap doesn't over-return
-    const related = await getRelatedProducts("home-care", "ultra-wash-detergent-1kg");
-
-    expect(related.length).toBeLessThanOrEqual(4);
-  });
-
-  it("returns href on related product cards", async () => {
     const related = await getRelatedProducts("personal-care", "hydra-care-face-wash");
 
+    expect(related.length).toBeGreaterThan(0);
+    expect(related.every((p) => p.categorySlug === "personal-care")).toBe(true);
+    expect(related.some((p) => p.slug === "hydra-care-face-wash")).toBe(false);
     expect(related.every((p) => p.href.startsWith("/categories/"))).toBe(true);
   });
 
-  it("returns all product slugs with category slugs", async () => {
+  it("prioritizes curated related product ids before fallback recommendations", async () => {
+    mockGetPublishedProductBySlug.mockResolvedValue({
+      ...makeDetailRecord(),
+      metadata: {
+        variantsEnabled: false,
+        relatedProductIds: ["p-curated"],
+      },
+    });
+
+    mockListPublishedProductsByIds.mockResolvedValue([
+      {
+        id: "p-curated",
+        name: "Curated Lotion",
+        slug: "curated-lotion",
+        shortDescription: null,
+        description: null,
+        masterSku: null,
+        metadata: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        category: { id: "cat-pc", name: "Personal Care", slug: "personal-care" },
+        images: [],
+        specifications: [],
+        variants: [{ id: "v1", title: "Default", sku: "CUR-001", options: null, price: 899, compareAtPrice: null, isDefault: true, inventory: { quantity: 6 } }],
+        reviews: [],
+      },
+    ]);
+
+    mockGetRelatedPublishedProducts.mockResolvedValue([
+      {
+        id: "p-fallback",
+        name: "Fallback Wash",
+        slug: "fallback-wash",
+        shortDescription: null,
+        description: null,
+        masterSku: null,
+        metadata: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        category: { id: "cat-pc", name: "Personal Care", slug: "personal-care" },
+        images: [],
+        specifications: [],
+        variants: [{ id: "v2", title: "Default", sku: "FB-001", options: null, price: 799, compareAtPrice: null, isDefault: true, inventory: { quantity: 5 } }],
+        reviews: [],
+      },
+    ]);
+
+    const related = await getRelatedProducts("personal-care", "hydra-care-face-wash");
+
+    expect(related[0]?.slug).toBe("curated-lotion");
+    expect(related.some((item) => item.slug === "fallback-wash")).toBe(true);
+  });
+
+  it("caps related products at 4", async () => {
+    mockListPublishedProductsByIds.mockResolvedValue([]);
+    mockGetRelatedPublishedProducts.mockResolvedValue([
+      {
+        id: "p-1",
+        name: "Fallback Product 1",
+        slug: "fallback-product-1",
+        shortDescription: null,
+        description: null,
+        masterSku: null,
+        metadata: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        category: { id: "cat-pc", name: "Personal Care", slug: "personal-care" },
+        images: [],
+        specifications: [],
+        variants: [{ id: "v-1", title: "Default", sku: "FB-001", options: null, price: 799, compareAtPrice: null, isDefault: true, inventory: { quantity: 5 } }],
+        reviews: [],
+      },
+      {
+        id: "p-2",
+        name: "Fallback Product 2",
+        slug: "fallback-product-2",
+        shortDescription: null,
+        description: null,
+        masterSku: null,
+        metadata: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        category: { id: "cat-pc", name: "Personal Care", slug: "personal-care" },
+        images: [],
+        specifications: [],
+        variants: [{ id: "v-2", title: "Default", sku: "FB-002", options: null, price: 899, compareAtPrice: null, isDefault: true, inventory: { quantity: 5 } }],
+        reviews: [],
+      },
+      {
+        id: "p-3",
+        name: "Fallback Product 3",
+        slug: "fallback-product-3",
+        shortDescription: null,
+        description: null,
+        masterSku: null,
+        metadata: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        category: { id: "cat-pc", name: "Personal Care", slug: "personal-care" },
+        images: [],
+        specifications: [],
+        variants: [{ id: "v-3", title: "Default", sku: "FB-003", options: null, price: 999, compareAtPrice: null, isDefault: true, inventory: { quantity: 5 } }],
+        reviews: [],
+      },
+      {
+        id: "p-4",
+        name: "Fallback Product 4",
+        slug: "fallback-product-4",
+        shortDescription: null,
+        description: null,
+        masterSku: null,
+        metadata: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        category: { id: "cat-pc", name: "Personal Care", slug: "personal-care" },
+        images: [],
+        specifications: [],
+        variants: [{ id: "v-4", title: "Default", sku: "FB-004", options: null, price: 1099, compareAtPrice: null, isDefault: true, inventory: { quantity: 5 } }],
+        reviews: [],
+      },
+      {
+        id: "p-5",
+        name: "Fallback Product 5",
+        slug: "fallback-product-5",
+        shortDescription: null,
+        description: null,
+        masterSku: null,
+        metadata: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        category: { id: "cat-pc", name: "Personal Care", slug: "personal-care" },
+        images: [],
+        specifications: [],
+        variants: [{ id: "v-5", title: "Default", sku: "FB-005", options: null, price: 1199, compareAtPrice: null, isDefault: true, inventory: { quantity: 5 } }],
+        reviews: [],
+      },
+      {
+        id: "p-6",
+        name: "Fallback Product 6",
+        slug: "fallback-product-6",
+        shortDescription: null,
+        description: null,
+        masterSku: null,
+        metadata: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        category: { id: "cat-pc", name: "Personal Care", slug: "personal-care" },
+        images: [],
+        specifications: [],
+        variants: [{ id: "v-6", title: "Default", sku: "FB-006", options: null, price: 1299, compareAtPrice: null, isDefault: true, inventory: { quantity: 5 } }],
+        reviews: [],
+      },
+    ]);
+
+    const related = await getRelatedProducts("personal-care", "hydra-care-face-wash");
+
+    expect(related.length).toBe(4);
+  });
+
+  it("returns all published product slugs with category slugs", async () => {
+    mockGetAllPublishedProductSlugsWithCategories.mockResolvedValue([
+      { slug: "product-a", category: { slug: "home-care" } },
+      { slug: "product-b", category: { slug: "grocery" } },
+    ]);
+
     const slugs = await getProductSlugsWithCategory();
 
-    expect(slugs.length).toBe(9);
+    expect(slugs.length).toBe(2);
     expect(slugs.every((s) => typeof s.slug === "string" && typeof s.categorySlug === "string")).toBe(true);
   });
 });
+
