@@ -31,6 +31,7 @@ Data and indexing strategy
 - Price fields use integer in the smallest currency unit (PKR) to avoid floating point errors.
 - Admin dashboard revenue metric currently treats recognized revenue as the sum of `Order.total` for `DELIVERED` orders where `refundStatus` is not `COMPLETED` (completed refunds are excluded from the aggregate).
 - Because checkout currently supports COD only, `paymentStatus` is intentionally not used yet as a revenue-recognition gate for dashboard cards.
+- Admin revenue reporting at `/admin/revenue` uses the same recognition assumptions and adds practical period windows (`last 7 days`, `last 30 days`) plus order totals summaries to support day-to-day admin decisions.
 
 Auth & permissions
 - Users reference a `Role` record and roles are exposed as an enum `RoleKey` for convenience.

@@ -32,6 +32,7 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `(admin)` now uses `AdminShell` with a responsive sidebar, topbar, breadcrumb, and user menu, plus the same form-based sign-out pattern and role-aware navigation filtering protected by the RBAC proxy/layout guards
 - `(admin)/admin` dashboard now reads live operational metrics through `src/features/admin/dashboard/service.ts` (pending orders, delivered-order revenue summary, low-stock count, and recent audit activity preview)
 - `(admin)/admin/activity` now reads a dedicated AuditLog-backed feed through `src/features/admin/activity/service.ts`, with non-technical event summaries and actor context when available
+- `(admin)/admin/revenue` now reads a dedicated DB-backed report through `src/features/admin/revenue/service.ts`, showing recognized revenue, recent period summaries, order totals, and explicit inclusion assumptions
 - `(admin)/admin/categories` now provides category CRUD with shared typed create/edit/filter forms and SEO field controls
 - `(admin)/admin/products` now provides product CRUD with reusable RHF + Zod form composition for simple and variant-based catalog entries
 - `(auth)` now uses the same shared form foundation for sign-in and sign-up while preserving the existing server-action flows
@@ -154,6 +155,17 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 	- Low stock: inventory rows where `(quantity - reserved) <= safetyStock`
 	- Recent activity: latest `AuditLog` records mapped into non-technical labels and summaries
 - Revenue assumptions are explicit in code via `AdminDashboardRevenueSummary.assumptions` so UI and docs stay aligned while payment workflows evolve.
+
+## Admin Revenue Reporting Strategy
+
+- Revenue reporting query orchestration lives in `src/features/admin/revenue/service.ts` so the route file remains presentation-focused and extensible.
+- Date-window logic for practical reporting periods (last 7 and last 30 days) is isolated in `src/features/admin/revenue/date-ranges.ts`.
+- Current report intentionally prioritizes simple operational summaries over heavy analytics:
+	- recognized revenue total (delivered orders with completed refunds excluded)
+	- recent period snapshots (last 7/30 days revenue, included order counts, average order value)
+	- order totals summary (total, pending, delivered, cancelled, and gross order value)
+- The `/admin/revenue` route includes clear empty, loading, and error states for non-technical admin users.
+- Revenue inclusion assumptions are surfaced in both service contract and UI copy so future payment/refund workflow changes can evolve transparently.
 
 ## Admin Activity Feed Strategy
 
