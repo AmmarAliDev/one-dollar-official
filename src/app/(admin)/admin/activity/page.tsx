@@ -62,10 +62,9 @@ export default async function AdminActivityPage() {
               </div>
               <p className="text-muted-foreground mt-2 text-sm">{entry.summary}</p>
               <p className="text-muted-foreground mt-2 text-xs">
-                By {entry.actor.label}
+                By {entry.actor?.label ?? "System"}
                 {entry.modelLabel ? ` in ${entry.modelLabel}` : ""}
-              </p>
-            </article>
+              </p>            </article>
           ))}
         </section>
       </PageShell>
