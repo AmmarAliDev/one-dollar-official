@@ -27,8 +27,10 @@ This repository currently implements **contact form with admin notifications** o
 - shared server-side database conventions for repositories, services, transaction orchestration, pagination, and query result typing in `src/server/db`
 - homepage rendering through `src/features/homepage` with admin-managed sections, announcement support, banner/campaign scheduling, and fallback safety
 - catalog listing routes at `/categories` and `/categories/[slug]` backed by `src/features/catalog`
-- typed filter parsing, basic sorting, and pagination contracts ready to swap from fallback data to Prisma-backed catalog queries later
-- product detail routes at `/categories/[slug]/[productSlug]` with static params, metadata generation, and seeded fallback product detail contracts
+- storefront catalog now reads exclusively from PostgreSQL via `src/server/db/catalog-queries.ts` — only PUBLISHED categories/products and APPROVED reviews reach the storefront
+- admin product/category mutations trigger on-demand ISR revalidation of storefront catalog pages via `revalidatePath('/categories')`
+- typed filter parsing, sorting, and pagination contracts available in `src/features/catalog/filters.ts`
+- product detail routes at `/categories/[slug]/[productSlug]` with static params, metadata generation, and DB-backed product detail
 - PDP feature components for image gallery, variant selection UX, product info panel, specifications, review summary/list, related products, and structured skeleton loading state
 - catalog product cards now link to PDP routes and related-product cards reuse the same route contracts
 - wishlist mutations via `POST/DELETE /api/wishlist/items` with authenticated user checks and safe request validation
@@ -54,7 +56,6 @@ This repository currently implements **contact form with admin notifications** o
 
 - order placement lifecycle and invoice generation
 - online payment gateway integrations
-- live Prisma-backed catalog persistence and admin catalog CRUD
 - notifications beyond shared frontend toasts
 - advanced CMS capabilities beyond the current homepage admin content scaffolds
 
@@ -77,7 +78,7 @@ src/
 - Continue from the current repository state.
 - Extend existing layers instead of creating duplicate patterns.
 - Keep business logic inside `src/features` or `src/server`, not directly in pages.
-- Use `src/features/catalog` as the seam for listing filters, seeded fallback data, and future product/category service logic.
+- Use `src/server/db/catalog-queries.ts` for all storefront catalog Prisma queries; enforce PUBLISHED-only visibility there.
 - Put new Prisma queries behind repository factories in `src/server` and let services own transactions.
 - Reuse `loadAppConfig()` / `getRequiredServerEnv()` for new config-dependent server features.
 - Update both `docs/ai` and `docs/dev` whenever a new capability is added.

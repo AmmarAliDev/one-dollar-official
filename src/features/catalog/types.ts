@@ -7,6 +7,12 @@ import type { PaginationMeta } from "@/server/db/pagination";
 
 export type ProductImage = {
   id: string;
+  /**
+   * Real image URL from the database. When present, the UI renders an <img>.
+   * When absent, the legacy gradient placeholder (label + tone) is used.
+   */
+  url?: string;
+  /** Alt text or product name — used as the visible label in placeholder mode. */
   label: string;
   tone: CatalogProductImageTone;
   isPrimary: boolean;
@@ -167,5 +173,6 @@ export type CatalogSearchResponse = {
   query: string;
   total: number;
   items: CatalogProductCard[];
-  source: "seed" | "external";
+  /** "db" — live Prisma-backed results; "seed" — legacy fallback; "external" — future dedicated search engine. */
+  source: "db" | "seed" | "external";
 };

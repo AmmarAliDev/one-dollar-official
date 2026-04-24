@@ -141,9 +141,10 @@ export async function createAdminProductAction(formData: FormData) {
       actor,
     });
 
+    // Revalidate storefront catalog so published products appear without delay
+    revalidatePath(routes.storefront.categories);
     revalidatePath(routes.admin.products);
-    redirect(appendFlash(routes.admin.productEdit(created.id), "notice", "created"));
-  } catch (error) {
+    redirect(appendFlash(routes.admin.productEdit(created.id), "notice", "created"));  } catch (error) {
     unstable_rethrow(error);
 
     const appError = captureServerError(error, "admin:product:create");
@@ -183,6 +184,8 @@ export async function updateAdminProductAction(formData: FormData) {
     redirect(appendFlash(returnTo, "error", errorCode));
   }
 
+  // Revalidate storefront catalog so published products appear without delay
+  revalidatePath(routes.storefront.categories);
   revalidatePath(routes.admin.products);
   redirect(appendFlash(returnTo, "notice", "updated"));
 }

@@ -1,12 +1,325 @@
-import { routes } from "@/config/routes";
-import { isReviewVisibleOnStorefront } from "@/lib/reviews/moderation";
-import { createPaginatedResult } from "@/server/db/pagination";
+/**
+ * Storefront catalog service.
+ *
+ * Provides the public API consumed by storefront pages and route handlers.
+ * All data is sourced from Prisma (PostgreSQL) via the catalog query layer
+ * in src/server/db/catalog-queries.ts.
+ *
+ * Visibility rules enforced here:
+ *   - Only PUBLISHED categories are surfaced.
+ *   - Only PUBLISHED products within PUBLISHED categories are surfaced.
+ *   - Only APPROVED reviews are shown on the storefront.
+ *   - DRAFT and ARCHIVED content is invisible to anonymous store visitors.
+ *
+ * Caching / revalidation:
+ *   - Storefront route pages declare `export const revalidate = 900` (15 min ISR).
+ *   - After an admin publish action, call `revalidatePath('/categories')` and
+ *     `revalidatePath('/categories/[slug]', 'page')` inside the server action
+ *     to trigger on-demand ISR. See docs/dev/architecture.md § Cache Strategy.
+ */
 
-import { catalogCategorySeeds, catalogProductDetailSeeds, catalogProductSeeds } from "./data";
+import type { Prisma } from "@prisma/client";
+
+import { routes } from "@/config/routes";
+import { createPaginatedResult } from "@/server/db/pagination";
+import type {
+  StorefrontCategoryRecord,
+  StorefrontProductDetailRecord,
+  StorefrontProductRecord,
+} from "@/server/db/catalog-queries";
+import {
+  getAllPublishedProductSlugsWithCategories,
+  getPublishedCategoryBySlug,
+  getPublishedProductBySlug as dbGetPublishedProductBySlug,
+  getRelatedPublishedProducts,
+  listPublishedProductsByIds,
+  listPublishedCategories,
+  listPublishedProductsByCategory,
+} from "@/server/db/catalog-queries";
 import type { CatalogSearchParams } from "./filters";
 import { parseCatalogSearchParams } from "./filters";
 import { getCatalogSearchAdapter } from "./search-adapter";
-import type { CatalogCategory, CatalogCategoryListing, CatalogProductCard, CatalogProductDetail, ProductReview, ProductReviewSummary } from "./types";
+import type {
+  CatalogCategory,
+  CatalogCategoryListing,
+  CatalogProductCard,
+  CatalogProductDetail,
+  CatalogProductImageTone,
+  ProductImage,
+  ProductReview,
+  ProductReviewSummary,
+  ProductVariantGroup,
+  ProductVariantOption,
+} from "./types";
+
+// ---------------------------------------------------------------------------
+// Internal helpers — DB record → storefront type mapping
+// ---------------------------------------------------------------------------
+
+/**
+ * Deterministic image tone derived from category slug.
+ * Keeps gradient placeholder colours consistent per category.
+ */
+const CATEGORY_TONE_MAP: Record<string, CatalogProductImageTone> = {
+  "home-care": "sky",
+  grocery: "amber",
+  "personal-care": "rose",
+};
+
+const TONE_CYCLE: CatalogProductImageTone[] = ["sky", "emerald", "amber", "rose", "slate"];
+
+function deriveTone(categorySlug: string, productSlug: string): CatalogProductImageTone {
+  if (categorySlug in CATEGORY_TONE_MAP) {
+    return CATEGORY_TONE_MAP[categorySlug]!;
+  }
+
+  // Fallback: hash product slug characters to pick a tone deterministically
+  const hash = [...productSlug].reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+  return TONE_CYCLE[hash % TONE_CYCLE.length]!;
+}
+
+/**
+ * Maps DB images to the storefront ProductImage shape.
+ * Keeps `url` for future real-image rendering while populating
+ * legacy `label`/`tone` fields for the placeholder gradient UI.
+ */
+function mapProductImages(
+  images: StorefrontProductRecord["images"],
+  productName: string,
+  categorySlug: string,
+  productSlug: string,
+): ProductImage[] {
+  if (images.length === 0) {
+    // Provide a single placeholder image so the gallery always renders
+    return [
+      {
+        id: `placeholder-${productSlug}`,
+        label: productName,
+        tone: deriveTone(categorySlug, productSlug),
+        isPrimary: true,
+      },
+    ];
+  }
+
+  const tone = deriveTone(categorySlug, productSlug);
+
+  return images.map((image, index) => ({
+    id: image.id,
+    url: image.url,
+    label: image.alt?.trim() || productName,
+    tone,
+    isPrimary: index === 0,
+  }));
+}
+
+/**
+ * Computes average rating and review count from a list of approved review
+ * ratings. Returns zero-state when no approved reviews exist.
+ */
+function computeReviewStats(reviewRatings: Array<{ rating: number }>): {
+  averageRating: number;
+  reviewCount: number;
+} {
+  if (reviewRatings.length === 0) {
+    return { averageRating: 0, reviewCount: 0 };
+  }
+
+  const total = reviewRatings.reduce((sum, r) => sum + r.rating, 0);
+
+  return {
+    averageRating: Number((total / reviewRatings.length).toFixed(1)),
+    reviewCount: reviewRatings.length,
+  };
+}
+
+/**
+ * Derives a short attribute summary from the first two specification values.
+ * Falls back to an empty array if the product has no specifications.
+ */
+function deriveAttributeSummary(
+  specifications: StorefrontProductRecord["specifications"],
+): string[] {
+  return specifications.slice(0, 2).map((spec) => spec.value);
+}
+
+/**
+ * Computes the total available inventory across all variants.
+ */
+function computeTotalInventory(
+  variants: StorefrontProductRecord["variants"],
+): number {
+  return variants.reduce(
+    (total, variant) => total + (variant.inventory?.quantity ?? 0),
+    0,
+  );
+}
+
+/**
+ * Picks the selling price and compare-at price from the default (or first) variant.
+ */
+function extractPricing(variants: StorefrontProductRecord["variants"]): {
+  price: number;
+  compareAt?: number;
+} {
+  const defaultVariant =
+    variants.find((v) => v.isDefault) ?? variants[0] ?? null;
+
+  if (!defaultVariant) {
+    return { price: 0 };
+  }
+
+  return {
+    price: defaultVariant.price,
+    ...(typeof defaultVariant.compareAtPrice === "number" &&
+    defaultVariant.compareAtPrice > defaultVariant.price
+      ? { compareAt: defaultVariant.compareAtPrice }
+      : {}),
+  };
+}
+
+/**
+ * Parses the product's `metadata` JSON to determine if variants are enabled.
+ */
+function parseVariantsEnabled(metadata: Prisma.JsonValue | null | undefined): boolean {
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
+    return false;
+  }
+
+  return (metadata as Record<string, unknown>).variantsEnabled === true;
+}
+
+function parseRelatedProductIds(metadata: Prisma.JsonValue | null | undefined): string[] {
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
+    return [];
+  }
+
+  const raw = (metadata as Record<string, unknown>).relatedProductIds;
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+
+  return [...new Set(raw.map((value) => `${value}`.trim()).filter(Boolean))];
+}
+
+/**
+ * Builds ProductVariantGroup[] from the DB variant records.
+ * Groups variants by their option keys and deduplicates option values.
+ *
+ * For SIMPLE products (one variant, no options), returns an empty array.
+ */
+function buildVariantGroups(
+  variants: StorefrontProductRecord["variants"],
+  variantsEnabled: boolean,
+): ProductVariantGroup[] {
+  if (!variantsEnabled || variants.length <= 1) {
+    return [];
+  }
+
+  // Collect unique option keys and map each unique value to the first variant
+  // that has it, so we can derive the per-option sku/price/inventory.
+  const groupMap = new Map<string, Map<string, (typeof variants)[number]>>();
+
+  for (const variant of variants) {
+    if (!variant.options || typeof variant.options !== "object") {
+      continue;
+    }
+
+    const opts = variant.options as Record<string, string>;
+
+    for (const [key, value] of Object.entries(opts)) {
+      const normalizedKey = key.trim();
+      const normalizedValue = `${value}`.trim();
+
+      if (!normalizedKey || !normalizedValue) {
+        continue;
+      }
+
+      if (!groupMap.has(normalizedKey)) {
+        groupMap.set(normalizedKey, new Map());
+      }
+
+      // First variant wins if multiple share the same option value
+      if (!groupMap.get(normalizedKey)!.has(normalizedValue)) {
+        groupMap.get(normalizedKey)!.set(normalizedValue, variant);
+      }
+    }
+  }
+
+  return Array.from(groupMap.entries()).map(([groupName, valueMap]) => {
+    const options: ProductVariantOption[] = Array.from(valueMap.entries()).map(
+      ([label, variant]) => ({
+        id: variant.id,
+        label,
+        sku: variant.sku ?? "",
+        price: variant.price,
+        ...(typeof variant.compareAtPrice === "number" &&
+        variant.compareAtPrice > variant.price
+          ? { compareAt: variant.compareAtPrice }
+          : {}),
+        inventoryQuantity: variant.inventory?.quantity ?? 0,
+      }),
+    );
+
+    return {
+      id: `group-${groupName.toLowerCase().replace(/\s+/g, "-")}`,
+      name: groupName,
+      options,
+    } satisfies ProductVariantGroup;
+  });
+}
+
+/**
+ * Maps a DB product record to a CatalogProductCard (used in listing views).
+ */
+function mapProductToCard(record: StorefrontProductRecord): CatalogProductCard {
+  const categorySlug = record.category?.slug ?? "";
+  const { price, compareAt } = extractPricing(record.variants);
+  const { averageRating, reviewCount } = computeReviewStats(record.reviews);
+  const allImages = mapProductImages(record.images, record.name, categorySlug, record.slug);
+  const primaryImage = allImages[0] ?? {
+    id: `placeholder-${record.slug}`,
+    label: record.name,
+    tone: deriveTone(categorySlug, record.slug),
+    isPrimary: true,
+  };
+
+  return {
+    id: record.id,
+    slug: record.slug,
+    name: record.name,
+    description: record.shortDescription ?? record.description ?? "",
+    categorySlug,
+    price,
+    ...(compareAt !== undefined ? { compareAt } : {}),
+    inventoryQuantity: computeTotalInventory(record.variants),
+    averageRating,
+    reviewCount,
+    imageLabel: primaryImage.label,
+    imageTone: primaryImage.tone,
+    attributeSummary: deriveAttributeSummary(record.specifications),
+    href: routes.storefront.product(categorySlug, record.slug),
+  };
+}
+
+/**
+ * Maps a DB category record to a CatalogCategory.
+ */
+function mapCategoryRecord(record: StorefrontCategoryRecord): CatalogCategory {
+  return {
+    id: record.id,
+    name: record.name,
+    slug: record.slug,
+    description: record.description ?? "",
+    ...(record.seoTitle != null && { seoTitle: record.seoTitle }),
+    ...(record.seoDescription != null && { seoDescription: record.seoDescription }),
+    productCount: record._count.products,
+    href: routes.storefront.category(record.slug),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Filter / sort helpers
+// ---------------------------------------------------------------------------
 
 type CategoryListingInput = {
   slug: string;
@@ -21,44 +334,40 @@ function getDiscountPercent(product: Pick<CatalogProductCard, "price" | "compare
   return Math.round(((product.compareAt - product.price) / product.compareAt) * 100);
 }
 
-function mapCategory(seed: (typeof catalogCategorySeeds)[number]): CatalogCategory {
-  const productCount = catalogProductSeeds.filter((product) => product.categorySlug === seed.slug).length;
-
-  return {
-    ...seed,
-    productCount,
-    href: routes.storefront.category(seed.slug),
-  };
-}
-
-function mapProduct(seed: (typeof catalogProductSeeds)[number]): CatalogProductCard {
-  return {
-    ...seed,
-    href: routes.storefront.product(seed.categorySlug, seed.slug),
-  };
-}
-
-function sortProducts(products: typeof catalogProductSeeds, sort: string) {
+function sortProducts(
+  products: CatalogProductCard[],
+  sort: string,
+): CatalogProductCard[] {
   return [...products].sort((left, right) => {
     switch (sort) {
       case "newest":
-        return left.newestRank - right.newestRank;
+      case "featured":
+        // DB already returns newest-first (createdAt DESC); preserve that order
+        return 0;
       case "price-asc":
         return left.price - right.price;
       case "price-desc":
         return right.price - left.price;
       case "rating-desc":
-        return right.averageRating - left.averageRating || right.reviewCount - left.reviewCount;
+        return (
+          right.averageRating - left.averageRating ||
+          right.reviewCount - left.reviewCount
+        );
       case "discount-desc":
-        return getDiscountPercent(right) - getDiscountPercent(left) || left.featuredRank - right.featuredRank;
-      case "featured":
+        return (
+          getDiscountPercent(right) - getDiscountPercent(left) ||
+          left.price - right.price
+        );
       default:
-        return left.featuredRank - right.featuredRank;
+        return 0;
     }
   });
 }
 
-function applyFilters(products: typeof catalogProductSeeds, filters: ReturnType<typeof parseCatalogSearchParams>) {
+function applyFilters(
+  products: CatalogProductCard[],
+  filters: ReturnType<typeof parseCatalogSearchParams>,
+): CatalogProductCard[] {
   return products.filter((product) => {
     if (typeof filters.minPrice === "number" && product.price < filters.minPrice) {
       return false;
@@ -72,7 +381,10 @@ function applyFilters(products: typeof catalogProductSeeds, filters: ReturnType<
       return false;
     }
 
-    if (filters.availability === "low-stock" && (product.inventoryQuantity < 1 || product.inventoryQuantity > 5)) {
+    if (
+      filters.availability === "low-stock" &&
+      (product.inventoryQuantity < 1 || product.inventoryQuantity > 5)
+    ) {
       return false;
     }
 
@@ -102,13 +414,25 @@ function applyFilters(products: typeof catalogProductSeeds, filters: ReturnType<
   });
 }
 
-function getVisibleReviewData(reviews: ProductReview[], summary: ProductReviewSummary) {
-  const visibleReviews = reviews.filter((review) => isReviewVisibleOnStorefront(review.status ?? "APPROVED"));
+// ---------------------------------------------------------------------------
+// Review helpers (detail page only)
+// ---------------------------------------------------------------------------
 
-  if (visibleReviews.length === reviews.length) {
+/**
+ * Builds the full ProductReview array and summary from the detail record.
+ * Only APPROVED reviews reach this function (enforced at DB query level).
+ */
+function buildReviewData(
+  reviews: NonNullable<StorefrontProductDetailRecord>["reviews"],
+): { reviews: ProductReview[]; summary: ProductReviewSummary } {
+  if (reviews.length === 0) {
     return {
-      reviews: visibleReviews,
-      summary,
+      reviews: [],
+      summary: {
+        averageRating: 0,
+        totalCount: 0,
+        distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+      },
     };
   }
 
@@ -119,62 +443,96 @@ function getVisibleReviewData(reviews: ProductReview[], summary: ProductReviewSu
     4: 0,
     5: 0,
   };
+  let totalRating = 0;
 
-  if (visibleReviews.length === 0) {
+  const mapped: ProductReview[] = reviews.map((review) => {
+    const clamped = Math.max(1, Math.min(5, Math.round(review.rating))) as 1 | 2 | 3 | 4 | 5;
+    distribution[clamped] += 1;
+    totalRating += review.rating;
+
     return {
-      reviews: [],
-      summary: {
-        averageRating: 0,
-        totalCount: 0,
-        distribution,
-      },
+      id: review.id,
+      author: review.user?.name ?? "Anonymous",
+      rating: review.rating,
+      comment: review.body ?? review.title ?? "",
+      date: review.createdAt.toISOString(),
+      verified: false,
+      status: review.status as "APPROVED",
     };
-  }
-
-  const totalRating = visibleReviews.reduce((sum, review) => sum + review.rating, 0);
-
-  for (const review of visibleReviews) {
-    const normalizedRating = Math.max(1, Math.min(5, Math.round(review.rating))) as 1 | 2 | 3 | 4 | 5;
-    distribution[normalizedRating] += 1;
-  }
+  });
 
   return {
-    reviews: visibleReviews,
+    reviews: mapped,
     summary: {
-      averageRating: Number((totalRating / visibleReviews.length).toFixed(1)),
-      totalCount: visibleReviews.length,
+      averageRating: Number((totalRating / reviews.length).toFixed(1)),
+      totalCount: reviews.length,
       distribution,
     },
   };
 }
 
-export async function getCatalogCategories() {
-  return catalogCategorySeeds.map(mapCategory);
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns all published catalog categories with their published product counts.
+ * Empty array if no categories have been published yet.
+ */
+export async function getCatalogCategories(): Promise<CatalogCategory[]> {
+  const records = await listPublishedCategories();
+  return records.map(mapCategoryRecord);
 }
 
-export async function getCatalogCategory(slug: string) {
-  const category = catalogCategorySeeds.find((item) => item.slug === slug);
-
-  return category ? mapCategory(category) : null;
+/**
+ * Returns a single published category by slug, or `null` if not found.
+ */
+export async function getCatalogCategory(
+  slug: string,
+): Promise<CatalogCategory | null> {
+  const record = await getPublishedCategoryBySlug(slug);
+  return record ? mapCategoryRecord(record) : null;
 }
 
-export async function getCatalogCategorySlugs() {
-  return catalogCategorySeeds.map((category) => category.slug);
+/**
+ * Returns slugs for all published categories.
+ * Used by `generateStaticParams` in the category listing route.
+ */
+export async function getCatalogCategorySlugs(): Promise<string[]> {
+  const records = await listPublishedCategories();
+  return records.map((r) => r.slug);
 }
 
-export async function getCatalogCategoryListing({ slug, searchParams }: CategoryListingInput): Promise<CatalogCategoryListing | null> {
-  const category = await getCatalogCategory(slug);
+/**
+ * Returns the full category listing payload (products + filters + pagination)
+ * for a given category slug and optional query string filters.
+ *
+ * Returns `null` if the category is not found or not published.
+ */
+export async function getCatalogCategoryListing({
+  slug,
+  searchParams,
+}: CategoryListingInput): Promise<CatalogCategoryListing | null> {
+  const [categoryRecord, productRecords] = await Promise.all([
+    getPublishedCategoryBySlug(slug),
+    listPublishedProductsByCategory(slug),
+  ]);
 
-  if (!category) {
+  if (!categoryRecord) {
     return null;
   }
 
+  const category = mapCategoryRecord(categoryRecord);
   const filters = parseCatalogSearchParams(searchParams);
-  const categoryProducts = catalogProductSeeds.filter((product) => product.categorySlug === slug);
-  const filteredProducts = sortProducts(applyFilters(categoryProducts, filters), filters.sort);
+  const allCards = productRecords.map(mapProductToCard);
+  const filteredCards = sortProducts(applyFilters(allCards, filters), filters.sort);
+
   const paginatedResult = createPaginatedResult({
-    items: filteredProducts.slice((filters.page - 1) * filters.pageSize, filters.page * filters.pageSize),
-    totalItems: filteredProducts.length,
+    items: filteredCards.slice(
+      (filters.page - 1) * filters.pageSize,
+      filters.page * filters.pageSize,
+    ),
+    totalItems: filteredCards.length,
     pagination: {
       page: filters.page,
       pageSize: filters.pageSize,
@@ -183,59 +541,122 @@ export async function getCatalogCategoryListing({ slug, searchParams }: Category
 
   return {
     category,
-    products: paginatedResult.items.map(mapProduct),
-    filteredProductCount: filteredProducts.length,
-    totalProductCount: categoryProducts.length,
+    products: paginatedResult.items,
+    filteredProductCount: filteredCards.length,
+    totalProductCount: allCards.length,
     filters,
     pagination: paginatedResult.meta,
   };
 }
 
-export async function getProductBySlug(slug: string): Promise<CatalogProductDetail | null> {
-  const seed = catalogProductSeeds.find((p) => p.slug === slug);
+/**
+ * Returns the full product detail record for a published product by slug.
+ * Includes images, specifications, variant groups, and APPROVED reviews.
+ *
+ * Returns `null` if the product is not found or not published.
+ */
+export async function getProductBySlug(
+  slug: string,
+): Promise<CatalogProductDetail | null> {
+  const record = await dbGetPublishedProductBySlug(slug);
 
-  if (!seed) {
+  if (!record) {
     return null;
   }
 
-  const detail = catalogProductDetailSeeds[slug];
+  const categorySlug = record.category?.slug ?? "";
+  const card = mapProductToCard(record);
+  const variantsEnabled = parseVariantsEnabled(record.metadata);
+  const variantGroups = buildVariantGroups(record.variants, variantsEnabled);
+  const { reviews, summary } = buildReviewData(record.reviews);
 
-  if (!detail) {
-    return null;
-  }
-
-  const card = mapProduct(seed);
-  const visibleReviewData = getVisibleReviewData(detail.reviews, detail.reviewSummary);
+  // Use the master SKU if present, otherwise fall back to the default variant SKU
+  const defaultVariant =
+    record.variants.find((v) => v.isDefault) ?? record.variants[0] ?? null;
+  const sku = record.masterSku ?? defaultVariant?.sku ?? "";
 
   return {
     ...card,
-    sku: detail.sku,
-    shortDescription: detail.shortDescription,
-    longDescription: detail.longDescription,
-    images: detail.images,
-    specifications: detail.specifications,
-    variantGroups: detail.variantGroups,
-    reviews: visibleReviewData.reviews,
-    reviewSummary: visibleReviewData.summary,
+    sku,
+    shortDescription: record.shortDescription ?? "",
+    longDescription: record.description ?? "",
+    images: mapProductImages(record.images, record.name, categorySlug, record.slug),
+    specifications: record.specifications.map((spec) => ({
+      label: spec.key,
+      value: spec.value,
+    })),
+    variantGroups,
+    reviews,
+    reviewSummary: summary,
   };
 }
 
-export async function getRelatedProducts(categorySlug: string, excludeSlug: string): Promise<CatalogProductCard[]> {
-  return catalogProductSeeds
-    .filter((p) => p.categorySlug === categorySlug && p.slug !== excludeSlug)
-    .slice(0, 4)
-    .map(mapProduct);
+/**
+ * Returns up to 4 related published products in the same category,
+ * excluding the current product.
+ */
+export async function getRelatedProducts(
+  categorySlug: string,
+  excludeSlug: string,
+): Promise<CatalogProductCard[]> {
+  const sourceProduct = await dbGetPublishedProductBySlug(excludeSlug);
+  const effectiveCategorySlug = sourceProduct?.category?.slug ?? categorySlug;
+  const preferredIds = parseRelatedProductIds(sourceProduct?.metadata);
+  const preferredIdRank = new Map(preferredIds.map((id, index) => [id, index]));
+
+  const preferredRecords = await listPublishedProductsByIds(preferredIds);
+  const curatedCards = preferredRecords
+    .filter((record) => record.slug !== excludeSlug)
+    .sort((left, right) => {
+      const leftRank = preferredIdRank.get(left.id) ?? Number.MAX_SAFE_INTEGER;
+      const rightRank = preferredIdRank.get(right.id) ?? Number.MAX_SAFE_INTEGER;
+      return leftRank - rightRank;
+    })
+    .map(mapProductToCard)
+    .slice(0, 4);
+
+  if (curatedCards.length >= 4) {
+    return curatedCards;
+  }
+
+  const excludedSlugs = new Set([excludeSlug, ...curatedCards.map((item) => item.slug)]);
+  const fallbackRecords = await getRelatedPublishedProducts(effectiveCategorySlug, excludeSlug, 8);
+  const fallbackCards = fallbackRecords
+    .filter((record) => !excludedSlugs.has(record.slug))
+    .map(mapProductToCard)
+    .slice(0, 4 - curatedCards.length);
+
+  return [...curatedCards, ...fallbackCards];
 }
 
-export async function getProductSlugsWithCategory(): Promise<{ slug: string; categorySlug: string }[]> {
-  return catalogProductSeeds.map((p) => ({ slug: p.slug, categorySlug: p.categorySlug }));
+/**
+ * Returns slug + categorySlug pairs for all published products.
+ * Used by `generateStaticParams` in the product detail route.
+ */
+export async function getProductSlugsWithCategory(): Promise<
+  { slug: string; categorySlug: string }[]
+> {
+  const records = await getAllPublishedProductSlugsWithCategories();
+  return records
+    .filter((r) => r.category !== null)
+    .map((r) => ({
+      slug: r.slug,
+      categorySlug: r.category!.slug,
+    }));
 }
 
 type CatalogProductSearchOptions = {
   limit?: number;
 };
 
-export async function searchCatalogProducts(query: string, options: CatalogProductSearchOptions = {}) {
+/**
+ * Searches published products by keyword.
+ * Delegates to the catalog search adapter (DB-backed by default).
+ */
+export async function searchCatalogProducts(
+  query: string,
+  options: CatalogProductSearchOptions = {},
+) {
   const adapter = getCatalogSearchAdapter();
 
   return adapter.searchProducts({

@@ -1,9 +1,114 @@
-import { describe, expect, it } from "vitest";
+/**
+ * Catalog listing service tests.
+ *
+ * Mocks the catalog-queries module so no real DB connection is needed.
+ * Verifies filter/sort/pagination logic inside the service layer.
+ */
+import { describe, expect, it, vi } from "vitest";
 
 import { getCatalogCategoryListing } from "@/features/catalog";
 
+// ---------------------------------------------------------------------------
+// Fixtures
+// ---------------------------------------------------------------------------
+
+function makeCategoryRecord(overrides?: Partial<{ id: string; name: string; slug: string }>) {
+  return {
+    id: overrides?.id ?? "cat-home-care",
+    name: overrides?.name ?? "Home Care",
+    slug: overrides?.slug ?? "home-care",
+    description: "Cleaning and home essentials.",
+    seoTitle: null,
+    seoDescription: null,
+    _count: { products: 3 },
+  };
+}
+
+function makeProductRecord(
+  overrides: Partial<{
+    id: string;
+    slug: string;
+    price: number;
+    compareAtPrice: number | null;
+    inventoryQty: number;
+    rating: number;
+    reviewCount: number;
+  }> = {},
+) {
+  const {
+    id = "prod-1",
+    slug = "test-product",
+    price = 500,
+    compareAtPrice = null,
+    inventoryQty = 10,
+    rating = 4,
+    reviewCount = 5,
+  } = overrides;
+
+  return {
+    id,
+    name: `Product ${slug}`,
+    slug,
+    shortDescription: "A test product.",
+    description: "Long description.",
+    masterSku: null,
+    metadata: null,
+    createdAt: new Date("2025-01-01"),
+    updatedAt: new Date("2025-01-01"),
+    category: { id: "cat-home-care", name: "Home Care", slug: "home-care" },
+    images: [],
+    specifications: [
+      { id: "spec-1", key: "Type", value: "Liquid" },
+      { id: "spec-2", key: "Size", value: "500ml" },
+    ],
+    variants: [
+      {
+        id: `var-${id}`,
+        title: "Default",
+        sku: `SKU-${id}`,
+        options: null,
+        price,
+        compareAtPrice,
+        isDefault: true,
+        inventory: { quantity: inventoryQty },
+      },
+    ],
+    reviews: Array.from({ length: reviewCount }, () => ({ rating })),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Mock catalog-queries
+// ---------------------------------------------------------------------------
+
+const mockListPublishedCategories = vi.fn();
+const mockGetPublishedCategoryBySlug = vi.fn();
+const mockListPublishedProductsByCategory = vi.fn();
+
+vi.mock("@/server/db/catalog-queries", () => ({
+  listPublishedCategories: (...args: unknown[]) => mockListPublishedCategories(...args),
+  getPublishedCategoryBySlug: (...args: unknown[]) => mockGetPublishedCategoryBySlug(...args),
+  listPublishedProductsByCategory: (...args: unknown[]) => mockListPublishedProductsByCategory(...args),
+  listPublishedProductsByIds: vi.fn().mockResolvedValue([]),
+  getPublishedProductBySlug: vi.fn().mockResolvedValue(null),
+  getRelatedPublishedProducts: vi.fn().mockResolvedValue([]),
+  getAllPublishedProductSlugsWithCategories: vi.fn().mockResolvedValue([]),
+  searchPublishedProducts: vi.fn().mockResolvedValue([]),
+}));
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
 describe("catalog listing service", () => {
   it("returns category listing data for a valid slug", async () => {
+    mockGetPublishedCategoryBySlug.mockResolvedValue(makeCategoryRecord());
+    mockListPublishedProductsByCategory.mockResolvedValue([
+      makeProductRecord({ id: "p1", slug: "product-a" }),
+      makeProductRecord({ id: "p2", slug: "product-b" }),
+      makeProductRecord({ id: "p3", slug: "product-c" }),
+    ]);
+
     const listing = await getCatalogCategoryListing({ slug: "home-care" });
 
     expect(listing).not.toBeNull();
@@ -12,31 +117,80 @@ describe("catalog listing service", () => {
     expect(listing?.products).toHaveLength(3);
   });
 
-  it("filters by stock and discount state", async () => {
+  it("returns null when the category is not published", async () => {
+    mockGetPublishedCategoryBySlug.mockResolvedValue(null);
+    mockListPublishedProductsByCategory.mockResolvedValue([]);
+
+    const listing = await getCatalogCategoryListing({ slug: "draft-category" });
+
+    expect(listing).toBeNull();
+  });
+
+  it("filters by out-of-stock availability", async () => {
+    mockGetPublishedCategoryBySlug.mockResolvedValue(makeCategoryRecord());
+    mockListPublishedProductsByCategory.mockResolvedValue([
+      makeProductRecord({ id: "p1", slug: "in-stock-product", inventoryQty: 10 }),
+      makeProductRecord({ id: "p2", slug: "out-of-stock-product", inventoryQty: 0 }),
+    ]);
+
     const listing = await getCatalogCategoryListing({
       slug: "home-care",
-      searchParams: {
-        availability: "out-of-stock",
-        discount: "all",
-      },
+      searchParams: { availability: "out-of-stock" },
     });
 
     expect(listing?.filteredProductCount).toBe(1);
-    expect(listing?.products.map((product) => product.slug)).toEqual(["drawstring-trash-bags-30-pack"]);
+    expect(listing?.products[0]?.slug).toBe("out-of-stock-product");
   });
 
-  it("sorts matching products by ascending price", async () => {
+  it("filters by on-sale discount", async () => {
+    mockGetPublishedCategoryBySlug.mockResolvedValue(makeCategoryRecord());
+    mockListPublishedProductsByCategory.mockResolvedValue([
+      makeProductRecord({ id: "p1", slug: "full-price-product", price: 500, compareAtPrice: null }),
+      makeProductRecord({ id: "p2", slug: "on-sale-product", price: 500, compareAtPrice: 700 }),
+    ]);
+
     const listing = await getCatalogCategoryListing({
-      slug: "grocery",
-      searchParams: {
-        sort: "price-asc",
-      },
+      slug: "home-care",
+      searchParams: { discount: "on-sale" },
     });
 
-    expect(listing?.products.map((product) => product.slug)).toEqual([
-      "strong-brew-tea-bags-100-pack",
-      "olive-blend-cooking-oil-1l",
-      "premium-basmati-rice-5kg",
+    expect(listing?.filteredProductCount).toBe(1);
+    expect(listing?.products[0]?.slug).toBe("on-sale-product");
+  });
+
+  it("sorts products by ascending price", async () => {
+    mockGetPublishedCategoryBySlug.mockResolvedValue(makeCategoryRecord());
+    mockListPublishedProductsByCategory.mockResolvedValue([
+      makeProductRecord({ id: "p1", slug: "expensive-product", price: 2000 }),
+      makeProductRecord({ id: "p2", slug: "cheap-product", price: 200 }),
+      makeProductRecord({ id: "p3", slug: "mid-product", price: 800 }),
+    ]);
+
+    const listing = await getCatalogCategoryListing({
+      slug: "home-care",
+      searchParams: { sort: "price-asc" },
+    });
+
+    expect(listing?.products.map((p) => p.slug)).toEqual([
+      "cheap-product",
+      "mid-product",
+      "expensive-product",
     ]);
   });
+
+  it("returns empty products list when no products match filters", async () => {
+    mockGetPublishedCategoryBySlug.mockResolvedValue(makeCategoryRecord());
+    mockListPublishedProductsByCategory.mockResolvedValue([
+      makeProductRecord({ id: "p1", slug: "product-a", inventoryQty: 10 }),
+    ]);
+
+    const listing = await getCatalogCategoryListing({
+      slug: "home-care",
+      searchParams: { availability: "out-of-stock" },
+    });
+
+    expect(listing?.filteredProductCount).toBe(0);
+    expect(listing?.products).toHaveLength(0);
+  });
 });
+

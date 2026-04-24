@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import { ChevronRight, Home } from "lucide-react";
 
 import { PageShell } from "@/components/layout/page-shell";
-import { SectionErrorState } from "@/components/ui/section-error-state";
 import { buildMetadata } from "@/config/metadata";
 import { routes } from "@/config/routes";
 import {
@@ -95,7 +94,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
           </li>
           <li
             aria-current="page"
-            className="text-foreground max-w-[200px] truncate font-medium sm:max-w-xs"
+            className="text-foreground max-w-50 truncate font-medium sm:max-w-xs"
           >
             {product.name}
           </li>
@@ -121,13 +120,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
       <ProductReviews reviews={product.reviews} summary={product.reviewSummary} />
 
       {/* Related products */}
-      {relatedProducts.length > 0 ? (
+      {relatedProducts.length > 0 && (
         <ProductRelatedGrid products={relatedProducts} />
-      ) : (
-        <SectionErrorState
-          title="No related products"
-          description="Check back later for more products in this category."
-        />
       )}
     </PageShell>
   );
