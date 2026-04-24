@@ -63,7 +63,7 @@ export function ProductReviews({ reviews, summary }: ProductReviewsProps) {
       </div>
 
       {visibleTotal === 0 ? (
-        <p className="text-muted-foreground text-sm">No approved reviews are visible for this product yet.</p>
+        <p className="text-muted-foreground text-sm">No reviews for this product yet.</p>
       ) : (
         <div className="grid gap-8 lg:grid-cols-[240px_1fr]">
           {/* Summary panel */}

@@ -1,8 +1,6 @@
 import Link from "next/link";
-import { Pencil } from "lucide-react";
 
 import { PageShell } from "@/components/layout/page-shell";
-import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { buildMetadata } from "@/config/metadata";
@@ -11,9 +9,9 @@ import { listAdminCategories } from "@/features/admin/categories";
 import { createAdminCategoryAction } from "@/features/admin/categories/actions";
 import { AdminCategoryFiltersForm } from "@/features/admin/categories/components/admin-category-filters-form";
 import { AdminCategoryForm } from "@/features/admin/categories/components/admin-category-form";
-import { DeleteCategoryButton } from "@/features/admin/categories/components/delete-category-button";
+import { AdminCategoriesTable } from "@/features/admin/categories/components/admin-categories-table";
 import { getCategoryErrorMessage, getCategoryNoticeMessage } from "@/features/admin/categories/flash";
-import { AdminPageHeader, AdminTablePattern } from "@/features/admin/components/admin-page-patterns";
+import { AdminPageHeader } from "@/features/admin/components/admin-page-patterns";
 import { requireRouteAccess } from "@/lib/auth/guards";
 import { rbacPermissions } from "@/lib/auth/rbac";
 
@@ -26,19 +24,6 @@ type AdminCategoriesPageProps = {
     notice?: string;
     error?: string;
   }>;
-};
-
-const statusLabelMap: Record<CategoryStatusFilter, string> = {
-  ALL: "All",
-  DRAFT: "Draft",
-  PUBLISHED: "Published",
-  ARCHIVED: "Archived",
-};
-
-const statusBadgeVariantMap: Record<Exclude<CategoryStatusFilter, "ALL">, "secondary" | "info" | "warning"> = {
-  DRAFT: "secondary",
-  PUBLISHED: "info",
-  ARCHIVED: "warning",
 };
 
 function normalizeStatusFilter(value?: string): CategoryStatusFilter {
@@ -109,64 +94,7 @@ export default async function AdminCategoriesPage({ searchParams }: AdminCategor
         </CardHeader>
         <CardContent className="space-y-4">
           <AdminCategoryFiltersForm query={query} status={status} />
-
-          {categories.length === 0 ? (
-            <AdminTablePattern
-              state="empty"
-              emptyTitle="No categories found"
-              emptyDescription="Create your first category or adjust search and filters."
-              errorDescription="Could not load categories."
-            />
-          ) : (
-            <div className="overflow-auto rounded-md border">
-              <table className="min-w-full divide-y divide-muted-foreground/20 text-sm">
-                <thead className="bg-muted/40 text-left">
-                  <tr>
-                    <th className="px-4 py-3 font-medium">Name</th>
-                    <th className="px-4 py-3 font-medium">Slug</th>
-                    <th className="px-4 py-3 font-medium">Status</th>
-                    <th className="px-4 py-3 font-medium">SEO</th>
-                    <th className="px-4 py-3 font-medium">Updated</th>
-                    <th className="px-4 py-3 font-medium">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-muted-foreground/10">
-                  {categories.map((category) => (
-                    <tr key={category.id} className="align-top">
-                      <td className="px-4 py-3">
-                        <p className="font-medium">{category.name}</p>
-                        <p className="text-muted-foreground mt-1 text-xs">{category.description ?? "No description"}</p>
-                      </td>
-                      <td className="px-4 py-3 font-mono text-xs">{category.slug}</td>
-                      <td className="px-4 py-3">
-                        <Badge variant={statusBadgeVariantMap[category.status]}>{statusLabelMap[category.status]}</Badge>
-                      </td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground">
-                        <p>{category.seoTitle ?? "No SEO title"}</p>
-                        <p className="mt-1">{category.seoDescription ?? "No SEO description"}</p>
-                      </td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground">
-                        {category.updatedAt.toLocaleString("en-PK", {
-                          dateStyle: "medium",
-                          timeStyle: "short",
-                        })}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <Link href={routes.admin.categoryEdit(category.id)} className={buttonVariants({ variant: "outline", size: "sm" })}>
-                            <Pencil className="size-4" />
-                            Edit
-                          </Link>
-
-                          <DeleteCategoryButton categoryId={category.id} categoryName={category.name} returnTo={returnTo} />
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <AdminCategoriesTable categories={categories} returnTo={returnTo} />
         </CardContent>
       </Card>
     </PageShell>

@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-**Phase 4 / Prompt 4.3 — Order placement and lifecycle**
+**Phase 4 / Prompt 4.6 — Admin dashboard metrics connected to database**
 
 ## Completed
 
@@ -185,6 +185,36 @@
 - [x] Release and launch checklists added at `docs/dev/release-checklist.md` (pre-launch, per-release, post-launch, rollback procedure)
 - [x] `.env.example` updated with Redis, analytics, security, and dev-override sections
 - [x] AI deployment assumptions documented at `docs/ai/deployment.md`
+- [x] Shared TanStack table foundation added in `src/components/data-table` with reusable typed API (`DataTable`, `useDataTable`, `createDataTableColumnHelper`)
+- [x] Shared table UI primitives added in `src/components/ui/table.tsx` to keep styling and responsive overflow behavior consistent with app conventions
+- [x] Data table supports columns, sorting, loading state, empty state, row actions slot, and error-compatible render patterns
+- [x] Pagination-ready architecture added with local pagination defaults and controlled server pagination integration seam (`pagination` + `renderPagination`)
+- [x] Optional search/filter integration seam added via composable `toolbar` slot and global filter-ready table state wiring
+- [x] Focused tests added for shared table rendering and behavior (`tests/components/data-table/data-table.test.tsx`)
+- [x] Type-oriented helper coverage added for column and pagination contracts (`tests/components/data-table/types.test.ts`)
+- [x] Developer docs updated for shared table usage and architecture (`docs/dev/ui-conventions.md`, `docs/dev/architecture.md`)
+- [x] **Admin products table** migrated to shared `DataTable` with columns for product, type, category, pricing, stock, SEO, updated date, and edit actions
+- [x] **Admin categories table** migrated to shared `DataTable` with columns for name, slug, status, SEO, updated date, and edit/delete actions
+- [x] **Admin orders table** migrated to shared `DataTable` with columns for order number, customer, status, payment, total, placed date, and view actions; pagination preserved
+- [x] **Admin inventory table** migrated to shared `DataTable` with columns for product, SKU, on-hand quantity, safety stock threshold, and warehouse location
+- [x] All admin table migrations preserve existing business logic: filters, search, sorting, row actions, status badges, and permissions-based UI
+- [x] Table rendering standardized across admin product, category, order, and inventory pages using feature-specific table components wrapping the shared DataTable
+- [x] Table components follow the pattern: typed columns definition, cell rendering logic, row actions/callbacks, and feature-specific UI (badges, links, moderation forms)
+- [x] **Storefront catalog connected to PostgreSQL database** — `src/server/db/catalog-queries.ts` added as the Prisma query layer enforcing PUBLISHED-only visibility for categories, products, and APPROVED-only reviews
+- [x] `src/features/catalog/service.ts` fully rewritten to use DB-backed catalog queries; seed data no longer read at runtime
+- [x] `src/features/catalog/search-adapter.ts` rewritten to use `searchPublishedProducts()` (PostgreSQL ILIKE); `source` changed from `"seed"` to `"db"`
+- [x] `src/features/catalog/components/product-image-gallery.tsx` updated to render real image URLs via `next/image` when available, falling back to gradient placeholders
+- [x] Admin product and category server actions now call `revalidatePath('/categories')` after mutations for on-demand ISR cache invalidation
+- [x] Catalog visibility tests added in `tests/features/catalog/catalog-visibility.test.ts`
+- [x] All catalog service and search tests rewritten to mock `@/server/db/catalog-queries` instead of importing seed data
+- [x] Related products on PDP now prioritize admin-curated `relatedProductIds` from product metadata, then fall back to same-category published products
+- [x] Cart add-to-cart now resolves published products/variants from the live DB first (with legacy seed fallback), fixing add failures for newly created and published catalog items
+- [x] Admin dashboard cards at `/admin` now use live DB-backed metrics instead of placeholders
+- [x] Pending order count is now sourced from `Order.status == PENDING`
+- [x] Revenue summary now uses delivered-order totals with completed refunds excluded (assumptions documented in code and docs)
+- [x] Low-stock metric now counts inventory rows where `(quantity - reserved) <= safetyStock`
+- [x] Dashboard and `/admin/activity` now render recent activity from `AuditLog` with clean empty/error states and non-technical copy
+- [x] Dashboard metric service and aggregation logic tests added in `tests/features/admin/dashboard/service.test.ts`
 
 ## Deferred by design
 
@@ -193,7 +223,6 @@
 - [ ] Nonce-based CSP hardening once all inline/script requirements are audited
 - [ ] Dedicated CSRF token flow for any future embedded or cross-origin clients
 - [ ] Online gateway provider implementations under checkout payment contract
-- [ ] Live catalog persistence beyond the fallback listing dataset
 - [ ] Broader admin CRUD workflows beyond the current category flows and product list/create/edit management
 - [ ] Server-side notifications and third-party integrations
 - [ ] Admin-manageable blog CRUD and persistence-backed publishing workflow
@@ -202,7 +231,8 @@
 - [ ] **Abandoned cart recovery job** — the cron/queue worker that reads AbandonedCartEvent rows, sends recovery emails, and records REMINDER_QUEUED/REMINDER_SENT events is deferred
 - [ ] **Recovery email template** — the cart recovery deep-link email with item snapshot and `/cart?recover=<token>` link is deferred
 - [ ] **Live campaign provider** — Mailchimp/Brevo/Klaviyo adapter is deferred; stub provider is active
+- [x] **Admin reviews moderation — completed; UI remains card-based (will not migrate to shared DataTable)**
 
 ## Recommended Next Prompt
 
-Proceed with **Phase 4 / Prompt 4.5 — admin subscriber list view and notifications integration**.
+Proceed with **Phase 4 / Prompt 4.6 — admin subscriber list view and notifications integration**.

@@ -1,15 +1,15 @@
 import Link from "next/link";
-import { PackageSearch, Pencil, Plus } from "lucide-react";
+import { PackageSearch, Plus } from "lucide-react";
 
 import { PageShell } from "@/components/layout/page-shell";
-import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { buildMetadata } from "@/config/metadata";
 import { routes } from "@/config/routes";
-import { AdminPageHeader, AdminTablePattern } from "@/features/admin/components/admin-page-patterns";
+import { AdminPageHeader } from "@/features/admin/components/admin-page-patterns";
 import { getProductErrorMessage, getProductNoticeMessage, listAdminProducts } from "@/features/admin/products";
 import { AdminProductFiltersForm } from "@/features/admin/products/components/admin-product-filters-form";
+import { AdminProductsTable } from "@/features/admin/products/components/admin-products-table";
 import { requireRouteAccess } from "@/lib/auth/guards";
 import { rbacPermissions } from "@/lib/auth/rbac";
 
@@ -25,12 +25,6 @@ type AdminProductsPageProps = {
     notice?: string;
     error?: string;
   }>;
-};
-
-const statusBadgeVariantMap: Record<Exclude<ProductStatusFilter, "ALL">, "secondary" | "info" | "warning"> = {
-  DRAFT: "secondary",
-  PUBLISHED: "info",
-  ARCHIVED: "warning",
 };
 
 function normalizeStatusFilter(value?: string): ProductStatusFilter {
@@ -128,66 +122,11 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
           <CardTitle>Product list</CardTitle>
         </CardHeader>
         <CardContent>
-          {products.length === 0 ? (
-            <AdminTablePattern
-              state="empty"
-              emptyTitle="No products found"
-              emptyDescription="Create your first product or adjust the current filters."
-              errorDescription="Could not load products."
-            />
-          ) : (
-            <div className="overflow-auto rounded-md border">
-              <table className="min-w-full divide-y divide-muted-foreground/20 text-sm">
-                <thead className="bg-muted/40 text-left">
-                  <tr>
-                    <th className="px-4 py-3 font-medium">Product</th>
-                    <th className="px-4 py-3 font-medium">Type</th>
-                    <th className="px-4 py-3 font-medium">Category</th>
-                    <th className="px-4 py-3 font-medium">Pricing</th>
-                    <th className="px-4 py-3 font-medium">Stock</th>
-                    <th className="px-4 py-3 font-medium">SEO</th>
-                    <th className="px-4 py-3 font-medium">Updated</th>
-                    <th className="px-4 py-3 font-medium">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-muted-foreground/10">
-                  {products.map((product) => (
-                    <tr key={product.id} className="align-top">
-                      <td className="px-4 py-3">
-                        <p className="font-medium">{product.title}</p>
-                        <p className="text-muted-foreground mt-1 text-xs">/{product.slug}</p>
-                        <p className="text-muted-foreground mt-1 text-xs">{product.shortDescription ?? "No short description"}</p>
-                        <div className="mt-2">
-                          <Badge variant={statusBadgeVariantMap[product.status]}>{product.status}</Badge>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <Badge variant="outline">{product.type === "VARIANT" ? `${product.variantCount} variants` : "Simple"}</Badge>
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">{product.categoryName ?? "Unassigned"}</td>
-                      <td className="px-4 py-3">
-                        <p className="font-medium">{product.priceLabel}</p>
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">{product.inventoryTotal} units</td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground">{product.seoTitle ?? "No SEO title"}</td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground">
-                        {product.updatedAt.toLocaleString("en-PK", {
-                          dateStyle: "medium",
-                          timeStyle: "short",
-                        })}
-                      </td>
-                      <td className="px-4 py-3">
-                        <Link href={routes.admin.productEdit(product.id)} className={buttonVariants({ variant: "outline", size: "sm" })}>
-                          <Pencil className="size-4" />
-                          Edit
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <AdminProductsTable
+            products={products}
+            emptyTitle="No products found"
+            emptyDescription="Create your first product or adjust the current filters."
+          />
         </CardContent>
       </Card>
 

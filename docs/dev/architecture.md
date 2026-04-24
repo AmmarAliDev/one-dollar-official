@@ -30,6 +30,7 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `(storefront)/account/*` now provides customer account routes for profile, addresses, order history, order detail, and reviews
 - `(storefront)` now uses the shared `SignOutButton` convention for authenticated logout controls across the header dropdown, mobile drawer, and account profile surface
 - `(admin)` now uses `AdminShell` with a responsive sidebar, topbar, breadcrumb, and user menu, plus the same form-based sign-out pattern and role-aware navigation filtering protected by the RBAC proxy/layout guards
+- `(admin)/admin` dashboard now reads live operational metrics through `src/features/admin/dashboard/service.ts` (pending orders, delivered-order revenue summary, low-stock count, and recent audit activity preview)
 - `(admin)/admin/categories` now provides category CRUD with shared typed create/edit/filter forms and SEO field controls
 - `(admin)/admin/products` now provides product CRUD with reusable RHF + Zod form composition for simple and variant-based catalog entries
 - `(auth)` now uses the same shared form foundation for sign-in and sign-up while preserving the existing server-action flows
@@ -45,6 +46,36 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - PDP UI also lives in `src/features/catalog/components` (gallery, product panel, variants, specs, reviews, related products, and skeleton states); route files should compose these primitives instead of duplicating product-detail markup.
 - Customer account shell UI lives in `src/features/account/components/account-shell.tsx` and should be reused for future account sections.
 - Wishlist client controls live in `src/features/wishlist/components` and call the dedicated wishlist API route.
+
+## Shared Table Strategy
+
+- `src/components/data-table` is the shared abstraction for reusable, typed TanStack-powered tables.
+- `data-table.tsx` is the composable UI layer that integrates app-standard loading, empty, and error-compatible states with shadcn-style table wrappers.
+- `use-data-table.ts` centralizes TanStack state wiring (sorting, global filter seam, and pagination-ready behavior) so feature modules avoid repeated table plumbing.
+- `types.ts` defines stable shared contracts (`DataTablePaginationOptions`, empty/error state shapes) that make future feature integrations predictable.
+- `src/components/ui/table.tsx` provides the low-level table primitives for consistent styling and responsive overflow behavior.
+- Integration seams:
+	- search/filter: feature-owned controls passed through `toolbar`
+	- row actions: `rowActions(row)` slot
+	- pagination: local by default, server-ready through controlled `pagination`
+	- error handling: `errorState` or custom `renderErrorState`
+- **Standardized tables in production:**
+	- `src/features/admin/products/components/admin-products-table.tsx` — admin product listing with status, category, pricing, stock, and SEO display
+	- `src/features/admin/categories/components/admin-categories-table.tsx` — admin category listing with status, SEO, and edit/delete actions
+	- `src/features/admin/orders/components/admin-orders-table.tsx` — admin order queue with customer, status, payment, and total display; preserves pagination
+	- `src/features/admin/inventory/components/admin-inventory-table.tsx` — low-stock alert listing with product, SKU, on-hand, safety threshold, and location
+- All feature-specific table components follow the pattern: typed columns definition, cell rendering logic with feature-specific formatting (badges, links, price displays), row actions/callbacks, and integration with the shared `DataTable` component.
+- **Tables intentionally not migrated:** admin review moderation (kept as card-based UI for better moderation workflow) and storefront order history (kept as cards for customer-facing readability).
+
+## Migration Pattern for Feature Tables
+
+- Define typed columns using `createDataTableColumnHelper<T>()` in a dedicated feature table component file
+- Keep columns definition stable and exported for possible reuse or testing
+- Implement cell rendering inline with feature-specific formatting (badges, status variants, links, price displays)
+- Pass row actions through the table component, not inline in cells
+- Wrap the shared `DataTable` component in a feature-specific component that accepts only the data and optional override messages
+- Keep feature-specific filtering/searching controls outside the table; they feed into the shared table through existing page-level state management
+- Preserve existing business logic: all filters, sorting, pagination, permissions, and row action handlers stay in the feature module
 
 ## Config and Environment Strategy
 
@@ -69,14 +100,22 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `src/app/unauthorized/page.tsx` and `src/app/forbidden/page.tsx` provide explicit recovery screens instead of raw auth errors.
 - `src/lib/audit/admin-actions.ts` prepares structured admin action records for future `AuditLog` persistence.
 
-## Catalog Listing Strategy
+## Catalog Data Strategy
 
-- `src/features/catalog` is the storefront catalog seam for this phase. It currently uses typed fallback seeds so routes can render without a live database dependency.
-- `filters.ts` owns query-string parsing and href rebuilding for sorting, filtering, and pagination.
-- `service.ts` owns listing + PDP assembly (`getCatalogCategoryListing`, `getProductBySlug`, `getRelatedProducts`) and should be the handoff point when real Prisma-backed category/product repositories are added later.
-- `src/app/(storefront)/categories/page.tsx` is the category index. `src/app/(storefront)/categories/[slug]/page.tsx` is the SEO-friendly category listing route.
-- `src/app/(storefront)/categories/[slug]/[productSlug]/page.tsx` is the SEO-friendly PDP route that validates category/product pairing before rendering.
-- Variant-aware attribute filtering is still a visible scaffold, but the storefront filter surface now uses the shared form layer and should keep extending the existing query/filter contracts rather than replacing them.
+- `src/features/catalog` is the storefront catalog feature module. It reads exclusively from the PostgreSQL database via Prisma.
+- `src/server/db/catalog-queries.ts` is the Prisma query layer for the storefront. It enforces all publish-state visibility rules: only PUBLISHED categories and products are returned, and only APPROVED reviews reach the storefront.
+- `src/features/catalog/service.ts` owns listing + PDP assembly (`getCatalogCategoryListing`, `getProductBySlug`, `getRelatedProducts`) by calling the query layer and mapping DB records to storefront types.
+- `filters.ts` owns query-string parsing and href rebuilding for sorting, filtering, and pagination (unchanged).
+- The admin mutation layer (`src/features/admin/products/actions.ts`, `src/features/admin/categories/actions.ts`) now calls `revalidatePath('/categories')` after any create/update/delete so the storefront ISR cache is invalidated and reflects changes within the next request.
+- `src/app/(storefront)/categories/page.tsx` is the category index (ISR: 900s). `src/app/(storefront)/categories/[slug]/page.tsx` is the SEO-friendly category listing route. `src/app/(storefront)/categories/[slug]/[productSlug]/page.tsx` is the SEO-friendly PDP route.
+- `generateStaticParams` in both listing and PDP routes fetches from the DB so newly published products are picked up on next ISR/build cycle.
+- `data.ts` (legacy seed file) still exists for local reference but is no longer used by the storefront service.
+
+## Cache Strategy
+
+- ISR with `revalidate = 900` (15 minutes) is declared on all three storefront category routes.
+- On-demand ISR is triggered by admin server actions: publishing or updating a product/category calls `revalidatePath('/categories')`, immediately clearing the cache for the affected path tree.
+- For faster individual product page invalidation, the admin product update action can additionally call `revalidatePath('/categories/[slug]/[productSlug]', 'page')` once product-slug tracking is added to the action.
 
 ## Search Strategy
 
@@ -84,7 +123,7 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - Debounced client requests call `GET /api/catalog/search` for fast perceived responsiveness without hammering the server on every keypress.
 - Route-handler validation happens in `src/app/api/catalog/search/route.ts` and delegates to feature-level service logic.
 - `searchCatalogProducts()` in `src/features/catalog/service.ts` is the stable entrypoint used by API/UI layers.
-- `src/features/catalog/search-adapter.ts` is the upgrade seam. The current seed-backed scoring logic can be replaced by a dedicated search provider while preserving API and UI contracts.
+- `src/features/catalog/search-adapter.ts` is the upgrade seam. The current DB-backed ILIKE search can be replaced by a dedicated search provider (Algolia, Typesense) while preserving API and UI contracts.
 - See `docs/dev/search-architecture.md` for flow details and phased upgrade guidance.
 
 ## Wishlist + Account Strategy
@@ -103,6 +142,17 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `src/app/not-found.tsx` provides a safe placeholder for unbuilt routes.
 - `src/lib/errors` centralizes reusable error abstractions and user-facing messaging through `toUserMessage()` and `getFormErrorMessages()`.
 - `src/lib/logger.ts` offers a client/server-safe logger with sensitive field redaction for operational diagnostics.
+- Admin dashboard metric queries are wrapped with an `AppError` code (`ADMIN_DASHBOARD_METRICS_QUERY_FAILED`) so the UI can keep rendering with user-safe fallback messaging when the database is temporarily unavailable.
+
+## Admin Dashboard Metrics Strategy
+
+- Metric query orchestration lives in `src/features/admin/dashboard/service.ts` to keep route files thin and typed.
+- Current cards intentionally remain simple (no charts yet):
+	- Pending orders: `Order.status == PENDING`
+	- Revenue summary: sum of `Order.total` where `status == DELIVERED` and `refundStatus` is not completed
+	- Low stock: inventory rows where `(quantity - reserved) <= safetyStock`
+	- Recent activity: latest `AuditLog` records mapped into non-technical labels and summaries
+- Revenue assumptions are explicit in code via `AdminDashboardRevenueSummary.assumptions` so UI and docs stay aligned while payment workflows evolve.
 
 ## Engineering Quality Gates
 
