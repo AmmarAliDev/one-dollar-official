@@ -193,6 +193,13 @@
 - [x] Focused tests added for shared table rendering and behavior (`tests/components/data-table/data-table.test.tsx`)
 - [x] Type-oriented helper coverage added for column and pagination contracts (`tests/components/data-table/types.test.ts`)
 - [x] Developer docs updated for shared table usage and architecture (`docs/dev/ui-conventions.md`, `docs/dev/architecture.md`)
+- [x] **Admin products table** migrated to shared `DataTable` with columns for product, type, category, pricing, stock, SEO, updated date, and edit actions
+- [x] **Admin categories table** migrated to shared `DataTable` with columns for name, slug, status, SEO, updated date, and edit/delete actions
+- [x] **Admin orders table** migrated to shared `DataTable` with columns for order number, customer, status, payment, total, placed date, and view actions; pagination preserved
+- [x] **Admin inventory table** migrated to shared `DataTable` with columns for product, SKU, on-hand quantity, safety stock threshold, and warehouse location
+- [x] All admin table migrations preserve existing business logic: filters, search, sorting, row actions, status badges, and permissions-based UI
+- [x] Table rendering standardized across admin product, category, order, and inventory pages using feature-specific table components wrapping the shared DataTable
+- [x] Table components follow the pattern: typed columns definition, cell rendering logic, row actions/callbacks, and feature-specific UI (badges, links, moderation forms)
 
 ## Deferred by design
 
@@ -210,7 +217,7 @@
 - [ ] **Abandoned cart recovery job** — the cron/queue worker that reads AbandonedCartEvent rows, sends recovery emails, and records REMINDER_QUEUED/REMINDER_SENT events is deferred
 - [ ] **Recovery email template** — the cart recovery deep-link email with item snapshot and `/cart?recover=<token>` link is deferred
 - [ ] **Live campaign provider** — Mailchimp/Brevo/Klaviyo adapter is deferred; stub provider is active
-- [ ] Existing feature/admin tables migration to the shared `DataTable` foundation (intentionally deferred to a dedicated migration step)
+- [x] **Admin reviews moderation — completed; UI remains card-based (will not migrate to shared DataTable)**
 
 ## Recommended Next Prompt
 

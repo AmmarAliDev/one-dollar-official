@@ -58,7 +58,23 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 	- row actions: `rowActions(row)` slot
 	- pagination: local by default, server-ready through controlled `pagination`
 	- error handling: `errorState` or custom `renderErrorState`
-- Non-goal in this step: replacing existing feature tables. Migration should be delivered as a separate prompt to reduce regression risk.
+- **Standardized tables in production:**
+	- `src/features/admin/products/components/admin-products-table.tsx` — admin product listing with status, category, pricing, stock, and SEO display
+	- `src/features/admin/categories/components/admin-categories-table.tsx` — admin category listing with status, SEO, and edit/delete actions
+	- `src/features/admin/orders/components/admin-orders-table.tsx` — admin order queue with customer, status, payment, and total display; preserves pagination
+	- `src/features/admin/inventory/components/admin-inventory-table.tsx` — low-stock alert listing with product, SKU, on-hand, safety threshold, and location
+- All feature-specific table components follow the pattern: typed columns definition, cell rendering logic with feature-specific formatting (badges, links, price displays), row actions/callbacks, and integration with the shared `DataTable` component.
+- **Tables intentionally not migrated:** admin review moderation (kept as card-based UI for better moderation workflow) and storefront order history (kept as cards for customer-facing readability).
+
+## Migration Pattern for Feature Tables
+
+- Define typed columns using `createDataTableColumnHelper<T>()` in a dedicated feature table component file
+- Keep columns definition stable and exported for possible reuse or testing
+- Implement cell rendering inline with feature-specific formatting (badges, status variants, links, price displays)
+- Pass row actions through the table component, not inline in cells
+- Wrap the shared `DataTable` component in a feature-specific component that accepts only the data and optional override messages
+- Keep feature-specific filtering/searching controls outside the table; they feed into the shared table through existing page-level state management
+- Preserve existing business logic: all filters, sorting, pagination, permissions, and row action handlers stay in the feature module
 
 ## Config and Environment Strategy
 

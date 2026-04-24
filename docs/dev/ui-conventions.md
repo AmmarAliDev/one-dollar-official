@@ -86,7 +86,8 @@
 	- custom pagination UI can be injected via `renderPagination`
 - For responsive behavior, keep wide tables inside the default horizontal overflow wrapper provided by `src/components/ui/table.tsx`.
 - Keep column headers descriptive and plain-language so sorting labels remain accessible.
-- Do not migrate existing feature tables in-place without a dedicated migration task; this prompt only adds the shared foundation.
+- Feature-specific table components should wrap the shared `DataTable` with typed columns, cell rendering, and feature-specific actions (see `AdminProductsTable`, `AdminCategoriesTable`, `AdminOrdersTable`, `AdminInventoryTable` for reference patterns).
+- Current standard tables now use the shared system: admin products, categories, orders, and inventory. Not all UIs benefit from tabular display; keep card-based layouts for moderation workflows (admin reviews) and storefront experiences (customer order history, wishlist) where readability and action density favor non-table patterns.
 
 ## Product Content Entry Guidelines
 

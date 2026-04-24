@@ -1,16 +1,13 @@
 import Link from "next/link";
-import { ArrowRight, ReceiptText } from "lucide-react";
+import { ReceiptText } from "lucide-react";
 
 import { PageShell } from "@/components/layout/page-shell";
-import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PriceDisplay } from "@/components/ui/price-display";
 import { buildMetadata } from "@/config/metadata";
 import { routes } from "@/config/routes";
 import {
   AdminPageHeader,
-  AdminTablePattern,
 } from "@/features/admin/components/admin-page-patterns";
 import {
   type AdminOrderStatusFilter,
@@ -19,7 +16,7 @@ import {
   listAdminOrders,
 } from "@/features/admin/orders";
 import { AdminOrderFiltersForm } from "@/features/admin/orders/components/admin-order-filters-form";
-import { getOrderStatusVariant } from "@/features/orders";
+import { AdminOrdersTable } from "@/features/admin/orders/components/admin-orders-table";
 import { testIds } from "@/lib/test-selectors";
 import { requireRouteAccess } from "@/lib/auth/guards";
 import { rbacPermissions } from "@/lib/auth/rbac";
@@ -140,87 +137,7 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
           <div className="text-muted-foreground text-sm">Page {orders.page}</div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {orders.items.length === 0 ? (
-            <AdminTablePattern
-              state="empty"
-              emptyTitle="No orders match the current filters"
-              emptyDescription="Try a broader search or switch back to all statuses."
-              errorDescription="We could not load order records right now."
-            />
-          ) : (
-            <div className="overflow-auto rounded-md border">
-              <table
-                className="divide-muted-foreground/20 min-w-full divide-y text-sm"
-                data-testid={testIds.admin.ordersTable}
-              >
-                <thead className="bg-muted/40 text-left">
-                  <tr>
-                    <th className="px-4 py-3 font-medium">Order</th>
-                    <th className="px-4 py-3 font-medium">Customer</th>
-                    <th className="px-4 py-3 font-medium">Status</th>
-                    <th className="px-4 py-3 font-medium">Payment</th>
-                    <th className="px-4 py-3 font-medium">Total</th>
-                    <th className="px-4 py-3 font-medium">Placed</th>
-                    <th className="px-4 py-3 font-medium">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-muted-foreground/10 divide-y">
-                  {orders.items.map((order) => (
-                    <tr
-                      key={order.id}
-                      className="align-top"
-                      data-testid={testIds.admin.orderRow(order.orderNumber)}
-                    >
-                      <td className="px-4 py-3">
-                        <p className="font-medium">{order.orderNumber}</p>
-                        <p className="text-muted-foreground mt-1 text-xs">
-                          {order.itemCount} item line{order.itemCount === 1 ? "" : "s"}
-                        </p>
-                      </td>
-                      <td className="px-4 py-3">
-                        <p className="font-medium">{order.customerName}</p>
-                        <p className="text-muted-foreground mt-1 text-xs">
-                          {order.customerEmail ?? order.customerPhone ?? "No contact provided"}
-                        </p>
-                        <p className="text-muted-foreground mt-1 text-xs">
-                          {order.city ?? "City not provided"}
-                        </p>
-                      </td>
-                      <td className="px-4 py-3">
-                        <Badge variant={getOrderStatusVariant(order.status)}>
-                          {order.statusLabel}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-3">
-                        <p className="font-medium">{order.paymentMethodLabel}</p>
-                        <p className="text-muted-foreground mt-1 text-xs">
-                          {order.paymentStatus ?? "Pending"}
-                        </p>
-                      </td>
-                      <td className="px-4 py-3">
-                        <PriceDisplay amount={order.total} size="sm" />
-                      </td>
-                      <td className="text-muted-foreground px-4 py-3 text-xs">
-                        {order.placedAt.toLocaleString("en-PK", {
-                          dateStyle: "medium",
-                          timeStyle: "short",
-                        })}
-                      </td>
-                      <td className="px-4 py-3">
-                        <Link
-                          href={routes.admin.orderDetail(order.orderNumber)}
-                          className={buttonVariants({ variant: "outline", size: "sm" })}
-                        >
-                          Review
-                          <ArrowRight className="size-4" />
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <AdminOrdersTable orders={orders.items} />
 
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="text-muted-foreground text-sm">
