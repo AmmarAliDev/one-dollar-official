@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-**Phase 4 / Prompt 4.5 — Storefront catalog connected to database**
+**Phase 4 / Prompt 4.6 — Admin dashboard metrics connected to database**
 
 ## Completed
 
@@ -209,6 +209,12 @@
 - [x] All catalog service and search tests rewritten to mock `@/server/db/catalog-queries` instead of importing seed data
 - [x] Related products on PDP now prioritize admin-curated `relatedProductIds` from product metadata, then fall back to same-category published products
 - [x] Cart add-to-cart now resolves published products/variants from the live DB first (with legacy seed fallback), fixing add failures for newly created and published catalog items
+- [x] Admin dashboard cards at `/admin` now use live DB-backed metrics instead of placeholders
+- [x] Pending order count is now sourced from `Order.status == PENDING`
+- [x] Revenue summary now uses delivered-order totals with completed refunds excluded (assumptions documented in code and docs)
+- [x] Low-stock metric now counts inventory rows where `(quantity - reserved) <= safetyStock`
+- [x] Dashboard and `/admin/activity` now render recent activity from `AuditLog` with clean empty/error states and non-technical copy
+- [x] Dashboard metric service and aggregation logic tests added in `tests/features/admin/dashboard/service.test.ts`
 
 ## Deferred by design
 

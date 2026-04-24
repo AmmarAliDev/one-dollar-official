@@ -30,6 +30,7 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `(storefront)/account/*` now provides customer account routes for profile, addresses, order history, order detail, and reviews
 - `(storefront)` now uses the shared `SignOutButton` convention for authenticated logout controls across the header dropdown, mobile drawer, and account profile surface
 - `(admin)` now uses `AdminShell` with a responsive sidebar, topbar, breadcrumb, and user menu, plus the same form-based sign-out pattern and role-aware navigation filtering protected by the RBAC proxy/layout guards
+- `(admin)/admin` dashboard now reads live operational metrics through `src/features/admin/dashboard/service.ts` (pending orders, delivered-order revenue summary, low-stock count, and recent audit activity preview)
 - `(admin)/admin/categories` now provides category CRUD with shared typed create/edit/filter forms and SEO field controls
 - `(admin)/admin/products` now provides product CRUD with reusable RHF + Zod form composition for simple and variant-based catalog entries
 - `(auth)` now uses the same shared form foundation for sign-in and sign-up while preserving the existing server-action flows
@@ -141,6 +142,17 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `src/app/not-found.tsx` provides a safe placeholder for unbuilt routes.
 - `src/lib/errors` centralizes reusable error abstractions and user-facing messaging through `toUserMessage()` and `getFormErrorMessages()`.
 - `src/lib/logger.ts` offers a client/server-safe logger with sensitive field redaction for operational diagnostics.
+- Admin dashboard metric queries are wrapped with an `AppError` code (`ADMIN_DASHBOARD_METRICS_QUERY_FAILED`) so the UI can keep rendering with user-safe fallback messaging when the database is temporarily unavailable.
+
+## Admin Dashboard Metrics Strategy
+
+- Metric query orchestration lives in `src/features/admin/dashboard/service.ts` to keep route files thin and typed.
+- Current cards intentionally remain simple (no charts yet):
+	- Pending orders: `Order.status == PENDING`
+	- Revenue summary: sum of `Order.total` where `status == DELIVERED` and `refundStatus` is not completed
+	- Low stock: inventory rows where `(quantity - reserved) <= safetyStock`
+	- Recent activity: latest `AuditLog` records mapped into non-technical labels and summaries
+- Revenue assumptions are explicit in code via `AdminDashboardRevenueSummary.assumptions` so UI and docs stay aligned while payment workflows evolve.
 
 ## Engineering Quality Gates
 
