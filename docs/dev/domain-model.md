@@ -29,6 +29,8 @@ Data and indexing strategy
 - Unique constraints for `slug`, `ProductVariant.sku`, and `orderNumber` support lookups and safe indexing. The product-level identifier is `masterSku` (optional) and not required to be unique.
 - Indexes on foreign keys (`userId`, `productId`, `categoryId`) to support common queries.
 - Price fields use integer in the smallest currency unit (PKR) to avoid floating point errors.
+- Admin dashboard revenue metric currently treats recognized revenue as the sum of `Order.total` for `DELIVERED` orders where `refundStatus` is not `COMPLETED` (completed refunds are excluded from the aggregate).
+- Because checkout currently supports COD only, `paymentStatus` is intentionally not used yet as a revenue-recognition gate for dashboard cards.
 
 Auth & permissions
 - Users reference a `Role` record and roles are exposed as an enum `RoleKey` for convenience.
