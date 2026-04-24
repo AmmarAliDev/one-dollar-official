@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-**Phase 4 / Prompt 4.7 — Admin activity feed connected to AuditLog**
+**Phase 4 / Prompt 4.8 — Admin revenue reporting page connected to order data**
 
 ## Completed
 
@@ -220,6 +220,11 @@
 - [x] Activity feed service is pagination-ready (`take + 1` query contract with `nextCursor`) while the UI currently loads the latest 30 events
 - [x] Activity mapping and service tests added in `tests/features/admin/activity/audit-log-feed.test.ts` and `tests/features/admin/activity/service.test.ts`
 - [x] Route-level activity loading state added at `src/app/(admin)/admin/activity/loading.tsx`
+- [x] Admin revenue page at `/admin/revenue` now uses a dedicated DB-backed report service (`src/features/admin/revenue/service.ts`) instead of placeholder content
+- [x] Revenue report now includes total recognized revenue, practical recent windows (last 7 days / last 30 days), and order totals summary for non-technical admins
+- [x] Revenue inclusion assumptions are explicitly surfaced in both the service contract and the page UI
+- [x] Revenue route now has explicit loading, empty, and error states with user-safe messaging
+- [x] Revenue helper and service tests added for calculation logic, date-range helpers, and no-data behavior in `tests/features/admin/revenue/*`
 
 ## Deferred by design
 
@@ -238,6 +243,7 @@
 - [ ] **Live campaign provider** — Mailchimp/Brevo/Klaviyo adapter is deferred; stub provider is active
 - [ ] Activity feed filtering (by action, model, actor, date range) is deferred
 - [ ] Cursor-driven activity pagination UI controls are deferred (service contract is ready)
+- [ ] Revenue charting, custom date filters, and export/report download workflows are intentionally deferred (current phase focuses on practical summary reporting)
 - [x] **Admin reviews moderation — completed; UI remains card-based (will not migrate to shared DataTable)**
 
 ## Recommended Next Prompt
