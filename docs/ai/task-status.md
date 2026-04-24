@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-**Phase 4 / Prompt 4.6 — Admin dashboard metrics connected to database**
+**Phase 4 / Prompt 4.7 — Admin activity feed connected to AuditLog**
 
 ## Completed
 
@@ -215,6 +215,11 @@
 - [x] Low-stock metric now counts inventory rows where `(quantity - reserved) <= safetyStock`
 - [x] Dashboard and `/admin/activity` now render recent activity from `AuditLog` with clean empty/error states and non-technical copy
 - [x] Dashboard metric service and aggregation logic tests added in `tests/features/admin/dashboard/service.test.ts`
+- [x] Admin activity page now uses a dedicated AuditLog feed service (`src/features/admin/activity/service.ts`) instead of a dashboard preview helper
+- [x] Activity feed entries now include actor context (when available), model context, and richer non-technical summaries for common admin actions
+- [x] Activity feed service is pagination-ready (`take + 1` query contract with `nextCursor`) while the UI currently loads the latest 30 events
+- [x] Activity mapping and service tests added in `tests/features/admin/activity/audit-log-feed.test.ts` and `tests/features/admin/activity/service.test.ts`
+- [x] Route-level activity loading state added at `src/app/(admin)/admin/activity/loading.tsx`
 
 ## Deferred by design
 
@@ -231,6 +236,8 @@
 - [ ] **Abandoned cart recovery job** — the cron/queue worker that reads AbandonedCartEvent rows, sends recovery emails, and records REMINDER_QUEUED/REMINDER_SENT events is deferred
 - [ ] **Recovery email template** — the cart recovery deep-link email with item snapshot and `/cart?recover=<token>` link is deferred
 - [ ] **Live campaign provider** — Mailchimp/Brevo/Klaviyo adapter is deferred; stub provider is active
+- [ ] Activity feed filtering (by action, model, actor, date range) is deferred
+- [ ] Cursor-driven activity pagination UI controls are deferred (service contract is ready)
 - [x] **Admin reviews moderation — completed; UI remains card-based (will not migrate to shared DataTable)**
 
 ## Recommended Next Prompt

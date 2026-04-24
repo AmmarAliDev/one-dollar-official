@@ -130,6 +130,14 @@ Admin boundary review result:
 
 Operationally, this reduces the chance of leaking session or integration secrets through ad-hoc error logs.
 
+### 8. Admin activity audit visibility
+
+- The admin activity page now reads from persisted `AuditLog` records through a dedicated service layer (`src/features/admin/activity/service.ts`).
+- Feed rendering uses plain-language summaries from `src/features/admin/activity/audit-log-feed.ts` so staff can review changes without raw payload inspection.
+- Actor context is resolved with a minimal user projection (`id`, `name`, `email`) only when `actorId` exists.
+- When actor records are missing (for example, deleted users), entries degrade safely to neutral labels instead of failing the feed.
+- This page is read-only and remains behind existing admin authorization boundaries (`(admin)` layout guard + RBAC permissions).
+
 ## Recommended conventions for future mutations
 
 ### Server Actions
