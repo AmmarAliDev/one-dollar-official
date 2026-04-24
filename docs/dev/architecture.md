@@ -31,6 +31,7 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `(storefront)` now uses the shared `SignOutButton` convention for authenticated logout controls across the header dropdown, mobile drawer, and account profile surface
 - `(admin)` now uses `AdminShell` with a responsive sidebar, topbar, breadcrumb, and user menu, plus the same form-based sign-out pattern and role-aware navigation filtering protected by the RBAC proxy/layout guards
 - `(admin)/admin` dashboard now reads live operational metrics through `src/features/admin/dashboard/service.ts` (pending orders, delivered-order revenue summary, low-stock count, and recent audit activity preview)
+- `(admin)/admin/activity` now reads a dedicated AuditLog-backed feed through `src/features/admin/activity/service.ts`, with non-technical event summaries and actor context when available
 - `(admin)/admin/categories` now provides category CRUD with shared typed create/edit/filter forms and SEO field controls
 - `(admin)/admin/products` now provides product CRUD with reusable RHF + Zod form composition for simple and variant-based catalog entries
 - `(auth)` now uses the same shared form foundation for sign-in and sign-up while preserving the existing server-action flows
@@ -153,6 +154,14 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 	- Low stock: inventory rows where `(quantity - reserved) <= safetyStock`
 	- Recent activity: latest `AuditLog` records mapped into non-technical labels and summaries
 - Revenue assumptions are explicit in code via `AdminDashboardRevenueSummary.assumptions` so UI and docs stay aligned while payment workflows evolve.
+
+## Admin Activity Feed Strategy
+
+- Activity feed query orchestration lives in `src/features/admin/activity/service.ts` to keep route files thin and focused on rendering.
+- Feed entries are sourced directly from `AuditLog`, ordered by newest first (`createdAt`, then `id`) with a `take + 1` approach so the contract is pagination-ready.
+- Event mapping logic is isolated in `src/features/admin/activity/audit-log-feed.ts` so title/summary formatting can evolve independently from query logic.
+- Actor context is resolved in a second query from `User` records using `actorId` when available; missing/deleted actors gracefully fall back to neutral labels.
+- UI remains intentionally simple for non-technical admins: readable titles, plain-language summaries, timestamp, and actor/model context.
 
 ## Engineering Quality Gates
 

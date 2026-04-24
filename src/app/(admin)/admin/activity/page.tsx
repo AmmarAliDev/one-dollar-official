@@ -1,6 +1,6 @@
 import { PageShell } from "@/components/layout/page-shell";
 import { buildMetadata } from "@/config/metadata";
-import { listAdminRecentActivity } from "@/features/admin/dashboard";
+import { listAdminActivityFeed } from "@/features/admin/activity";
 import {
   AdminListPattern,
   AdminPageHeader,
@@ -23,7 +23,8 @@ function formatActivityTimestamp(date: Date) {
 
 export default async function AdminActivityPage() {
   try {
-    const activity = await listAdminRecentActivity(30);
+    const result = await listAdminActivityFeed({ take: 30 });
+    const activity = result.items;
 
     if (activity.length === 0) {
       return (
@@ -37,7 +38,7 @@ export default async function AdminActivityPage() {
           <AdminListPattern
             state="empty"
             emptyTitle="No recent events"
-            emptyDescription="Activity logs will appear here once tracking events are written."
+            emptyDescription="Activity entries will appear here as your team updates orders, products, content, and moderation actions."
             errorDescription="We could not load activity records right now."
           />
         </PageShell>
@@ -60,6 +61,10 @@ export default async function AdminActivityPage() {
                 <p className="text-muted-foreground text-xs">{formatActivityTimestamp(entry.createdAt)}</p>
               </div>
               <p className="text-muted-foreground mt-2 text-sm">{entry.summary}</p>
+              <p className="text-muted-foreground mt-2 text-xs">
+                By {entry.actor.label}
+                {entry.modelLabel ? ` in ${entry.modelLabel}` : ""}
+              </p>
             </article>
           ))}
         </section>
@@ -77,7 +82,7 @@ export default async function AdminActivityPage() {
         <AdminListPattern
           state="error"
           emptyTitle="No recent events"
-          emptyDescription="Activity logs will appear here once tracking is enabled."
+          emptyDescription="Activity entries will appear here once events are available."
           errorDescription={toUserMessage(error as AppError)}
         />
       </PageShell>
