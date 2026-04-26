@@ -121,6 +121,8 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `src/features/blog/service.ts` is now database-backed and reads from `BlogPost` rows through `src/server/db/blog-queries.ts`.
 - Storefront blog visibility is enforced in the service layer: only `PUBLISHED` posts with `publishedAt <= now` are shown by default; drafts/archived/future posts stay hidden unless `includeDrafts` is explicitly requested.
 - `src/app/(storefront)/blog/page.tsx` and `src/app/(storefront)/blog/[slug]/page.tsx` continue to generate metadata and JSON-LD using the same helper contracts, but now consume async DB reads.
+- Homepage blog highlights now hydrate from the same DB-backed storefront blog service (`getBlogPosts`) so listing, detail, and homepage surfaces share one primary source of truth.
+- Admin/homepage `blog-highlights.content.articles` is now treated as non-primary legacy payload data; storefront hydration replaces it with DB results and clears it on DB read failures so hardcoded/manual article arrays are isolated from production rendering.
 - Admin blog mutations (`src/features/admin/blog/actions.ts`) revalidate `/blog`, dynamic blog detail pages, and `/admin/blog` so published/unpublished changes are reflected promptly.
 
 ## Cache Strategy
