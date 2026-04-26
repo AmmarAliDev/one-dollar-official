@@ -52,6 +52,7 @@ export const routes = {
     signUp: "/auth/sign-up",
     error: "/auth/error",
     forgotPassword: "/auth/forgot-password",
+    resetPassword: "/auth/reset-password",
   },
   system: {
     unauthorized: "/unauthorized",

@@ -59,3 +59,20 @@ export const forgotPasswordValidator = z.object({
 });
 
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordValidator>;
+
+export const resetPasswordValidator = z
+  .object({
+    token: z
+      .string()
+      .trim()
+      .min(20, "Reset token is invalid.")
+      .max(512, "Reset token is invalid."),
+    password: createPasswordSchema(MIN_PASSWORD_LENGTH, MAX_PASSWORD_LENGTH),
+    confirmPassword: z.string().min(1, "Please confirm your password."),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match.",
+    path: ["confirmPassword"],
+  });
+
+export type ResetPasswordInput = z.infer<typeof resetPasswordValidator>;

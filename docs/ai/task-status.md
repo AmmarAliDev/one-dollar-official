@@ -246,10 +246,14 @@
 - [x] Storefront review display remains backed by moderated DB records (`APPROVED` only), and admin moderation changes continue to control visibility through shared status rules
 - [x] Review-related tests added/expanded for submission validation, ownership/permission behavior, account listing behavior, and moderation visibility effects
 - [x] Architecture and domain-model docs updated for the production review workflow
+- [x] Real email-based forgot-password and reset-password flow implemented with secure token generation, hashed token persistence, 1-hour expiry, and single-use token consumption
+- [x] Forgot-password responses are enumeration-safe (same success message for known/unknown emails)
+- [x] Reset flow updates credentials password hash and invalidates all outstanding reset tokens for the user
+- [x] Auth/security/docs updates completed for reset flow, including token safety model and operational notes
+- [x] Password reset coverage added for token helpers, reset validation, expiry behavior, and safe response behavior
 
 ## Deferred by design
 
-- [ ] Email-based password reset (requires email provider — deferred)
 - [ ] Email verification for credentials accounts
 - [ ] Nonce-based CSP hardening once all inline/script requirements are audited
 - [ ] Dedicated CSRF token flow for any future embedded or cross-origin clients
@@ -266,6 +270,7 @@
 - [ ] Revenue charting, custom date filters, and export/report download workflows are intentionally deferred (current phase focuses on practical summary reporting)
 - [ ] Review anti-abuse hardening beyond current baseline (e.g., semantic spam detection, automated toxicity scoring, velocity anomaly heuristics) is deferred; current protections cover auth, ownership, delivered-order checks, and rate limits
 - [ ] Advanced inventory workflows are deferred: batched adjustments/imports, transfer workflows across multiple locations, and explicit stock-count approval/rollback flows
+- [ ] Password reset email deliverability/branding hardening is deferred (SPF/DKIM/DMARC tuning, bounce/suppression handling, branded/localized templates)
 - [x] **Admin reviews moderation — completed; UI remains card-based (will not migrate to shared DataTable)**
 
 ## Recommended Next Prompt
