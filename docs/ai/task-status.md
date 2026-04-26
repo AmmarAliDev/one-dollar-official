@@ -251,10 +251,14 @@
 - [x] Reset flow updates credentials password hash and invalidates all outstanding reset tokens for the user
 - [x] Auth/security/docs updates completed for reset flow, including token safety model and operational notes
 - [x] Password reset coverage added for token helpers, reset validation, expiry behavior, and safe response behavior
+- [x] Credentials sign-up now initiates email verification instead of immediate auto-login
+- [x] Email verification token flow added with hashed storage, 24-hour expiry, and single-use consumption
+- [x] Verification page added at `/auth/verify-email` with clear success/invalid/expired states
+- [x] Credentials sign-in now blocks unverified users and re-issues verification links after password match; OAuth behavior remains unchanged
+- [x] Verification-focused tests added for token utilities, verification success/expiry handling, and unverified sign-in rules
 
 ## Deferred by design
 
-- [ ] Email verification for credentials accounts
 - [ ] Nonce-based CSP hardening once all inline/script requirements are audited
 - [ ] Dedicated CSRF token flow for any future embedded or cross-origin clients
 - [ ] Online gateway provider implementations under checkout payment contract

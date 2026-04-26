@@ -107,6 +107,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const passwordValid = await comparePassword(password, user.password);
         if (!passwordValid) return null;
 
+        // Credentials accounts must verify email before they can sign in.
+        if (!user.emailVerified) return null;
+
         // Return minimal user object; role is added to JWT in the callback.
         return {
           id: user.id,

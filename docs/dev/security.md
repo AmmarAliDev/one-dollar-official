@@ -90,6 +90,15 @@ Implemented coverage in this pass:
 - Successful reset consumes the submitted token and invalidates all other active reset tokens for that user.
 - Forgot-password responses are enumeration-safe: known and unknown emails receive the same success message.
 
+### Email verification safety model (credentials sign-up)
+
+- Credentials sign-up now issues `EmailVerificationToken` records using 32-byte cryptographic randomness.
+- Only SHA-256 token hashes are stored in the database (`EmailVerificationToken.tokenHash`); raw tokens exist only in email links.
+- Tokens expire after 24 hours and are treated as single-use.
+- Verification consumes the token and clears any remaining verification tokens for the same user.
+- Credentials sign-in requires `User.emailVerified`; unverified users are blocked and receive a new verification link only after a matching password check.
+- OAuth behavior remains unchanged and is not gated by the credentials verification flow.
+
 ### 4. Validation conventions
 
 Use shared helpers from `src/lib/security/validation.ts`:
