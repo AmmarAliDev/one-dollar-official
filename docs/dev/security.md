@@ -45,6 +45,7 @@ These helpers live in `src/lib/security/csrf.ts` and validate that mutating requ
 Implemented coverage in this pass:
 
 - Auth Server Actions (`signInAction`, `signUpAction`, `signOutAction`)
+- Password reset Server Actions (`forgotPasswordAction`, `resetPasswordAction`)
 - Checkout, cart, and email subscribe route handlers
 - Contact form Server Action
 - Wishlist add/remove route handlers
@@ -75,8 +76,19 @@ Implemented coverage in this pass:
 
 - Sign-in: IP + email bucket
 - Sign-up: IP bucket plus per-email bucket
+- Forgot password request: IP bucket plus per-email bucket
+- Reset password submit: IP bucket
 - Email subscribe: per-IP bucket
 - Contact form submission: IP + email bucket
+
+### Password reset token safety model
+
+- Tokens are generated from 32 bytes of cryptographically secure random data.
+- Only a SHA-256 hash of the token is stored in the database (`PasswordResetToken.tokenHash`); raw tokens are sent only via email link.
+- Tokens expire after 1 hour and are single-use.
+- Expired tokens are treated as invalid and deleted when encountered.
+- Successful reset consumes the submitted token and invalidates all other active reset tokens for that user.
+- Forgot-password responses are enumeration-safe: known and unknown emails receive the same success message.
 
 ### 4. Validation conventions
 
@@ -177,7 +189,7 @@ Use this checklist for production deployments and incident response:
 
 ## Deferred on purpose
 
-- **Email-based password reset** with token rotation and replay protection
+- **Reset email deliverability and branding hardening** (provider reputation, SPF/DKIM/DMARC verification, bounce/suppression handling, localized templates)
 - **Nonce-based CSP** for even stricter script execution controls
 - **Dedicated double-submit CSRF tokens** for any future embedded/cross-origin client integrations
 - **Centralized route-handler request schema helpers** to reduce repeated inline `safeParse()` usage

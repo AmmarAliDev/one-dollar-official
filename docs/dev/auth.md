@@ -29,6 +29,15 @@ AUTH_GOOGLE_SECRET=
 
 # ── Database (already used by Prisma) ───────────────────────────────────────
 DATABASE_URL=postgresql://user:password@localhost:5432/one_dollar
+
+# ── SMTP (required for email-based password reset) ─────────────────────────
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=
+SMTP_PASSWORD=
+SMTP_FROM_EMAIL=no-reply@yourdomain.com
+SMTP_FROM_NAME=One Dollar
 ```
 
 ## Google OAuth Setup
@@ -70,6 +79,15 @@ Session hardening note:
 4. If the email matches an existing `User`, the `Account` is linked.
 5. If new user → `User` created via the Prisma adapter.
 6. JWT session created → redirected to home.
+
+### Forgot password and reset
+
+1. User submits email at `/auth/forgot-password`.
+2. `forgotPasswordAction` verifies trusted origin, validates input, and applies rate limits.
+3. Action always returns the same success message for known and unknown emails (anti-enumeration).
+4. For an existing account, server creates a one-time reset token (secure random value), stores only its SHA-256 hash in DB, expires it in 1 hour, and sends an email link to `/auth/reset-password?token=...`.
+5. User opens reset link, submits new password at `/auth/reset-password`.
+6. `resetPasswordAction` validates token + password, checks expiry, hashes the new password with bcrypt, consumes the token, and invalidates any other active reset tokens for the same user.
 
 ### Sign-out
 
@@ -150,22 +168,28 @@ src/
     routes.ts                          # Site route definitions (exports `routes` with `routes.storefront.home`)
   types/next-auth.d.ts                 # Session/JWT type augmentation
   features/auth/
-    validators.ts                      # Zod schemas: signIn, signUp, forgotPassword
+    validators.ts                      # Zod schemas: signIn, signUp, forgotPassword, resetPassword
     actions/
       sign-in.ts                       # Credentials sign-in server action
       sign-up.ts                       # New user creation server action
       sign-out.ts                      # Sign-out server action
+      forgot-password.ts               # Password reset request server action
+      reset-password.ts                # Password reset submit server action
     components/
       sign-in-form.tsx                 # Email/password form (client component)
       sign-up-form.tsx                 # Registration form (client component)
       sign-out-button.tsx               # Shared `SignOutButton` form submit control (exports `SignOutButton`)
       google-sign-in-button.tsx        # Google SSO button (client component)
+      forgot-password-form.tsx         # Forgot-password request form
+      reset-password-form.tsx          # Password reset form (token + new password)
+    password-reset-email.ts            # SMTP reset email sender
   lib/auth/
     session.ts                         # Server-side session helpers
     client.ts                          # Client-side auth re-exports
     guards.ts                          # Route guards for RSCs and route handlers
     rbac.ts                            # Typed role + permission model
     password.ts                        # bcrypt hash/compare utilities
+    password-reset-token.ts            # Token generation/hash/expiry helpers
   lib/audit/
     admin-actions.ts                   # Audit-log-ready helper for admin mutations
   lib/rate-limit/
@@ -179,7 +203,8 @@ src/
     sign-in/page.tsx                   # /auth/sign-in
     sign-up/page.tsx                   # /auth/sign-up
     error/page.tsx                     # /auth/error (Auth.js error page)
-    forgot-password/page.tsx           # /auth/forgot-password (placeholder)
+    forgot-password/page.tsx           # /auth/forgot-password (request flow)
+    reset-password/page.tsx            # /auth/reset-password (token submit flow)
   app/unauthorized/page.tsx            # Friendly 401-style recovery page
   app/forbidden/page.tsx               # Friendly 403-style recovery page
   app/api/auth/[...nextauth]/route.ts  # Auth.js catch-all API route
@@ -223,6 +248,8 @@ Sensitive auth flows now use a **Redis-first** rate-limit helper:
 
 - Sign-in: 10 attempts / minute / IP+email bucket
 - Sign-up: 10 attempts / minute / IP (+ 3 attempts / minute / email)
+- Forgot password: 10 attempts / minute / IP (+ 5 attempts / minute / email)
+- Reset password submit: 10 attempts / minute / IP
 
 Implementation notes:
 
@@ -245,7 +272,7 @@ const valid = await comparePassword("mysecretpassword", hash); // true
 
 ## Deferred
 
-- **Email-based password reset** — requires transactional email provider (Resend/Postmark). Placeholder page at `/auth/forgot-password`. Will be implemented in Prompt 4.4.
+- **Reset email deliverability and branding enhancements** — SPF/DKIM/DMARC hardening, provider-level bounce/suppression handling, branded templates, and localization are intentionally deferred.
 - **Audit log persistence** — `src/lib/audit/admin-actions.ts` currently logs structured admin events and prepares `AuditLog`-ready payloads; DB writes will be added alongside real admin mutations.
 - **Email verification flow** — `User.emailVerified` is set by Auth.js for OAuth accounts. Credential-based email verification is deferred.
 - **Nonce-based CSP hardening** — the current CSP is intentionally baseline-compatible; tighten it later if inline/script needs are fully mapped.
