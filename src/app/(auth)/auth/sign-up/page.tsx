@@ -17,7 +17,9 @@ export default function SignUpPage() {
     <Card className="w-full max-w-sm">
       <CardHeader className="text-center">
         <CardTitle className="text-2xl">Create account</CardTitle>
-        <CardDescription>Sign up to start shopping with One Dollar.</CardDescription>
+        <CardDescription>
+          Sign up to start shopping with One Dollar. We&apos;ll ask you to verify your email.
+        </CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-4">

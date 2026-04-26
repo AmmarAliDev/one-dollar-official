@@ -5,6 +5,9 @@ const headersMock = vi.hoisted(() => vi.fn());
 const checkRateLimitMock = vi.hoisted(() => vi.fn());
 const assertTrustedOriginMock = vi.hoisted(() => vi.fn());
 const getClientIpMock = vi.hoisted(() => vi.fn());
+const getPrismaClientMock = vi.hoisted(() => vi.fn());
+const comparePasswordMock = vi.hoisted(() => vi.fn());
+const issueEmailVerificationTokenMock = vi.hoisted(() => vi.fn());
 
 vi.mock("next/headers", () => ({
   headers: headersMock,
@@ -23,6 +26,18 @@ vi.mock("next-auth", () => ({
 
 vi.mock("@/auth", () => ({
   signIn: signInMock,
+}));
+
+vi.mock("@/server/db", () => ({
+  getPrismaClient: getPrismaClientMock,
+}));
+
+vi.mock("@/lib/auth/password", () => ({
+  comparePassword: comparePasswordMock,
+}));
+
+vi.mock("@/features/auth/email-verification", () => ({
+  issueEmailVerificationToken: issueEmailVerificationTokenMock,
 }));
 
 vi.mock("@/lib/rate-limit", () => ({
@@ -55,12 +70,23 @@ function createSignInFormData(redirectTo: string) {
 }
 
 describe("signInAction redirect validation", () => {
+  const userFindUniqueMock = vi.fn();
+
   beforeEach(() => {
     signInMock.mockReset().mockResolvedValue(undefined);
     headersMock.mockReset().mockResolvedValue(new Headers());
     checkRateLimitMock.mockReset().mockResolvedValue({ success: true });
     assertTrustedOriginMock.mockReset().mockResolvedValue(undefined);
     getClientIpMock.mockReset().mockReturnValue("127.0.0.1");
+    comparePasswordMock.mockReset().mockResolvedValue(false);
+    issueEmailVerificationTokenMock.mockReset().mockResolvedValue({ emailSent: true });
+
+    userFindUniqueMock.mockReset().mockResolvedValue(null);
+    getPrismaClientMock.mockReset().mockReturnValue({
+      user: {
+        findUnique: userFindUniqueMock,
+      },
+    });
   });
 
   it("falls back to the storefront home for encoded open-redirect input", async () => {
@@ -94,5 +120,26 @@ describe("signInAction redirect validation", () => {
         redirectTo: "/account/orders?filter=open",
       }),
     );
+  });
+
+  it("blocks unverified credentials users and re-sends verification", async () => {
+    userFindUniqueMock.mockResolvedValue({
+      id: "user-1",
+      email: "user@example.com",
+      password: "hashed-password",
+      emailVerified: null,
+    });
+    comparePasswordMock.mockResolvedValue(true);
+
+    const result = await signInAction(null, createSignInFormData("/account"));
+
+    expect(result).toEqual({
+      errors: ["Please verify your email before signing in. We sent you a new verification link."],
+    });
+    expect(issueEmailVerificationTokenMock).toHaveBeenCalledWith({
+      userId: "user-1",
+      email: "user@example.com",
+    });
+    expect(signInMock).not.toHaveBeenCalled();
   });
 });

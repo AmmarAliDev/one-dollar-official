@@ -17,12 +17,15 @@ import { AuthError } from "next-auth";
 
 import { signIn } from "@/auth";
 import { routes } from "@/config/routes";
+import { issueEmailVerificationToken } from "@/features/auth/email-verification";
 import { signInValidator } from "@/features/auth/validators";
+import { comparePassword } from "@/lib/auth/password";
 import { toActionErrorState } from "@/lib/errors/handling";
 import { logger } from "@/lib/logger";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { assertTrustedOrigin, getClientIp } from "@/lib/security/csrf";
 import { validateWithSchema } from "@/lib/security/validation";
+import { getPrismaClient } from "@/server/db";
 
 export interface SignInActionState {
   errors?: string[];
@@ -67,6 +70,8 @@ export async function signInAction(
   _prev: SignInActionState | null,
   formData: FormData,
 ): Promise<SignInActionState> {
+  const db = getPrismaClient();
+
   try {
     await assertTrustedOrigin({ action: "auth:sign-in" });
   } catch (error) {
@@ -106,7 +111,39 @@ export async function signInAction(
     };
   }
 
-  // ── 3. Authenticate ───────────────────────────────────────────────────────
+  // ── 3. Unverified credentials handling ────────────────────────────────────
+  // Only show the verification message when the password matches, so the flow
+  // remains resistant to account-email probing by unauthenticated attackers.
+  try {
+    const user = await db.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        password: true,
+        emailVerified: true,
+      },
+    });
+
+    if (user?.password && !user.emailVerified) {
+      const passwordValid = await comparePassword(parsed.data.password, user.password);
+
+      if (passwordValid && user.email) {
+        await issueEmailVerificationToken({
+          userId: user.id,
+          email: user.email,
+        });
+
+        return {
+          errors: ["Please verify your email before signing in. We sent you a new verification link."],
+        };
+      }
+    }
+  } catch (error) {
+    logger.error("sign-in: unverified pre-check failed", { error });
+  }
+
+  // ── 4. Authenticate ───────────────────────────────────────────────────────
   try {
     await signIn("credentials", {
       ...Object.fromEntries(formData),

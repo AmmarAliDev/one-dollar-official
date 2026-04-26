@@ -18,6 +18,7 @@ export function SignUpForm() {
   const [, startTransition] = useTransition();
 
   const errors = state?.errors ?? [];
+  const successMessage = state?.success ? state.message : undefined;
 
   const form = useAppForm<SignUpInput>({
     schema: signUpValidator,
@@ -56,6 +57,15 @@ export function SignUpForm() {
           {errors.map((error, index) => (
             <p key={`${error}-${index}`}>{error}</p>
           ))}
+        </div>
+      ) : null}
+
+      {successMessage ? (
+        <div
+          role="status"
+          className="rounded-[calc(var(--radius)-2px)] border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700"
+        >
+          <p>{successMessage}</p>
         </div>
       ) : null}
 
