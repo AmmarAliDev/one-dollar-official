@@ -125,4 +125,12 @@ describe("blog storefront service", () => {
 
     expect(post).toBeNull();
   });
+
+  it("returns an empty listing when DB has no visible posts", async () => {
+    mockListBlogPostsByLocale.mockResolvedValue([]);
+
+    const posts = await getBlogPosts({ locale: "en" });
+
+    expect(posts).toEqual([]);
+  });
 });

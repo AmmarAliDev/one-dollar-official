@@ -172,6 +172,9 @@
 - [x] Blog publish visibility rules enforced: only `PUBLISHED` posts with `publishedAt <= now` are storefront-visible by default
 - [x] Blog migration added to create `blog_post` model + seed previous hardcoded posts into the database
 - [x] Blog service, validation, and admin CRUD tests added/updated for DB-backed behavior
+- [x] Homepage `blog-highlights` storefront rendering is now hydrated from DB-backed blog reads (`getBlogPosts`) instead of manual/hardcoded article arrays
+- [x] Legacy homepage `blog-highlights.content.articles` payload is isolated as non-primary fallback data; on DB read failures storefront clears article arrays and shows empty-state messaging
+- [x] Targeted test coverage added for homepage blog highlight hydration and fallback isolation behavior, plus blog listing empty-result behavior
 - [x] Contact form persistence added — submissions saved to `ContactSubmission` table
 - [x] Contact form server action sends admin notification email + Telegram alert (non-blocking)
 - [x] `EmailSubscriber` data model added with status lifecycle (PENDING/ACTIVE/UNSUBSCRIBED/BOUNCED), source capture, tags, and opaque unsubscribe token
