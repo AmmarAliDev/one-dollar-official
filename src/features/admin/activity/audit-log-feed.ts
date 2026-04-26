@@ -134,6 +134,8 @@ export function mapAuditLogTitle(action: string) {
       return "Product created";
     case "product.updated":
       return "Product updated";
+    case "inventory.adjusted":
+      return "Inventory adjusted";
     case "review.moderated":
       return "Review moderated";
     case "homepage.section.created":
@@ -232,6 +234,22 @@ export function mapAuditLogSummary(entry: Pick<AuditLogActivityRecord, "action" 
     if (entry.action === "product.updated") {
       return entity ? `${entity} product details were updated.` : "Product details were updated.";
     }
+  }
+
+  if (entry.action === "inventory.adjusted") {
+    const productName = readString(changes, "productName");
+    const sku = readString(changes, "sku");
+    const beforeQuantity = changes.beforeQuantity;
+    const afterQuantity = changes.afterQuantity;
+    const adjustmentMode = readString(changes, "adjustmentMode");
+
+    const targetLabel = productName ?? sku ?? "inventory row";
+    if (typeof beforeQuantity === "number" && typeof afterQuantity === "number") {
+      const modeLabel = adjustmentMode ? ` (${toLabel(adjustmentMode)})` : "";
+      return `${targetLabel} changed from ${beforeQuantity} to ${afterQuantity}${modeLabel}.`;
+    }
+
+    return `${targetLabel} stock was adjusted.`;
   }
 
   if (entry.action.startsWith("homepage.")) {
