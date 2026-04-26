@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-**Phase 4 / Prompt 4.10 — Admin blog CRUD and DB-backed storefront blog**
+**Phase 4 / Prompt 4.11 — End-to-end customer reviews and admin moderation workflow**
 
 ## Completed
 
@@ -240,6 +240,12 @@
 - [x] Revenue inclusion assumptions are explicitly surfaced in both the service contract and the page UI
 - [x] Revenue route now has explicit loading, empty, and error states with user-safe messaging
 - [x] Revenue helper and service tests added for calculation logic, date-range helpers, and no-data behavior in `tests/features/admin/revenue/*`
+- [x] Customer review submission flow implemented with server-side validation, CSRF protection, auth enforcement, ownership checks, delivered-order eligibility checks, and rate-limiting safeguards
+- [x] PDP now includes a real review submission form with clear eligibility messaging, pending submit state, and notice/error flash handling
+- [x] Account reviews page now renders real user-scoped review history with moderation status, storefront visibility badges, customer-facing moderation reasons, and product links
+- [x] Storefront review display remains backed by moderated DB records (`APPROVED` only), and admin moderation changes continue to control visibility through shared status rules
+- [x] Review-related tests added/expanded for submission validation, ownership/permission behavior, account listing behavior, and moderation visibility effects
+- [x] Architecture and domain-model docs updated for the production review workflow
 
 ## Deferred by design
 
@@ -258,6 +264,7 @@
 - [ ] Activity feed filtering (by action, model, actor, date range) is deferred
 - [ ] Cursor-driven activity pagination UI controls are deferred (service contract is ready)
 - [ ] Revenue charting, custom date filters, and export/report download workflows are intentionally deferred (current phase focuses on practical summary reporting)
+- [ ] Review anti-abuse hardening beyond current baseline (e.g., semantic spam detection, automated toxicity scoring, velocity anomaly heuristics) is deferred; current protections cover auth, ownership, delivered-order checks, and rate limits
 - [ ] Advanced inventory workflows are deferred: batched adjustments/imports, transfer workflows across multiple locations, and explicit stock-count approval/rollback flows
 - [x] **Admin reviews moderation — completed; UI remains card-based (will not migrate to shared DataTable)**
 

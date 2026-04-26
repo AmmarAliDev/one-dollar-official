@@ -152,6 +152,17 @@ function isReviewModerationSchemaMissing(error: unknown) {
   );
 }
 
+function sanitizeModerationReason(reason: string | undefined) {
+  if (!reason?.trim()) {
+    return null;
+  }
+
+  return reason
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function normalizePage(value: number | undefined) {
   if (!Number.isFinite(value)) {
     return 1;
@@ -543,7 +554,7 @@ export async function moderateAdminReview(input: {
   const db = getPrismaClient();
   const reviewId = ensureReviewId(input.reviewId);
   const nextStatus = ensureReviewStatus(input.nextStatus);
-  const reason = input.reason?.trim() ? input.reason.trim() : null;
+  const reason = sanitizeModerationReason(input.reason);
 
   if (typeof db.$transaction !== "function") {
     throw new AppError("Review moderation requires transaction support.", "REVIEW_TRANSACTION_UNAVAILABLE", {
