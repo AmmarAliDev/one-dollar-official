@@ -11,9 +11,9 @@ This milestone introduces an SEO-ready storefront blog with an English-first con
 
 ## Current data source
 
-The blog currently uses a typed in-repo seed (`src/features/blog/content.ts`) to keep this step modular and low-risk.
+The blog now uses Prisma-backed content (`BlogPost` model / `blog_post` table).
 
-Published pages consume helper functions from `src/features/blog/service.ts` rather than reading seed data directly.
+Published pages consume helper functions from `src/features/blog/service.ts`, which reads DB rows through `src/server/db/blog-queries.ts`.
 
 ## Content model
 
@@ -52,16 +52,17 @@ This is intentionally simple and deterministic for now so ranking logic can be r
 
 ## Future admin editing path
 
-When admin blog CRUD is added:
+Admin blog CRUD is now available at `/admin/blog` and `/admin/blog/[postId]/edit`.
 
-1. Persist `BlogPost` fields in Prisma with locale-aware uniqueness (`locale + slug`).
-2. Reuse existing shared SEO admin controls from `src/features/admin/components/admin-seo-section.tsx` and `src/features/admin/seo/schema.ts`.
-3. Replace static seed resolvers in `src/features/blog/service.ts` with repository-backed reads.
-4. Add a publish scheduler and validation for `publishedAt` transitions.
-5. Add moderation/audit events for create/update/publish/unpublish operations.
+Current implementation:
+
+1. Stores blog fields in Prisma `BlogPost` with unique `(locale, slug)` pairs for stable locale-scoped `/blog/[slug]` routes.
+2. Reuses shared SEO admin controls from `src/features/admin/components/admin-seo-section.tsx`.
+3. Uses server-side validation for slug rules, JSON content blocks, publish dates, and URL/path fields.
+4. Persists audit entries for create/update/delete events.
+5. Revalidates storefront and admin blog routes after mutations.
 
 ## Intentional deferrals
 
-- Admin blog CRUD UI and mutations
 - Urdu storefront route strategy (for example `/ur/blog`)
-- Rich markdown/MDX editor and sanitization pipeline
+- Rich markdown/MDX editor and sanitization pipeline (current editor uses structured JSON blocks)

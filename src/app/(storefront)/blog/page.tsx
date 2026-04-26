@@ -14,13 +14,13 @@ export const metadata = buildMetadata({
     "Read practical shopping, budget, and household planning guides from the One Dollar team.",
 });
 
-export default function BlogListingPage() {
-  let posts = [] as ReturnType<typeof getBlogPosts>;
+export default async function BlogListingPage() {
+  let posts = [] as Awaited<ReturnType<typeof getBlogPosts>>;
   let jsonLd = buildBlogListingJsonLd(posts);
   let loadError: unknown = null;
 
   try {
-    posts = getBlogPosts({ locale: "en" });
+    posts = await getBlogPosts({ locale: "en" });
     jsonLd = buildBlogListingJsonLd(posts);
   } catch (error) {
     loadError = error;

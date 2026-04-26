@@ -65,6 +65,14 @@ enum CategoryStatus {
   ARCHIVED
 }
 
+enum BlogPostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+
+  @@map("blog_post_status")
+}
+
 enum OrderStatus {
   PENDING
   CONFIRMED
@@ -235,6 +243,37 @@ model Category {
 
   @@index([slug])
   @@index([status])
+}
+
+model BlogPost {
+  id               String         @id @default(uuid())
+  locale           String         @default("en")
+  title            String
+  slug             String
+  excerpt          String
+  content          Json
+  coverImageUrl    String?        @map("cover_image_url")
+  coverImageAlt    String?        @map("cover_image_alt")
+  coverImageWidth  Int?           @map("cover_image_width")
+  coverImageHeight Int?           @map("cover_image_height")
+  status           BlogPostStatus @default(DRAFT)
+  publishedAt      DateTime?      @map("published_at")
+  seoTitle         String?        @map("seo_title")
+  seoDescription   String?        @map("seo_description")
+  seoCanonicalUrl  String?        @map("seo_canonical_url")
+  seoOgTitle       String?        @map("seo_og_title")
+  seoOgDescription String?        @map("seo_og_description")
+  seoImageUrl      String?        @map("seo_image_url")
+  seoNoIndex       Boolean        @default(false) @map("seo_no_index")
+  seoSchemaNotes   String?        @map("seo_schema_notes")
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt        DateTime       @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([publishedAt])
+  @@index([locale, status])
+  @@unique([locale, slug])
+  @@map("blog_post")
 }
 
 model Product {
