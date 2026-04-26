@@ -256,6 +256,9 @@
 - [x] Verification page added at `/auth/verify-email` with clear success/invalid/expired states
 - [x] Credentials sign-in now blocks unverified users and re-issues verification links after password match; OAuth behavior remains unchanged
 - [x] Verification-focused tests added for token utilities, verification success/expiry handling, and unverified sign-in rules
+- [x] Admin settings placeholder replaced with a practical first-pass `/admin/settings` workspace for store identity, support contact details, shipping basics, and operational defaults
+- [x] Store settings persistence added through new `StoreSettings` singleton model + migration (`id = default`) with `settings.updated` audit log events
+- [x] Admin settings validation, persistence-service behavior, and form rendering behavior tests added under `tests/features/admin/settings/*`
 
 ## Deferred by design
 
@@ -276,6 +279,7 @@
 - [ ] Advanced inventory workflows are deferred: batched adjustments/imports, transfer workflows across multiple locations, and explicit stock-count approval/rollback flows
 - [ ] Password reset email deliverability/branding hardening is deferred (SPF/DKIM/DMARC tuning, bounce/suppression handling, branded/localized templates)
 - [x] **Admin reviews moderation — completed; UI remains card-based (will not migrate to shared DataTable)**
+- [ ] Advanced settings areas are intentionally deferred for now: tax rules, payment gateway controls, multi-warehouse shipping matrices, and role-scoped notification policy automation
 
 ## Recommended Next Prompt
 

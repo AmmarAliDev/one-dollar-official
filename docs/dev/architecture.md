@@ -37,6 +37,7 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `(admin)/admin/products` now provides product CRUD with reusable RHF + Zod form composition for simple and variant-based catalog entries
 - `(admin)/admin/blog` now provides blog post CRUD with structured content JSON, publish scheduling, and SEO controls
 - `(admin)/admin/inventory` now supports low-stock monitoring plus inline manual stock adjustments for authorized catalog admins
+- `(admin)/admin/settings` now provides practical store settings management (identity, support contacts, shipping basics, and operational defaults) backed by a singleton persistence record and CSRF/RBAC-protected server action writes
 - `(auth)` now uses the same shared form foundation for sign-in and sign-up while preserving the existing server-action flows
 
 ## UI Foundation Strategy
@@ -205,6 +206,20 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - Concurrency is handled via `updateMany` matching on `id + updatedAt`; stale writes fail with a user-safe conflict error.
 - Quantity safeguards prevent manual updates from producing negative stock or quantities below `reserved`.
 - Successful adjustments write `AuditLog` events (`inventory.adjusted`) and revalidate `/admin/inventory` + `/admin`.
+
+## Admin Store Settings Strategy
+
+- Store settings logic is isolated in `src/features/admin/settings` with clear module boundaries: `validation.ts`, `service.ts`, `actions.ts`, and `flash.ts`.
+- Persistence uses a singleton `StoreSettings` row (`id = "default"`) so this first-pass scope remains simple while still supporting future expansion.
+- Validation uses Zod and rejects invalid contact/shipping values before mutation; optional fields normalize to `undefined`/`null` consistently.
+- Server-action writes are protected by trusted-origin checks and require both `admin:access` and `settings:manage` permissions.
+- Save operations write `AuditLog` entries (`settings.updated`) and revalidate `/admin/settings`.
+- The page intentionally focuses on operationally useful present-day settings:
+	- store identity basics
+	- support contact info
+	- shipping-related basic defaults
+	- operational defaults
+- Advanced enterprise settings (multi-warehouse rules, tax engines, payment-provider controls, SLA matrices) remain deferred by design.
 
 ## Engineering Quality Gates
 

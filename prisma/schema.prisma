@@ -562,6 +562,28 @@ model AuditLog {
   createdAt DateTime @default(now()) @map("created_at")
 }
 
+model StoreSettings {
+  // Singleton-style settings row. The service always reads/writes the "default" id.
+  id                    String   @id
+  storeName             String   @map("store_name")
+  storeTagline          String?  @map("store_tagline")
+  supportEmail          String   @map("support_email")
+  supportPhone          String?  @map("support_phone")
+  supportWhatsapp       String?  @map("support_whatsapp")
+  supportHours          String?  @map("support_hours")
+  shippingOriginCity    String   @map("shipping_origin_city")
+  shippingFlatRate      Int      @default(250) @map("shipping_flat_rate")
+  shippingFreeThreshold Int?     @map("shipping_free_threshold")
+  dispatchLeadTimeDays  Int      @default(1) @map("dispatch_lead_time_days")
+  lowStockThreshold     Int      @default(5) @map("low_stock_threshold")
+  allowBackorders       Boolean  @default(false) @map("allow_backorders")
+  metadata              Json?
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  @@map("store_settings")
+}
+
 model HomePageSection {
   id        String   @id @default(uuid())
   key       String   @unique

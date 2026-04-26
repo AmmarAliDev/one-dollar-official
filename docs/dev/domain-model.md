@@ -24,6 +24,7 @@ Key entities
 - `Order` / `OrderItem` / `OrderAddress` — orders contain snapshot fields (productName, unitPrice, etc.) so historical data remains stable.
 - `AuditLog` — simple auditing table to store actor, action and JSON diffs, including admin review moderation and admin inventory adjustment events (`inventory.adjusted`).
 - `HomePageSection`, `Banner`, `DealCampaign` — lightweight CMS / marketing placeholders.
+- `StoreSettings` — singleton-style operational settings record (`id = default`) for store identity, support contact channels, shipping baseline defaults, and simple operations defaults used by admin workflows.
 
 Data and indexing strategy
 - Timestamps: `createdAt` and `updatedAt` are present on most models (`@default(now())` and `@updatedAt`).
@@ -35,6 +36,7 @@ Data and indexing strategy
 - Because checkout currently supports COD only, `paymentStatus` is intentionally not used yet as a revenue-recognition gate for dashboard cards.
 - Admin revenue reporting at `/admin/revenue` uses the same recognition assumptions and adds practical period windows (`last 7 days`, `last 30 days`) plus order totals summaries to support day-to-day admin decisions.
 - Admin inventory adjustments enforce quantity-integrity rules server-side: resulting quantity cannot be negative and cannot be lower than `reserved`; stale writes are rejected when `updatedAt` no longer matches the submitted version.
+- Admin settings are intentionally scoped to practical first-pass controls. The singleton record avoids over-modeling while allowing future additive fields and grouped settings sections.
 
 Auth & permissions
 - Users reference a `Role` record and roles are exposed as an enum `RoleKey` for convenience.
