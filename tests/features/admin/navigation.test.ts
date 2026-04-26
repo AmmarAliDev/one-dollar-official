@@ -11,6 +11,7 @@ describe("admin navigation visibility", () => {
       "Dashboard",
       "Products",
       "Reviews",
+      "Blog",
       "Categories",
       "Orders",
       "Homepage",

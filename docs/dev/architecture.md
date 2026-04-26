@@ -35,6 +35,7 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `(admin)/admin/revenue` now reads a dedicated DB-backed report through `src/features/admin/revenue/service.ts`, showing recognized revenue, recent period summaries, order totals, and explicit inclusion assumptions
 - `(admin)/admin/categories` now provides category CRUD with shared typed create/edit/filter forms and SEO field controls
 - `(admin)/admin/products` now provides product CRUD with reusable RHF + Zod form composition for simple and variant-based catalog entries
+- `(admin)/admin/blog` now provides blog post CRUD with structured content JSON, publish scheduling, and SEO controls
 - `(admin)/admin/inventory` now supports low-stock monitoring plus inline manual stock adjustments for authorized catalog admins
 - `(auth)` now uses the same shared form foundation for sign-in and sign-up while preserving the existing server-action flows
 
@@ -114,6 +115,13 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `src/app/(storefront)/categories/page.tsx` is the category index (ISR: 900s). `src/app/(storefront)/categories/[slug]/page.tsx` is the SEO-friendly category listing route. `src/app/(storefront)/categories/[slug]/[productSlug]/page.tsx` is the SEO-friendly PDP route.
 - `generateStaticParams` in both listing and PDP routes fetches from the DB so newly published products are picked up on next ISR/build cycle.
 - `data.ts` (legacy seed file) still exists for local reference but is no longer used by the storefront service.
+
+## Blog Data Strategy
+
+- `src/features/blog/service.ts` is now database-backed and reads from `BlogPost` rows through `src/server/db/blog-queries.ts`.
+- Storefront blog visibility is enforced in the service layer: only `PUBLISHED` posts with `publishedAt <= now` are shown by default; drafts/archived/future posts stay hidden unless `includeDrafts` is explicitly requested.
+- `src/app/(storefront)/blog/page.tsx` and `src/app/(storefront)/blog/[slug]/page.tsx` continue to generate metadata and JSON-LD using the same helper contracts, but now consume async DB reads.
+- Admin blog mutations (`src/features/admin/blog/actions.ts`) revalidate `/blog`, dynamic blog detail pages, and `/admin/blog` so published/unpublished changes are reflected promptly.
 
 ## Cache Strategy
 

@@ -15,6 +15,7 @@ Key entities
 - `Account` / `Session` — NextAuth-compatible tables are included to make integration straightforward.
 - `Address` — user addresses. Orders use `OrderAddress` snapshots so address changes do not mutate historic orders.
 - `Category` — currently managed as simple categories in admin (no parent assignment), with `name`, `slug`, `description`, `status`, and SEO fields.
+- `BlogPost` — CMS-style article record for storefront blog content with locale, title, slug, excerpt, structured content JSON blocks, cover-image metadata, publication status/date, and SEO fields.
 - `Product` — product master record for both simple and variant-based products. Admin management covers content copy, related product links, images, specifications, status, an optional `masterSku`/`product_code` parent identifier, and shared SEO/metadata.
 - `ProductVariant` — SKU-level record used for inventory, pricing, fulfillment, and shopper options JSON such as color/size. `Inventory` is required per variant, and `ProductVariant.sku` is the authoritative SKU for orders and stock.
 - `Inventory` — tracks `quantity`, `reserved`, `safetyStock` and `location` (Karachi by default). Admin inventory now supports manual adjustments in the low-stock workspace, with server-side validation and optimistic concurrency protection using `updatedAt`.
@@ -27,6 +28,7 @@ Key entities
 Data and indexing strategy
 - Timestamps: `createdAt` and `updatedAt` are present on most models (`@default(now())` and `@updatedAt`).
 - Unique constraints for `slug`, `ProductVariant.sku`, and `orderNumber` support lookups and safe indexing. The product-level identifier is `masterSku` (optional) and not required to be unique.
+- `BlogPost` enforces a composite unique constraint on `(locale, slug)` so the same slug can exist across locales while remaining unique per locale. Blog indexing includes `status`, `publishedAt`, and `(locale, status)` for listing/publish workflows.
 - Indexes on foreign keys (`userId`, `productId`, `categoryId`) to support common queries.
 - Price fields use integer in the smallest currency unit (PKR) to avoid floating point errors.
 - Admin dashboard revenue metric currently treats recognized revenue as the sum of `Order.total` for `DELIVERED` orders where `refundStatus` is not `COMPLETED` (completed refunds are excluded from the aggregate).

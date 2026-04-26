@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-**Phase 4 / Prompt 4.9 — Admin inventory manual adjustment workflow**
+**Phase 4 / Prompt 4.10 — Admin blog CRUD and DB-backed storefront blog**
 
 ## Completed
 
@@ -166,6 +166,12 @@
 - [x] Blog listing and article pages now emit structured data (`CollectionPage`, `ItemList`, `BlogPosting`, and `BreadcrumbList`)
 - [x] Blog helper tests added for listing/page data flow, metadata inputs, and structured data generation
 - [x] AI and developer docs added for blog content modeling and future admin editing path
+- [x] Blog content moved from hardcoded seed usage to Prisma-backed `BlogPost` reads through `src/server/db/blog-queries.ts`
+- [x] Admin blog CRUD added at `/admin/blog` with create/edit/delete flows, status filters, publish scheduling, and SEO controls
+- [x] Storefront blog routes now use async DB-backed reads while preserving existing route behavior and structured-data SEO output
+- [x] Blog publish visibility rules enforced: only `PUBLISHED` posts with `publishedAt <= now` are storefront-visible by default
+- [x] Blog migration added to create `blog_post` model + seed previous hardcoded posts into the database
+- [x] Blog service, validation, and admin CRUD tests added/updated for DB-backed behavior
 - [x] Contact form persistence added — submissions saved to `ContactSubmission` table
 - [x] Contact form server action sends admin notification email + Telegram alert (non-blocking)
 - [x] `EmailSubscriber` data model added with status lifecycle (PENDING/ACTIVE/UNSUBSCRIBED/BOUNCED), source capture, tags, and opaque unsubscribe token
@@ -241,7 +247,6 @@
 - [ ] Online gateway provider implementations under checkout payment contract
 - [ ] Broader admin CRUD workflows beyond the current category flows and product list/create/edit management
 - [ ] Server-side notifications and third-party integrations
-- [ ] Admin-manageable blog CRUD and persistence-backed publishing workflow
 - [ ] Urdu blog route strategy and locale-aware storefront rendering
 - [ ] **Double opt-in confirmation email** — new subscribers land as PENDING; confirmation email and `GET /api/email/confirm?token=` route are deferred
 - [ ] **Abandoned cart recovery job** — the cron/queue worker that reads AbandonedCartEvent rows, sends recovery emails, and records REMINDER_QUEUED/REMINDER_SENT events is deferred
