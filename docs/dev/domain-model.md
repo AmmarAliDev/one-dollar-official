@@ -17,11 +17,11 @@ Key entities
 - `Category` — currently managed as simple categories in admin (no parent assignment), with `name`, `slug`, `description`, `status`, and SEO fields.
 - `Product` — product master record for both simple and variant-based products. Admin management covers content copy, related product links, images, specifications, status, an optional `masterSku`/`product_code` parent identifier, and shared SEO/metadata.
 - `ProductVariant` — SKU-level record used for inventory, pricing, fulfillment, and shopper options JSON such as color/size. `Inventory` is required per variant, and `ProductVariant.sku` is the authoritative SKU for orders and stock.
-- `Inventory` — tracks `quantity`, `reserved`, `safetyStock` and `location` (Karachi by default).
+- `Inventory` — tracks `quantity`, `reserved`, `safetyStock` and `location` (Karachi by default). Admin inventory now supports manual adjustments in the low-stock workspace, with server-side validation and optimistic concurrency protection using `updatedAt`.
 - `Review` — customer product feedback now includes moderation-aware state (`PENDING`, `APPROVED`, `REJECTED`, `HIDDEN`) plus optional moderation reason/timestamps so admins can safely control storefront visibility without deleting the original text.
 - `Wishlist`, `Cart` (and their items) support shopper intent and purchase flows.
 - `Order` / `OrderItem` / `OrderAddress` — orders contain snapshot fields (productName, unitPrice, etc.) so historical data remains stable.
-- `AuditLog` — simple auditing table to store actor, action and JSON diffs, including admin review moderation events.
+- `AuditLog` — simple auditing table to store actor, action and JSON diffs, including admin review moderation and admin inventory adjustment events (`inventory.adjusted`).
 - `HomePageSection`, `Banner`, `DealCampaign` — lightweight CMS / marketing placeholders.
 
 Data and indexing strategy
@@ -32,6 +32,7 @@ Data and indexing strategy
 - Admin dashboard revenue metric currently treats recognized revenue as the sum of `Order.total` for `DELIVERED` orders where `refundStatus` is not `COMPLETED` (completed refunds are excluded from the aggregate).
 - Because checkout currently supports COD only, `paymentStatus` is intentionally not used yet as a revenue-recognition gate for dashboard cards.
 - Admin revenue reporting at `/admin/revenue` uses the same recognition assumptions and adds practical period windows (`last 7 days`, `last 30 days`) plus order totals summaries to support day-to-day admin decisions.
+- Admin inventory adjustments enforce quantity-integrity rules server-side: resulting quantity cannot be negative and cannot be lower than `reserved`; stale writes are rejected when `updatedAt` no longer matches the submitted version.
 
 Auth & permissions
 - Users reference a `Role` record and roles are exposed as an enum `RoleKey` for convenience.

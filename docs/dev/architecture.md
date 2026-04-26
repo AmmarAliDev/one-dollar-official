@@ -35,6 +35,7 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `(admin)/admin/revenue` now reads a dedicated DB-backed report through `src/features/admin/revenue/service.ts`, showing recognized revenue, recent period summaries, order totals, and explicit inclusion assumptions
 - `(admin)/admin/categories` now provides category CRUD with shared typed create/edit/filter forms and SEO field controls
 - `(admin)/admin/products` now provides product CRUD with reusable RHF + Zod form composition for simple and variant-based catalog entries
+- `(admin)/admin/inventory` now supports low-stock monitoring plus inline manual stock adjustments for authorized catalog admins
 - `(auth)` now uses the same shared form foundation for sign-in and sign-up while preserving the existing server-action flows
 
 ## UI Foundation Strategy
@@ -65,7 +66,7 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 	- `src/features/admin/products/components/admin-products-table.tsx` — admin product listing with status, category, pricing, stock, and SEO display
 	- `src/features/admin/categories/components/admin-categories-table.tsx` — admin category listing with status, SEO, and edit/delete actions
 	- `src/features/admin/orders/components/admin-orders-table.tsx` — admin order queue with customer, status, payment, and total display; preserves pagination
-	- `src/features/admin/inventory/components/admin-inventory-table.tsx` — low-stock alert listing with product, SKU, on-hand, safety threshold, and location
+	- `src/features/admin/inventory/components/admin-inventory-table.tsx` — low-stock alert listing with product, SKU, on-hand, safety threshold, location, and permission-aware inline adjustment controls
 - All feature-specific table components follow the pattern: typed columns definition, cell rendering logic with feature-specific formatting (badges, links, price displays), row actions/callbacks, and integration with the shared `DataTable` component.
 - **Tables intentionally not migrated:** admin review moderation (kept as card-based UI for better moderation workflow) and storefront order history (kept as cards for customer-facing readability).
 
@@ -101,6 +102,7 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - If these layers cannot be kept consistent over time, prefer consolidating to a single authoritative server-side guard rather than maintaining conflicting rules.
 - `src/app/unauthorized/page.tsx` and `src/app/forbidden/page.tsx` provide explicit recovery screens instead of raw auth errors.
 - `src/lib/audit/admin-actions.ts` prepares structured admin action records for future `AuditLog` persistence.
+- `src/features/admin/inventory/actions.ts` applies trusted-origin validation and requires both `admin:access` and `catalog:write` for stock mutations.
 
 ## Catalog Data Strategy
 
@@ -174,6 +176,15 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - Event mapping logic is isolated in `src/features/admin/activity/audit-log-feed.ts` so title/summary formatting can evolve independently from query logic.
 - Actor context is resolved in a second query from `User` records using `actorId` when available; missing/deleted actors gracefully fall back to neutral labels.
 - UI remains intentionally simple for non-technical admins: readable titles, plain-language summaries, timestamp, and actor/model context.
+- Inventory adjustments now emit `inventory.adjusted` records with before/after quantities, adjustment mode, and reason so operational stock changes are traceable in the same feed.
+
+## Admin Inventory Adjustment Strategy
+
+- Stock mutation logic is isolated in `src/features/admin/inventory/service.ts` and leaves existing low-stock read behavior intact.
+- Server-side validation in `src/features/admin/inventory/validation.ts` enforces mode, amount, reason, and version timestamp integrity.
+- Concurrency is handled via `updateMany` matching on `id + updatedAt`; stale writes fail with a user-safe conflict error.
+- Quantity safeguards prevent manual updates from producing negative stock or quantities below `reserved`.
+- Successful adjustments write `AuditLog` events (`inventory.adjusted`) and revalidate `/admin/inventory` + `/admin`.
 
 ## Engineering Quality Gates
 

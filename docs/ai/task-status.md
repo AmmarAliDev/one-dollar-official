@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-**Phase 4 / Prompt 4.8 — Admin revenue reporting page connected to order data**
+**Phase 4 / Prompt 4.9 — Admin inventory manual adjustment workflow**
 
 ## Completed
 
@@ -197,6 +197,12 @@
 - [x] **Admin categories table** migrated to shared `DataTable` with columns for name, slug, status, SEO, updated date, and edit/delete actions
 - [x] **Admin orders table** migrated to shared `DataTable` with columns for order number, customer, status, payment, total, placed date, and view actions; pagination preserved
 - [x] **Admin inventory table** migrated to shared `DataTable` with columns for product, SKU, on-hand quantity, safety stock threshold, and warehouse location
+- [x] Admin inventory now supports inline manual stock updates from `/admin/inventory` for authorized catalog admins (`catalog:write`)
+- [x] Inventory update server action added with trusted-origin checks, server-side validation, user-safe flash messages, and route revalidation for `/admin/inventory` + `/admin`
+- [x] Inventory service layer added with quantity-integrity safeguards (no negative stock, no drop below reserved) and optimistic concurrency protection via `updatedAt`
+- [x] Inventory adjustments now persist `AuditLog` events (`inventory.adjusted`) with before/after quantities, reason, SKU/product context, and actor metadata
+- [x] Admin activity feed mapping now includes inventory adjustment titles and summaries
+- [x] Targeted tests added for inventory update validation, service logic, audit behavior, and action-level permission enforcement
 - [x] All admin table migrations preserve existing business logic: filters, search, sorting, row actions, status badges, and permissions-based UI
 - [x] Table rendering standardized across admin product, category, order, and inventory pages using feature-specific table components wrapping the shared DataTable
 - [x] Table components follow the pattern: typed columns definition, cell rendering logic, row actions/callbacks, and feature-specific UI (badges, links, moderation forms)
@@ -244,8 +250,11 @@
 - [ ] Activity feed filtering (by action, model, actor, date range) is deferred
 - [ ] Cursor-driven activity pagination UI controls are deferred (service contract is ready)
 - [ ] Revenue charting, custom date filters, and export/report download workflows are intentionally deferred (current phase focuses on practical summary reporting)
+- [ ] Advanced inventory workflows are deferred: batched adjustments/imports, transfer workflows across multiple locations, and explicit stock-count approval/rollback flows
 - [x] **Admin reviews moderation — completed; UI remains card-based (will not migrate to shared DataTable)**
 
 ## Recommended Next Prompt
 
-Proceed with **Phase 4 / Prompt 4.6 — admin subscriber list view and notifications integration**.
+Proceed with **Phase 4 / Prompt 5.1 — inventory history filters and adjustment reason taxonomy**.
+
+Note on prompt numbering: the apparent jump from "Prompt 4.9" to "Prompt 5.1" is intentional — "Prompt 5.0" has been reserved as a higher-level or cross-phase milestone and is not currently used. Prompt numbers follow a `Phase.Prompt` convention where the first number is the phase and the second is a prompt identifier; gaps or skipped numbers are left intentionally to reserve space for larger, cross-cutting prompts or future planning items. If a prompt belonged strictly to Phase 4 it would be numbered `4.x` (for example `4.10`).

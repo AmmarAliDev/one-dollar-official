@@ -2,6 +2,9 @@ import { PageShell } from "@/components/layout/page-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { SectionErrorState } from "@/components/ui/section-error-state";
 import { buildMetadata } from "@/config/metadata";
+import type { ReactNode } from "react";
+import { routes } from "@/config/routes";
+import { updateAdminInventoryAction } from "@/features/admin/inventory/actions";
 import {
   AdminPageHeader,
 } from "@/features/admin/components/admin-page-patterns";
@@ -9,6 +12,12 @@ import {
   AdminInventoryTable,
   type AdminInventoryItem,
 } from "@/features/admin/inventory/components/admin-inventory-table";
+import {
+  getAdminInventoryErrorMessage,
+  getAdminInventoryNoticeMessage,
+} from "@/features/admin/inventory/flash";
+import { requireRouteAccess } from "@/lib/auth/guards";
+import { hasPermission, rbacPermissions } from "@/lib/auth/rbac";
 import { getPrismaClient } from "@/server/db";
 
 export const metadata = buildMetadata({
@@ -17,7 +26,44 @@ export const metadata = buildMetadata({
   description: "Inventory and low-stock placeholder using the shared admin table pattern.",
 });
 
-export default async function AdminInventoryPage() {
+type AdminInventoryPageProps = {
+  searchParams?: Promise<{ notice?: string; error?: string }>;
+};
+
+function FlashBanner({
+  message,
+  tone = "notice",
+  role,
+}: {
+  message: ReactNode;
+  tone?: "notice" | "error";
+  role?: string;
+}) {
+  const isNotice = tone === "notice";
+  const cls = isNotice
+    ? "rounded-md border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-900"
+    : "rounded-md border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive";
+
+  const ariaRole = role ?? (isNotice ? "status" : "alert");
+
+  return (
+    <div role={ariaRole} className={cls}>
+      {message}
+    </div>
+  );
+}
+
+export default async function AdminInventoryPage({ searchParams }: AdminInventoryPageProps) {
+  const { role } = await requireRouteAccess({
+    permissions: [rbacPermissions.adminAccess],
+    from: routes.admin.inventory,
+  });
+
+  const canAdjustInventory = hasPermission(role, rbacPermissions.catalogWrite);
+  const params = (await searchParams) ?? {};
+  const noticeMessage = getAdminInventoryNoticeMessage(params.notice);
+  const errorMessage = getAdminInventoryErrorMessage(params.error);
+
   // Try to read low-stock inventory from the database. If the DB is not
   // available or an error occurs, we fall back to the shared placeholder
   // pattern and show an error state.
@@ -69,9 +115,22 @@ export default async function AdminInventoryPage() {
           description="See products that may need restocking before customers are impacted."
         />
 
+        {noticeMessage ? (
+          <FlashBanner message={noticeMessage} tone="notice" />
+        ) : null}
+
+        {errorMessage ? (
+          <FlashBanner message={errorMessage} tone="error" />
+        ) : null}
+
         <Card>
           <CardContent className="pt-6">
-            <AdminInventoryTable items={[]} />
+            <AdminInventoryTable
+              items={[]}
+              canAdjust={canAdjustInventory}
+              updateAction={updateAdminInventoryAction}
+              returnTo={routes.admin.inventory}
+            />
           </CardContent>
         </Card>
       </PageShell>
@@ -93,6 +152,7 @@ export default async function AdminInventoryPage() {
       onHand,
       safetyStock: inv.safetyStock ?? null,
       location: inv.location ?? null,
+      updatedAt: inv.updatedAt instanceof Date ? inv.updatedAt.toISOString() : new Date(inv.updatedAt).toISOString(),
     };
   });
 
@@ -104,11 +164,28 @@ export default async function AdminInventoryPage() {
         description="See products that may need restocking before customers are impacted."
       />
 
+      {noticeMessage ? <FlashBanner message={noticeMessage} tone="notice" /> : null}
+
+      {errorMessage ? <FlashBanner message={errorMessage} tone="error" /> : null}
+
       <Card>
         <CardContent className="pt-6">
-          <AdminInventoryTable items={inventoryItems} />
+          <AdminInventoryTable
+            items={inventoryItems}
+            canAdjust={canAdjustInventory}
+            updateAction={updateAdminInventoryAction}
+            returnTo={routes.admin.inventory}
+          />
         </CardContent>
       </Card>
+
+      {!canAdjustInventory ? (
+        <Card className="border-dashed">
+          <CardContent className="p-4 text-sm text-muted-foreground">
+            You can review low-stock rows here, but inventory adjustments require catalog write access.
+          </CardContent>
+        </Card>
+      ) : null}
     </PageShell>
   );
 }
