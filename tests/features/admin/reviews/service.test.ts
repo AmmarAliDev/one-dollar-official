@@ -196,6 +196,75 @@ describe("admin review moderation service", () => {
     expect(result.storefrontVisible).toBe(true);
   });
 
+  it("marks rejected reviews as hidden from storefront", async () => {
+    prismaMock.review.findUnique.mockResolvedValue({
+      id: "review-2",
+      status: "APPROVED",
+      approved: true,
+      title: "Okay",
+      body: "Not ideal",
+      rating: 2,
+      product: {
+        id: "product-1",
+        name: "Daily Face Wash",
+        slug: "daily-face-wash",
+        category: {
+          slug: "skincare",
+        },
+      },
+      user: {
+        id: "user-1",
+        name: "Ammar Khan",
+        email: "ammar@example.com",
+      },
+    });
+    prismaMock.review.update.mockResolvedValue({
+      id: "review-2",
+      status: "REJECTED",
+      approved: false,
+      moderationReason: "Off-topic content",
+      moderatedAt: new Date("2026-04-20T11:00:00.000Z"),
+      product: {
+        id: "product-1",
+        name: "Daily Face Wash",
+        slug: "daily-face-wash",
+        category: {
+          slug: "skincare",
+        },
+      },
+      user: {
+        id: "user-1",
+        name: "Ammar Khan",
+        email: "ammar@example.com",
+      },
+      createdAt: new Date("2026-04-20T09:00:00.000Z"),
+      updatedAt: new Date("2026-04-20T11:00:00.000Z"),
+      rating: 2,
+      title: "Okay",
+      body: "Not ideal",
+    });
+    prismaMock.auditLog.create.mockResolvedValue({ id: "audit-2" });
+
+    const result = await moderateAdminReview({
+      reviewId: "review-2",
+      nextStatus: "REJECTED",
+      reason: "Off-topic content",
+      actor: {
+        actorId: "admin-1",
+      },
+    });
+
+    expect(prismaMock.review.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: "REJECTED",
+          approved: false,
+        }),
+      }),
+    );
+    expect(result.storefrontVisible).toBe(false);
+  });
+
   it("treats only approved reviews as storefront-visible", () => {
     expect(isReviewVisibleOnStorefront("APPROVED")).toBe(true);
     expect(isReviewVisibleOnStorefront("PENDING")).toBe(false);
