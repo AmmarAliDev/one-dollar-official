@@ -229,6 +229,17 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - TypeScript runs in strict mode with stronger safety checks and shared path aliases.
 - Vitest smoke tests now cover config loading and invalid env handling.
 
+## Rewards Phase-2 Placeholder Strategy
+
+- `src/features/rewards/contracts.ts` defines contract-first interfaces for:
+	- referral tracking (`ReferralTrackingService`)
+	- loyalty points (`LoyaltyPointsService`)
+	- wallet ledger (`WalletLedgerService`)
+- Runtime parse helpers (`parseReferralVisitInput`, `parseReferralConversionInput`, `parseLoyaltyPointsMutationInput`, `parseWalletLedgerEntryInput`) provide a shared, user-safe validation/error baseline for future route handlers and server actions.
+- Contract response shape is standardized by `RewardsServiceResult<T>` so future modules can return typed success/failure payloads without leaking internals.
+- This seam is intentionally isolated and not wired into checkout/order modules in this phase.
+- Detailed rollout and schema plan is documented in `docs/dev/referral-loyalty-wallet.md`.
+
 ## Deferred on Purpose
 
 This phase already includes the RBAC foundation (`src/lib/auth/rbac.ts`, `src/lib/auth/guards.ts`, `src/proxy.ts`, the unauthorized/forbidden pages, and the audit-ready helper). Feature-specific repositories, richer auth/business integrations, and real admin workflows should still be added in later prompts on top of the shared `src/server/db` structure.
