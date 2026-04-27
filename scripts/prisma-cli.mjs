@@ -1,7 +1,12 @@
 import { spawnSync } from "node:child_process";
 import path from "node:path";
 
-import { getMigrateDevSafetyCheck, resolvePrismaEnv } from "./prisma-env.mjs";
+import {
+  getMigrateDeploySafetyCheck,
+  getMigrateDevSafetyCheck,
+  isDeploymentRuntime,
+  resolvePrismaEnv,
+} from "./prisma-env.mjs";
 
 const args = process.argv.slice(2);
 
@@ -12,8 +17,9 @@ if (args.length === 0) {
 
 const { env, usedNonPoolingFallback } = resolvePrismaEnv();
 const isMigrateDevCommand = args[0] === "migrate" && args[1] === "dev";
+const isMigrateDeployCommand = args[0] === "migrate" && args[1] === "deploy";
 
-if (usedNonPoolingFallback) {
+if (usedNonPoolingFallback && !isMigrateDeployCommand) {
   console.warn(
     "[prisma] POSTGRES_URL_NON_POOLING is not set. Falling back to DATABASE_URL for this command.",
   );
@@ -28,6 +34,26 @@ if (isMigrateDevCommand) {
     if (!env.SHADOW_DATABASE_URL && env.POSTGRES_URL_NON_POOLING !== env.DATABASE_URL) {
       console.error(
         "Tip: SHADOW_DATABASE_URL is optional for local PostgreSQL, but may be required when developing against a separate hosted development database.",
+      );
+    }
+
+    process.exit(1);
+  }
+}
+
+if (isMigrateDeployCommand) {
+  const safetyCheck = getMigrateDeploySafetyCheck(env);
+
+  if (!safetyCheck.allowed) {
+    console.error(safetyCheck.reason);
+
+    if (isDeploymentRuntime(env)) {
+      console.error(
+        "Tip: in production deployments, configure DATABASE_URL as pooled and POSTGRES_URL_NON_POOLING as the direct database URL.",
+      );
+    } else {
+      console.error(
+        "Tip: use pnpm prisma:migrate:dev for local schema changes; reserve pnpm prisma:migrate:deploy for CI/production deployment workflows.",
       );
     }
 

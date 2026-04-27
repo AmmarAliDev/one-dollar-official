@@ -53,6 +53,9 @@ Validation is centralized in `src/config/env.ts`, and the safe shared config sna
 | `DATABASE_URL`             | Yes for Prisma workflows        | Main PostgreSQL connection string for local development, Prisma CLI commands, and server-side DB access |
 | `POSTGRES_URL_NON_POOLING` | Recommended for Prisma Migrate  | Direct non-pooling PostgreSQL URL for Prisma migrations; for local Postgres this can match `DATABASE_URL` |
 | `SHADOW_DATABASE_URL`      | Optional                        | Separate shadow database used only when `prisma migrate dev` needs one for a hosted dev setup           |
+| `PRISMA_ALLOW_HOSTED_MIGRATE_DEV` | No                       | Break-glass override to allow `prisma migrate dev` against hosted DBs in disposable dev environments     |
+| `PRISMA_ALLOW_LOCAL_DEPLOY_BUILD` | No                       | Break-glass override to run `pnpm build:deploy` locally for pipeline rehearsal                            |
+| `PRISMA_ALLOW_POOLED_MIGRATE_DEPLOY` | No                    | Break-glass override to permit deploy migrations without pooled/direct URL separation                      |
 | `APP_SECRET`               | Conditionally required          | Add before enabling a sensitive server-side integration that calls `getRequiredServerEnv("APP_SECRET")` |
 | `AUTH_SECRET`              | Yes outside development         | Auth.js secret for any non-development environment                                                      |
 
@@ -81,6 +84,43 @@ pnpm prisma:generate
 - Use `pnpm build` for a local-safe app build.
 - Use `pnpm build:deploy` when the deployment pipeline should apply Prisma migrations before the production build.
 
+### Command policy (safe by default)
+
+- `pnpm build` is the default local build command.
+- `pnpm build:deploy` is now guarded and only runs in deploy-like contexts (`NODE_ENV=production`, `CI=true`, or `VERCEL=1`).
+- For intentional local rehearsal of the deploy pipeline, set `PRISMA_ALLOW_LOCAL_DEPLOY_BUILD=true` for that shell session.
+
+```bash
+# local build (recommended)
+pnpm build
+
+# deployment/CI build path
+pnpm build:deploy
+
+# intentional local deploy-pipeline rehearsal (temporary, POSIX shells)
+PRISMA_ALLOW_LOCAL_DEPLOY_BUILD=true pnpm build:deploy
+
+# intentional local deploy-pipeline rehearsal (temporary, PowerShell)
+$env:PRISMA_ALLOW_LOCAL_DEPLOY_BUILD='true'; pnpm build:deploy
+```
+
+### Migration recovery (failed migration history)
+
+If deployment fails with Prisma `P3009` (failed migration recorded in `_prisma_migrations`), resolve the broken migration state before retrying deploy.
+
+```bash
+# inspect state
+pnpm prisma:migrate:status
+
+# mark a failed migration as rolled back (example)
+pnpm prisma:migrate:resolve -- --rolled-back 20260426_admin_blog_db
+
+# re-run deployment-safe migration
+pnpm prisma:migrate:deploy
+```
+
+Use `pnpm prisma:migrate:resolve` only with a known migration incident and a verified DBA/developer remediation plan.
+
 Keep application queries behind `src/server/db` and feature-level repositories instead of importing Prisma directly into route handlers. See `docs/dev/database-access.md` for the repository/service/transaction pattern.
 
 ### Prisma troubleshooting
@@ -89,6 +129,10 @@ Keep application queries behind `src/server/db` and feature-level repositories i
 - If you intentionally use a remote development database, set `PRISMA_ALLOW_HOSTED_MIGRATE_DEV=true` for that shell session and ensure you understand the risk.
 - If a hosted development database cannot create the shadow database automatically, provide `SHADOW_DATABASE_URL`.
 - If you only want to verify the app build locally, use `pnpm build`; it does not run deployment migrations.
+- If `prisma migrate deploy` is blocked for hosted DB safety, ensure:
+	- `DATABASE_URL` points to the pooled URL
+	- `POSTGRES_URL_NON_POOLING` points to the direct (non-pooling) URL
+	- the two values are not identical in hosted environments
 
 ## Code Quality Workflow
 

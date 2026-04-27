@@ -117,8 +117,9 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - Homepage fallback preview-only artifacts should be gated by validated runtime env (`env.nodeEnv !== "production"`) so development helpers never leak into production storefront UI.
 - `getRequiredServerEnv()` should be used when a future integration needs a non-public secret at runtime.
 - `DATABASE_URL` must be available anywhere Prisma queries or CLI workflows run.
-- Prisma CLI commands are routed through `scripts/prisma-cli.mjs`, which respects local env files, falls back `POSTGRES_URL_NON_POOLING` to `DATABASE_URL` for local use, and blocks obvious hosted `migrate dev` mistakes by default.
+- Prisma CLI commands are routed through `scripts/prisma-cli.mjs`, which respects local env files, falls back `POSTGRES_URL_NON_POOLING` to `DATABASE_URL` for local use, blocks obvious hosted `migrate dev` mistakes, and validates hosted `migrate deploy` URL safety (pooled vs direct URL separation).
 - The build workflow is intentionally split: `pnpm build` stays local-safe, while `pnpm build:deploy` is the deploy-time path that runs `prisma migrate deploy` before the production build.
+- `scripts/guard-deploy-workflow.mjs` prevents accidental local `build:deploy` runs unless explicitly allowed (`PRISMA_ALLOW_LOCAL_DEPLOY_BUILD=true`) or running in deployment context (`NODE_ENV=production`, `CI=true`, `VERCEL=1`).
 
 ## RBAC Foundation Strategy
 

@@ -2,6 +2,8 @@
 
 ## Current Milestone
 
+Deployment Prisma safety hardening completed on 2026-04-28 (deploy-path failure reproduced at `prisma migrate deploy` with `P3009`; added deploy workflow guard, hosted pooled-vs-direct migration URL safety checks, and explicit migration incident recovery commands/docs).
+
 Admin low-inventory visibility fix completed on 2026-04-28 (shared threshold-aware low-stock query now powers both dashboard and inventory views, with per-item safety-stock override and global store-threshold fallback).
 
 Cart session separation hardening completed on 2026-04-28 (guest vs authenticated context isolation, explicit merge guardrails, sign-out context reset).
