@@ -269,12 +269,21 @@
 - [x] Pages no longer use `StaticPagePlaceholder`; all use `PageShell`, `Badge`, and `Separator` from shared UI and layout primitives
 - [x] Metadata titles and descriptions updated to real, SEO-appropriate copy on all four pages
 - [x] Smoke tests added in `tests/smoke/static-pages.test.ts` for metadata sanity, non-placeholder descriptions, canonical URL presence, and default export function checks
+- [x] **Payment gateway abstraction formalized** — `CheckoutPaymentProvider` contract exported from `payment.ts`; COD remains the only active provider
+- [x] `PaymentInitStatus` added (`"pending"` / `"authorized"` / `"requires_redirect"`) replacing the inline literal in `CheckoutPaymentResult`
+- [x] `PaymentWebhookEvent` and `PaymentWebhookEventType` types added for future gateway callback normalization (stored in `types.ts`; not used by COD)
+- [x] `PaymentTransactionRecord` TypeScript type added with embedded Prisma model sketch for when the first online gateway is integrated
+- [x] `FUTURE_PAYMENT_GATEWAY_CODES` (`JAZZCASH`, `EASYPAISA`, `HBL_OMNI`) added to `constants.ts` — reserved, NOT in active registry
+- [x] `AuthorizePaymentContext` and `CheckoutPaymentProvider` exported from checkout index for external consumers
+- [x] `payment.ts` now contains full JSDoc with step-by-step gateway integration guide and webhook flow documentation
+- [x] Checkout payment tests expanded: provider contract shape, disabled-provider guard, COD offline guarantee, redirect URL absence, handleWebhook absence, future gateway code isolation
 
 ## Deferred by design
 
 - [ ] Nonce-based CSP hardening once all inline/script requirements are audited
 - [ ] Dedicated CSRF token flow for any future embedded or cross-origin clients
-- [ ] Online gateway provider implementations under checkout payment contract
+- [ ] Online gateway provider implementations under checkout payment contract (abstraction and future codes are in place; `PaymentTransactionRecord` type and suggested Prisma model are documented in `types.ts`; DB migration + `/api/webhooks/payments/[provider]` route deferred until first real gateway is integrated)
+- [ ] JazzCash / EasyPaisa / HBL Omni provider implementations (reserved codes: `FUTURE_PAYMENT_GATEWAY_CODES` in `constants.ts`)
 - [ ] Broader admin CRUD workflows beyond the current category flows and product list/create/edit management
 - [ ] Server-side notifications and third-party integrations
 - [ ] Urdu blog route strategy and locale-aware storefront rendering

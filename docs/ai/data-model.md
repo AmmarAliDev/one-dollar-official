@@ -24,6 +24,7 @@ Models (summary)
 - `Wishlist` / `WishlistItem`: wishlist per user, items reference variants
 - `Cart` / `CartItem`: carts accept optional userId and a `token` for guest sessions
 - `Order` / `OrderItem` / `OrderAddress`: order snapshots contain productName, unitPrice, quantity and address snapshot fields
+- `PaymentTransactionRecord` (TypeScript type only — no DB table yet): shape of a future `payment_transaction` row. Will be backed by a Prisma migration when the first online gateway (JazzCash, EasyPaisa, HBL Omni) is integrated. Fields: id, orderNumber, provider, amount (PKR paisa), currency, status (`PaymentTransactionStatus` — init states plus terminal webhook-driven states: captured, failed, cancelled, refund_initiated, refund_completed), gatewayReference?, gatewayResponse?, webhookPayload?, createdAt, updatedAt. See `src/features/checkout/types.ts` for the Prisma model snippet.
 - `AuditLog`: generic audit trail with JSON changes
 - `HomePageSection` / `Banner` / `DealCampaign`: marketing placeholders with `content`/`meta` JSON
 - `ContactSubmission`: { id, fullName, email, subject, message, createdAt }
