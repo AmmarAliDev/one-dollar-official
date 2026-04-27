@@ -2,316 +2,43 @@
 
 ## Current Milestone
 
-**Phase 4 / Prompt 4.11 — End-to-end customer reviews and admin moderation workflow**
+Documentation consolidation for AI continuity completed on 2026-04-27.
 
-## Completed
+## Purpose of this File
 
-- [x] Mobile-readiness boundary pass completed with typed checkout transport seam (`src/features/checkout/client.ts`) and runtime API contract parsing (`src/features/checkout/api-contract.ts`)
-- [x] Checkout client UI now delegates submit transport parsing/error normalization to feature-level helper instead of inline `fetch` handling
-- [x] Mobile-readiness strategy and API/service boundary guidance documented in `docs/dev/mobile-readiness.md` and `docs/ai/mobile-readiness.md`
-- [x] Focused transport tests added for checkout submit client behavior in `tests/features/checkout/client.test.ts`
+This file is now intentionally concise. Detailed implementation state is split into focused docs:
 
-- [x] Phase-2 rewards architecture placeholder added with isolated service contracts for referral tracking, loyalty points, and wallet ledger (`src/features/rewards/contracts.ts`)
-- [x] Rewards contract helper tests added in `tests/features/rewards/contracts.test.ts`
-- [x] Referral/loyalty/wallet integration and data-model extension path documented in `docs/dev/referral-loyalty-wallet.md` and `docs/ai/referral-loyalty-wallet.md`
-- [x] Current checkout/order flow intentionally kept unchanged while phase-2 seams are prepared
+- `docs/ai/implemented-features.md`
+- `docs/ai/open-tasks.md`
+- `docs/ai/architecture-decisions.md`
+- `docs/ai/testing-status.md`
 
-- [x] System-aware theme switching upgraded to explicit `system`, `light`, and `dark` selection
-- [x] Global design tokens added for semantic colors, spacing, radii, and shadows in `src/app/globals.css`
-- [x] Storefront shell polished with a reusable header, footer, and responsive navigation structure
-- [x] Admin route group upgraded with a sidebar + topbar placeholder shell
-- [x] Reusable UI state primitives added for page containers, section headers, empty/loading/error states, badges, prices, and skeletons
-- [x] Shared frontend toast support added through `sonner`, `AppToaster`, and `notify.*()`
-- [x] Page-level fallbacks now use `PageErrorFallback`, while reusable `SectionErrorState` and `FormErrorSummary` cover localized and form-specific failures
-- [x] Loading infrastructure expanded with `InlineSpinner`, configurable `PageSkeleton`, `CardSkeleton`, and `TableSkeleton`
-- [x] Empty-state messaging is more configurable, and `ConfirmationDialog` now provides one reusable abstraction for high-impact actions
-- [x] `src/lib/errors/error-messages.ts` centralizes friendly user-safe copy, and `src/lib/logger.ts` redacts sensitive fields for client/server logging
-- [x] Boundary pages and preview/auth placeholders now exercise the new UX reliability patterns
-- [x] Smoke coverage now includes safe messaging, validation summaries, and log redaction behavior in `tests/smoke/ux-infrastructure.test.ts`
-- [x] AI and developer docs updated with UX and error-handling conventions for future prompts
-- [x] Prisma access moved behind `src/server/db` with a lazy singleton getter instead of a top-level client instantiation
-- [x] Shared repository/service factories added so future modules can accept a root client or transaction executor consistently
-- [x] Transaction helpers added for both always-new and reuse-if-present transaction patterns
-- [x] Offset pagination helpers added with typed metadata and user-safe validation errors
-- [x] Query result typing helpers added for explicit success/failure flows when throwing is not the best fit
-- [x] Database access guidance documented for future feature prompts in developer and AI docs
-- [x] Helper coverage added for pagination, query results, transactions, and Prisma singleton reuse
-- [x] **Auth.js v5 (next-auth beta) configured** with JWT sessions + PrismaAdapter
-- [x] **Email/password sign-in and sign-up** via Credentials provider + bcrypt (12 rounds)
-- [x] **Google SSO** wired via Google OAuth provider (reads `AUTH_GOOGLE_ID`/`AUTH_GOOGLE_SECRET`)
-- [x] **Sign-out** server action clears JWT session
-- [x] **Prisma schema updated** with `User.password`, `User.emailVerified`, `User.image` (migration 20260411_auth)
-- [x] **Zod validators** for sign-in, sign-up, and forgot-password (Zod v4 compatible)
-- [x] **Rate-limit foundation** (in-memory sliding window; Redis-ready abstraction in `src/lib/rate-limit`)
-- [x] **Session utilities** for server (`getSession`, `requireSession`, `getCurrentUserId`, `hasRole`, `hasPermission`) and client (`useSession`)
-- [x] **Auth pages** at `/auth/sign-in`, `/auth/sign-up`, `/auth/error`, `/auth/forgot-password`
-- [x] **JWT type augmentation** adds `id` and typed `role` to `Session.user` and `JWT`
-- [x] **Typed RBAC model** added in `src/lib/auth/rbac.ts` with `super admin`, `product manager`, and `order manager` admin roles
-- [x] **Permission helpers** now centralize `admin:access`, catalog, order, and user-read grants for future modules
-- [x] **Route guards** added for server components and route handlers via `src/lib/auth/guards.ts`
-- [x] **Admin route group** now blocks unauthenticated users and signed-in non-admin roles through `src/proxy.ts` + `(admin)/layout.tsx`
-- [x] **Unauthorized and forbidden pages** added at `/unauthorized` and `/forbidden`
-- [x] **Admin audit foundation** added in `src/lib/audit/admin-actions.ts` for future `AuditLog` persistence
-- [x] **`AuthProvider`** (SessionProvider wrapper) added to root layout
-- [x] **Input and Label** UI primitives added to `src/components/ui`
-- [x] **5 new RBAC tests** cover non-admin blocking, valid admin-role access, forbidden API responses, audit payload generation, and forbidden-page rendering (54 total tests)
-- [x] Verification re-confirmed with `pnpm typecheck`, `pnpm lint`, `pnpm test`, and `pnpm build`
-- [x] Developer docs at `docs/dev/auth.md`
-- [x] Global security headers added through `next.config.ts` + `src/config/security.ts`
-- [x] CSRF / trusted-origin checks added for sensitive Server Actions through `src/lib/security/csrf.ts`
-- [x] Redis-first rate-limit foundation added using `@upstash/redis` + `@upstash/ratelimit` with a safe in-memory fallback for local/test
-- [x] Shared Zod validation conventions added in `src/lib/security/validation.ts`
-- [x] Centralized safe error normalization/response helpers added in `src/lib/errors/handling.ts`
-- [x] Security-focused developer guide added at `docs/dev/security.md`
-- [x] Validation, rate-limit, and safe-error helper coverage expanded in Vitest
-- [x] Storefront header now includes logo, search placeholder, account, wishlist, and cart links
-- [x] Responsive mobile navigation added with accessible toggle semantics and shared nav config usage
-- [x] Footer expanded with company links, policy links, and newsletter placeholder section
-- [x] Storefront placeholder pages added for `/about`, `/contact`, `/privacy`, `/terms`, `/shipping-policy`, and `/return-policy`
-- [x] Additional placeholder routes added for `/search`, `/account`, `/wishlist`, and `/cart` so primary header actions resolve cleanly
-- [x] Route config and smoke coverage updated for storefront shell navigation requirements
-- [x] AI and developer docs updated for Prompt 3.1 conventions
-- [x] Homepage switched to a section-based renderer through `src/features/homepage` for CMS/admin-driven composition
-- [x] Initial homepage sections added: hero banner, featured categories, featured products, deal spotlight, and blog highlights placeholder
-- [x] Fallback homepage payload added so storefront renders when CMS content is missing or fully disabled
-- [x] Server-side homepage service seam added in `src/features/homepage/service.ts` with CMS loading stub + resolver
-- [x] Section contract documented in `docs/dev/homepage-section-contract.md`
-- [x] Homepage section rendering coverage added in `tests/features/homepage/section-rendering.test.ts`
-- [x] SEO-friendly category routes added at `/categories` and `/categories/[slug]`
-- [x] Catalog listing module added in `src/features/catalog` with typed fallback data, filter parsing, sorting, and pagination helpers
-- [x] Reusable product grid cards now show placeholder imagery, product title, price, compare price, stock badge, and review summary placeholder
-- [x] Category listing pages now include loading, empty, sorting, filtering, and pagination states
-- [x] Storefront navigation and homepage fallback links now point to category listing routes
-- [x] Catalog-focused tests added for filter parsing, listing behavior, and storefront route coverage
-- [x] Product detail routes added at `/categories/[slug]/[productSlug]` with static params and SEO metadata
-- [x] PDP now includes a multi-image gallery, product info block (title, price, compare-at, stock, SKU, short description), and add-to-cart interaction stub
-- [x] Variant selection UX added for variant-enabled products with dynamic price/SKU/stock state updates
-- [x] Specifications and reviews sections added with seeded fallback detail data
-- [x] Related products section added with same-category recommendations excluding the current product
-- [x] PDP loading state added through `ProductDetailSkeleton`
-- [x] Product cards now link directly to PDP routes
-- [x] Catalog service now exposes product detail and related-product helpers
-- [x] PDP service tests added for rendering prerequisites, variant availability data, and related-product behavior
-- [x] Storefront search page now includes a reusable search input with debounced query behavior
-- [x] `GET /api/catalog/search` route added for server-side catalog search requests
-- [x] Catalog search adapter seam added in `src/features/catalog/search-adapter.ts` for future dedicated search integrations
-- [x] Search UX state handling added for loading, empty, and error outcomes
-- [x] Recent-search helper placeholder reserved in the search experience UI
-- [x] Search architecture and migration guidance documented in `docs/dev/search-architecture.md`
-- [x] Wishlist API added at `POST/DELETE /api/wishlist/items` for authenticated add/remove operations
-- [x] PDP now includes a wishlist toggle action with guest sign-in prompts and authenticated save/remove behavior
-- [x] `/wishlist` now renders real account-backed wishlist entries with remove actions and empty-state handling
-- [x] Customer account foundation added with protected routes and reusable account shell navigation
-- [x] Account pages now available at `/account/profile`, `/account/addresses`, `/account/orders`, and `/account/reviews`
-- [x] `/account` now redirects to `/account/profile` for a stable account entrypoint
-- [x] Sign-in flow now accepts a safe `from` return path and redirects back after successful credentials login
-- [x] Wishlist resolver tests added in `tests/features/wishlist/service.test.ts`
-- [x] Storefront route smoke tests updated for account sub-routes
-- [x] Cart feature module added in `src/features/cart` with transactional add/update/remove operations
-- [x] Guest cart persistence implemented via HTTP-only cart token cookie (`one-dollar-cart`)
-- [x] Guest-to-auth cart merge implemented when a signed-in user has a guest cart token
-- [x] Cart API route added at `GET/POST/PATCH/DELETE /api/cart`
-- [x] Stock validation route added at `GET /api/cart/validate`
-- [x] PDP add-to-cart action now uses real cart API (supports variant and non-variant products)
-- [x] `/cart` page now renders live line items, quantity controls, subtotal, and checkout gating on stock issues
-- [x] Header mini-cart added with loading/empty/error states and live cart count updates
-- [x] Cart route-level loading and error boundaries added (`/cart/loading`, `/cart/error`)
-- [x] Cart helper tests added in `tests/features/cart/service.test.ts`
-- [x] Cart behavior documentation added at `docs/dev/cart.md`
-- [x] Checkout feature module added in `src/features/checkout` with shared constants, payload schema, totals helper, and payment-provider abstraction
-- [x] One-page checkout route added at `/checkout` with customer info, shipping address, order summary, and payment method selection
-- [x] Karachi-only city restriction implemented in both UI messaging and server-side payload validation
-- [x] Fixed shipping calculations added for checkout (`shipping=250`, `total=subtotal+shipping`)
-- [x] COD payment option implemented through provider contract (`payment.ts`) to preserve future online gateway extension seam
-- [x] Checkout API route added at `POST /api/checkout` with trusted-origin checks, payload validation, cart ID integrity checks, and stock-aware submit blocking
-- [x] Checkout form now supports user-friendly validation summaries plus retry of the last failed submission
-- [x] Cart page now routes to `/checkout` when stock checks pass
-- [x] Checkout docs added in `docs/dev/checkout.md` with assumptions and payment expansion path
-- [x] Checkout tests added in `tests/features/checkout/*` for validation, totals, and payment contract coverage
-- [x] Order feature module added in `src/features/orders` with transactional placement, lifecycle helpers, access checks, and invoice utilities
-- [x] Checkout API now places orders transactionally instead of returning a validation-only payload
-- [x] Active cart stock is revalidated inside a serializable transaction before inventory rows are decremented
-- [x] Order item snapshots and order-address snapshots are persisted on successful placement
-- [x] Order numbering strategy added with `OD-YYYYMMDD-XXXXXX` format and retry-on-conflict protection
-- [x] Order lifecycle statuses updated to `pending`, `confirmed`, `packed`, `shipped`, `delivered`, and `cancelled`
-- [x] Customer confirmation route added at `/checkout/confirmation/[orderNumber]`
-- [x] Invoice PDF download route added at `/api/orders/[orderNumber]/invoice`
-- [x] `AuditLog` persistence now records `order.created` and `order.status.changed` events
-- [x] Account order history now links to customer-visible confirmation pages and uses lifecycle status badges
-- [x] Account order history upgraded with detail, invoice, and re-order actions
-- [x] Account order detail route added at `/account/orders/[orderNumber]` with item/address/payment breakdown
-- [x] Stock-aware re-order flow added to recreate cart items from prior customer orders
-- [x] Re-order feedback now clearly reports unavailable, out-of-stock, and quantity-adjusted items
-- [x] Re-order helper tests added in `tests/features/orders/reorder.test.ts`
-- [x] Customer sign-out button added in storefront header and account profile page
-- [x] Sign-out behavior standardized across the storefront header dropdown, mobile drawer, account profile page, and admin shell with one shared server-action form pattern and redirect-to-home behavior
-- [x] Sign-out regression tests added for the auth action and mobile signed-in surface rendering
-- [x] Admin category management added at `/admin/categories` with create/edit/delete flows, search/filter basics, and status + SEO fields
-- [x] Admin product management added at `/admin/products` with list/create/edit flows, variant stock handling, related-product links, and SEO controls
-- [x] Admin order management added at `/admin/orders` with searchable filters, fulfillment status controls, invoice access, and clear customer/order breakdowns
-- [x] Admin order detail route added at `/admin/orders/[orderNumber]` with address, items, totals, staff notes, and audit history
-- [x] Order-manager write restrictions now keep product managers in read-only mode for admin order screens
-- [x] Order admin workflows now surface and persist `AuditLog` entries for status changes and internal note updates
-- [x] Category admin mutations now persist `AuditLog` entries for create/update/delete events
-- [x] Category validation and service tests added for slug and CRUD logic
-- [x] Prisma workflow verified for local PostgreSQL development and hosted Supabase production deployment separation
-- [x] Repo-level Prisma CLI wrapper added so local-safe scripts honor `.env.local`, fall back non-pooling URLs cleanly, and block obvious hosted `migrate dev` usage by default
-- [x] Developer docs updated with local setup, migration safety, deployment commands, and Prisma troubleshooting guidance
-- [x] Reusable app-wide form foundation added with React Hook Form + Zod integration, typed dynamic field configs, shadcn-style controls, and on-change validation defaults
-- [x] Shared form primitives now support input, textarea, select, checkbox, switch, hidden values, and custom render escape hatches for future feature modules
-- [x] Shared server-action submit helper added so RHF forms can preserve existing Next server action redirects and error handling safely
-- [x] Shared submit handling now lets successful redirects bubble correctly and supports optional close/reset callbacks for modal-style admin saves
-- [x] Auth, checkout, admin category, admin product, and query-string filter forms migrated onto the shared form conventions without changing business payload shapes
-- [x] Admin category save/filter regressions now have targeted coverage so false validation errors and stale filter navigation do not recur
-- [x] Focused form-system and regression tests now cover shared forms plus auth, checkout, and admin category migration behavior
-- [x] Homepage admin management added at `/admin/homepage` with section ordering, enable/disable toggles, scheduling support, banner and campaign pages, and announcement-bar support
-- [x] Homepage service now resolves validated admin content into the storefront rendering contract with safe fallback behavior
-- [x] Homepage content validation tests added for admin config payloads and storefront resolution flow
-- [x] Admin review moderation added at `/admin/reviews` with status/product filters, safe reviewer masking, approve/reject/hide actions, and persisted `AuditLog` entries
-- [x] Review moderation service coverage added for filter behavior, audit logging, and storefront visibility rules
-- [x] Reusable admin SEO management section added for categories and products with preview cards, advanced metadata fields, slug guidance, clear conflict handling, and targeted SEO helper tests
-- [x] AI and developer SEO workflow docs added so future blog-post and key-page admin work can reuse the same pattern cleanly
-- [x] SEO-ready blog foundation added with storefront routes at `/blog` and `/blog/[slug]`
-- [x] Blog feature module added in `src/features/blog` with typed content model (`title`, `slug`, `excerpt`, `content`, `cover image`, `status`, `publish date`, `SEO fields`)
-- [x] Blog listing and article pages now emit structured data (`CollectionPage`, `ItemList`, `BlogPosting`, and `BreadcrumbList`)
-- [x] Blog helper tests added for listing/page data flow, metadata inputs, and structured data generation
-- [x] AI and developer docs added for blog content modeling and future admin editing path
-- [x] Blog content moved from hardcoded seed usage to Prisma-backed `BlogPost` reads through `src/server/db/blog-queries.ts`
-- [x] Admin blog CRUD added at `/admin/blog` with create/edit/delete flows, status filters, publish scheduling, and SEO controls
-- [x] Storefront blog routes now use async DB-backed reads while preserving existing route behavior and structured-data SEO output
-- [x] Blog publish visibility rules enforced: only `PUBLISHED` posts with `publishedAt <= now` are storefront-visible by default
-- [x] Blog migration added to create `blog_post` model + seed previous hardcoded posts into the database
-- [x] Blog service, validation, and admin CRUD tests added/updated for DB-backed behavior
-- [x] Homepage `blog-highlights` storefront rendering is now hydrated from DB-backed blog reads (`getBlogPosts`) instead of manual/hardcoded article arrays
-- [x] Legacy homepage `blog-highlights.content.articles` payload is isolated as non-primary fallback data; on DB read failures storefront clears article arrays and shows empty-state messaging
-- [x] Targeted test coverage added for homepage blog highlight hydration and fallback isolation behavior, plus blog listing empty-result behavior
-- [x] Homepage fallback hero now hides the preview-only secondary CTA in production while preserving it in non-production envs (`env.nodeEnv !== "production"`)
-- [x] Homepage fallback environment-guard coverage added in `tests/features/homepage/fallback-content.test.ts`
-- [x] Contact form persistence added — submissions saved to `ContactSubmission` table
-- [x] Contact form server action sends admin notification email + Telegram alert (non-blocking)
-- [x] `EmailSubscriber` data model added with status lifecycle (PENDING/ACTIVE/UNSUBSCRIBED/BOUNCED), source capture, tags, and opaque unsubscribe token
-- [x] `AbandonedCartEvent` append-only event log added with CART_CREATED/CART_UPDATED/REMINDER_QUEUED/REMINDER_SENT/CART_RECOVERED/CART_EXPIRED types
-- [x] Cart model extended with `abandonedAt`, `recoveryToken`, and `recoveryEmailSentAt` fields
-- [x] Email marketing feature module added at `src/features/email-marketing` with repository, service, and pluggable provider abstraction
-- [x] Abandoned cart event helpers added at `src/features/cart/abandoned-cart-events.ts`
-- [x] Subscribe API at `POST /api/email/subscribe` (rate-limited 5/10 min, CSRF-checked)
-- [x] Unsubscribe API at `GET /api/email/unsubscribe?token=` and `POST /api/email/unsubscribe`
-- [x] PII utilities added at `src/lib/security/pii.ts` (`maskEmail`, `stripControlChars`) and shared across contact and email-marketing modules
-- [x] Tests added for validation schemas, subscribe/unsubscribe business logic, abandoned cart events, and PII helpers
-- [x] Developer docs added at `docs/dev/email-marketing.md`
-- [x] User-facing resilience pass completed across storefront/admin boundaries and interactive flows with standardized safe messaging, retry-safe recovery, and stronger fallback states
-- [x] Production deployment documentation added at `docs/dev/deployment.md` (Vercel, PostgreSQL, Redis, auth providers, SMTP email, Telegram, analytics)
-- [x] Health/readiness endpoint added at `GET /api/health` (checks env vars + database, returns 200/503)
-- [x] Operations guide added at `docs/dev/operations.md` (backups, monitoring, maintenance, incident response, secrets rotation)
-- [x] Release and launch checklists added at `docs/dev/release-checklist.md` (pre-launch, per-release, post-launch, rollback procedure)
-- [x] `.env.example` updated with Redis, analytics, security, and dev-override sections
-- [x] AI deployment assumptions documented at `docs/ai/deployment.md`
-- [x] Shared TanStack table foundation added in `src/components/data-table` with reusable typed API (`DataTable`, `useDataTable`, `createDataTableColumnHelper`)
-- [x] Shared table UI primitives added in `src/components/ui/table.tsx` to keep styling and responsive overflow behavior consistent with app conventions
-- [x] Data table supports columns, sorting, loading state, empty state, row actions slot, and error-compatible render patterns
-- [x] Pagination-ready architecture added with local pagination defaults and controlled server pagination integration seam (`pagination` + `renderPagination`)
-- [x] Optional search/filter integration seam added via composable `toolbar` slot and global filter-ready table state wiring
-- [x] Focused tests added for shared table rendering and behavior (`tests/components/data-table/data-table.test.tsx`)
-- [x] Type-oriented helper coverage added for column and pagination contracts (`tests/components/data-table/types.test.ts`)
-- [x] Developer docs updated for shared table usage and architecture (`docs/dev/ui-conventions.md`, `docs/dev/architecture.md`)
-- [x] **Admin products table** migrated to shared `DataTable` with columns for product, type, category, pricing, stock, SEO, updated date, and edit actions
-- [x] **Admin categories table** migrated to shared `DataTable` with columns for name, slug, status, SEO, updated date, and edit/delete actions
-- [x] **Admin orders table** migrated to shared `DataTable` with columns for order number, customer, status, payment, total, placed date, and view actions; pagination preserved
-- [x] **Admin inventory table** migrated to shared `DataTable` with columns for product, SKU, on-hand quantity, safety stock threshold, and warehouse location
-- [x] Admin inventory now supports inline manual stock updates from `/admin/inventory` for authorized catalog admins (`catalog:write`)
-- [x] Inventory update server action added with trusted-origin checks, server-side validation, user-safe flash messages, and route revalidation for `/admin/inventory` + `/admin`
-- [x] Inventory service layer added with quantity-integrity safeguards (no negative stock, no drop below reserved) and optimistic concurrency protection via `updatedAt`
-- [x] Inventory adjustments now persist `AuditLog` events (`inventory.adjusted`) with before/after quantities, reason, SKU/product context, and actor metadata
-- [x] Admin activity feed mapping now includes inventory adjustment titles and summaries
-- [x] Targeted tests added for inventory update validation, service logic, audit behavior, and action-level permission enforcement
-- [x] All admin table migrations preserve existing business logic: filters, search, sorting, row actions, status badges, and permissions-based UI
-- [x] Table rendering standardized across admin product, category, order, and inventory pages using feature-specific table components wrapping the shared DataTable
-- [x] Table components follow the pattern: typed columns definition, cell rendering logic, row actions/callbacks, and feature-specific UI (badges, links, moderation forms)
-- [x] **Storefront catalog connected to PostgreSQL database** — `src/server/db/catalog-queries.ts` added as the Prisma query layer enforcing PUBLISHED-only visibility for categories, products, and APPROVED-only reviews
-- [x] `src/features/catalog/service.ts` fully rewritten to use DB-backed catalog queries; seed data no longer read at runtime
-- [x] `src/features/catalog/search-adapter.ts` rewritten to use `searchPublishedProducts()` (PostgreSQL ILIKE); `source` changed from `"seed"` to `"db"`
-- [x] `src/features/catalog/components/product-image-gallery.tsx` updated to render real image URLs via `next/image` when available, falling back to gradient placeholders
-- [x] Admin product and category server actions now call `revalidatePath('/categories')` after mutations for on-demand ISR cache invalidation
-- [x] Catalog visibility tests added in `tests/features/catalog/catalog-visibility.test.ts`
-- [x] All catalog service and search tests rewritten to mock `@/server/db/catalog-queries` instead of importing seed data
-- [x] Related products on PDP now prioritize admin-curated `relatedProductIds` from product metadata, then fall back to same-category published products
-- [x] Cart add-to-cart now resolves published products/variants from the live DB first (with legacy seed fallback), fixing add failures for newly created and published catalog items
-- [x] Admin dashboard cards at `/admin` now use live DB-backed metrics instead of placeholders
-- [x] Pending order count is now sourced from `Order.status == PENDING`
-- [x] Revenue summary now uses delivered-order totals with completed refunds excluded (assumptions documented in code and docs)
-- [x] Low-stock metric now counts inventory rows where `(quantity - reserved) <= safetyStock`
-- [x] Dashboard and `/admin/activity` now render recent activity from `AuditLog` with clean empty/error states and non-technical copy
-- [x] Dashboard metric service and aggregation logic tests added in `tests/features/admin/dashboard/service.test.ts`
-- [x] Admin activity page now uses a dedicated AuditLog feed service (`src/features/admin/activity/service.ts`) instead of a dashboard preview helper
-- [x] Activity feed entries now include actor context (when available), model context, and richer non-technical summaries for common admin actions
-- [x] Activity feed service is pagination-ready (`take + 1` query contract with `nextCursor`) while the UI currently loads the latest 30 events
-- [x] Activity mapping and service tests added in `tests/features/admin/activity/audit-log-feed.test.ts` and `tests/features/admin/activity/service.test.ts`
-- [x] Route-level activity loading state added at `src/app/(admin)/admin/activity/loading.tsx`
-- [x] Admin revenue page at `/admin/revenue` now uses a dedicated DB-backed report service (`src/features/admin/revenue/service.ts`) instead of placeholder content
-- [x] Revenue report now includes total recognized revenue, practical recent windows (last 7 days / last 30 days), and order totals summary for non-technical admins
-- [x] Revenue inclusion assumptions are explicitly surfaced in both the service contract and the page UI
-- [x] Revenue route now has explicit loading, empty, and error states with user-safe messaging
-- [x] Revenue helper and service tests added for calculation logic, date-range helpers, and no-data behavior in `tests/features/admin/revenue/*`
-- [x] Customer review submission flow implemented with server-side validation, CSRF protection, auth enforcement, ownership checks, delivered-order eligibility checks, and rate-limiting safeguards
-- [x] PDP now includes a real review submission form with clear eligibility messaging, pending submit state, and notice/error flash handling
-- [x] Account reviews page now renders real user-scoped review history with moderation status, storefront visibility badges, customer-facing moderation reasons, and product links
-- [x] Storefront review display remains backed by moderated DB records (`APPROVED` only), and admin moderation changes continue to control visibility through shared status rules
-- [x] Review-related tests added/expanded for submission validation, ownership/permission behavior, account listing behavior, and moderation visibility effects
-- [x] Architecture and domain-model docs updated for the production review workflow
-- [x] Real email-based forgot-password and reset-password flow implemented with secure token generation, hashed token persistence, 1-hour expiry, and single-use token consumption
-- [x] Forgot-password responses are enumeration-safe (same success message for known/unknown emails)
-- [x] Reset flow updates credentials password hash and invalidates all outstanding reset tokens for the user
-- [x] Auth/security/docs updates completed for reset flow, including token safety model and operational notes
-- [x] Password reset coverage added for token helpers, reset validation, expiry behavior, and safe response behavior
-- [x] Credentials sign-up now initiates email verification instead of immediate auto-login
-- [x] Email verification token flow added with hashed storage, 24-hour expiry, and single-use consumption
-- [x] Verification page added at `/auth/verify-email` with clear success/invalid/expired states
-- [x] Credentials sign-in now blocks unverified users and re-issues verification links after password match; OAuth behavior remains unchanged
-- [x] Verification-focused tests added for token utilities, verification success/expiry handling, and unverified sign-in rules
-- [x] Admin settings placeholder replaced with a practical first-pass `/admin/settings` workspace for store identity, support contact details, shipping basics, and operational defaults
-- [x] Store settings persistence added through new `StoreSettings` singleton model + migration (`id = default`) with `settings.updated` audit log events
-- [x] Admin settings validation, persistence-service behavior, and form rendering behavior tests added under `tests/features/admin/settings/*`
-- [x] Static informational pages replaced with real, generic, production-appropriate content: `/about`, `/privacy`, `/terms`, and `/shipping-policy`
-- [x] `/about` — brand story, mission, customer promise, and contact nudge (interim; should be updated with real brand narrative)
-- [x] `/privacy` — data collection, usage, sharing, security, cookies, and user rights sections (interim; should be reviewed by legal counsel before launch)
-- [x] `/terms` — website use, account responsibility, orders/pricing, payment, delivery, returns, IP, liability, and governing law sections (interim; should be reviewed by legal counsel before launch)
-- [x] `/shipping-policy` — Karachi-first delivery scope, processing time, estimated timelines, charges, tracking, missing/damaged orders, and returns cross-link (interim; update as coverage expands)
-- [x] Pages no longer use `StaticPagePlaceholder`; all use `PageShell`, `Badge`, and `Separator` from shared UI and layout primitives
-- [x] Metadata titles and descriptions updated to real, SEO-appropriate copy on all four pages
-- [x] Smoke tests added in `tests/smoke/static-pages.test.ts` for metadata sanity, non-placeholder descriptions, canonical URL presence, and default export function checks
-- [x] **Payment gateway abstraction formalized** — `CheckoutPaymentProvider` contract exported from `payment.ts`; COD remains the only active provider
-- [x] `PaymentInitStatus` added (`"pending"` / `"authorized"` / `"requires_redirect"`) replacing the inline literal in `CheckoutPaymentResult`
-- [x] `PaymentWebhookEvent` and `PaymentWebhookEventType` types added for future gateway callback normalization (stored in `types.ts`; not used by COD)
-- [x] `PaymentTransactionRecord` TypeScript type added with embedded Prisma model sketch for when the first online gateway is integrated
-- [x] `FUTURE_PAYMENT_GATEWAY_CODES` (`JAZZCASH`, `EASYPAISA`, `HBL_OMNI`) added to `constants.ts` — reserved, NOT in active registry
-- [x] `AuthorizePaymentContext` and `CheckoutPaymentProvider` exported from checkout index for external consumers
-- [x] `payment.ts` now contains full JSDoc with step-by-step gateway integration guide and webhook flow documentation
-- [x] Checkout payment tests expanded: provider contract shape, disabled-provider guard, COD offline guarantee, redirect URL absence, handleWebhook absence, future gateway code isolation
+## Current State Snapshot
 
-## Deferred by design
+- Product baseline is production-minded and broad: storefront, admin, auth/security, cart/checkout/orders, reviews, blog, homepage CMS controls, contact, and email-marketing foundations.
+- Database-backed catalog and blog flows are active; publish-state visibility is enforced.
+- Shared infrastructure for forms, tables, error handling, logging redaction, and RBAC is active and used across major modules.
+- Test suites (unit/integration/e2e) and build pipelines are in place and routinely used as release gates.
 
-- [ ] Nonce-based CSP hardening once all inline/script requirements are audited
-- [ ] Dedicated CSRF token flow for any future embedded or cross-origin clients
-- [ ] Online gateway provider implementations under checkout payment contract (abstraction and future codes are in place; `PaymentTransactionRecord` type and suggested Prisma model are documented in `types.ts`; DB migration + `/api/webhooks/payments/[provider]` route deferred until first real gateway is integrated)
-- [ ] JazzCash / EasyPaisa / HBL Omni provider implementations (reserved codes: `FUTURE_PAYMENT_GATEWAY_CODES` in `constants.ts`)
-- [ ] Broader admin CRUD workflows beyond the current category flows and product list/create/edit management
-- [ ] Server-side notifications and third-party integrations
-- [ ] Urdu blog route strategy and locale-aware storefront rendering
-- [ ] **Double opt-in confirmation email** — new subscribers land as PENDING; confirmation email and `GET /api/email/confirm?token=` route are deferred
-- [ ] **Abandoned cart recovery job** — the cron/queue worker that reads AbandonedCartEvent rows, sends recovery emails, and records REMINDER_QUEUED/REMINDER_SENT events is deferred
-- [ ] **Recovery email template** — the cart recovery deep-link email with item snapshot and `/cart?recover=<token>` link is deferred
-- [ ] **Live campaign provider** — Mailchimp/Brevo/Klaviyo adapter is deferred; stub provider is active
-- [ ] Activity feed filtering (by action, model, actor, date range) is deferred
-- [ ] Cursor-driven activity pagination UI controls are deferred (service contract is ready)
-- [ ] Revenue charting, custom date filters, and export/report download workflows are intentionally deferred (current phase focuses on practical summary reporting)
-- [ ] Review anti-abuse hardening beyond current baseline (e.g., semantic spam detection, automated toxicity scoring, velocity anomaly heuristics) is deferred; current protections cover auth, ownership, delivered-order checks, and rate limits
-- [ ] Advanced inventory workflows are deferred: batched adjustments/imports, transfer workflows across multiple locations, and explicit stock-count approval/rollback flows
-- [ ] Password reset email deliverability/branding hardening is deferred (SPF/DKIM/DMARC tuning, bounce/suppression handling, branded/localized templates)
-- [x] **Admin reviews moderation — completed; UI remains card-based (will not migrate to shared DataTable)**
-- [ ] Advanced settings areas are intentionally deferred for now: tax rules, payment gateway controls, multi-warehouse shipping matrices, and role-scoped notification policy automation
+## Active Deferred Buckets
+
+- Online payment providers and webhook processing
+- Advanced inventory operations (history filters are the recommended next implementation step)
+- Advanced revenue analytics and export workflows
+- Activity feed filter/pagination UI controls
+- Email-marketing double opt-in and abandoned-cart recovery automation
+- Extended admin settings (tax/payment/warehouse policy matrices)
 
 ## Recommended Next Prompt
 
-Proceed with **Phase 4 / Prompt 5.1 — inventory history filters and adjustment reason taxonomy**.
+Proceed with: Phase 5.1 inventory history filters and adjustment reason taxonomy.
 
-Note on prompt numbering: the apparent jump from "Prompt 4.9" to "Prompt 5.1" is intentional — "Prompt 5.0" has been reserved as a higher-level or cross-phase milestone and is not currently used. Prompt numbers follow a `Phase.Prompt` convention where the first number is the phase and the second is a prompt identifier; gaps or skipped numbers are left intentionally to reserve space for larger, cross-cutting prompts or future planning items. If a prompt belonged strictly to Phase 4 it would be numbered `4.x` (for example `4.10`).
+## Continuity Rule
+
+When a feature is added, modified, or deferred:
+
+1. Update `docs/ai/implemented-features.md`.
+2. Update `docs/ai/open-tasks.md`.
+3. Update `docs/ai/architecture-decisions.md` if design tradeoffs changed.
+4. Update `docs/ai/testing-status.md` if test posture changed.
+5. Keep this file as a short status checkpoint only.
