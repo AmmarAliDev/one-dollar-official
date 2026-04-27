@@ -178,6 +178,15 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `src/app/(auth)/auth/sign-in/page.tsx` and `src/features/auth/actions/sign-in.ts` support safe `from` path handling to return users after authentication.
 - `src/features/orders/service.ts` now owns customer order-history retrieval plus stock-aware re-order logic that rehydrates active cart items while reporting unavailable/out-of-stock lines.
 
+## Cart Context Separation Strategy
+
+- Guest and authenticated cart contexts are intentionally isolated even inside the same browser session.
+- Guest cart resolution is token-based and must be scoped to `userId = null` (guest-only cart ownership).
+- Authenticated cart resolution is user-based (`userId + ACTIVE`) and does not rely on guest token identity.
+- Guest-to-user merge is explicit (`mergeGuestIntoUser`) and only applies when the token resolves to an ACTIVE guest cart.
+- Authenticated cart APIs preserve a guest-context cookie token to avoid leaking authenticated cart identity into post-sign-out guest browsing.
+- Sign-out rotates to a fresh guest token before session clear so the next anonymous request starts from a clean guest cart context.
+
 ## Review Workflow Strategy
 
 - `src/features/reviews/service.ts` is the customer review service layer for submission eligibility, account listing, and safe status mapping.

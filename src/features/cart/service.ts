@@ -164,10 +164,11 @@ async function ensureCartHasUniqueToken(cartId: string, db: DatabaseExecutor) {
   });
 }
 
-async function findCartByToken(token: string, db: DatabaseExecutor) {
+async function findGuestCartByToken(token: string, db: DatabaseExecutor) {
   return db.cart.findFirst({
     where: {
       token,
+      userId: null,
     },
     orderBy: {
       updatedAt: "desc",
@@ -492,7 +493,7 @@ async function getOrCreateActiveCartForUser(userId: string, db: DatabaseExecutor
 }
 
 async function getOrCreateActiveCartForGuest(token: string, db: DatabaseExecutor) {
-  const existing = await findCartByToken(token, db);
+  const existing = await findGuestCartByToken(token, db);
 
   if (existing?.status === "ACTIVE") {
     return existing;
@@ -514,7 +515,7 @@ async function getOrCreateActiveCartForGuest(token: string, db: DatabaseExecutor
       throw error;
     }
 
-    const conflicted = await findCartByToken(token, db);
+    const conflicted = await findGuestCartByToken(token, db);
     if (conflicted?.status === "ACTIVE") {
       return conflicted;
     }
