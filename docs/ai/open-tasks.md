@@ -17,6 +17,7 @@ This is the prioritized backlog for future AI-assisted implementation. Items are
 3. Email marketing double opt-in confirmation flow.
 4. Abandoned cart recovery worker and reminder delivery flow.
 5. Recovery email template with cart deep link semantics.
+6. Optional AI-provider adapter for admin product SEO helper personalization (current generator is deterministic by design).
 
 ## Security and Reliability Hardening
 

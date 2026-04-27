@@ -81,3 +81,33 @@ Do not duplicate SEO field definitions per feature unless a content type has a t
 Storefront catalog pages still rely on seeded fallback data in the current milestone.
 
 That means the admin SEO fields are now persisted and ready for content operations, but full live storefront metadata output from admin-managed catalog records will be connected when the catalog moves fully onto persisted data.
+
+## Product SEO content generator (admin product form)
+
+The product form now includes a built-in SEO content helper focused on practical, simple English copy for Pakistan shoppers.
+
+### What it generates
+
+- product title improvement suggestions
+- SEO title
+- meta description
+- short description
+- product highlights
+- FAQ ideas
+- structured specification suggestions
+- internal linking suggestions
+- suggested slug
+
+### UX behavior
+
+- The helper shows a loading state while generating.
+- If product title is missing, a user-friendly error is shown.
+- If no generation has run yet, an explicit empty state is shown.
+- Admins can apply generated SEO fields directly to slug/meta/OG/schema notes.
+- Admins can apply generated short description separately.
+
+### Why deterministic now
+
+This step intentionally uses a deterministic local generator in the admin feature module. It avoids external provider dependency during product-entry workflows while still producing consistent, editable first drafts.
+
+Future AI-provider integration can be added behind this seam without changing admin form structure.

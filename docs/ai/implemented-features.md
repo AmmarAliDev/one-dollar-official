@@ -36,6 +36,7 @@ Use this as the quick implementation map for future AI prompts. Each section des
 - AuditLog-based activity feed with actor and model context
 - Revenue summary page with explicit inclusion assumptions
 - Category and product admin CRUD with SEO controls and ISR revalidation
+- Product admin SEO content helper (deterministic generation for title suggestions, SEO title/description, short description, highlights, FAQ ideas, schema-oriented specs, internal linking suggestions, and slug)
 - Blog admin CRUD with publish scheduling and SEO fields
 - Homepage admin controls for sections, banners, campaigns, and announcements
 - Inventory monitoring plus inline manual stock adjustment with concurrency checks and audit events

@@ -23,6 +23,7 @@ Provide a compact testing map for AI prompts so changes can target the right tes
 - Broad feature-level unit/integration coverage across storefront and admin domains
 - Focused tests on high-risk seams: checkout transport parsing, order placement, inventory adjustment safety, moderation behavior
 - Shared foundation coverage for forms, tables, error handling, and security helpers
+- Product admin SEO content generation coverage for output shape, schema/spec suggestion behavior, and missing-title failure messaging (`tests/features/admin/products/seo-content-generator.test.ts`)
 
 ## Known Gaps (from current docs and coverage posture)
 
