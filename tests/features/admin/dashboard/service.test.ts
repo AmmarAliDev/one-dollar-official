@@ -5,6 +5,9 @@ const prismaMock = vi.hoisted(() => ({
     count: vi.fn(),
     aggregate: vi.fn(),
   },
+  storeSettings: {
+    findUnique: vi.fn(),
+  },
   inventory: {
     findMany: vi.fn(),
   },
@@ -61,6 +64,9 @@ describe("admin dashboard service", () => {
   });
 
   it("loads pending orders, delivered revenue, low-stock count, and activity", async () => {
+    prismaMock.storeSettings.findUnique.mockResolvedValue({
+      lowStockThreshold: 5,
+    });
     prismaMock.order.count
       .mockResolvedValueOnce(4)
       .mockResolvedValueOnce(2);
@@ -73,9 +79,51 @@ describe("admin dashboard service", () => {
       },
     });
     prismaMock.inventory.findMany.mockResolvedValue([
-      { quantity: 6, reserved: 2, safetyStock: 4 },
-      { quantity: 12, reserved: 1, safetyStock: 5 },
-      { quantity: 3, reserved: 0, safetyStock: 3 },
+      {
+        id: "inv-1",
+        productVariantId: "variant-1",
+        quantity: 6,
+        reserved: 2,
+        safetyStock: 0,
+        location: "KARACHI",
+        updatedAt: new Date("2026-04-24T12:00:00.000Z"),
+        productVariant: {
+          sku: "SKU-1",
+          product: {
+            name: "Daily Face Wash",
+          },
+        },
+      },
+      {
+        id: "inv-2",
+        productVariantId: "variant-2",
+        quantity: 12,
+        reserved: 1,
+        safetyStock: 5,
+        location: "KARACHI",
+        updatedAt: new Date("2026-04-24T12:01:00.000Z"),
+        productVariant: {
+          sku: "SKU-2",
+          product: {
+            name: "Night Cream",
+          },
+        },
+      },
+      {
+        id: "inv-3",
+        productVariantId: "variant-3",
+        quantity: 3,
+        reserved: 0,
+        safetyStock: 3,
+        location: "KARACHI",
+        updatedAt: new Date("2026-04-24T12:02:00.000Z"),
+        productVariant: {
+          sku: "SKU-3",
+          product: {
+            name: "Body Lotion",
+          },
+        },
+      },
     ]);
     prismaMock.auditLog.findMany.mockResolvedValue([
       {
@@ -108,6 +156,14 @@ describe("admin dashboard service", () => {
       },
       _count: {
         _all: true,
+      },
+    });
+    expect(prismaMock.storeSettings.findUnique).toHaveBeenCalledWith({
+      where: {
+        id: "default",
+      },
+      select: {
+        lowStockThreshold: true,
       },
     });
     expect(result.pendingOrdersCount).toBe(4);

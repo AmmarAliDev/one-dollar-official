@@ -2,6 +2,8 @@
 
 ## Current Milestone
 
+Admin low-inventory visibility fix completed on 2026-04-28 (shared threshold-aware low-stock query now powers both dashboard and inventory views, with per-item safety-stock override and global store-threshold fallback).
+
 Cart session separation hardening completed on 2026-04-28 (guest vs authenticated context isolation, explicit merge guardrails, sign-out context reset).
 
 Related products reliability pass completed on 2026-04-28 (explicit admin-curated handling hardened, same-category fallback behavior stabilized, self-exclusion enforced by slug/id, and PDP related-section empty-state made explicit when no valid recommendations exist).
