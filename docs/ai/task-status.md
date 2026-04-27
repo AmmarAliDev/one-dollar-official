@@ -259,6 +259,14 @@
 - [x] Admin settings placeholder replaced with a practical first-pass `/admin/settings` workspace for store identity, support contact details, shipping basics, and operational defaults
 - [x] Store settings persistence added through new `StoreSettings` singleton model + migration (`id = default`) with `settings.updated` audit log events
 - [x] Admin settings validation, persistence-service behavior, and form rendering behavior tests added under `tests/features/admin/settings/*`
+- [x] Static informational pages replaced with real, generic, production-appropriate content: `/about`, `/privacy`, `/terms`, and `/shipping-policy`
+- [x] `/about` — brand story, mission, customer promise, and contact nudge (interim; should be updated with real brand narrative)
+- [x] `/privacy` — data collection, usage, sharing, security, cookies, and user rights sections (interim; should be reviewed by legal counsel before launch)
+- [x] `/terms` — website use, account responsibility, orders/pricing, payment, delivery, returns, IP, liability, and governing law sections (interim; should be reviewed by legal counsel before launch)
+- [x] `/shipping-policy` — Karachi-first delivery scope, processing time, estimated timelines, charges, tracking, missing/damaged orders, and returns cross-link (interim; update as coverage expands)
+- [x] Pages no longer use `StaticPagePlaceholder`; all use `PageShell`, `Badge`, and `Separator` from shared UI and layout primitives
+- [x] Metadata titles and descriptions updated to real, SEO-appropriate copy on all four pages
+- [x] Smoke tests added in `tests/smoke/static-pages.test.ts` for metadata sanity, non-placeholder descriptions, canonical URL presence, and default export function checks
 
 ## Deferred by design
 
