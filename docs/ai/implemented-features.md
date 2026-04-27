@@ -37,6 +37,7 @@ Use this as the quick implementation map for future AI prompts. Each section des
 - Revenue summary page with explicit inclusion assumptions
 - Category and product admin CRUD with SEO controls and ISR revalidation
 - Product admin SEO content helper (deterministic generation for title suggestions, SEO title/description, short description, highlights, FAQ ideas, schema-oriented specs, internal linking suggestions, and slug)
+- Storefront category SEO content generator (`src/features/catalog/seo/category-seo-content.ts`): deterministic, Pakistan-focused output — SEO title, meta description, introductory copy, FAQ items, internal link suggestions, blog topic ideas, and schema markup notes — for all category pages; per-slug templates for home-care, grocery, and personal-care with a generic fallback for any other slug
 - Blog admin CRUD with publish scheduling and SEO fields
 - Homepage admin controls for sections, banners, campaigns, and announcements
 - Inventory monitoring plus inline manual stock adjustment with concurrency checks and audit events

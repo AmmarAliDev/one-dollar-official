@@ -18,6 +18,7 @@ This is the prioritized backlog for future AI-assisted implementation. Items are
 4. Abandoned cart recovery worker and reminder delivery flow.
 5. Recovery email template with cart deep link semantics.
 6. Optional AI-provider adapter for admin product SEO helper personalization (current generator is deterministic by design).
+7. Enrich category SEO content with live product data (price ranges, product counts) once storefront is fully DB-backed; seam exists in `CategorySeoContentOptions`.
 
 ## Security and Reliability Hardening
 
