@@ -21,6 +21,7 @@
 import type { Prisma } from "@prisma/client";
 
 import { routes } from "@/config/routes";
+import { createLogger } from "@/lib/logger";
 import { createPaginatedResult } from "@/server/db/pagination";
 import type {
   StorefrontCategoryRecord,
@@ -51,6 +52,10 @@ import type {
   ProductVariantGroup,
   ProductVariantOption,
 } from "./types";
+
+const catalogServiceLogger = createLogger("catalog-service");
+const RELATED_PRODUCTS_LIMIT = 4;
+const RELATED_FALLBACK_FETCH_SIZE = 12;
 
 // ---------------------------------------------------------------------------
 // Internal helpers — DB record → storefront type mapping
@@ -193,12 +198,33 @@ function parseRelatedProductIds(metadata: Prisma.JsonValue | null | undefined): 
     return [];
   }
 
-  const raw = (metadata as Record<string, unknown>).relatedProductIds;
-  if (!Array.isArray(raw)) {
+  const source = metadata as Record<string, unknown>;
+  const candidates = [source.relatedProductIds, source.relatedProducts]
+    .filter(Array.isArray)
+    .flatMap((value) => value as unknown[]);
+
+  if (candidates.length === 0) {
     return [];
   }
 
-  return [...new Set(raw.map((value) => `${value}`.trim()).filter(Boolean))];
+  const normalizedIds = candidates
+    .map((value) => {
+      if (typeof value === "string" || typeof value === "number") {
+        return `${value}`.trim();
+      }
+
+      if (value && typeof value === "object" && !Array.isArray(value)) {
+        const id = (value as Record<string, unknown>).id;
+        if (typeof id === "string" || typeof id === "number") {
+          return `${id}`.trim();
+        }
+      }
+
+      return "";
+    })
+    .filter(Boolean);
+
+  return [...new Set(normalizedIds)];
 }
 
 /**
@@ -599,34 +625,57 @@ export async function getRelatedProducts(
   categorySlug: string,
   excludeSlug: string,
 ): Promise<CatalogProductCard[]> {
-  const sourceProduct = await dbGetPublishedProductBySlug(excludeSlug);
-  const effectiveCategorySlug = sourceProduct?.category?.slug ?? categorySlug;
-  const preferredIds = parseRelatedProductIds(sourceProduct?.metadata);
-  const preferredIdRank = new Map(preferredIds.map((id, index) => [id, index]));
+  try {
+    const sourceProduct = await dbGetPublishedProductBySlug(excludeSlug);
+    const excludedProductId = sourceProduct?.id;
+    const effectiveCategorySlug = sourceProduct?.category?.slug ?? categorySlug;
+    const preferredIds = parseRelatedProductIds(sourceProduct?.metadata).filter(
+      (id) => id !== excludedProductId,
+    );
+    const preferredIdRank = new Map(preferredIds.map((id, index) => [id, index]));
 
-  const preferredRecords = await listPublishedProductsByIds(preferredIds);
-  const curatedCards = preferredRecords
-    .filter((record) => record.slug !== excludeSlug)
-    .sort((left, right) => {
-      const leftRank = preferredIdRank.get(left.id) ?? Number.MAX_SAFE_INTEGER;
-      const rightRank = preferredIdRank.get(right.id) ?? Number.MAX_SAFE_INTEGER;
-      return leftRank - rightRank;
-    })
-    .map(mapProductToCard)
-    .slice(0, 4);
+    const preferredRecords = await listPublishedProductsByIds(preferredIds);
+    const curatedCards = preferredRecords
+      .filter((record) => record.slug !== excludeSlug && record.id !== excludedProductId)
+      .sort((left, right) => {
+        const leftRank = preferredIdRank.get(left.id) ?? Number.MAX_SAFE_INTEGER;
+        const rightRank = preferredIdRank.get(right.id) ?? Number.MAX_SAFE_INTEGER;
+        return leftRank - rightRank;
+      })
+      .map(mapProductToCard)
+      .slice(0, RELATED_PRODUCTS_LIMIT);
 
-  if (curatedCards.length >= 4) {
-    return curatedCards;
+    if (curatedCards.length >= RELATED_PRODUCTS_LIMIT) {
+      return curatedCards;
+    }
+
+    const slotsRemaining = RELATED_PRODUCTS_LIMIT - curatedCards.length;
+    const excludedSlugs = new Set([excludeSlug, ...curatedCards.map((item) => item.slug)]);
+    const excludedIds = new Set<string>(
+      [excludedProductId, ...curatedCards.map((item) => item.id)].filter(
+        (value): value is string => typeof value === "string" && value.length > 0,
+      ),
+    );
+    const fallbackRecords = await getRelatedPublishedProducts(
+      effectiveCategorySlug,
+      excludeSlug,
+      RELATED_FALLBACK_FETCH_SIZE,
+    );
+    const fallbackCards = fallbackRecords
+      .filter((record) => !excludedSlugs.has(record.slug) && !excludedIds.has(record.id))
+      .map(mapProductToCard)
+      .slice(0, slotsRemaining);
+
+    return [...curatedCards, ...fallbackCards];
+  } catch (error) {
+    catalogServiceLogger.error("related products lookup failed", {
+      categorySlug,
+      excludeSlug,
+      error,
+    });
+
+    return [];
   }
-
-  const excludedSlugs = new Set([excludeSlug, ...curatedCards.map((item) => item.slug)]);
-  const fallbackRecords = await getRelatedPublishedProducts(effectiveCategorySlug, excludeSlug, 8);
-  const fallbackCards = fallbackRecords
-    .filter((record) => !excludedSlugs.has(record.slug))
-    .map(mapProductToCard)
-    .slice(0, 4 - curatedCards.length);
-
-  return [...curatedCards, ...fallbackCards];
 }
 
 /**

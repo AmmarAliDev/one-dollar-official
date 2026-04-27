@@ -4,7 +4,7 @@
  * Mocks the catalog-queries module so no real DB connection is needed.
  * Verifies product detail mapping, variant groups, reviews, and related products.
  */
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { getProductBySlug, getProductSlugsWithCategory, getRelatedProducts } from "@/features/catalog";
 
@@ -139,6 +139,14 @@ vi.mock("@/server/db/catalog-queries", () => ({
 // ---------------------------------------------------------------------------
 
 describe("product detail service", () => {
+  beforeEach(() => {
+    mockGetPublishedProductBySlug.mockReset();
+    mockGetRelatedPublishedProducts.mockReset();
+    mockGetAllPublishedProductSlugsWithCategories.mockReset();
+    mockListPublishedProductsByIds.mockReset();
+    mockListPublishedProductsByIds.mockResolvedValue([]);
+  });
+
   it("returns full product detail for a valid slug", async () => {
     mockGetPublishedProductBySlug.mockResolvedValue(makeDetailRecord());
 
@@ -307,6 +315,62 @@ describe("product detail service", () => {
 
     expect(related[0]?.slug).toBe("curated-lotion");
     expect(related.some((item) => item.slug === "fallback-wash")).toBe(true);
+  });
+
+  it("accepts legacy related metadata objects and excludes the current product by id", async () => {
+    mockGetPublishedProductBySlug.mockResolvedValue({
+      ...makeDetailRecord(),
+      metadata: {
+        variantsEnabled: false,
+        relatedProducts: [{ id: "prod-face-wash" }, { id: "p-curated" }],
+      },
+    });
+
+    mockListPublishedProductsByIds.mockResolvedValue([
+      {
+        id: "prod-face-wash",
+        name: "Hydra Care Face Wash",
+        slug: "hydra-care-face-wash",
+        shortDescription: null,
+        description: null,
+        masterSku: null,
+        metadata: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        category: { id: "cat-pc", name: "Personal Care", slug: "personal-care" },
+        images: [],
+        specifications: [],
+        variants: [{ id: "self-v1", title: "Default", sku: "HCF-001", options: null, price: 699, compareAtPrice: null, isDefault: true, inventory: { quantity: 10 } }],
+        reviews: [],
+      },
+      {
+        id: "p-curated",
+        name: "Curated Lotion",
+        slug: "curated-lotion",
+        shortDescription: null,
+        description: null,
+        masterSku: null,
+        metadata: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        category: { id: "cat-pc", name: "Personal Care", slug: "personal-care" },
+        images: [],
+        specifications: [],
+        variants: [{ id: "v1", title: "Default", sku: "CUR-001", options: null, price: 899, compareAtPrice: null, isDefault: true, inventory: { quantity: 6 } }],
+        reviews: [],
+      },
+    ]);
+    mockGetRelatedPublishedProducts.mockResolvedValue([]);
+
+    const related = await getRelatedProducts("personal-care", "hydra-care-face-wash");
+
+    expect(related.map((item) => item.slug)).toEqual(["curated-lotion"]);
+  });
+
+  it("returns an empty array when related lookup fails", async () => {
+    mockGetPublishedProductBySlug.mockRejectedValue(new Error("query failed"));
+
+    await expect(getRelatedProducts("personal-care", "hydra-care-face-wash")).resolves.toEqual([]);
   });
 
   it("caps related products at 4", async () => {
