@@ -16,9 +16,9 @@ import {
   getAdminInventoryErrorMessage,
   getAdminInventoryNoticeMessage,
 } from "@/features/admin/inventory/flash";
+import { listAdminLowStockInventoryItems } from "@/features/admin/inventory/service";
 import { requireRouteAccess } from "@/lib/auth/guards";
 import { hasPermission, rbacPermissions } from "@/lib/auth/rbac";
-import { getPrismaClient } from "@/server/db";
 
 export const metadata = buildMetadata({
   title: "Admin Inventory",
@@ -64,32 +64,12 @@ export default async function AdminInventoryPage({ searchParams }: AdminInventor
   const noticeMessage = getAdminInventoryNoticeMessage(params.notice);
   const errorMessage = getAdminInventoryErrorMessage(params.error);
 
-  // Try to read low-stock inventory from the database. If the DB is not
-  // available or an error occurs, we fall back to the shared placeholder
-  // pattern and show an error state.
-  let lowStock: any[] = [];
+  let lowStockItems: Awaited<ReturnType<typeof listAdminLowStockInventoryItems>> = [];
   try {
-    const db = getPrismaClient();
-    const allInventory = await db.inventory.findMany({
-      include: {
-        productVariant: {
-          include: {
-            product: true,
-          },
-        },
-      },
-      orderBy: { updatedAt: "asc" },
+    lowStockItems = await listAdminLowStockInventoryItems({
       take: 200,
     });
-
-    // Prisma doesn't support column-to-column comparisons in the query,
-    // so compute low-stock in JS: (quantity - reserved) <= safetyStock.
-    lowStock = allInventory.filter((inv: any) => {
-      const onHand = (inv.quantity ?? 0) - (inv.reserved ?? 0);
-      const safety = inv.safetyStock ?? 0;
-      return onHand <= safety;
-    });
-  } catch (err) {
+  } catch {
     return (
       <PageShell className="gap-8">
         <AdminPageHeader
@@ -106,7 +86,7 @@ export default async function AdminInventoryPage({ searchParams }: AdminInventor
     );
   }
 
-  if (!lowStock || lowStock.length === 0) {
+  if (lowStockItems.length === 0) {
     return (
       <PageShell className="gap-8">
         <AdminPageHeader
@@ -137,24 +117,16 @@ export default async function AdminInventoryPage({ searchParams }: AdminInventor
     );
   }
 
-  // Ready state: render a simple table of low-stock items instead of the
-  // placeholder pattern. Keep the UI minimal — this can be replaced with a
-  // richer data table component later.
-  const inventoryItems: AdminInventoryItem[] = lowStock.map((inv: any) => {
-    const variant = inv.productVariant;
-    const product = variant?.product;
-    const onHand = (inv.quantity ?? 0) - (inv.reserved ?? 0);
-
-    return {
-      id: inv.id,
-      productName: product?.name ?? null,
-      sku: variant?.sku ?? null,
-      onHand,
-      safetyStock: inv.safetyStock ?? null,
-      location: inv.location ?? null,
-      updatedAt: inv.updatedAt instanceof Date ? inv.updatedAt.toISOString() : new Date(inv.updatedAt).toISOString(),
-    };
-  });
+  const inventoryItems: AdminInventoryItem[] = lowStockItems.map((item) => ({
+    id: item.inventoryId,
+    productName: item.productName,
+    sku: item.sku,
+    onHand: item.onHand,
+    safetyStock: item.safetyStock,
+    alertThreshold: item.alertThreshold,
+    location: item.location,
+    updatedAt: item.updatedAt.toISOString(),
+  }));
 
   return (
     <PageShell className="gap-8">

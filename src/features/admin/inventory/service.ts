@@ -1,5 +1,9 @@
 import type { Prisma } from "@prisma/client";
 
+import {
+  adminStoreSettingsSingletonId,
+  defaultAdminStoreSettings,
+} from "@/features/admin/settings/validation";
 import { AppError } from "@/lib/errors/app-error";
 import { getPrismaClient } from "@/server/db";
 
@@ -24,7 +28,160 @@ export type AdminInventoryAdjustmentResult = {
   updatedAt: Date;
 };
 
+export type LowStockInventoryRecord = {
+  quantity: number;
+  reserved: number;
+  safetyStock: number;
+};
+
+export type AdminLowStockInventoryItem = {
+  inventoryId: string;
+  productVariantId: string;
+  productName: string | null;
+  sku: string | null;
+  quantity: number;
+  reserved: number;
+  onHand: number;
+  safetyStock: number;
+  alertThreshold: number;
+  location: string;
+  updatedAt: Date;
+};
+
 const MAX_INVENTORY_QUANTITY = 1_000_000;
+
+function normalizeThreshold(value: number, fallback: number) {
+  if (!Number.isFinite(value)) {
+    return fallback;
+  }
+
+  return Math.max(0, Math.floor(value));
+}
+
+export function computeInventoryOnHand(record: Pick<LowStockInventoryRecord, "quantity" | "reserved">) {
+  return record.quantity - record.reserved;
+}
+
+export function resolveInventoryLowStockThreshold(input: {
+  safetyStock: number;
+  fallbackLowStockThreshold: number;
+}) {
+  const fallbackThreshold = normalizeThreshold(
+    input.fallbackLowStockThreshold,
+    defaultAdminStoreSettings.lowStockThreshold,
+  );
+  const safetyStock = normalizeThreshold(input.safetyStock, 0);
+
+  return safetyStock > 0 ? safetyStock : fallbackThreshold;
+}
+
+export function isInventoryLowStock(input: {
+  quantity: number;
+  reserved: number;
+  safetyStock: number;
+  fallbackLowStockThreshold: number;
+}) {
+  const onHand = computeInventoryOnHand({
+    quantity: input.quantity,
+    reserved: input.reserved,
+  });
+  const threshold = resolveInventoryLowStockThreshold({
+    safetyStock: input.safetyStock,
+    fallbackLowStockThreshold: input.fallbackLowStockThreshold,
+  });
+
+  return onHand <= threshold;
+}
+
+export async function listAdminLowStockInventoryItems(options: {
+  take?: number;
+} = {}): Promise<AdminLowStockInventoryItem[]> {
+  const db = getPrismaClient();
+  const take = Number.isFinite(options.take)
+    ? Math.max(1, Math.floor(options.take ?? 200))
+    : 200;
+
+  try {
+    const [settingsRecord, rows] = await Promise.all([
+      db.storeSettings.findUnique({
+        where: {
+          id: adminStoreSettingsSingletonId,
+        },
+        select: {
+          lowStockThreshold: true,
+        },
+      }),
+      db.inventory.findMany({
+        orderBy: {
+          updatedAt: "asc",
+        },
+        take,
+        select: {
+          id: true,
+          productVariantId: true,
+          quantity: true,
+          reserved: true,
+          safetyStock: true,
+          location: true,
+          updatedAt: true,
+          productVariant: {
+            select: {
+              sku: true,
+              product: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+      }),
+    ]);
+
+    const fallbackLowStockThreshold = settingsRecord?.lowStockThreshold
+      ?? defaultAdminStoreSettings.lowStockThreshold;
+
+    return rows
+      .map((row) => {
+        const onHand = computeInventoryOnHand({
+          quantity: row.quantity,
+          reserved: row.reserved,
+        });
+        const alertThreshold = resolveInventoryLowStockThreshold({
+          safetyStock: row.safetyStock,
+          fallbackLowStockThreshold,
+        });
+
+        return {
+          inventoryId: row.id,
+          productVariantId: row.productVariantId,
+          productName: row.productVariant.product?.name ?? null,
+          sku: row.productVariant.sku ?? null,
+          quantity: row.quantity,
+          reserved: row.reserved,
+          onHand,
+          safetyStock: row.safetyStock,
+          alertThreshold,
+          location: row.location,
+          updatedAt: row.updatedAt,
+        };
+      })
+      .filter((row) => row.onHand <= row.alertThreshold)
+      .sort((left, right) => {
+        if (left.onHand !== right.onHand) {
+          return left.onHand - right.onHand;
+        }
+
+        return left.updatedAt.getTime() - right.updatedAt.getTime();
+      });
+  } catch (error) {
+    throw new AppError("Low-stock inventory query failed.", "ADMIN_LOW_STOCK_QUERY_FAILED", {
+      cause: error,
+      statusCode: 500,
+      userMessage: "Inventory alerts are temporarily unavailable. Please refresh and try again.",
+    });
+  }
+}
 
 function computeNextQuantity(input: {
   mode: AdminInventoryAdjustmentInput["adjustmentMode"];

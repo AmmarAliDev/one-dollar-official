@@ -212,10 +212,12 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 ## Admin Dashboard Metrics Strategy
 
 - Metric query orchestration lives in `src/features/admin/dashboard/service.ts` to keep route files thin and typed.
+- Low-stock detection is shared with admin inventory through `src/features/admin/inventory/service.ts` (`listAdminLowStockInventoryItems`, `isInventoryLowStock`) so dashboard and inventory surfaces cannot drift.
 - Current cards intentionally remain simple (no charts yet):
 	- Pending orders: `Order.status == PENDING`
 	- Revenue summary: sum of `Order.total` where `status == DELIVERED` and `refundStatus` is not completed
-	- Low stock: inventory rows where `(quantity - reserved) <= safetyStock`
+	- Low stock: inventory rows where `onHand = (quantity - reserved)` and `onHand <= effectiveThreshold`
+	- Effective threshold rule: if `Inventory.safetyStock > 0`, use it; otherwise fall back to `StoreSettings.lowStockThreshold` (default `5`)
 	- Recent activity: latest `AuditLog` records mapped into non-technical labels and summaries
 - Revenue assumptions are explicit in code via `AdminDashboardRevenueSummary.assumptions` so UI and docs stay aligned while payment workflows evolve.
 
@@ -241,11 +243,12 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 
 ## Admin Inventory Adjustment Strategy
 
-- Stock mutation logic is isolated in `src/features/admin/inventory/service.ts` and leaves existing low-stock read behavior intact.
+- Stock mutation and low-stock read logic are isolated in `src/features/admin/inventory/service.ts` so read/write inventory behavior follows one shared contract.
 - Server-side validation in `src/features/admin/inventory/validation.ts` enforces mode, amount, reason, and version timestamp integrity.
 - Concurrency is handled via `updateMany` matching on `id + updatedAt`; stale writes fail with a user-safe conflict error.
 - Quantity safeguards prevent manual updates from producing negative stock or quantities below `reserved`.
 - Successful adjustments write `AuditLog` events (`inventory.adjusted`) and revalidate `/admin/inventory` + `/admin`.
+- `/admin/inventory` now uses the shared low-stock query and shows an explicit `Alert at` threshold column so fallback-threshold alerts remain transparent to admins.
 
 ## Admin Store Settings Strategy
 

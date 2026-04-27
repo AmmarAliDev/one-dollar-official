@@ -13,6 +13,7 @@ export type AdminInventoryItem = {
   sku: string | null;
   onHand: number;
   safetyStock: number | null;
+  alertThreshold: number;
   location: string | null;
   updatedAt: string;
 };
@@ -47,6 +48,14 @@ export const adminInventoryTableColumns: ColumnDef<AdminInventoryItem, any>[] = 
     cell: (info) => {
       const safetyStock = info.getValue();
       return <span>{safetyStock ?? 0}</span>;
+    },
+  }),
+
+  columnHelper.accessor("alertThreshold", {
+    header: "Alert at",
+    cell: (info) => {
+      const alertThreshold = info.getValue();
+      return <span>{alertThreshold}</span>;
     },
   }),
 

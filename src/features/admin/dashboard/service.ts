@@ -1,5 +1,10 @@
 import type { Prisma, RefundStatus } from "@prisma/client";
 
+import {
+  isInventoryLowStock,
+  listAdminLowStockInventoryItems,
+} from "@/features/admin/inventory/service";
+import { defaultAdminStoreSettings } from "@/features/admin/settings/validation";
 import { AppError } from "@/lib/errors/app-error";
 import { getPrismaClient } from "@/server/db";
 
@@ -122,9 +127,22 @@ function mapActivitySummary(entry: {
 }
 
 export function countLowStockInventoryItems(inventoryRows: LowStockInventoryRecord[]) {
+  return countLowStockInventoryItemsWithThreshold(inventoryRows, defaultAdminStoreSettings.lowStockThreshold);
+}
+
+export function countLowStockInventoryItemsWithThreshold(
+  inventoryRows: LowStockInventoryRecord[],
+  fallbackLowStockThreshold: number,
+) {
   return inventoryRows.reduce((count, row) => {
-    const onHand = row.quantity - row.reserved;
-    return onHand <= row.safetyStock ? count + 1 : count;
+    return isInventoryLowStock({
+      quantity: row.quantity,
+      reserved: row.reserved,
+      safetyStock: row.safetyStock,
+      fallbackLowStockThreshold,
+    })
+      ? count + 1
+      : count;
   }, 0);
 }
 
@@ -179,7 +197,7 @@ export async function getAdminDashboardMetrics(): Promise<AdminDashboardMetrics>
   const db = getPrismaClient();
 
   try {
-    const [pendingOrdersCount, deliveredRevenueAggregate, refundedOrderCountExcluded, inventoryRows, recentActivity] = await Promise.all([
+    const [pendingOrdersCount, deliveredRevenueAggregate, refundedOrderCountExcluded, lowStockItems, recentActivity] = await Promise.all([
       db.order.count({
         where: {
           status: "PENDING",
@@ -205,19 +223,15 @@ export async function getAdminDashboardMetrics(): Promise<AdminDashboardMetrics>
           refundStatus: "COMPLETED",
         },
       }),
-      db.inventory.findMany({
-        select: {
-          quantity: true,
-          reserved: true,
-          safetyStock: true,
-        },
+      listAdminLowStockInventoryItems({
+        take: 1_000,
       }),
       listAdminRecentActivity(DEFAULT_ACTIVITY_PREVIEW_LIMIT),
     ]);
 
     return {
       pendingOrdersCount,
-      lowStockItemCount: countLowStockInventoryItems(inventoryRows),
+      lowStockItemCount: lowStockItems.length,
       revenue: buildDashboardRevenueSummary({
         recognizedTotal: deliveredRevenueAggregate._sum.total,
         deliveredOrderCount: deliveredRevenueAggregate._count._all,
