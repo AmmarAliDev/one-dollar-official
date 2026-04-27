@@ -87,6 +87,7 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `src/config/env.ts` validates public env input with a typed schema and throws readable `CONFIG_ERROR` messages.
 - `src/config/app-config.ts` builds a safe application config snapshot for future server and feature modules.
 - `src/config/feature-flags.ts` derives preview flags from validated env values instead of raw `process.env` access.
+- Homepage fallback preview-only artifacts should be gated by validated runtime env (`env.nodeEnv !== "production"`) so development helpers never leak into production storefront UI.
 - `getRequiredServerEnv()` should be used when a future integration needs a non-public secret at runtime.
 - `DATABASE_URL` must be available anywhere Prisma queries or CLI workflows run.
 - Prisma CLI commands are routed through `scripts/prisma-cli.mjs`, which respects local env files, falls back `POSTGRES_URL_NON_POOLING` to `DATABASE_URL` for local use, and blocks obvious hosted `migrate dev` mistakes by default.
