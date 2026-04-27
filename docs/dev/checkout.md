@@ -182,9 +182,15 @@ Server flow:
 
 1. Trusted-origin check
 2. Payload validation with Zod
-3. Resolve cart context (guest/auth)
+3. Resolve cart context (guest/auth) with guest-token isolation (`userId=null` for guest lookup)
 4. Place order transactionally with stock protection and snapshot persistence
 5. Return order number, totals, payment message, confirmation URL, and invoice URL
+
+Cart merge behavior during checkout context resolution:
+
+- Guest-to-user merge is only attempted when the caller explicitly enables merge and both auth user + guest token context are present
+- Merge is guest-scoped and does not use authenticated cart tokens as guest cart identifiers
+- If no active guest cart exists for the token, checkout continues with the authenticated active cart without forced merge
 
 Invoice route: `GET /api/orders/[orderNumber]/invoice`
 

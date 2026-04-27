@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-Documentation consolidation for AI continuity completed on 2026-04-27.
+Cart session separation hardening completed on 2026-04-28 (guest vs authenticated context isolation, explicit merge guardrails, sign-out context reset).
 
 ## Purpose of this File
 
@@ -19,6 +19,7 @@ This file is now intentionally concise. Detailed implementation state is split i
 - Database-backed catalog and blog flows are active; publish-state visibility is enforced.
 - Shared infrastructure for forms, tables, error handling, logging redaction, and RBAC is active and used across major modules.
 - Test suites (unit/integration/e2e) and build pipelines are in place and routinely used as release gates.
+- Cart context resolution now enforces guest/auth isolation in shared browser sessions and prevents authenticated cart token leakage into guest cart resolution.
 
 ## Active Deferred Buckets
 
@@ -28,6 +29,7 @@ This file is now intentionally concise. Detailed implementation state is split i
 - Activity feed filter/pagination UI controls
 - Email-marketing double opt-in and abandoned-cart recovery automation
 - Extended admin settings (tax/payment/warehouse policy matrices)
+- Optional future enhancement: one-time explicit merge intent cookie/flag (only needed if product wants merge strictly at login event boundaries rather than at merge-enabled cart/checkout resolution points)
 
 ## Recommended Next Prompt
 

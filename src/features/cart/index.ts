@@ -2,6 +2,7 @@ export {
   applyCartTokenCookie,
   CART_COOKIE_NAME,
   readCartTokenFromCookieValue,
+  setCartTokenCookie,
 } from "./cookies";
 export {
   addCartItemForContext,

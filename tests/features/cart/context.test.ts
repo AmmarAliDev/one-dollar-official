@@ -2,6 +2,9 @@ import { Prisma } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockDb = vi.hoisted(() => ({
+  user: {
+    findUnique: vi.fn(),
+  },
   cart: {
     findFirst: vi.fn(),
     findUnique: vi.fn(),
@@ -41,29 +44,42 @@ vi.mock("@/server/db", () => ({
 describe("cart context resolution", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockDb.user.findUnique.mockResolvedValue({ id: "user-1" });
   });
 
-  it("reuses an active token-backed cart without creating a duplicate guest cart", async () => {
+  it("isolates guest cart resolution when cookie token belongs to an authenticated cart", async () => {
+    const tokenConflict = new Prisma.PrismaClientKnownRequestError("Unique constraint failed on the fields: (token)", {
+      code: "P2002",
+      clientVersion: "test",
+      meta: {
+        target: ["token"],
+      },
+    });
+
     mockDb.cart.findFirst.mockImplementation(async (args?: { where?: Record<string, unknown> }) => {
-      if (args?.where?.token === "shared-token") {
-        return {
-          id: "cart-1",
-          token: "shared-token",
-          userId: "user-1",
-          status: "ACTIVE",
-        };
+      if (args?.where?.token === "shared-token" && args.where.userId === null) {
+        return null;
       }
 
       return null;
     });
 
+    mockDb.cart.create
+      .mockImplementationOnce(async () => {
+        throw tokenConflict;
+      })
+      .mockImplementationOnce(async () => ({
+        id: "guest-cart-1",
+        token: "fresh-guest-token",
+        userId: null,
+        status: "ACTIVE",
+      }));
+
     mockDb.cart.findUnique.mockResolvedValue({
-      id: "cart-1",
-      token: "shared-token",
+      id: "guest-cart-1",
+      token: "fresh-guest-token",
       items: [],
     });
-
-    mockDb.cart.create.mockRejectedValue(new Error("cart.create should not be called when the token already resolves an active cart"));
 
     const { getCartSummaryForContext } = await import("@/features/cart");
 
@@ -72,13 +88,169 @@ describe("cart context resolution", () => {
         guestToken: "shared-token",
       }),
     ).resolves.toMatchObject({
-      id: "cart-1",
-      token: "shared-token",
+      id: "guest-cart-1",
+      token: "fresh-guest-token",
       itemCount: 0,
       subtotal: 0,
     });
 
-    expect(mockDb.cart.create).not.toHaveBeenCalled();
+    expect(mockDb.cart.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          token: "shared-token",
+          userId: null,
+        }),
+      }),
+    );
+    expect(mockDb.cart.create).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps authenticated cart isolated when merge is not requested", async () => {
+    mockDb.user.findUnique.mockResolvedValue({ id: "user-1" });
+
+    mockDb.cart.findFirst.mockImplementation(async (args?: { where?: Record<string, unknown> }) => {
+      if (args?.where?.userId === "user-1") {
+        return {
+          id: "user-cart-1",
+          token: "user-token-1",
+          userId: "user-1",
+          status: "ACTIVE",
+        };
+      }
+
+      if (args?.where?.token === "guest-token-1" && args.where.userId === null) {
+        return {
+          id: "guest-cart-1",
+          token: "guest-token-1",
+          userId: null,
+          status: "ACTIVE",
+        };
+      }
+
+      return null;
+    });
+
+    mockDb.cart.findUnique.mockResolvedValue({
+      id: "user-cart-1",
+      token: "user-token-1",
+      items: [],
+    });
+
+    const { getCartSummaryForContext } = await import("@/features/cart");
+
+    await expect(
+      getCartSummaryForContext({
+        userId: "user-1",
+        guestToken: "guest-token-1",
+        mergeGuestIntoUser: false,
+      }),
+    ).resolves.toMatchObject({
+      id: "user-cart-1",
+      token: "user-token-1",
+      itemCount: 0,
+      subtotal: 0,
+    });
+
+    expect(mockDb.cart.update).not.toHaveBeenCalled();
+    expect(mockDb.cartItem.deleteMany).not.toHaveBeenCalled();
+  });
+
+  it("merges guest cart into authenticated cart once when merge is requested", async () => {
+    mockDb.user.findUnique.mockResolvedValue({ id: "user-1" });
+
+    let guestCartLookupCount = 0;
+
+    mockDb.cart.findFirst.mockImplementation(async (args?: { where?: Record<string, unknown>; include?: Record<string, unknown> }) => {
+      if (args?.where?.userId === "user-1") {
+        return {
+          id: "user-cart-1",
+          token: "user-token-1",
+          userId: "user-1",
+          status: "ACTIVE",
+        };
+      }
+
+      if (args?.where?.token === "guest-token-1" && args.where.userId === null) {
+        guestCartLookupCount += 1;
+
+        if (guestCartLookupCount > 1) {
+          return null;
+        }
+
+        return {
+          id: "guest-cart-1",
+          token: "guest-token-1",
+          userId: null,
+          status: "ACTIVE",
+          items: [
+            {
+              id: "guest-item-1",
+              cartId: "guest-cart-1",
+              productVariantId: "variant-1",
+              quantity: 2,
+              unitPrice: 499,
+              productVariant: {
+                inventory: {
+                  quantity: 8,
+                  reserved: 0,
+                  safetyStock: 0,
+                },
+              },
+            },
+          ],
+        };
+      }
+
+      return null;
+    });
+
+    mockDb.cartItem.findUnique.mockResolvedValue(null);
+    mockDb.cartItem.upsert.mockResolvedValue({
+      id: "user-item-1",
+      cartId: "user-cart-1",
+      productVariantId: "variant-1",
+      quantity: 2,
+      unitPrice: 499,
+    });
+    mockDb.cart.update.mockResolvedValue({
+      id: "guest-cart-1",
+      status: "ABANDONED",
+      token: null,
+    });
+    mockDb.cartItem.deleteMany.mockResolvedValue({ count: 1 });
+
+    mockDb.cart.findUnique.mockResolvedValue({
+      id: "user-cart-1",
+      token: "user-token-1",
+      items: [],
+    });
+
+    const { getCartSummaryForContext } = await import("@/features/cart");
+
+    await expect(
+      getCartSummaryForContext({
+        userId: "user-1",
+        guestToken: "guest-token-1",
+        mergeGuestIntoUser: true,
+      }),
+    ).resolves.toMatchObject({
+      id: "user-cart-1",
+      token: "user-token-1",
+    });
+
+    await expect(
+      getCartSummaryForContext({
+        userId: "user-1",
+        guestToken: "guest-token-1",
+        mergeGuestIntoUser: true,
+      }),
+    ).resolves.toMatchObject({
+      id: "user-cart-1",
+      token: "user-token-1",
+    });
+
+    expect(mockDb.cart.update).toHaveBeenCalledTimes(1);
+    expect(mockDb.cartItem.deleteMany).toHaveBeenCalledTimes(1);
   });
 
   it("recovers when guest cart creation races on the unique token", async () => {

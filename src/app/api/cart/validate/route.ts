@@ -46,7 +46,7 @@ export async function GET() {
       },
     );
 
-    applyCartTokenCookie(response, cart?.token ?? ensuredGuestToken);
+    applyCartTokenCookie(response, userId ? ensuredGuestToken : cart?.token ?? ensuredGuestToken);
 
     return response;
   } catch (error) {
