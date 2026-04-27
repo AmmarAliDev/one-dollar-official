@@ -1,3 +1,5 @@
+export { generateCategorySeoContent } from "./seo/category-seo-content";
+export type { CategoryFaqItem, CategoryInternalLink, CategorySeoContent, CategorySeoContentOptions } from "./seo/category-seo-content";
 export { CatalogPagination } from "./components/catalog-pagination";
 export { CatalogSearchExperience } from "./components/catalog-search-experience";
 export { CatalogSearchInput } from "./components/catalog-search-input";
