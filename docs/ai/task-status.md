@@ -6,6 +6,11 @@
 
 ## Completed
 
+- [x] Phase-2 rewards architecture placeholder added with isolated service contracts for referral tracking, loyalty points, and wallet ledger (`src/features/rewards/contracts.ts`)
+- [x] Rewards contract helper tests added in `tests/features/rewards/contracts.test.ts`
+- [x] Referral/loyalty/wallet integration and data-model extension path documented in `docs/dev/referral-loyalty-wallet.md` and `docs/ai/referral-loyalty-wallet.md`
+- [x] Current checkout/order flow intentionally kept unchanged while phase-2 seams are prepared
+
 - [x] System-aware theme switching upgraded to explicit `system`, `light`, and `dark` selection
 - [x] Global design tokens added for semantic colors, spacing, radii, and shadows in `src/app/globals.css`
 - [x] Storefront shell polished with a reusable header, footer, and responsive navigation structure

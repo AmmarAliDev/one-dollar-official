@@ -37,6 +37,19 @@ Models (summary)
   - The background recovery job (cron/queue) that reads events and sends recovery emails is **deferred**.
 - `Cart` model has three new fields: `abandonedAt` (DateTime?), `recoveryToken` (String? unique), `recoveryEmailSentAt` (DateTime?).
 
+Phase-2 planned model extension (not migrated yet)
+- Referral tracking:
+  - `ReferralProgram`: { id, code (unique), ownerUserId?, status, createdAt, updatedAt }
+  - `ReferralVisit`: { id, referralProgramId, visitorSessionId, landingPath, campaign?, occurredAt }
+  - `ReferralConversion`: { id, referralProgramId, orderId (unique), orderNumber, orderTotalMinor, occurredAt }
+- Loyalty points:
+  - `LoyaltyAccount`: { id, userId (unique), pointsAvailable, pointsPending, tier?, updatedAt }
+  - `LoyaltyTransaction`: { id, loyaltyAccountId, points (signed int), reason, reference, occurredAt }
+- Wallet ledger:
+  - `Wallet`: { id, userId, currency (PKR), availableMinor, holdMinor, updatedAt }
+  - `WalletLedgerEntry`: { id, walletId, direction (credit/debit), amountMinor, source, reference, note?, occurredAt }
+- Integration note: Phase-2 contracts are prepared in `src/features/rewards/contracts.ts`; schema migration is intentionally deferred to avoid affecting current checkout/order execution.
+
 Field types notes
 - Monetary values are integers in the smallest currency unit to keep calculations precise.
 - Flexible JSON fields (`metadata`, `permissions`, `content`) are intentionally used to reduce schema churn for marketing and feature flags.
