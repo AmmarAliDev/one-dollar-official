@@ -4,6 +4,8 @@
 
 Cart session separation hardening completed on 2026-04-28 (guest vs authenticated context isolation, explicit merge guardrails, sign-out context reset).
 
+Related products reliability pass completed on 2026-04-28 (explicit admin-curated handling hardened, same-category fallback behavior stabilized, self-exclusion enforced by slug/id, and PDP related-section empty-state made explicit when no valid recommendations exist).
+
 ## Purpose of this File
 
 This file is now intentionally concise. Detailed implementation state is split into focused docs:

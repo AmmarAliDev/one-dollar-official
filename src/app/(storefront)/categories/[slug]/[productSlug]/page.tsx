@@ -163,9 +163,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
       <ProductReviews reviews={product.reviews} summary={product.reviewSummary} />
 
       {/* Related products */}
-      {relatedProducts.length > 0 && (
-        <ProductRelatedGrid products={relatedProducts} />
-      )}
+      <ProductRelatedGrid products={relatedProducts} />
     </PageShell>
   );
 }
