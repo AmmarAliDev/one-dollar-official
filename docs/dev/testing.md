@@ -122,6 +122,7 @@ Lightweight import-level checks that verify public API contracts without mocking
 `validation.test.ts` — `checkoutPayloadSchema`.  
 `totals.test.ts` — `calculateCheckoutTotals`, `CHECKOUT_SHIPPING_FEE`.  
 `payment.test.ts` — `listCheckoutPaymentMethods`, `getCheckoutPaymentProvider`.  
+`client.test.ts` — `submitCheckoutRequest` success/error/malformed-response handling.  
 `checkout-page-client.test.tsx` — `CheckoutPageClient` field validation, payload shape, retry-button disable (jsdom).
 
 #### Contact

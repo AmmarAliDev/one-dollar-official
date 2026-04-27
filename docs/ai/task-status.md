@@ -6,6 +6,11 @@
 
 ## Completed
 
+- [x] Mobile-readiness boundary pass completed with typed checkout transport seam (`src/features/checkout/client.ts`) and runtime API contract parsing (`src/features/checkout/api-contract.ts`)
+- [x] Checkout client UI now delegates submit transport parsing/error normalization to feature-level helper instead of inline `fetch` handling
+- [x] Mobile-readiness strategy and API/service boundary guidance documented in `docs/dev/mobile-readiness.md` and `docs/ai/mobile-readiness.md`
+- [x] Focused transport tests added for checkout submit client behavior in `tests/features/checkout/client.test.ts`
+
 - [x] Phase-2 rewards architecture placeholder added with isolated service contracts for referral tracking, loyalty points, and wallet ledger (`src/features/rewards/contracts.ts`)
 - [x] Rewards contract helper tests added in `tests/features/rewards/contracts.test.ts`
 - [x] Referral/loyalty/wallet integration and data-model extension path documented in `docs/dev/referral-loyalty-wallet.md` and `docs/ai/referral-loyalty-wallet.md`

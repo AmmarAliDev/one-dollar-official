@@ -17,15 +17,15 @@ import {
 import { FormErrorSummary } from "@/components/ui/form-error-summary";
 import { PriceDisplay } from "@/components/ui/price-display";
 import type { CartSummary } from "@/features/cart/types";
-import { testIds } from "@/lib/test-selectors";
-import { AppError } from "@/lib/errors/app-error";
 import { toUserMessage } from "@/lib/errors/error-messages";
+import { testIds } from "@/lib/test-selectors";
 import {
   CHECKOUT_FIXED_PROVINCE,
   CHECKOUT_SUPPORTED_CITY,
   type CheckoutPayload,
   checkoutPayloadSchema,
   type CheckoutPaymentMethodDefinition,
+  submitCheckoutRequest,
 } from "@/features/checkout";
 import { notify } from "@/lib/notify";
 
@@ -102,34 +102,10 @@ export function CheckoutPageClient({
     }
 
     try {
-      const response = await fetch("/api/checkout", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const responsePayload = (await response.json().catch(() => null)) as {
-        error?: string;
-        order?: {
-          confirmationUrl: string;
-          orderNumber: string;
-          payment: { message: string };
-          totals: { total: number };
-        };
-      } | null;
-
-      if (!response.ok) {
-        throw new AppError("Checkout request failed.", "INTERNAL_ERROR", {
-          userMessage:
-            responsePayload?.error ?? "Checkout could not be submitted. Please try again.",
-        });
-      }
-
-      const paymentMessage = responsePayload?.order?.payment?.message ?? "Order placed.";
-      const total = responsePayload?.order?.totals?.total ?? totals.total;
-      const confirmationUrl = responsePayload?.order?.confirmationUrl;
+      const order = await submitCheckoutRequest(payload);
+      const paymentMessage = order.payment.message ?? "Order placed.";
+      const total = order.totals.total;
+      const confirmationUrl = order.confirmationUrl;
 
       setRetryPayload(null);
       setSuccessMessage(`${paymentMessage} Total payable: PKR ${total.toLocaleString("en-PK")}.`);
