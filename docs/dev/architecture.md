@@ -1,5 +1,25 @@
 # Architecture Notes
 
+## Table of Contents
+
+1. [Goal](#goal)
+2. [Layering Pattern](#layering-pattern)
+3. [Mobile-Readiness Boundary Rule](#mobile-readiness-boundary-rule)
+4. [Database Access Strategy](#database-access-strategy)
+5. [Route Groups](#route-groups)
+6. [UI Foundation Strategy](#ui-foundation-strategy)
+7. [Shared Table Strategy](#shared-table-strategy)
+8. [Config and Environment Strategy](#config-and-environment-strategy)
+9. [RBAC Foundation Strategy](#rbac-foundation-strategy)
+10. [Catalog Data Strategy](#catalog-data-strategy)
+11. [Blog Data Strategy](#blog-data-strategy)
+12. [Cache Strategy](#cache-strategy)
+13. [Search Strategy](#search-strategy)
+14. [Error Handling Strategy](#error-handling-strategy)
+15. [Analytics Strategy](#analytics-strategy)
+
+---
+
 ## Goal
 
 Create a scalable foundation for a single-vendor e-commerce app using one shared codebase for storefront, admin, and auth experiences.

@@ -2,6 +2,13 @@
 
 This guide covers production deployment of **One Dollar** on Vercel with a hosted PostgreSQL database (Supabase or Vercel Postgres), Upstash Redis, Google OAuth, SMTP email, Telegram alerts, and analytics.
 
+> **Quick-start checklist** — things you must set before the first deployment:
+> 1. `DATABASE_URL` (pooled) and `POSTGRES_URL_NON_POOLING` (direct)
+> 2. `AUTH_SECRET` — minimum 32 random characters (`openssl rand -base64 32`)
+> 3. `NEXT_PUBLIC_APP_URL` — your production domain, no trailing slash
+> 4. Vercel build command set to `pnpm build:deploy`
+> 5. Node.js version set to `20.x` in Vercel project settings
+
 ---
 
 ## Table of Contents
