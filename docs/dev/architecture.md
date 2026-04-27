@@ -13,6 +13,13 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 5. **`src/config`** — app-wide constants, env validation, and safe config loading
 6. **`src/lib`** — low-level helpers and shared error utilities
 
+## Mobile-Readiness Boundary Rule
+
+- Keep UI components thin and route all business operations through feature services and typed feature contracts so future mobile clients can reuse the same behavior.
+- Route handlers in `src/app/api/*` are the transport seam; they should validate and delegate instead of embedding domain logic.
+- Feature-owned transport helpers (for example checkout submit in `src/features/checkout/client.ts`) should centralize API parsing and user-safe error normalization.
+- See `docs/dev/mobile-readiness.md` for the current boundary map and deferred items.
+
 ## Database Access Strategy
 
 - `src/server/db/client.ts` owns the lazy Prisma singleton for Next.js server execution.

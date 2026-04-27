@@ -1,4 +1,4 @@
-// @vitest-environment jsdom
+﻿// @vitest-environment jsdom
 
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -23,14 +23,7 @@ vi.mock("@/lib/notify", () => ({
 
 type MockCheckoutResponse = {
   ok: boolean;
-  json: () => Promise<{
-    order: {
-      confirmationUrl: string;
-      orderNumber: string;
-      payment: { message: string };
-      totals: { total: number };
-    };
-  }>;
+  json: () => Promise<any>;
 };
 
 describe("checkout form migration", () => {
@@ -90,6 +83,7 @@ describe("checkout form migration", () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
+        ok: true,
         order: {
           confirmationUrl: "/checkout/confirmation/OD-1001",
           orderNumber: "OD-1001",
@@ -227,6 +221,7 @@ describe("checkout form migration", () => {
     resolveRetry({
       ok: true,
       json: async () => ({
+        ok: true,
         order: {
           confirmationUrl: "/checkout/confirmation/OD-1002",
           orderNumber: "OD-1002",

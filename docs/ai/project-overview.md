@@ -42,6 +42,7 @@ This repository currently implements **contact form with admin notifications** o
 - fixed shipping fee checkout totals (`subtotal + 250`) shared through checkout service helpers
 - `POST /api/checkout` validation endpoint for checkout payload, cart integrity checks, and stock-aware submission gating
 - payment abstraction registry in `src/features/checkout/payment.ts` with COD implementation and extension seam for future online gateways
+- checkout API transport now has a typed feature-client boundary (`src/features/checkout/client.ts`) and runtime response contract (`src/features/checkout/api-contract.ts`) to support future mobile clients
 - retry-safe checkout UX with user-friendly validation and submit error handling
 - helper tests covering pagination, query results, transaction helpers, safe Prisma singleton reuse, and storefront catalog filtering
 - helper tests now also cover PDP service retrieval and related-product behavior
@@ -82,3 +83,4 @@ src/
 - Put new Prisma queries behind repository factories in `src/server` and let services own transactions.
 - Reuse `loadAppConfig()` / `getRequiredServerEnv()` for new config-dependent server features.
 - Update both `docs/ai` and `docs/dev` whenever a new capability is added.
+- Follow `docs/ai/mobile-readiness.md` for API/service boundary decisions that should remain mobile-compatible.
