@@ -4,6 +4,10 @@ import path from "node:path";
 const TRUE_VALUES = new Set(["1", "true", "yes", "on"]);
 const HOSTED_DATABASE_HINTS = ["pooler.supabase.com", ".supabase.co", "pgbouncer=true"];
 
+function isTruthy(value) {
+  return TRUE_VALUES.has((value ?? "").trim().toLowerCase());
+}
+
 function stripWrappingQuotes(value) {
   if (value.length >= 2) {
     const firstCharacter = value[0];
@@ -86,6 +90,11 @@ export function resolvePrismaEnv(rawEnv = process.env, cwd = process.cwd()) {
   };
 }
 
+export function isDeploymentRuntime(rawEnv = process.env) {
+  const nodeEnv = (rawEnv.NODE_ENV ?? "").trim().toLowerCase();
+  return nodeEnv === "production" || isTruthy(rawEnv.CI) || isTruthy(rawEnv.VERCEL);
+}
+
 export function buildPrismaProcessEnv(rawEnv = process.env, cwd = process.cwd()) {
   return resolvePrismaEnv(rawEnv, cwd).env;
 }
@@ -98,9 +107,7 @@ export function looksLikeHostedDatabaseUrl(databaseUrl = "") {
 export function getMigrateDevSafetyCheck(rawEnv = process.env, cwd = process.cwd()) {
   const { env } = resolvePrismaEnv(rawEnv, cwd);
   const databaseUrl = env.DATABASE_URL?.trim() ?? "";
-  const allowHostedOverride = TRUE_VALUES.has(
-    (env.PRISMA_ALLOW_HOSTED_MIGRATE_DEV ?? "").trim().toLowerCase(),
-  );
+  const allowHostedOverride = isTruthy(env.PRISMA_ALLOW_HOSTED_MIGRATE_DEV);
 
   if (!databaseUrl) {
     return {
@@ -134,5 +141,42 @@ export function getMigrateDevSafetyCheck(rawEnv = process.env, cwd = process.cwd
   return {
     allowed: true,
     reason: "Database URL looks safe for local Prisma Migrate usage.",
+  };
+}
+
+export function getMigrateDeploySafetyCheck(rawEnv = process.env, cwd = process.cwd()) {
+  const { env, usedNonPoolingFallback } = resolvePrismaEnv(rawEnv, cwd);
+  const databaseUrl = env.DATABASE_URL?.trim() ?? "";
+  const nonPoolingUrl = env.POSTGRES_URL_NON_POOLING?.trim() ?? "";
+  const isHostedDatabase = looksLikeHostedDatabaseUrl(databaseUrl);
+  const allowPooledOverride = isTruthy(env.PRISMA_ALLOW_POOLED_MIGRATE_DEPLOY);
+
+  if (!databaseUrl) {
+    return {
+      allowed: false,
+      reason:
+        "DATABASE_URL is required for prisma migrate deploy. Add it to the deployment environment before building.",
+    };
+  }
+
+  if (isHostedDatabase && usedNonPoolingFallback && !allowPooledOverride) {
+    return {
+      allowed: false,
+      reason:
+        "Refusing to run prisma migrate deploy against a hosted pooled DATABASE_URL without POSTGRES_URL_NON_POOLING. Set POSTGRES_URL_NON_POOLING to the provider's direct (non-pooling) URL for migration safety.",
+    };
+  }
+
+  if (isHostedDatabase && databaseUrl === nonPoolingUrl && !allowPooledOverride) {
+    return {
+      allowed: false,
+      reason:
+        "Refusing to run prisma migrate deploy because DATABASE_URL and POSTGRES_URL_NON_POOLING are identical while the URL looks hosted/pooling-based. Use a direct non-pooling URL for POSTGRES_URL_NON_POOLING.",
+    };
+  }
+
+  return {
+    allowed: true,
+    reason: "Migration deploy safety checks passed.",
   };
 }

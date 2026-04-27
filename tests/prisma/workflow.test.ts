@@ -59,4 +59,42 @@ describe('Prisma workflow helpers', () => {
 
     expect(result.allowed).toBe(true);
   });
+
+  it('blocks migrate deploy when hosted DATABASE_URL is pooled and POSTGRES_URL_NON_POOLING is missing', async () => {
+    const { getMigrateDeploySafetyCheck } = await loadWorkflowHelpers();
+    const result = getMigrateDeploySafetyCheck(
+      {
+        DATABASE_URL:
+          'postgresql://postgres:secret@aws-1-ap-south-1.pooler.supabase.com:6543/postgres?sslmode=require&pgbouncer=true',
+      },
+      isolatedCwd,
+    );
+
+    expect(result.allowed).toBe(false);
+    expect(result.reason).toMatch(/POSTGRES_URL_NON_POOLING|direct|non-pooling/i);
+  });
+
+  it('allows migrate deploy when hosted pooled and direct URLs are properly separated', async () => {
+    const { getMigrateDeploySafetyCheck } = await loadWorkflowHelpers();
+    const result = getMigrateDeploySafetyCheck(
+      {
+        DATABASE_URL:
+          'postgresql://postgres:secret@aws-1-ap-south-1.pooler.supabase.com:6543/postgres?sslmode=require&pgbouncer=true',
+        POSTGRES_URL_NON_POOLING:
+          'postgresql://postgres:secret@db.abcdefgh.supabase.co:5432/postgres?sslmode=require',
+      },
+      isolatedCwd,
+    );
+
+    expect(result.allowed).toBe(true);
+  });
+
+  it('detects production-like deployment runtime through VERCEL or CI env', async () => {
+    const { isDeploymentRuntime } = await loadWorkflowHelpers();
+
+    expect(isDeploymentRuntime({ VERCEL: '1' })).toBe(true);
+    expect(isDeploymentRuntime({ CI: 'true' })).toBe(true);
+    expect(isDeploymentRuntime({ NODE_ENV: 'production' })).toBe(true);
+    expect(isDeploymentRuntime({ NODE_ENV: 'development' })).toBe(false);
+  });
 });

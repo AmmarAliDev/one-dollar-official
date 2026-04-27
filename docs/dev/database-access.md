@@ -82,7 +82,7 @@ The repository separates local schema development from deployment-time migration
 - `pnpm prisma:migrate:dev` is the default local workflow and now runs through a repo-level safety wrapper.
 - `pnpm prisma:migrate:deploy` is the deployment-safe command for Vercel / production environments.
 - `pnpm build` remains safe for local builds because it does **not** run production migrations.
-- `pnpm build:deploy` exists for environments where migration deployment should happen before the application build.
+- `pnpm build:deploy` exists for environments where migration deployment should happen before the application build and is now guarded to prevent accidental local usage.
 
 ### Expected Prisma variables
 
@@ -91,18 +91,25 @@ The repository separates local schema development from deployment-time migration
 | `DATABASE_URL` | Primary PostgreSQL connection | Required everywhere Prisma is used |
 | `POSTGRES_URL_NON_POOLING` | Direct non-pooling connection | Recommended for Supabase / hosted Postgres; can match `DATABASE_URL` locally |
 | `SHADOW_DATABASE_URL` | Optional shadow DB | Only needed when `prisma migrate dev` cannot create its own shadow database |
+| `PRISMA_ALLOW_HOSTED_MIGRATE_DEV` | Break-glass override for hosted dev migrate | Use only for intentional remote dev DB workflows |
+| `PRISMA_ALLOW_LOCAL_DEPLOY_BUILD` | Break-glass local deploy-build override | Allows `build:deploy` outside CI/production for rehearsals |
+| `PRISMA_ALLOW_POOLED_MIGRATE_DEPLOY` | Break-glass deploy migration override | Allows deploy migrations when pooled/direct URL separation is unavailable |
 
 ### Safety behavior
 
 - Obvious hosted Supabase / pooled URLs are blocked for `prisma migrate dev` by default.
 - If `POSTGRES_URL_NON_POOLING` is missing locally, the Prisma wrapper falls back to `DATABASE_URL` for that command.
 - To intentionally bypass the hosted-URL block for a remote development database, set `PRISMA_ALLOW_HOSTED_MIGRATE_DEV=true` for the current shell session.
+- `prisma migrate deploy` now blocks hosted pooled-only setups where `POSTGRES_URL_NON_POOLING` is missing or equals `DATABASE_URL`, unless explicitly overridden.
+- `build:deploy` is blocked outside deploy-like runtime context by default; use `pnpm build` for normal local builds.
 
 ### Troubleshooting
 
 - `Environment variable not found: POSTGRES_URL_NON_POOLING` → add the variable or let the local wrapper fall back by using the repo scripts instead of raw Prisma commands.
 - `prisma migrate dev` blocked against Supabase → switch to a local PostgreSQL database for development, or use `prisma migrate deploy` in deployment environments.
 - Shadow database errors on a hosted development DB → add `SHADOW_DATABASE_URL` pointing to a dedicated shadow database.
+- `prisma migrate deploy` blocked for hosted safety → set `POSTGRES_URL_NON_POOLING` to the provider's direct non-pooling URL and keep `DATABASE_URL` as pooled.
+- `P3009` on deploy (failed migration recorded) → resolve the migration state (`pnpm prisma:migrate:resolve -- --rolled-back <migration_id>`) before re-running deploy.
 
 ## Deferred items
 
