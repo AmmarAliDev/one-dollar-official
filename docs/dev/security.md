@@ -1,5 +1,21 @@
 # Security Conventions — Developer Guide
 
+## Quick reference
+
+| Layer | Where it lives | What it does |
+|-------|---------------|--------------|
+| Security headers | `src/config/security.ts` + `next.config.ts` | CSP, HSTS, X-Frame-Options, etc. |
+| CSRF — Server Actions | `src/lib/security/csrf.ts` → `assertTrustedOrigin()` | Validates request origin before any mutation |
+| CSRF — Route Handlers | `src/lib/security/csrf.ts` → `assertTrustedRouteHandlerRequest()` | Same, for API handlers |
+| Rate limiting | `src/lib/rate-limit/` | Redis-first, in-memory fallback |
+| RBAC guards | `src/lib/auth/guards.ts` | `requireAdminAccess()`, `assertHasPermission()` |
+| Admin proxy | `src/proxy.ts` | Early redirect for clearly blocked admin paths |
+| Password hashing | `src/lib/auth/password.ts` | bcrypt, 12 rounds |
+| PII redaction | `src/lib/security/pii.ts` | `maskEmail()`, `stripControlChars()` |
+| Audit logging | `src/lib/audit/admin-actions.ts` | Append-only admin action log |
+
+---
+
 ## Goal
 
 Provide a baseline, production-minded security layer that future features can reuse without rewriting the auth or routing foundations.

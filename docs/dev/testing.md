@@ -1,5 +1,16 @@
 # Testing
 
+## Table of Contents
+
+1. [How to run tests](#how-to-run-tests)
+2. [E2E / Playwright](#e2e--playwright)
+3. [What is tested](#what-is-tested)
+4. [What still needs tests](#what-still-needs-tests)
+5. [Testing conventions](#testing-conventions)
+6. [Adding a new test](#adding-a-new-test)
+
+---
+
 ## How to run tests
 
 | Command                 | Purpose                                                  |

@@ -4,13 +4,33 @@
 
 - Node.js 20+
 - `pnpm` 10+
+- PostgreSQL 14+ (local instance **or** a hosted dev database such as Supabase)
 
-## Install
+## First-time checklist
 
 ```bash
+# 1. Install dependencies
 pnpm install
+
+# 2. Create your local env file and fill in at minimum DATABASE_URL and AUTH_SECRET
 cp .env.example .env.local
+
+# 3. Validate the Prisma schema
+pnpm prisma:validate
+
+# 4. Apply migrations to your local database
+pnpm prisma:migrate:dev --name init
+
+# 5. Seed roles and the default category
+pnpm prisma:seed
+
+# 6. Start the dev server
+pnpm dev
 ```
+
+Open [http://localhost:3000](http://localhost:3000).
+
+The admin panel is at [http://localhost:3000/admin](http://localhost:3000/admin). Access requires an account with an admin role (`SUPER_ADMIN`, `PRODUCT_MANAGER`, or `ORDER_MANAGER`). Assign a role directly in the database via Prisma Studio (`pnpm prisma:studio`) or SQL.
 
 ## Run the app
 

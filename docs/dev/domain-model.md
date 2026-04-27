@@ -1,6 +1,36 @@
-# Domain model — One Dollar (initial)
+# Domain model — One Dollar
 
-This document explains the initial Prisma-based domain model implemented for the single-vendor One Dollar store.
+This document explains the Prisma-based domain model for the single-vendor One Dollar store.
+
+## Quick reference
+
+| Model | Table | Purpose |
+|-------|-------|---------|
+| `User` | `users` | Customers and staff accounts |
+| `Role` | `roles` | Permission sets (`SUPER_ADMIN`, `PRODUCT_MANAGER`, `ORDER_MANAGER`, `CUSTOMER`, `GUEST`) |
+| `Account` / `Session` | — | NextAuth adapter tables |
+| `PasswordResetToken` | — | Short-lived password-reset tokens (hashed, single-use) |
+| `EmailVerificationToken` | — | Short-lived email verification tokens (hashed, single-use) |
+| `Address` | `addresses` | User addresses |
+| `Category` | `categories` | Product categories with SEO fields |
+| `Product` | `products` | Product master (simple + variant-based) |
+| `ProductVariant` | `product_variants` | SKU-level record: inventory, pricing, options |
+| `Inventory` | `inventories` | Quantity, reserved, safety stock per variant |
+| `Review` | `reviews` | Customer product reviews with moderation state |
+| `Wishlist` / `WishlistItem` | — | Per-user saved items |
+| `Cart` / `CartItem` | — | Guest + authenticated cart |
+| `Order` / `OrderItem` / `OrderAddress` | — | Immutable order snapshots |
+| `AuditLog` | `audit_logs` | Append-only admin action log |
+| `BlogPost` | `blog_posts` | CMS-style articles |
+| `HomePageSection` | — | Storefront homepage CMS sections |
+| `Banner` | — | Promotional banners |
+| `DealCampaign` | — | Deal/campaign records |
+| `StoreSettings` | — | Singleton store-identity and shipping defaults |
+| `ContactFormSubmission` | — | Inbound contact form entries |
+| `EmailSubscriber` | — | Newsletter subscribers with double opt-in lifecycle |
+| `AbandonedCartEvent` | — | Append-only event log for cart recovery automation |
+
+---
 
 Goals
 - Single-vendor commerce (no multi-tenant complexity).
