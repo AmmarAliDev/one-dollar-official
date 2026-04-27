@@ -236,6 +236,18 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - TypeScript runs in strict mode with stronger safety checks and shared path aliases.
 - Vitest smoke tests now cover config loading and invalid env handling.
 
+## AI Documentation Continuity
+
+- `docs/ai/project-overview.md` is the AI entrypoint and should remain concise.
+- `docs/ai/implemented-features.md` is the implementation index for completed capability buckets.
+- `docs/ai/open-tasks.md` is the prioritized deferred/next-work list.
+- `docs/ai/architecture-decisions.md` records stable design decisions and tradeoffs.
+- `docs/ai/testing-status.md` records current test posture and update rules.
+- `docs/ai/task-status.md` should stay brief and point to the focused files above.
+- Any prompt that adds, changes, or defers behavior should update both:
+	- relevant `docs/dev/*` implementation guides
+	- the matching `docs/ai/*` continuity files listed here
+
 ## Rewards Phase-2 Placeholder Strategy
 
 - `src/features/rewards/contracts.ts` defines contract-first interfaces for:
