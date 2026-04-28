@@ -8,6 +8,7 @@ import { DynamicFormField } from "@/components/forms";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AdminImageUploadInput } from "@/features/admin/uploads";
 
 import { buildAdminSeoPreview, createSlugCandidate, SEO_CHARACTER_LIMITS } from "../seo/schema";
 
@@ -217,10 +218,25 @@ export function AdminSeoSection<TFieldValues extends FieldValues>({
               fieldConfig={{
                 id: `${entityLabel.toLowerCase().replace(/\s+/g, "-")}-seo-image`,
                 name: seoImageUrlField,
-                type: "text",
+                type: "custom",
                 label: "OG image",
                 placeholder: "https://example.com/seo-image.jpg",
                 description: "Optional image for social shares. A clear square or wide image works best.",
+                render: ({ field, fieldState, inputId, describedBy, disabled: fieldDisabled }) => (
+                  <AdminImageUploadInput
+                    inputId={inputId}
+                    value={typeof field.value === "string" ? field.value : ""}
+                    onChange={(nextValue) => {
+                      field.onChange(nextValue);
+                    }}
+                    onBlur={field.onBlur}
+                    purpose="seo"
+                    placeholder="https://example.com/seo-image.jpg"
+                    describedBy={describedBy}
+                    disabled={fieldDisabled}
+                    invalid={Boolean(fieldState.error)}
+                  />
+                ),
               }}
             />
           ) : null}
