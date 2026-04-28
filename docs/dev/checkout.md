@@ -61,13 +61,61 @@ Checkout contracts are centralized under `src/features/checkout`:
 
 ### Payment abstraction
 
-`payment.ts` defines a provider registry keyed by payment method code.
+`payment.ts` exports a `CheckoutPaymentProvider` contract and a `providerRegistry` keyed by payment method code.
+
+#### Provider contract
+
+```typescript
+type CheckoutPaymentProvider = {
+  method: CheckoutPaymentMethodDefinition;
+
+  // Initiate a payment attempt.
+  // - Offline (COD): returns immediately with status "pending".
+  // - Online gateway: returns status "requires_redirect" + a redirectUrl.
+  //   Do NOT return "authorized" without a verified webhook.
+  authorize: (context: AuthorizePaymentContext) => CheckoutPaymentResult;
+
+  // Optional — online providers only.
+  // Verify and normalize a signed POST callback from the gateway.
+  handleWebhook?: (rawBody: string, signature: string) => Promise<PaymentWebhookEvent>;
+};
+```
+
+#### PaymentInitStatus values
+
+| Status | Meaning |
+|---|---|
+| `"pending"` | Payment deferred (COD). Order created; money collected at delivery. |
+| `"authorized"` | Gateway pre-authorized funds. Not used by any current provider. |
+| `"requires_redirect"` | Customer must complete payment on the gateway's hosted page. |
+
+#### Webhook flow (future online providers)
+
+1. `authorize()` returns `status: "requires_redirect"` and a `redirectUrl`.
+2. Customer pays on the gateway page.
+3. Gateway POSTs a signed callback to `/api/webhooks/payments/<provider>`.
+4. The route calls `provider.handleWebhook(rawBody, signature)`.
+5. If `event.type === "payment.captured"` the order service transitions the order to CONFIRMED.
+6. Persist `rawPayload` in `PaymentTransaction.webhookPayload` (future DB column — see `PaymentTransactionRecord` in `types.ts`).
 
 Current provider:
 
-- `COD`: offline, enabled
+- `COD`: offline, enabled, no webhook
 
-Future providers (e.g., card gateways) should implement the same contract and be added to the registry without changing the checkout API or page form shape.
+#### Registering a future provider
+
+1. Move the gateway code from `FUTURE_PAYMENT_GATEWAY_CODES` in `constants.ts` into `CHECKOUT_PAYMENT_METHODS`.
+2. Create `src/features/checkout/providers/<name>.ts` implementing `CheckoutPaymentProvider`.
+3. Register the new provider in `providerRegistry` inside `payment.ts`.
+4. Update `validation.ts` to include the new code in the Zod enum.
+5. Add environment variables (API keys, webhook secrets) to `.env.example`.
+6. Add a `PaymentTransaction` Prisma migration (schema suggested in `types.ts`).
+
+Reserved gateway codes (not yet active): `JAZZCASH`, `EASYPAISA`, `HBL_OMNI`.
+
+#### PaymentTransactionRecord (future DB entity)
+
+`types.ts` defines `PaymentTransactionRecord` as a TypeScript type documenting the shape of a future `payment_transaction` table. The Prisma model and migration should be added when the first online gateway is integrated. The suggested schema is embedded in the JSDoc of `PaymentTransactionRecord`.
 
 ### Order placement flow
 
@@ -134,9 +182,15 @@ Server flow:
 
 1. Trusted-origin check
 2. Payload validation with Zod
-3. Resolve cart context (guest/auth)
+3. Resolve cart context (guest/auth) with guest-token isolation (`userId=null` for guest lookup)
 4. Place order transactionally with stock protection and snapshot persistence
 5. Return order number, totals, payment message, confirmation URL, and invoice URL
+
+Cart merge behavior during checkout context resolution:
+
+- Guest-to-user merge is only attempted when the caller explicitly enables merge and both auth user + guest token context are present
+- Merge is guest-scoped and does not use authenticated cart tokens as guest cart identifiers
+- If no active guest cart exists for the token, checkout continues with the authenticated active cart without forced merge
 
 Invoice route: `GET /api/orders/[orderNumber]/invoice`
 
@@ -184,3 +238,14 @@ Prompt 4.4 should add:
 - email and Telegram notifications triggered from order events
 - notification failure isolation around the placement service
 - template-ready email payload builders that can use the stored order snapshot
+
+### Future payment gateway integration
+
+The payment abstraction is ready to accept online Pakistan gateways (JazzCash, EasyPaisa, HBL Omni).
+See the provider registration steps in the **Payment abstraction** section above and the reserved codes in `constants.ts`.
+
+When integrating the first online gateway also:
+- Add a `PaymentTransaction` Prisma model (schema provided in `types.ts` JSDoc).
+- Add `/api/webhooks/payments/[provider]` route with HMAC signature verification.
+- Ensure the order service does NOT confirm an order until a verified `payment.captured` webhook is received.
+- Store raw webhook payloads in `PaymentTransaction.webhookPayload` for audit / idempotent replay.

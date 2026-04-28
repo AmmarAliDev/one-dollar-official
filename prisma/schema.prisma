@@ -65,6 +65,14 @@ enum CategoryStatus {
   ARCHIVED
 }
 
+enum BlogPostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+
+  @@map("blog_post_status")
+}
+
 enum OrderStatus {
   PENDING
   CONFIRMED
@@ -149,6 +157,8 @@ model User {
   roleId        String?    @map("role_id")
   accounts      Account[]
   sessions      Session[]
+  passwordResetTokens PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
   addresses        Address[]
   reviews          Review[]   @relation("AuthorReviews")
   moderatedReviews Review[]   @relation("ModeratedReviews")
@@ -157,6 +167,30 @@ model User {
   orders        Order[]
   createdAt     DateTime   @default(now()) @map("created_at")
   updatedAt     DateTime   @updatedAt @map("updated_at")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique @map("token_hash")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique @map("token_hash")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 // NextAuth compatible Account + Session models (optional for NextAuth)
@@ -235,6 +269,37 @@ model Category {
 
   @@index([slug])
   @@index([status])
+}
+
+model BlogPost {
+  id               String         @id @default(uuid())
+  locale           String         @default("en")
+  title            String
+  slug             String
+  excerpt          String
+  content          Json
+  coverImageUrl    String?        @map("cover_image_url")
+  coverImageAlt    String?        @map("cover_image_alt")
+  coverImageWidth  Int?           @map("cover_image_width")
+  coverImageHeight Int?           @map("cover_image_height")
+  status           BlogPostStatus @default(DRAFT)
+  publishedAt      DateTime?      @map("published_at")
+  seoTitle         String?        @map("seo_title")
+  seoDescription   String?        @map("seo_description")
+  seoCanonicalUrl  String?        @map("seo_canonical_url")
+  seoOgTitle       String?        @map("seo_og_title")
+  seoOgDescription String?        @map("seo_og_description")
+  seoImageUrl      String?        @map("seo_image_url")
+  seoNoIndex       Boolean        @default(false) @map("seo_no_index")
+  seoSchemaNotes   String?        @map("seo_schema_notes")
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt        DateTime       @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([publishedAt])
+  @@index([locale, status])
+  @@unique([locale, slug])
+  @@map("blog_post")
 }
 
 model Product {
@@ -495,6 +560,28 @@ model AuditLog {
   modelId   String?  @map("model_id")
   changes   Json?
   createdAt DateTime @default(now()) @map("created_at")
+}
+
+model StoreSettings {
+  // Singleton-style settings row. The service always reads/writes the "default" id.
+  id                    String   @id
+  storeName             String   @map("store_name")
+  storeTagline          String?  @map("store_tagline")
+  supportEmail          String   @map("support_email")
+  supportPhone          String?  @map("support_phone")
+  supportWhatsapp       String?  @map("support_whatsapp")
+  supportHours          String?  @map("support_hours")
+  shippingOriginCity    String   @map("shipping_origin_city")
+  shippingFlatRate      Int      @default(250) @map("shipping_flat_rate")
+  shippingFreeThreshold Int?     @map("shipping_free_threshold")
+  dispatchLeadTimeDays  Int      @default(1) @map("dispatch_lead_time_days")
+  lowStockThreshold     Int      @default(5) @map("low_stock_threshold")
+  allowBackorders       Boolean  @default(false) @map("allow_backorders")
+  metadata              Json?
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  @@map("store_settings")
 }
 
 model HomePageSection {

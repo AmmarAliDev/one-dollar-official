@@ -1,5 +1,16 @@
 # Testing
 
+## Table of Contents
+
+1. [How to run tests](#how-to-run-tests)
+2. [E2E / Playwright](#e2e--playwright)
+3. [What is tested](#what-is-tested)
+4. [What still needs tests](#what-still-needs-tests)
+5. [Testing conventions](#testing-conventions)
+6. [Adding a new test](#adding-a-new-test)
+
+---
+
 ## How to run tests
 
 | Command                 | Purpose                                                  |
@@ -122,6 +133,7 @@ Lightweight import-level checks that verify public API contracts without mocking
 `validation.test.ts` — `checkoutPayloadSchema`.  
 `totals.test.ts` — `calculateCheckoutTotals`, `CHECKOUT_SHIPPING_FEE`.  
 `payment.test.ts` — `listCheckoutPaymentMethods`, `getCheckoutPaymentProvider`.  
+`client.test.ts` — `submitCheckoutRequest` success/error/malformed-response handling.  
 `checkout-page-client.test.tsx` — `CheckoutPageClient` field validation, payload shape, retry-button disable (jsdom).
 
 #### Contact

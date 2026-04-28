@@ -17,12 +17,18 @@ import { ProductPanel } from "@/features/catalog/components/product-panel";
 import { ProductRelatedGrid } from "@/features/catalog/components/product-related-grid";
 import { ProductReviews } from "@/features/catalog/components/product-reviews";
 import { ProductSpecifications } from "@/features/catalog/components/product-specifications";
+import { CustomerReviewForm } from "@/features/reviews/components/customer-review-form";
+import { getReviewErrorMessage, getReviewNoticeMessage } from "@/features/reviews/flash";
+import { getCustomerReviewComposerContext } from "@/features/reviews/service";
 import { testIds } from "@/lib/test-selectors";
-
-export const revalidate = 900;
+import { auth } from "@/auth";
 
 type ProductPageProps = {
   params: Promise<{ slug: string; productSlug: string }>;
+  searchParams?: Promise<{
+    reviewNotice?: string;
+    reviewError?: string;
+  }>;
 };
 
 export async function generateStaticParams() {
@@ -46,13 +52,15 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   });
 }
 
-export default async function ProductPage({ params }: ProductPageProps) {
+export default async function ProductPage({ params, searchParams }: ProductPageProps) {
   const { slug, productSlug } = await params;
+  const resolvedSearchParams = (await searchParams) ?? {};
 
-  const [product, category, relatedProducts] = await Promise.all([
+  const [product, category, relatedProducts, session] = await Promise.all([
     getProductBySlug(productSlug),
     getCatalogCategory(slug),
     getRelatedProducts(slug, productSlug),
+    auth(),
   ]);
 
   // Guard: product must exist and belong to this category
@@ -63,6 +71,15 @@ export default async function ProductPage({ params }: ProductPageProps) {
   if (!category) {
     notFound();
   }
+
+  const userId = session?.user?.id ?? null;
+  const composerContext = await getCustomerReviewComposerContext({
+    userId,
+    productId: product.id,
+  });
+  const noticeMessage = getReviewNoticeMessage(resolvedSearchParams.reviewNotice);
+  const errorMessage = getReviewErrorMessage(resolvedSearchParams.reviewError);
+  const returnTo = routes.storefront.product(slug, productSlug);
 
   return (
     <PageShell className="gap-14">
@@ -116,13 +133,37 @@ export default async function ProductPage({ params }: ProductPageProps) {
         <ProductSpecifications specifications={product.specifications} />
       ) : null}
 
+      {noticeMessage ? (
+        <div role="status" className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-900">
+          {noticeMessage}
+        </div>
+      ) : null}
+
+      {errorMessage ? (
+        <div role="alert" className="rounded-md border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          {errorMessage}
+        </div>
+      ) : null}
+
+      <CustomerReviewForm
+        productId={product.id}
+        returnTo={returnTo}
+        canSubmit={composerContext.canSubmit}
+        disabledReason={
+          composerContext.reason === "AUTH_REQUIRED"
+            ? "Sign in to submit your review."
+            : composerContext.reason === "PURCHASE_REQUIRED"
+              ? "Reviews unlock after your delivered order for this product."
+              : undefined
+        }
+        existingReview={composerContext.existingReview}
+      />
+
       {/* Reviews */}
       <ProductReviews reviews={product.reviews} summary={product.reviewSummary} />
 
       {/* Related products */}
-      {relatedProducts.length > 0 && (
-        <ProductRelatedGrid products={relatedProducts} />
-      )}
+      <ProductRelatedGrid products={relatedProducts} />
     </PageShell>
   );
 }

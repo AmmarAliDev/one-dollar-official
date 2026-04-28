@@ -58,6 +58,18 @@ async function withCartCookie<T>(payload: T, token: string | undefined) {
   return response;
 }
 
+function resolveResponseCartToken(input: {
+  userId: string | undefined;
+  ensuredGuestToken: string;
+  cartToken: string | undefined;
+}) {
+  if (input.userId) {
+    return input.ensuredGuestToken;
+  }
+
+  return input.cartToken ?? input.ensuredGuestToken;
+}
+
 export async function GET() {
   try {
     const context = await getCartContext();
@@ -73,7 +85,11 @@ export async function GET() {
         ok: true,
         cart: summary,
       },
-      summary?.token ?? ensuredGuestToken,
+      resolveResponseCartToken({
+        userId: context.userId,
+        ensuredGuestToken,
+        cartToken: summary?.token,
+      }),
     );
   } catch (error) {
     return createRouteHandlerErrorResponse(error, "cart:get", {
@@ -109,7 +125,11 @@ export async function POST(request: Request) {
         ok: true,
         cart: summary,
       },
-      summary.token,
+      resolveResponseCartToken({
+        userId: context.userId,
+        ensuredGuestToken,
+        cartToken: summary.token,
+      }),
     );
   } catch (error) {
     return createRouteHandlerErrorResponse(error, "cart:add", {
@@ -145,7 +165,11 @@ export async function PATCH(request: Request) {
         ok: true,
         cart: summary,
       },
-      summary.token,
+      resolveResponseCartToken({
+        userId: context.userId,
+        ensuredGuestToken,
+        cartToken: summary.token,
+      }),
     );
   } catch (error) {
     return createRouteHandlerErrorResponse(error, "cart:update", {
@@ -181,7 +205,11 @@ export async function DELETE(request: Request) {
         ok: true,
         cart: summary,
       },
-      summary.token,
+      resolveResponseCartToken({
+        userId: context.userId,
+        ensuredGuestToken,
+        cartToken: summary.token,
+      }),
     );
   } catch (error) {
     return createRouteHandlerErrorResponse(error, "cart:remove", {

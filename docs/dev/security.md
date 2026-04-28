@@ -1,5 +1,21 @@
 # Security Conventions — Developer Guide
 
+## Quick reference
+
+| Layer | Where it lives | What it does |
+|-------|---------------|--------------|
+| Security headers | `src/config/security.ts` + `next.config.ts` | CSP, HSTS, X-Frame-Options, etc. |
+| CSRF — Server Actions | `src/lib/security/csrf.ts` → `assertTrustedOrigin()` | Validates request origin before any mutation |
+| CSRF — Route Handlers | `src/lib/security/csrf.ts` → `assertTrustedRouteHandlerRequest()` | Same, for API handlers |
+| Rate limiting | `src/lib/rate-limit/` | Redis-first, in-memory fallback |
+| RBAC guards | `src/lib/auth/guards.ts` | `requireAdminAccess()`, `assertHasPermission()` |
+| Admin proxy | `src/proxy.ts` | Early redirect for clearly blocked admin paths |
+| Password hashing | `src/lib/auth/password.ts` | bcrypt, 12 rounds |
+| PII redaction | `src/lib/security/pii.ts` | `maskEmail()`, `stripControlChars()` |
+| Audit logging | `src/lib/audit/admin-actions.ts` | Append-only admin action log |
+
+---
+
 ## Goal
 
 Provide a baseline, production-minded security layer that future features can reuse without rewriting the auth or routing foundations.
@@ -45,6 +61,7 @@ These helpers live in `src/lib/security/csrf.ts` and validate that mutating requ
 Implemented coverage in this pass:
 
 - Auth Server Actions (`signInAction`, `signUpAction`, `signOutAction`)
+- Password reset Server Actions (`forgotPasswordAction`, `resetPasswordAction`)
 - Checkout, cart, and email subscribe route handlers
 - Contact form Server Action
 - Wishlist add/remove route handlers
@@ -75,8 +92,28 @@ Implemented coverage in this pass:
 
 - Sign-in: IP + email bucket
 - Sign-up: IP bucket plus per-email bucket
+- Forgot password request: IP bucket plus per-email bucket
+- Reset password submit: IP bucket
 - Email subscribe: per-IP bucket
 - Contact form submission: IP + email bucket
+
+### Password reset token safety model
+
+- Tokens are generated from 32 bytes of cryptographically secure random data.
+- Only a SHA-256 hash of the token is stored in the database (`PasswordResetToken.tokenHash`); raw tokens are sent only via email link.
+- Tokens expire after 1 hour and are single-use.
+- Expired tokens are treated as invalid and deleted when encountered.
+- Successful reset consumes the submitted token and invalidates all other active reset tokens for that user.
+- Forgot-password responses are enumeration-safe: known and unknown emails receive the same success message.
+
+### Email verification safety model (credentials sign-up)
+
+- Credentials sign-up now issues `EmailVerificationToken` records using 32-byte cryptographic randomness.
+- Only SHA-256 token hashes are stored in the database (`EmailVerificationToken.tokenHash`); raw tokens exist only in email links.
+- Tokens expire after 24 hours and are treated as single-use.
+- Verification consumes the token and clears any remaining verification tokens for the same user.
+- Credentials sign-in requires `User.emailVerified`; unverified users are blocked and receive a new verification link only after a matching password check.
+- OAuth behavior remains unchanged and is not gated by the credentials verification flow.
 
 ### 4. Validation conventions
 
@@ -130,6 +167,14 @@ Admin boundary review result:
 
 Operationally, this reduces the chance of leaking session or integration secrets through ad-hoc error logs.
 
+### 8. Admin activity audit visibility
+
+- The admin activity page now reads from persisted `AuditLog` records through a dedicated service layer (`src/features/admin/activity/service.ts`).
+- Feed rendering uses plain-language summaries from `src/features/admin/activity/audit-log-feed.ts` so staff can review changes without raw payload inspection.
+- Actor context is resolved with a minimal user projection (`id`, `name`, `email`) only when `actorId` exists.
+- When actor records are missing (for example, deleted users), entries degrade safely to neutral labels instead of failing the feed.
+- This page is read-only and remains behind existing admin authorization boundaries (`(admin)` layout guard + RBAC permissions).
+
 ## Recommended conventions for future mutations
 
 ### Server Actions
@@ -169,7 +214,7 @@ Use this checklist for production deployments and incident response:
 
 ## Deferred on purpose
 
-- **Email-based password reset** with token rotation and replay protection
+- **Reset email deliverability and branding hardening** (provider reputation, SPF/DKIM/DMARC verification, bounce/suppression handling, localized templates)
 - **Nonce-based CSP** for even stricter script execution controls
 - **Dedicated double-submit CSRF tokens** for any future embedded/cross-origin client integrations
 - **Centralized route-handler request schema helpers** to reduce repeated inline `safeParse()` usage

@@ -17,7 +17,8 @@ import { AdminSeoSection } from "@/features/admin/components/admin-seo-section";
 import { formatPrice } from "@/lib/currency";
 
 import type { AdminProductCategoryOption, AdminProductFormRecord, AdminRelatedProductOption } from "../service";
-import { type AdminProductCreateInput,adminProductMutationSchema } from "../validation";
+import { type AdminProductCreateInput, adminProductMutationSchema } from "../validation";
+import { AdminProductSeoGenerator } from "./admin-product-seo-generator";
 
 type AdminProductFormProps = {
   mode: "create" | "edit";
@@ -799,6 +800,12 @@ export function AdminProductForm({ mode, action, returnTo, submitLabel, categori
           seoImageUrlField="seoImageUrl"
           seoNoIndexField="seoNoIndex"
           seoSchemaNotesField="seoSchemaNotes"
+        />
+
+        <AdminProductSeoGenerator
+          form={form}
+          disabled={isPending}
+          categoryName={selectedCategory?.name}
         />
       </div>
     </form>

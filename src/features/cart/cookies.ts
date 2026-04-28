@@ -5,6 +5,20 @@ import { AppError } from "@/lib/errors/app-error";
 export const CART_COOKIE_NAME = "one-dollar-cart";
 const CART_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
 
+type CartCookieShape = {
+  name: string;
+  value: string;
+  httpOnly: true;
+  sameSite: "lax";
+  secure: boolean;
+  path: "/";
+  maxAge: number;
+};
+
+type MutableCookieStore = {
+  set: (cookie: CartCookieShape) => unknown;
+};
+
 function isValidCartToken(value: string) {
   return /^[a-zA-Z0-9-]{16,128}$/.test(value);
 }
@@ -20,6 +34,10 @@ export function readCartTokenFromCookieValue(value: string | undefined) {
 }
 
 export function applyCartTokenCookie(response: NextResponse, token: string) {
+  setCartTokenCookie(response.cookies, token);
+}
+
+export function setCartTokenCookie(cookieStore: MutableCookieStore, token: string) {
   if (!isValidCartToken(token)) {
     throw new AppError("Invalid cart token generated for cookie write.", "CART_COOKIE_TOKEN_INVALID", {
       statusCode: 500,
@@ -27,7 +45,7 @@ export function applyCartTokenCookie(response: NextResponse, token: string) {
     });
   }
 
-  response.cookies.set({
+  cookieStore.set({
     name: CART_COOKIE_NAME,
     value: token,
     httpOnly: true,

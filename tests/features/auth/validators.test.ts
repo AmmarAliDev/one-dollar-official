@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   forgotPasswordValidator,
+  resetPasswordValidator,
   signInValidator,
   signUpValidator,
 } from "../../../src/features/auth/validators";
@@ -135,5 +136,43 @@ describe("forgotPasswordValidator", () => {
   it("rejects empty email", () => {
     const result = forgotPasswordValidator.safeParse({ email: "" });
     expect(result.success).toBe(false);
+  });
+});
+
+// ── resetPasswordValidator ───────────────────────────────────────────────────
+
+describe("resetPasswordValidator", () => {
+  it("accepts a valid token and matching passwords", () => {
+    const result = resetPasswordValidator.safeParse({
+      token: "valid-reset-token-1234567890",
+      password: "securepass123",
+      confirmPassword: "securepass123",
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects invalid short token", () => {
+    const result = resetPasswordValidator.safeParse({
+      token: "short",
+      password: "securepass123",
+      confirmPassword: "securepass123",
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects password mismatch", () => {
+    const result = resetPasswordValidator.safeParse({
+      token: "valid-reset-token-1234567890",
+      password: "securepass123",
+      confirmPassword: "differentpass123",
+    });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const messages = result.error.issues.map((issue) => issue.message);
+      expect(messages).toContain("Passwords do not match.");
+    }
   });
 });

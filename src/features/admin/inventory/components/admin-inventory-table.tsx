@@ -3,6 +3,7 @@
 import { type ColumnDef } from "@tanstack/react-table";
 
 import { DataTable, createDataTableColumnHelper } from "@/components/data-table";
+import { InventoryAdjustmentForm } from "./inventory-adjustment-form";
 
 const columnHelper = createDataTableColumnHelper<AdminInventoryItem>();
 
@@ -12,7 +13,9 @@ export type AdminInventoryItem = {
   sku: string | null;
   onHand: number;
   safetyStock: number | null;
+  alertThreshold: number;
   location: string | null;
+  updatedAt: string;
 };
 
 export const adminInventoryTableColumns: ColumnDef<AdminInventoryItem, any>[] = [
@@ -48,6 +51,14 @@ export const adminInventoryTableColumns: ColumnDef<AdminInventoryItem, any>[] = 
     },
   }),
 
+  columnHelper.accessor("alertThreshold", {
+    header: "Alert at",
+    cell: (info) => {
+      const alertThreshold = info.getValue();
+      return <span>{alertThreshold}</span>;
+    },
+  }),
+
   columnHelper.accessor("location", {
     header: "Location",
     cell: (info) => {
@@ -59,19 +70,42 @@ export const adminInventoryTableColumns: ColumnDef<AdminInventoryItem, any>[] = 
 
 export interface AdminInventoryTableProps {
   items: AdminInventoryItem[];
+  canAdjust?: boolean;
+  updateAction?: (formData: FormData) => void | Promise<void>;
+  returnTo?: string;
   emptyTitle?: string;
   emptyDescription?: string;
 }
 
 export function AdminInventoryTable({
   items,
+  canAdjust = false,
+  updateAction,
+  returnTo = "/admin/inventory",
   emptyTitle = "No low-stock alerts",
   emptyDescription = "Inventory alerts will appear here as product stock drops.",
 }: AdminInventoryTableProps) {
+  const columns: ColumnDef<AdminInventoryItem, any>[] = [
+    ...adminInventoryTableColumns,
+    ...(canAdjust && updateAction
+      ? [
+          columnHelper.display({
+            id: "adjust",
+            header: "Adjust",
+            cell: (info) => {
+              const item = info.row.original;
+
+              return <InventoryAdjustmentForm item={item} action={updateAction} returnTo={returnTo} />;
+            },
+          }),
+        ]
+      : []),
+  ];
+
   return (
     <DataTable<AdminInventoryItem>
       data={items}
-      columns={adminInventoryTableColumns}
+      columns={columns}
       getRowId={(row) => row.id}
       emptyState={{
         title: emptyTitle,

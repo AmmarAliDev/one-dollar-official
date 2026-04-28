@@ -24,6 +24,7 @@ Models (summary)
 - `Wishlist` / `WishlistItem`: wishlist per user, items reference variants
 - `Cart` / `CartItem`: carts accept optional userId and a `token` for guest sessions
 - `Order` / `OrderItem` / `OrderAddress`: order snapshots contain productName, unitPrice, quantity and address snapshot fields
+- `PaymentTransactionRecord` (TypeScript type only — no DB table yet): shape of a future `payment_transaction` row. Will be backed by a Prisma migration when the first online gateway (JazzCash, EasyPaisa, HBL Omni) is integrated. Fields: id, orderNumber, provider, amount (PKR paisa), currency, status (`PaymentTransactionStatus` — init states plus terminal webhook-driven states: captured, failed, cancelled, refund_initiated, refund_completed), gatewayReference?, gatewayResponse?, webhookPayload?, createdAt, updatedAt. See `src/features/checkout/types.ts` for the Prisma model snippet.
 - `AuditLog`: generic audit trail with JSON changes
 - `HomePageSection` / `Banner` / `DealCampaign`: marketing placeholders with `content`/`meta` JSON
 - `ContactSubmission`: { id, fullName, email, subject, message, createdAt }
@@ -35,6 +36,19 @@ Models (summary)
   - Denormalized by design — cartToken and email are stored alongside cartId so events remain useful after the Cart row is archived.
   - The background recovery job (cron/queue) that reads events and sends recovery emails is **deferred**.
 - `Cart` model has three new fields: `abandonedAt` (DateTime?), `recoveryToken` (String? unique), `recoveryEmailSentAt` (DateTime?).
+
+Phase-2 planned model extension (not migrated yet)
+- Referral tracking:
+  - `ReferralProgram`: { id, code (unique), ownerUserId?, status, createdAt, updatedAt }
+  - `ReferralVisit`: { id, referralProgramId, visitorSessionId, landingPath, campaign?, occurredAt }
+  - `ReferralConversion`: { id, referralProgramId, orderId (unique), orderNumber, orderTotalMinor, occurredAt }
+- Loyalty points:
+  - `LoyaltyAccount`: { id, userId (unique), pointsAvailable, pointsPending, tier?, updatedAt }
+  - `LoyaltyTransaction`: { id, loyaltyAccountId, points (signed int), reason, reference, occurredAt }
+- Wallet ledger:
+  - `Wallet`: { id, userId, currency (PKR), availableMinor, holdMinor, updatedAt }
+  - `WalletLedgerEntry`: { id, walletId, direction (credit/debit), amountMinor, source, reference, note?, occurredAt }
+- Integration note: Phase-2 contracts are prepared in `src/features/rewards/contracts.ts`; schema migration is intentionally deferred to avoid affecting current checkout/order execution.
 
 Field types notes
 - Monetary values are integers in the smallest currency unit to keep calculations precise.

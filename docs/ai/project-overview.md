@@ -1,84 +1,63 @@
 # Project Overview
 
-## Scope
+## Purpose
 
-`One Dollar` is a production-minded single-vendor e-commerce application for Pakistan, starting with **Karachi only**. The same Next.js codebase will power:
+`One Dollar` is a production-minded, single-vendor e-commerce app for Pakistan (Karachi-first launch scope), implemented as one Next.js codebase for storefront, admin, and auth experiences.
 
-- the storefront
-- the admin panel
-- future authentication flows
+This file is a continuity index for AI-assisted work. For implementation details, use the linked AI docs below as the source of truth.
 
-## Current Phase
+## Read Order for Future AI Prompts
 
-This repository currently implements **contact form with admin notifications** on top of the previously completed checkout, storefront shell, homepage foundation, auth, RBAC, security baseline, category listing, PDP, search, wishlist/account, and cart flows.
+1. `docs/ai/project-overview.md` (this file)
+2. `docs/ai/implemented-features.md`
+3. `docs/ai/open-tasks.md`
+4. `docs/ai/architecture-decisions.md`
+5. `docs/ai/testing-status.md`
+6. `docs/ai/task-status.md`
 
-### Included now
+## Current Product Scope
 
-> This list highlights recent and core additions and is not exhaustive; previously completed features include auth, RBAC, and the security baseline.
+- Storefront: homepage, category listing, PDP, search, cart, checkout, account, wishlist, blog, contact
+- Admin: dashboard/activity/revenue, category/product/blog CRUD, inventory adjustment, order operations, review moderation, homepage content management, settings
+- Auth and security: credentials + Google sign-in, email verification, password reset, RBAC guards, CSRF and trusted-origin enforcement, rate-limiting foundation
 
-- Next.js App Router + TypeScript + Tailwind CSS foundation
-- shadcn/ui-compatible setup (`components.json`, `cn()` utility, reusable primitives)
-- theme provider wiring plus a three-way `system` / `light` / `dark` toggle
-- global design tokens in `src/app/globals.css` for semantic colors, spacing, radii, and shadows
-- polished storefront header/footer and a responsive admin shell placeholder with sidebar + topbar
-- reusable UI wrappers for page containers, section headers, empty/loading/error states, badges, price formatting, and skeletons
-- shared frontend toast support through `sonner`, `AppToaster`, and `notify.*()`
-- lazy Prisma singleton access through `src/server/db/client.ts`
-- shared server-side database conventions for repositories, services, transaction orchestration, pagination, and query result typing in `src/server/db`
-- homepage rendering through `src/features/homepage` with admin-managed sections, announcement support, banner/campaign scheduling, and fallback safety
-- catalog listing routes at `/categories` and `/categories/[slug]` backed by `src/features/catalog`
-- storefront catalog now reads exclusively from PostgreSQL via `src/server/db/catalog-queries.ts` — only PUBLISHED categories/products and APPROVED reviews reach the storefront
-- admin product/category mutations trigger on-demand ISR revalidation of storefront catalog pages via `revalidatePath('/categories')`
-- typed filter parsing, sorting, and pagination contracts available in `src/features/catalog/filters.ts`
-- product detail routes at `/categories/[slug]/[productSlug]` with static params, metadata generation, and DB-backed product detail
-- PDP feature components for image gallery, variant selection UX, product info panel, specifications, review summary/list, related products, and structured skeleton loading state
-- catalog product cards now link to PDP routes and related-product cards reuse the same route contracts
-- wishlist mutations via `POST/DELETE /api/wishlist/items` with authenticated user checks and safe request validation
-- wishlist UI support on PDP (`Save to wishlist`) plus a real `/wishlist` page with guest sign-in prompt, empty state, and remove actions
-- protected account area with reusable account shell and section routes for profile, addresses, order history, and reviews placeholders
-- sign-in return-path support (`/auth/sign-in?from=...`) for smoother guest-to-authenticated wishlist/account flows
-- one-page checkout route at `/checkout` with customer info, shipping address, order summary, and payment method selection
-- Karachi-only checkout restriction enforced on both client and server with clear user-facing copy
-- fixed shipping fee checkout totals (`subtotal + 250`) shared through checkout service helpers
-- `POST /api/checkout` validation endpoint for checkout payload, cart integrity checks, and stock-aware submission gating
-- payment abstraction registry in `src/features/checkout/payment.ts` with COD implementation and extension seam for future online gateways
-- retry-safe checkout UX with user-friendly validation and submit error handling
-- helper tests covering pagination, query results, transaction helpers, safe Prisma singleton reuse, and storefront catalog filtering
-- helper tests now also cover PDP service retrieval and related-product behavior
-- helper tests now include wishlist seed-selection behavior and updated storefront route assertions
-- helper tests now include checkout validation, totals, and payment provider selection contracts
-- admin homepage content controls at `/admin/homepage` for sections, banners, and deal campaigns with validation and audit logging
-- analytics implementation using GA4 and Meta Pixel for core e-commerce events
-- contact form at `/contact` with validation, database persistence, and email + Telegram notifications
-- updated AI and developer docs for UI conventions and future continuity
+## Module Boundaries
 
-### Intentionally deferred
+- `src/app`: routes, layouts, metadata, route-level loading/error boundaries
+- `src/features`: feature-level UI, validation, orchestration, service contracts
+- `src/server`: server-only DB composition and query/repository helpers
+- `src/components`: shared UI/layout/form/table primitives
+- `src/config`: environment validation, route config, metadata and feature-flag helpers
+- `src/lib`: cross-cutting utilities (errors, logger, security, notifications)
 
-- order placement lifecycle and invoice generation
-- online payment gateway integrations
-- notifications beyond shared frontend toasts
-- advanced CMS capabilities beyond the current homepage admin content scaffolds
+Do not move business logic into route/page files when a feature service seam exists.
 
-## Folder Structure Snapshot
+## Key Services and Seams
 
-```text
-src/
-  app/            App Router entrypoints and route groups
-  components/     shared UI, layout, and providers
-  config/         env validation, metadata, routes, feature flags, app config
-  features/       future domain modules
-  hooks/          reusable React hooks
-  lib/            cross-cutting helpers and errors
-  server/         future server-only services and repositories
-  types/          shared TypeScript contracts
-```
+- Catalog query visibility source: `src/server/db/catalog-queries.ts`
+- Storefront catalog orchestration: `src/features/catalog/service.ts`
+- Checkout transport contract seam: `src/features/checkout/api-contract.ts` + `src/features/checkout/client.ts`
+- Checkout payment provider seam: `src/features/checkout/payment.ts` (COD active, online gateways deferred)
+- Order placement and lifecycle service: `src/features/orders/service.ts`
+- Admin activity feed service: `src/features/admin/activity/service.ts`
+- Admin inventory adjustment service: `src/features/admin/inventory/service.ts`
+- Blog storefront/admin service seam: `src/features/blog/service.ts`
 
-## Guidance for Future Prompts
+## Working Conventions for AI
 
-- Continue from the current repository state.
-- Extend existing layers instead of creating duplicate patterns.
-- Keep business logic inside `src/features` or `src/server`, not directly in pages.
-- Use `src/server/db/catalog-queries.ts` for all storefront catalog Prisma queries; enforce PUBLISHED-only visibility there.
-- Put new Prisma queries behind repository factories in `src/server` and let services own transactions.
-- Reuse `loadAppConfig()` / `getRequiredServerEnv()` for new config-dependent server features.
-- Update both `docs/ai` and `docs/dev` whenever a new capability is added.
+- Extend existing feature modules instead of introducing parallel patterns.
+- Preserve user-safe error handling (`AppError`, `toUserMessage`, shared fallback components).
+- Preserve mobile-ready boundaries: route handlers validate and delegate; feature services own business rules.
+- Keep Prisma access inside the established server/db patterns.
+- Keep docs synchronized whenever capability, architecture, or test posture changes.
+
+## Deferred Work (High-Level)
+
+- Online payment gateway implementation and webhook flow
+- Advanced inventory operations (batch import/transfer/approvals)
+- Advanced admin settings (tax, multi-warehouse shipping matrix, automated notification policy)
+- Email-marketing double opt-in and abandoned-cart recovery worker
+- Activity feed filter UI and cursor-pagination UI
+- Advanced revenue reporting (charts, custom ranges, exports)
+
+See `docs/ai/open-tasks.md` for prioritized and detailed deferred work.

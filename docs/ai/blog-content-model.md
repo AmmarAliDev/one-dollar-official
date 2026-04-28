@@ -7,12 +7,15 @@ Keep blog content SEO-ready, English-first, locale-safe, and compatible with a f
 ## Current implementation surface
 
 - Feature entrypoint: `src/features/blog/index.ts`
-- Seed content: `src/features/blog/content.ts`
+- DB query layer: `src/server/db/blog-queries.ts`
 - Data helpers: `src/features/blog/service.ts`
 - Structured data helpers: `src/features/blog/seo.ts`
 - Routes:
   - `src/app/(storefront)/blog/page.tsx`
   - `src/app/(storefront)/blog/[slug]/page.tsx`
+- Admin routes:
+  - `src/app/(admin)/admin/blog/page.tsx`
+  - `src/app/(admin)/admin/blog/[postId]/edit/page.tsx`
 
 ## Model constraints
 
@@ -36,6 +39,6 @@ Keep blog content SEO-ready, English-first, locale-safe, and compatible with a f
 
 ## Extension guidance
 
-- Prefer extending the service API over reading seed arrays in UI.
+- Prefer extending the service API over reading direct Prisma queries in route UI.
 - Preserve typed content blocks unless migrating to a sanitizer-backed rich text/MDX flow.
-- Reuse shared admin SEO section when blog CRUD is introduced.
+- Reuse shared admin SEO section for any future content entities.

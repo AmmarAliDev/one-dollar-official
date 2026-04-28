@@ -3,8 +3,7 @@
 /**
  * Sign-up server action.
  *
- * Creates a new credentials-based account, then immediately signs the user in
- * using the Credentials provider so they land in an authenticated session.
+ * Creates a new credentials-based account and starts email verification.
  *
  * Flow:
  *  1. Validate input with Zod.
@@ -13,17 +12,21 @@
  *  4. Hash the password with bcrypt.
  *  5. Resolve or create the CUSTOMER role.
  *  6. Insert the User record.
- *  7. Call signIn("credentials") → Auth.js creates the JWT session + redirects.
+ *  7. Create and send a verification email link.
  */
 
 import { headers } from "next/headers";
-import { redirect } from "next/navigation";
-import { AuthError } from "next-auth";
 import { RoleKey } from "@/lib/auth/roles";
 
-import { signIn } from "@/auth";
+import { env } from "@/config/env";
 import { routes } from "@/config/routes";
+import { issueEmailVerificationToken } from "@/features/auth/email-verification";
+import { sendEmailVerificationEmail } from "@/features/auth/email-verification-email";
 import { signUpValidator } from "@/features/auth/validators";
+import {
+  buildEmailVerificationUrl,
+  createEmailVerificationTokenPair,
+} from "@/lib/auth/email-verification-token";
 import { hashPassword } from "@/lib/auth/password";
 import { toActionErrorState } from "@/lib/errors/handling";
 import { logger } from "@/lib/logger";
@@ -35,7 +38,11 @@ import { getPrismaClient } from "@/server/db";
 export interface SignUpActionState {
   errors?: string[];
   success?: boolean;
+  message?: string;
 }
+
+const SIGN_UP_SUCCESS_MESSAGE =
+  "If your account can be created, we sent a verification email. Please check your inbox before signing in.";
 
 /**
  * Sign-up server action — compatible with React 19 `useActionState`.
@@ -107,9 +114,26 @@ export async function signUpAction(
   // Return a generic success-like response for existing emails so an attacker
   // cannot distinguish a registered address from an unregistered one (i.e. no
   // email enumeration via differing error vs. success responses).
-  const existing = await db.user.findUnique({ where: { email } });
+  const existing = await db.user.findUnique({
+    where: { email },
+    select: {
+      id: true,
+      email: true,
+      emailVerified: true,
+    },
+  });
   if (existing) {
-    return { success: true };
+    if (!existing.emailVerified && existing.email) {
+      await issueEmailVerificationToken({
+        userId: existing.id,
+        email: existing.email,
+      });
+    }
+
+    return {
+      success: true,
+      message: SIGN_UP_SUCCESS_MESSAGE,
+    };
   }
 
   // ── 4. Hash password ──────────────────────────────────────────────────────
@@ -128,40 +152,65 @@ export async function signUpAction(
     update: {},
   });
 
-  // ── 6. Create user ────────────────────────────────────────────────────────
+  // ── 6. Create user + verification token atomically ───────────────────────
+  const tokenPair = createEmailVerificationTokenPair();
+  let createdUserEmail: string | null;
+
   try {
-    await db.user.create({
-      data: {
-        email,
-        name: name || null,
-        password: passwordHash,
-        roleId: customerRole.id,
-      },
+    createdUserEmail = await db.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: {
+          email,
+          name: name || null,
+          password: passwordHash,
+          roleId: customerRole.id,
+        },
+        select: {
+          id: true,
+          email: true,
+        },
+      });
+
+      await tx.emailVerificationToken.create({
+        data: {
+          userId: user.id,
+          tokenHash: tokenPair.tokenHash,
+          expiresAt: tokenPair.expiresAt,
+        },
+      });
+
+      return user.email;
     });
   } catch (err) {
     return toActionErrorState(
       err,
-      "sign-up:create-user",
+      "sign-up:create-user-or-verify-token",
       "Could not create your account. Please try again.",
     );
   }
 
-  // ── 7. Sign in immediately (throws redirect on success) ────────────────────
-  try {
-    await signIn("credentials", {
-      email,
-      password,
-      redirectTo: routes.storefront.home,
-    });
-  } catch (err) {
-    // Auth.js throws a NEXT_REDIRECT for the redirect — re-throw it.
-    if (err instanceof AuthError) {
-      logger.error("sign-up: auto sign-in failed", { err });
-      // User was created; send them to sign-in page to log in manually.
-      redirect(routes.auth.signIn);
+  if (typeof createdUserEmail === "string") {
+    const verificationUrl = buildEmailVerificationUrl(env.appUrl, routes.auth.verifyEmail, tokenPair.token);
+
+    try {
+      await sendEmailVerificationEmail({
+        email: createdUserEmail,
+        verificationUrl,
+      });
+    } catch (error) {
+      logger.error("sign-up: verification email send failed", {
+        error,
+        emailDomain: createdUserEmail.split("@")[1] ?? "unknown",
+      });
     }
-    throw err; // Re-throw redirect or unexpected errors
   }
 
-  return { success: true };
+  logger.info("sign-up: verification initiated", {
+    emailDomain: email.split("@")[1] ?? "unknown",
+  });
+
+  return {
+    success: true,
+    message: SIGN_UP_SUCCESS_MESSAGE,
+  };
 }

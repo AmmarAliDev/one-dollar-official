@@ -16,6 +16,7 @@ export {
   validateAdminProductCreateInput,
   validateAdminProductUpdateInput,
 } from "./validation";
+export { generateProductSeoContent } from "./seo-content-generator";
 export type {
   AdminProductCreateInput,
   AdminProductImageInput,
@@ -23,3 +24,10 @@ export type {
   AdminProductUpdateInput,
   AdminProductVariantInput,
 } from "./validation";
+export type {
+  ProductFaqIdea,
+  ProductInternalLinkSuggestion,
+  ProductSeoContentInput,
+  ProductSeoContentResult,
+  ProductStructuredSpecificationSuggestion,
+} from "./seo-content-generator";

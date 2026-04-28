@@ -23,14 +23,15 @@ type BlogPostPageProps = {
 };
 
 export async function generateStaticParams() {
-  return getBlogPostSlugs("en").map((slug) => ({ slug }));
+  const slugs = await getBlogPostSlugs("en");
+  return slugs.map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
   const { slug } = await params;
 
   try {
-    const post = getBlogPostBySlug(slug, { locale: "en" });
+    const post = await getBlogPostBySlug(slug, { locale: "en" });
 
     if (!post) {
       return buildMetadata({
@@ -65,11 +66,11 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const { slug } = await params;
-  let post: ReturnType<typeof getBlogPostBySlug> = null;
+  let post: Awaited<ReturnType<typeof getBlogPostBySlug>> = null;
   let loadError: unknown = null;
 
   try {
-    post = getBlogPostBySlug(slug, { locale: "en" });
+    post = await getBlogPostBySlug(slug, { locale: "en" });
   } catch (error) {
     loadError = error;
   }
@@ -91,7 +92,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     notFound();
   }
 
-  const relatedPosts = getRelatedBlogPosts(post, 2);
+  const relatedPosts = await getRelatedBlogPosts(post, 2);
   const articleJsonLd = buildBlogPostJsonLd(post);
   const breadcrumbJsonLd = buildBlogPostBreadcrumbJsonLd(post);
 

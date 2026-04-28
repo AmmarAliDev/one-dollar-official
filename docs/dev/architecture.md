@@ -1,5 +1,25 @@
 # Architecture Notes
 
+## Table of Contents
+
+1. [Goal](#goal)
+2. [Layering Pattern](#layering-pattern)
+3. [Mobile-Readiness Boundary Rule](#mobile-readiness-boundary-rule)
+4. [Database Access Strategy](#database-access-strategy)
+5. [Route Groups](#route-groups)
+6. [UI Foundation Strategy](#ui-foundation-strategy)
+7. [Shared Table Strategy](#shared-table-strategy)
+8. [Config and Environment Strategy](#config-and-environment-strategy)
+9. [RBAC Foundation Strategy](#rbac-foundation-strategy)
+10. [Catalog Data Strategy](#catalog-data-strategy)
+11. [Blog Data Strategy](#blog-data-strategy)
+12. [Cache Strategy](#cache-strategy)
+13. [Search Strategy](#search-strategy)
+14. [Error Handling Strategy](#error-handling-strategy)
+15. [Analytics Strategy](#analytics-strategy)
+
+---
+
 ## Goal
 
 Create a scalable foundation for a single-vendor e-commerce app using one shared codebase for storefront, admin, and auth experiences.
@@ -12,6 +32,13 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 4. **`src/server`** — future repositories, services, auth, and integrations
 5. **`src/config`** — app-wide constants, env validation, and safe config loading
 6. **`src/lib`** — low-level helpers and shared error utilities
+
+## Mobile-Readiness Boundary Rule
+
+- Keep UI components thin and route all business operations through feature services and typed feature contracts so future mobile clients can reuse the same behavior.
+- Route handlers in `src/app/api/*` are the transport seam; they should validate and delegate instead of embedding domain logic.
+- Feature-owned transport helpers (for example checkout submit in `src/features/checkout/client.ts`) should centralize API parsing and user-safe error normalization.
+- See `docs/dev/mobile-readiness.md` for the current boundary map and deferred items.
 
 ## Database Access Strategy
 
@@ -31,8 +58,13 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `(storefront)` now uses the shared `SignOutButton` convention for authenticated logout controls across the header dropdown, mobile drawer, and account profile surface
 - `(admin)` now uses `AdminShell` with a responsive sidebar, topbar, breadcrumb, and user menu, plus the same form-based sign-out pattern and role-aware navigation filtering protected by the RBAC proxy/layout guards
 - `(admin)/admin` dashboard now reads live operational metrics through `src/features/admin/dashboard/service.ts` (pending orders, delivered-order revenue summary, low-stock count, and recent audit activity preview)
+- `(admin)/admin/activity` now reads a dedicated AuditLog-backed feed through `src/features/admin/activity/service.ts`, with non-technical event summaries and actor context when available
+- `(admin)/admin/revenue` now reads a dedicated DB-backed report through `src/features/admin/revenue/service.ts`, showing recognized revenue, recent period summaries, order totals, and explicit inclusion assumptions
 - `(admin)/admin/categories` now provides category CRUD with shared typed create/edit/filter forms and SEO field controls
 - `(admin)/admin/products` now provides product CRUD with reusable RHF + Zod form composition for simple and variant-based catalog entries
+- `(admin)/admin/blog` now provides blog post CRUD with structured content JSON, publish scheduling, and SEO controls
+- `(admin)/admin/inventory` now supports low-stock monitoring plus inline manual stock adjustments for authorized catalog admins
+- `(admin)/admin/settings` now provides practical store settings management (identity, support contacts, shipping basics, and operational defaults) backed by a singleton persistence record and CSRF/RBAC-protected server action writes
 - `(auth)` now uses the same shared form foundation for sign-in and sign-up while preserving the existing server-action flows
 
 ## UI Foundation Strategy
@@ -63,7 +95,7 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 	- `src/features/admin/products/components/admin-products-table.tsx` — admin product listing with status, category, pricing, stock, and SEO display
 	- `src/features/admin/categories/components/admin-categories-table.tsx` — admin category listing with status, SEO, and edit/delete actions
 	- `src/features/admin/orders/components/admin-orders-table.tsx` — admin order queue with customer, status, payment, and total display; preserves pagination
-	- `src/features/admin/inventory/components/admin-inventory-table.tsx` — low-stock alert listing with product, SKU, on-hand, safety threshold, and location
+	- `src/features/admin/inventory/components/admin-inventory-table.tsx` — low-stock alert listing with product, SKU, on-hand, safety threshold, location, and permission-aware inline adjustment controls
 - All feature-specific table components follow the pattern: typed columns definition, cell rendering logic with feature-specific formatting (badges, links, price displays), row actions/callbacks, and integration with the shared `DataTable` component.
 - **Tables intentionally not migrated:** admin review moderation (kept as card-based UI for better moderation workflow) and storefront order history (kept as cards for customer-facing readability).
 
@@ -82,10 +114,12 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `src/config/env.ts` validates public env input with a typed schema and throws readable `CONFIG_ERROR` messages.
 - `src/config/app-config.ts` builds a safe application config snapshot for future server and feature modules.
 - `src/config/feature-flags.ts` derives preview flags from validated env values instead of raw `process.env` access.
+- Homepage fallback preview-only artifacts should be gated by validated runtime env (`env.nodeEnv !== "production"`) so development helpers never leak into production storefront UI.
 - `getRequiredServerEnv()` should be used when a future integration needs a non-public secret at runtime.
 - `DATABASE_URL` must be available anywhere Prisma queries or CLI workflows run.
-- Prisma CLI commands are routed through `scripts/prisma-cli.mjs`, which respects local env files, falls back `POSTGRES_URL_NON_POOLING` to `DATABASE_URL` for local use, and blocks obvious hosted `migrate dev` mistakes by default.
+- Prisma CLI commands are routed through `scripts/prisma-cli.mjs`, which respects local env files, falls back `POSTGRES_URL_NON_POOLING` to `DATABASE_URL` for local use, blocks obvious hosted `migrate dev` mistakes, and validates hosted `migrate deploy` URL safety (pooled vs direct URL separation).
 - The build workflow is intentionally split: `pnpm build` stays local-safe, while `pnpm build:deploy` is the deploy-time path that runs `prisma migrate deploy` before the production build.
+- `scripts/guard-deploy-workflow.mjs` prevents accidental local `build:deploy` runs unless explicitly allowed (`PRISMA_ALLOW_LOCAL_DEPLOY_BUILD=true`) or running in deployment context (`NODE_ENV=production`, `CI=true`, `VERCEL=1`).
 
 ## RBAC Foundation Strategy
 
@@ -99,17 +133,30 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - If these layers cannot be kept consistent over time, prefer consolidating to a single authoritative server-side guard rather than maintaining conflicting rules.
 - `src/app/unauthorized/page.tsx` and `src/app/forbidden/page.tsx` provide explicit recovery screens instead of raw auth errors.
 - `src/lib/audit/admin-actions.ts` prepares structured admin action records for future `AuditLog` persistence.
+- `src/features/admin/inventory/actions.ts` applies trusted-origin validation and requires both `admin:access` and `catalog:write` for stock mutations.
 
 ## Catalog Data Strategy
 
 - `src/features/catalog` is the storefront catalog feature module. It reads exclusively from the PostgreSQL database via Prisma.
 - `src/server/db/catalog-queries.ts` is the Prisma query layer for the storefront. It enforces all publish-state visibility rules: only PUBLISHED categories and products are returned, and only APPROVED reviews reach the storefront.
 - `src/features/catalog/service.ts` owns listing + PDP assembly (`getCatalogCategoryListing`, `getProductBySlug`, `getRelatedProducts`) by calling the query layer and mapping DB records to storefront types.
+- Related products on PDP follow a two-stage strategy in `getRelatedProducts`: (1) explicit admin-curated metadata (`relatedProductIds`, plus legacy `relatedProducts` entries with `id`) in saved order, then (2) same-category published fallback recommendations to fill remaining slots.
+- Related products always exclude the current product by slug and id, deduplicate curated/fallback overlap, and cap at 4 cards.
+- Related product failures are treated as non-fatal: lookup errors are logged server-side and the PDP renders with an explicit empty-state related section instead of failing the route.
 - `filters.ts` owns query-string parsing and href rebuilding for sorting, filtering, and pagination (unchanged).
 - The admin mutation layer (`src/features/admin/products/actions.ts`, `src/features/admin/categories/actions.ts`) now calls `revalidatePath('/categories')` after any create/update/delete so the storefront ISR cache is invalidated and reflects changes within the next request.
 - `src/app/(storefront)/categories/page.tsx` is the category index (ISR: 900s). `src/app/(storefront)/categories/[slug]/page.tsx` is the SEO-friendly category listing route. `src/app/(storefront)/categories/[slug]/[productSlug]/page.tsx` is the SEO-friendly PDP route.
 - `generateStaticParams` in both listing and PDP routes fetches from the DB so newly published products are picked up on next ISR/build cycle.
 - `data.ts` (legacy seed file) still exists for local reference but is no longer used by the storefront service.
+
+## Blog Data Strategy
+
+- `src/features/blog/service.ts` is now database-backed and reads from `BlogPost` rows through `src/server/db/blog-queries.ts`.
+- Storefront blog visibility is enforced in the service layer: only `PUBLISHED` posts with `publishedAt <= now` are shown by default; drafts/archived/future posts stay hidden unless `includeDrafts` is explicitly requested.
+- `src/app/(storefront)/blog/page.tsx` and `src/app/(storefront)/blog/[slug]/page.tsx` continue to generate metadata and JSON-LD using the same helper contracts, but now consume async DB reads.
+- Homepage blog highlights now hydrate from the same DB-backed storefront blog service (`getBlogPosts`) so listing, detail, and homepage surfaces share one primary source of truth.
+- Admin/homepage `blog-highlights.content.articles` is now treated as non-primary legacy payload data; storefront hydration replaces it with DB results and clears it on DB read failures so hardcoded/manual article arrays are isolated from production rendering.
+- Admin blog mutations (`src/features/admin/blog/actions.ts`) revalidate `/blog`, dynamic blog detail pages, and `/admin/blog` so published/unpublished changes are reflected promptly.
 
 ## Cache Strategy
 
@@ -135,6 +182,25 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `src/app/(auth)/auth/sign-in/page.tsx` and `src/features/auth/actions/sign-in.ts` support safe `from` path handling to return users after authentication.
 - `src/features/orders/service.ts` now owns customer order-history retrieval plus stock-aware re-order logic that rehydrates active cart items while reporting unavailable/out-of-stock lines.
 
+## Cart Context Separation Strategy
+
+- Guest and authenticated cart contexts are intentionally isolated even inside the same browser session.
+- Guest cart resolution is token-based and must be scoped to `userId = null` (guest-only cart ownership).
+- Authenticated cart resolution is user-based (`userId + ACTIVE`) and does not rely on guest token identity.
+- Guest-to-user merge is explicit (`mergeGuestIntoUser`) and only applies when the token resolves to an ACTIVE guest cart.
+- Authenticated cart APIs preserve a guest-context cookie token to avoid leaking authenticated cart identity into post-sign-out guest browsing.
+- Sign-out rotates to a fresh guest token before session clear so the next anonymous request starts from a clean guest cart context.
+
+## Review Workflow Strategy
+
+- `src/features/reviews/service.ts` is the customer review service layer for submission eligibility, account listing, and safe status mapping.
+- `submitCustomerReview()` enforces review ownership and practical abuse safeguards: authenticated user id, published product existence, delivered-order ownership for first-time submissions, and rate limiting (`review:submit`).
+- Customer edits to an existing review are allowed and intentionally reset moderation fields to `PENDING`/`approved=false` so updated content is re-reviewed.
+- `src/features/reviews/actions.ts` owns CSRF-safe server action handling, auth redirects, validation, flash codes, and route revalidation for storefront PDP/account pages plus admin moderation.
+- `src/app/(storefront)/categories/[slug]/[productSlug]/page.tsx` now composes `CustomerReviewForm` above `ProductReviews`, with user-friendly notice/error banners and eligibility messaging.
+- `src/app/(storefront)/account/reviews/page.tsx` now renders live user-scoped review history (status badge, storefront visibility state, customer-facing `moderationReason`, product deep link) instead of an empty placeholder.
+- Storefront visibility remains strictly moderation-driven: only `APPROVED` reviews are queried by `src/server/db/catalog-queries.ts` and rendered in PDP review sections.
+
 ## Error Handling Strategy
 
 - `src/app/error.tsx` and `src/app/global-error.tsx` now share `PageErrorFallback` so boundary copy stays consistent and user-safe.
@@ -147,12 +213,57 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 ## Admin Dashboard Metrics Strategy
 
 - Metric query orchestration lives in `src/features/admin/dashboard/service.ts` to keep route files thin and typed.
+- Low-stock detection is shared with admin inventory through `src/features/admin/inventory/service.ts` (`listAdminLowStockInventoryItems`, `isInventoryLowStock`) so dashboard and inventory surfaces cannot drift.
 - Current cards intentionally remain simple (no charts yet):
 	- Pending orders: `Order.status == PENDING`
 	- Revenue summary: sum of `Order.total` where `status == DELIVERED` and `refundStatus` is not completed
-	- Low stock: inventory rows where `(quantity - reserved) <= safetyStock`
+	- Low stock: inventory rows where `onHand = (quantity - reserved)` and `onHand <= effectiveThreshold`
+	- Effective threshold rule: if `Inventory.safetyStock > 0`, use it; otherwise fall back to `StoreSettings.lowStockThreshold` (default `5`)
 	- Recent activity: latest `AuditLog` records mapped into non-technical labels and summaries
 - Revenue assumptions are explicit in code via `AdminDashboardRevenueSummary.assumptions` so UI and docs stay aligned while payment workflows evolve.
+
+## Admin Revenue Reporting Strategy
+
+- Revenue reporting query orchestration lives in `src/features/admin/revenue/service.ts` so the route file remains presentation-focused and extensible.
+- Date-window logic for practical reporting periods (last 7 and last 30 days) is isolated in `src/features/admin/revenue/date-ranges.ts`.
+- Current report intentionally prioritizes simple operational summaries over heavy analytics:
+	- recognized revenue total (delivered orders with completed refunds excluded)
+	- recent period snapshots (last 7/30 days revenue, included order counts, average order value)
+	- order totals summary (total, pending, delivered, cancelled, and gross order value)
+- The `/admin/revenue` route includes clear empty, loading, and error states for non-technical admin users.
+- Revenue inclusion assumptions are surfaced in both service contract and UI copy so future payment/refund workflow changes can evolve transparently.
+
+## Admin Activity Feed Strategy
+
+- Activity feed query orchestration lives in `src/features/admin/activity/service.ts` to keep route files thin and focused on rendering.
+- Feed entries are sourced directly from `AuditLog`, ordered by newest first (`createdAt`, then `id`) with a `take + 1` approach so the contract is pagination-ready.
+- Event mapping logic is isolated in `src/features/admin/activity/audit-log-feed.ts` so title/summary formatting can evolve independently from query logic.
+- Actor context is resolved in a second query from `User` records using `actorId` when available; missing/deleted actors gracefully fall back to neutral labels.
+- UI remains intentionally simple for non-technical admins: readable titles, plain-language summaries, timestamp, and actor/model context.
+- Inventory adjustments now emit `inventory.adjusted` records with before/after quantities, adjustment mode, and reason so operational stock changes are traceable in the same feed.
+
+## Admin Inventory Adjustment Strategy
+
+- Stock mutation and low-stock read logic are isolated in `src/features/admin/inventory/service.ts` so read/write inventory behavior follows one shared contract.
+- Server-side validation in `src/features/admin/inventory/validation.ts` enforces mode, amount, reason, and version timestamp integrity.
+- Concurrency is handled via `updateMany` matching on `id + updatedAt`; stale writes fail with a user-safe conflict error.
+- Quantity safeguards prevent manual updates from producing negative stock or quantities below `reserved`.
+- Successful adjustments write `AuditLog` events (`inventory.adjusted`) and revalidate `/admin/inventory` + `/admin`.
+- `/admin/inventory` now uses the shared low-stock query and shows an explicit `Alert at` threshold column so fallback-threshold alerts remain transparent to admins.
+
+## Admin Store Settings Strategy
+
+- Store settings logic is isolated in `src/features/admin/settings` with clear module boundaries: `validation.ts`, `service.ts`, `actions.ts`, and `flash.ts`.
+- Persistence uses a singleton `StoreSettings` row (`id = "default"`) so this first-pass scope remains simple while still supporting future expansion.
+- Validation uses Zod and rejects invalid contact/shipping values before mutation; optional fields normalize to `undefined`/`null` consistently.
+- Server-action writes are protected by trusted-origin checks and require both `admin:access` and `settings:manage` permissions.
+- Save operations write `AuditLog` entries (`settings.updated`) and revalidate `/admin/settings`.
+- The page intentionally focuses on operationally useful present-day settings:
+	- store identity basics
+	- support contact info
+	- shipping-related basic defaults
+	- operational defaults
+- Advanced enterprise settings (multi-warehouse rules, tax engines, payment-provider controls, SLA matrices) remain deferred by design.
 
 ## Engineering Quality Gates
 
@@ -160,6 +271,29 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - Prettier formats code and keeps Tailwind utility order consistent.
 - TypeScript runs in strict mode with stronger safety checks and shared path aliases.
 - Vitest smoke tests now cover config loading and invalid env handling.
+
+## AI Documentation Continuity
+
+- `docs/ai/project-overview.md` is the AI entrypoint and should remain concise.
+- `docs/ai/implemented-features.md` is the implementation index for completed capability buckets.
+- `docs/ai/open-tasks.md` is the prioritized deferred/next-work list.
+- `docs/ai/architecture-decisions.md` records stable design decisions and tradeoffs.
+- `docs/ai/testing-status.md` records current test posture and update rules.
+- `docs/ai/task-status.md` should stay brief and point to the focused files above.
+- Any prompt that adds, changes, or defers behavior should update both:
+	- relevant `docs/dev/*` implementation guides
+	- the matching `docs/ai/*` continuity files listed here
+
+## Rewards Phase-2 Placeholder Strategy
+
+- `src/features/rewards/contracts.ts` defines contract-first interfaces for:
+	- referral tracking (`ReferralTrackingService`)
+	- loyalty points (`LoyaltyPointsService`)
+	- wallet ledger (`WalletLedgerService`)
+- Runtime parse helpers (`parseReferralVisitInput`, `parseReferralConversionInput`, `parseLoyaltyPointsMutationInput`, `parseWalletLedgerEntryInput`) provide a shared, user-safe validation/error baseline for future route handlers and server actions.
+- Contract response shape is standardized by `RewardsServiceResult<T>` so future modules can return typed success/failure payloads without leaking internals.
+- This seam is intentionally isolated and not wired into checkout/order modules in this phase.
+- Detailed rollout and schema plan is documented in `docs/dev/referral-loyalty-wallet.md`.
 
 ## Deferred on Purpose
 

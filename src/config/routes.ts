@@ -35,6 +35,8 @@ export const routes = {
     products: "/admin/products",
     productCreate: "/admin/products/new",
     productEdit: (productId: string) => `/admin/products/${productId}/edit`,
+    blog: "/admin/blog",
+    blogEdit: (postId: string) => `/admin/blog/${postId}/edit`,
     reviews: "/admin/reviews",
     categories: "/admin/categories",
     categoryEdit: (categoryId: string) => `/admin/categories/${categoryId}/edit`,
@@ -50,6 +52,8 @@ export const routes = {
     signUp: "/auth/sign-up",
     error: "/auth/error",
     forgotPassword: "/auth/forgot-password",
+    resetPassword: "/auth/reset-password",
+    verifyEmail: "/auth/verify-email",
   },
   system: {
     unauthorized: "/unauthorized",

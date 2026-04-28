@@ -2,6 +2,9 @@ import { PageShell } from "@/components/layout/page-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { SectionErrorState } from "@/components/ui/section-error-state";
 import { buildMetadata } from "@/config/metadata";
+import type { ReactNode } from "react";
+import { routes } from "@/config/routes";
+import { updateAdminInventoryAction } from "@/features/admin/inventory/actions";
 import {
   AdminPageHeader,
 } from "@/features/admin/components/admin-page-patterns";
@@ -9,7 +12,13 @@ import {
   AdminInventoryTable,
   type AdminInventoryItem,
 } from "@/features/admin/inventory/components/admin-inventory-table";
-import { getPrismaClient } from "@/server/db";
+import {
+  getAdminInventoryErrorMessage,
+  getAdminInventoryNoticeMessage,
+} from "@/features/admin/inventory/flash";
+import { listAdminLowStockInventoryItems } from "@/features/admin/inventory/service";
+import { requireRouteAccess } from "@/lib/auth/guards";
+import { hasPermission, rbacPermissions } from "@/lib/auth/rbac";
 
 export const metadata = buildMetadata({
   title: "Admin Inventory",
@@ -17,33 +26,50 @@ export const metadata = buildMetadata({
   description: "Inventory and low-stock placeholder using the shared admin table pattern.",
 });
 
-export default async function AdminInventoryPage() {
-  // Try to read low-stock inventory from the database. If the DB is not
-  // available or an error occurs, we fall back to the shared placeholder
-  // pattern and show an error state.
-  let lowStock: any[] = [];
+type AdminInventoryPageProps = {
+  searchParams?: Promise<{ notice?: string; error?: string }>;
+};
+
+function FlashBanner({
+  message,
+  tone = "notice",
+  role,
+}: {
+  message: ReactNode;
+  tone?: "notice" | "error";
+  role?: string;
+}) {
+  const isNotice = tone === "notice";
+  const cls = isNotice
+    ? "rounded-md border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-900"
+    : "rounded-md border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive";
+
+  const ariaRole = role ?? (isNotice ? "status" : "alert");
+
+  return (
+    <div role={ariaRole} className={cls}>
+      {message}
+    </div>
+  );
+}
+
+export default async function AdminInventoryPage({ searchParams }: AdminInventoryPageProps) {
+  const { role } = await requireRouteAccess({
+    permissions: [rbacPermissions.adminAccess],
+    from: routes.admin.inventory,
+  });
+
+  const canAdjustInventory = hasPermission(role, rbacPermissions.catalogWrite);
+  const params = (await searchParams) ?? {};
+  const noticeMessage = getAdminInventoryNoticeMessage(params.notice);
+  const errorMessage = getAdminInventoryErrorMessage(params.error);
+
+  let lowStockItems: Awaited<ReturnType<typeof listAdminLowStockInventoryItems>> = [];
   try {
-    const db = getPrismaClient();
-    const allInventory = await db.inventory.findMany({
-      include: {
-        productVariant: {
-          include: {
-            product: true,
-          },
-        },
-      },
-      orderBy: { updatedAt: "asc" },
+    lowStockItems = await listAdminLowStockInventoryItems({
       take: 200,
     });
-
-    // Prisma doesn't support column-to-column comparisons in the query,
-    // so compute low-stock in JS: (quantity - reserved) <= safetyStock.
-    lowStock = allInventory.filter((inv: any) => {
-      const onHand = (inv.quantity ?? 0) - (inv.reserved ?? 0);
-      const safety = inv.safetyStock ?? 0;
-      return onHand <= safety;
-    });
-  } catch (err) {
+  } catch {
     return (
       <PageShell className="gap-8">
         <AdminPageHeader
@@ -60,7 +86,7 @@ export default async function AdminInventoryPage() {
     );
   }
 
-  if (!lowStock || lowStock.length === 0) {
+  if (lowStockItems.length === 0) {
     return (
       <PageShell className="gap-8">
         <AdminPageHeader
@@ -69,32 +95,38 @@ export default async function AdminInventoryPage() {
           description="See products that may need restocking before customers are impacted."
         />
 
+        {noticeMessage ? (
+          <FlashBanner message={noticeMessage} tone="notice" />
+        ) : null}
+
+        {errorMessage ? (
+          <FlashBanner message={errorMessage} tone="error" />
+        ) : null}
+
         <Card>
           <CardContent className="pt-6">
-            <AdminInventoryTable items={[]} />
+            <AdminInventoryTable
+              items={[]}
+              canAdjust={canAdjustInventory}
+              updateAction={updateAdminInventoryAction}
+              returnTo={routes.admin.inventory}
+            />
           </CardContent>
         </Card>
       </PageShell>
     );
   }
 
-  // Ready state: render a simple table of low-stock items instead of the
-  // placeholder pattern. Keep the UI minimal — this can be replaced with a
-  // richer data table component later.
-  const inventoryItems: AdminInventoryItem[] = lowStock.map((inv: any) => {
-    const variant = inv.productVariant;
-    const product = variant?.product;
-    const onHand = (inv.quantity ?? 0) - (inv.reserved ?? 0);
-
-    return {
-      id: inv.id,
-      productName: product?.name ?? null,
-      sku: variant?.sku ?? null,
-      onHand,
-      safetyStock: inv.safetyStock ?? null,
-      location: inv.location ?? null,
-    };
-  });
+  const inventoryItems: AdminInventoryItem[] = lowStockItems.map((item) => ({
+    id: item.inventoryId,
+    productName: item.productName,
+    sku: item.sku,
+    onHand: item.onHand,
+    safetyStock: item.safetyStock,
+    alertThreshold: item.alertThreshold,
+    location: item.location,
+    updatedAt: item.updatedAt.toISOString(),
+  }));
 
   return (
     <PageShell className="gap-8">
@@ -104,11 +136,28 @@ export default async function AdminInventoryPage() {
         description="See products that may need restocking before customers are impacted."
       />
 
+      {noticeMessage ? <FlashBanner message={noticeMessage} tone="notice" /> : null}
+
+      {errorMessage ? <FlashBanner message={errorMessage} tone="error" /> : null}
+
       <Card>
         <CardContent className="pt-6">
-          <AdminInventoryTable items={inventoryItems} />
+          <AdminInventoryTable
+            items={inventoryItems}
+            canAdjust={canAdjustInventory}
+            updateAction={updateAdminInventoryAction}
+            returnTo={routes.admin.inventory}
+          />
         </CardContent>
       </Card>
+
+      {!canAdjustInventory ? (
+        <Card className="border-dashed">
+          <CardContent className="p-4 text-sm text-muted-foreground">
+            You can review low-stock rows here, but inventory adjustments require catalog write access.
+          </CardContent>
+        </Card>
+      ) : null}
     </PageShell>
   );
 }

@@ -20,12 +20,13 @@ How it is used now:
 
 - Guest carts are resolved by `Cart.token` and persisted in an HTTP-only cookie (`one-dollar-cart`)
 - Authenticated carts are resolved by `userId` + `status=ACTIVE`
+- Guest cart token resolution is strictly guest-scoped (`userId=null`) so a token that belongs to an authenticated cart can never resolve into guest context
 - ACTIVE carts are given a token so the frontend can keep continuity across guest/auth transitions; guest carts moving to `ABANDONED` have their token removed
 - `CartItem.unitPrice` is kept as a snapshot at add/update time
 
 ## Guest to auth merge
 
-When a signed-in user has a guest token cookie, cart resolution performs a merge:
+When a signed-in user has a guest token cookie, cart resolution may perform a merge:
 
 1. Load guest active cart by token (`userId=null`)
 2. Resolve or create the user active cart
@@ -34,6 +35,13 @@ When a signed-in user has a guest token cookie, cart resolution performs a merge
 5. Mark guest cart as `ABANDONED`, null out token, remove guest line items
 
 Merge runs inside a DB transaction to avoid partial state.
+
+Merge guardrails:
+
+- Merge only runs when `mergeGuestIntoUser` is explicitly enabled by the calling flow (cart/checkout context resolution)
+- Merge only acts on a real guest cart (`token + userId=null + status=ACTIVE`)
+- If the cookie token belongs to an authenticated cart or a non-active cart, merge is skipped
+- After the guest cart is merged once, subsequent resolutions with the same stale token are no-ops because the guest cart token is removed during merge
 
 ## Add, update, remove API
 
@@ -78,7 +86,9 @@ Stock is validated in two places:
 ## Persistence behavior
 
 - Guests: cart token cookie persists for 30 days
-- Auth users: active cart persists by user id, with guest cart merged when appropriate
+- Auth users: active cart persists by user id, with guest cart merged only when explicitly requested by cart/checkout context rules
+- Authenticated cart API responses keep the browser cookie tied to guest context, not user cart token, to prevent guest/auth cart leakage in the same browser session
+- Sign-out rotates to a fresh guest cart token before clearing auth session so post-sign-out browsing starts with a clean guest cart context
 
 This satisfies the expected flow:
 
