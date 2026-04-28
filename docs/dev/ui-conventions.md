@@ -99,10 +99,12 @@
 - For variant-based products, turn on the variant toggle and enter one row per sellable option combination with its own SKU, price, and stock.
 - Variant titles should be human-friendly, such as "Small / Blue" or "500ml / Lemon".
 - Specifications should use plain labels customers recognize, such as Material, Size, or Fragrance.
+- Product, banner, blog cover, and SEO image URL fields should use the shared `AdminImageUploadInput` so admins can upload directly while still retaining manual URL entry.
+- Keep image form payload contracts stable by persisting final uploaded values back into the same string URL fields already used by server actions.
 - Add alt text for important images so listings remain accessible and easier to manage later.
 - Keep SEO titles under 70 characters and SEO descriptions under 160 characters. Reuse the strongest shopper-facing language instead of keyword stuffing.
 
 ## Deferred Items
 
-- File uploads, multi-step wizards, and async remote field validation are still intentionally deferred.
+- Non-image file uploads, multi-step wizards, and async remote field validation are still intentionally deferred.
 - Future features should compose the current primitives instead of duplicating layout and state styling.

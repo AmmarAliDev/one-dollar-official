@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-Admin image upload foundation completed on 2026-04-28 (server-side Vercel Blob integration added behind a reusable provider abstraction, guarded admin upload route added, shared upload field integrated into banner/blog/SEO image flows, and existing URL-based data fields preserved).
+Admin image upload expansion completed on 2026-04-28 (shared upload-enabled image fields now cover product image rows plus existing banner/blog/SEO flows, while preserving existing URL-based payload/data contracts).
 
 Deployment Prisma safety hardening completed on 2026-04-28 (deploy-path failure reproduced at `prisma migrate deploy` with `P3009`; added deploy workflow guard, hosted pooled-vs-direct migration URL safety checks, and explicit migration incident recovery commands/docs).
 
@@ -26,13 +26,13 @@ This file is now intentionally concise. Detailed implementation state is split i
 - Product baseline is production-minded and broad: storefront, admin, auth/security, cart/checkout/orders, reviews, blog, homepage CMS controls, contact, and email-marketing foundations.
 - Database-backed catalog and blog flows are active; publish-state visibility is enforced.
 - Shared infrastructure for forms, tables, error handling, logging redaction, and RBAC is active and used across major modules.
-- Admin/content image uploads now have a single reusable path: guarded route handler, provider abstraction, shared image upload input, and final-URL persistence back into existing form values.
+- Admin/content image uploads now have a single reusable path: guarded route handler, provider abstraction, shared image upload input, and final-URL persistence back into existing form values across product, category/blog SEO, blog cover, and banner forms.
 - Test suites (unit/integration/e2e) and build pipelines are in place and routinely used as release gates.
 - Cart context resolution now enforces guest/auth isolation in shared browser sessions and prevents authenticated cart token leakage into guest cart resolution.
 
 ## Active Deferred Buckets
 
-- Product gallery row uploads, category hero/media uploads beyond SEO, and broad replacement of all legacy raw URL fields are intentionally deferred to follow-up slices now that the shared upload foundation exists.
+- Category hero/media uploads beyond SEO and image URLs embedded inside JSON content editors remain intentionally deferred to follow-up slices.
 - Online payment providers and webhook processing
 - Advanced inventory operations (history filters are the recommended next implementation step)
 - Advanced revenue analytics and export workflows
