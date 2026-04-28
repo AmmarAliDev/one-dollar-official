@@ -37,6 +37,13 @@
 - `AppFooter` now has three sections: company links, policy links, and a newsletter placeholder block.
 - Static storefront placeholders live under `src/app/(storefront)` for `/about`, `/contact`, `/privacy`, `/terms`, `/shipping-policy`, and `/return-policy`.
 
+## Homepage Carousel Conventions
+
+- Homepage category surfaces should use the shared shadcn-compatible carousel primitives in `src/components/ui/carousel.tsx` instead of bespoke slider logic.
+- Featured category cards should use responsive carousel basis classes so card density scales with viewport width (`basis-[85%]`, `sm:basis-1/2`, `lg:basis-1/3`, `xl:basis-1/4`).
+- Keep carousel controls keyboard accessible and touch-friendly: swipe/drag remains the primary interaction on mobile, while previous/next icon controls are shown on wider screens.
+- Empty category payloads must render a user-safe `EmptyState` instead of a blank section.
+
 ## Product Listing Conventions (Prompt 3.3)
 
 - Category discovery lives at `/categories`, while individual listing pages live at `/categories/[slug]` for clean, SEO-friendly storefront URLs.
