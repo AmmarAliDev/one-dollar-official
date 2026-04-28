@@ -3,7 +3,7 @@
 
 CREATE TABLE IF NOT EXISTS "EmailVerificationToken" (
   id text PRIMARY KEY,
-  user_id uuid NOT NULL,
+  user_id text NOT NULL,
   token_hash text NOT NULL UNIQUE,
   expires_at timestamptz NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
