@@ -3,21 +3,23 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #f6f8fb;
-  --foreground: #0f172a;
+  --background: #ffffff;
+  --foreground: #160d1a;
   --card: #ffffff;
-  --card-foreground: #0f172a;
-  --muted: #edf2f7;
-  --muted-foreground: #475569;
-  --accent: #ecfeff;
-  --accent-foreground: #134e4a;
-  --primary: #0f766e;
-  --primary-foreground: #f0fdfa;
-  --secondary: #e2e8f0;
-  --secondary-foreground: #0f172a;
-  --border: #dbe4ee;
-  --input: #cbd5e1;
-  --ring: #14b8a6;
+  --card-foreground: #160d1a;
+  --popover: #ffffff;
+  --popover-foreground: #160d1a;
+  --muted: #f6f1f8;
+  --muted-foreground: #5f4b68;
+  --accent: #f1e8f5;
+  --accent-foreground: #2a1433;
+  --primary: #431b52;
+  --primary-foreground: #ffffff;
+  --secondary: #eee3f2;
+  --secondary-foreground: #2a1433;
+  --border: #dfd2e6;
+  --input: #ceb9d8;
+  --ring: #431b52;
   --success: #15803d;
   --warning: #b45309;
   --destructive: #dc2626;
@@ -27,32 +29,34 @@
   --space-page: clamp(1rem, 0.85rem + 0.8vw, 1.5rem);
   --space-section: clamp(2.5rem, 1.6rem + 2.8vw, 4.5rem);
   --space-stack: clamp(1rem, 0.8rem + 1vw, 1.5rem);
-  --shadow-soft: 0 12px 30px -20px rgb(15 23 42 / 0.28);
-  --shadow-elevated: 0 24px 60px -32px rgb(15 23 42 / 0.38);
+  --shadow-soft: 0 14px 34px -22px rgb(38 12 51 / 0.28);
+  --shadow-elevated: 0 26px 62px -34px rgb(28 8 37 / 0.42);
 }
 
 .dark {
-  --background: #020617;
-  --foreground: #e2e8f0;
-  --card: #0f172a;
-  --card-foreground: #e2e8f0;
-  --muted: #172033;
-  --muted-foreground: #94a3b8;
-  --accent: #0f2b36;
-  --accent-foreground: #ccfbf1;
-  --primary: #2dd4bf;
-  --primary-foreground: #042f2e;
-  --secondary: #1e293b;
-  --secondary-foreground: #e2e8f0;
-  --border: #233047;
-  --input: #334155;
-  --ring: #5eead4;
+  --background: #000000;
+  --foreground: #f4eefa;
+  --card: #0b0610;
+  --card-foreground: #f4eefa;
+  --popover: #100815;
+  --popover-foreground: #f4eefa;
+  --muted: #140c19;
+  --muted-foreground: #ccb7d5;
+  --accent: #25112f;
+  --accent-foreground: #f6ecfa;
+  --primary: #431b52;
+  --primary-foreground: #f6effa;
+  --secondary: #190f20;
+  --secondary-foreground: #efe5f5;
+  --border: #2b1735;
+  --input: #392145;
+  --ring: #8f5ca8;
   --success: #4ade80;
   --warning: #f59e0b;
   --destructive: #f87171;
   --info: #60a5fa;
-  --shadow-soft: 0 18px 40px -26px rgb(2 6 23 / 0.65);
-  --shadow-elevated: 0 28px 70px -34px rgb(2 6 23 / 0.72);
+  --shadow-soft: 0 20px 44px -28px rgb(0 0 0 / 0.74);
+  --shadow-elevated: 0 30px 74px -36px rgb(0 0 0 / 0.82);
 }
 
 @theme inline {
@@ -60,6 +64,8 @@
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
@@ -94,20 +100,25 @@ html {
 body {
   min-height: 100vh;
   background: radial-gradient(
-      circle at top,
-      color-mix(in srgb, var(--accent) 40%, transparent),
-      transparent 35%
+      78rem 36rem at 12% -12%,
+      color-mix(in srgb, var(--primary) 16%, transparent),
+      transparent 58%
+    ),
+    radial-gradient(
+      64rem 30rem at 96% -6%,
+      color-mix(in srgb, var(--accent) 72%, transparent),
+      transparent 62%
     ),
     var(--background);
   color: var(--foreground);
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--primary) 24%, white);
+  background: color-mix(in srgb, var(--primary) 26%, white);
   color: var(--foreground);
 }
 
 .dark ::selection {
-  background: color-mix(in srgb, var(--primary) 68%, black);
+  background: color-mix(in srgb, var(--primary) 70%, black);
   color: var(--primary-foreground);
 }

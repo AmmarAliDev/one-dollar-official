@@ -46,7 +46,7 @@ export function StorefrontMobileNav({
       {isOpen ? (
         <div
           id="mobile-navigation-panel"
-          className="border-border/70 bg-background absolute inset-x-0 top-full z-50 border-b px-4 py-4 shadow-lg"
+          className="border-border/80 bg-card/98 absolute inset-x-0 top-full z-50 border-b px-4 py-4 shadow-(--shadow-soft) backdrop-blur"
         >
           <div className="mx-auto flex w-full max-w-(--container-width) flex-col gap-4">
             <Link
@@ -64,7 +64,7 @@ export function StorefrontMobileNav({
                   key={item.href}
                   href={item.href}
                   onClick={() => setIsOpen(false)}
-                  className="text-foreground rounded-md px-3 py-2 text-sm font-medium hover:bg-accent"
+                  className="text-foreground hover:bg-accent hover:text-accent-foreground rounded-md px-3 py-2 text-sm font-medium transition-colors"
                 >
                   {item.title}
                 </Link>

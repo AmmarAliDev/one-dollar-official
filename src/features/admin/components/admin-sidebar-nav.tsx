@@ -27,8 +27,8 @@ export function AdminSidebarNav({ items }: AdminSidebarNavProps) {
             className={cn(
               "rounded-xl border px-3 py-2.5 text-sm transition-colors",
               isActive
-                ? "border-primary/40 bg-primary/10 text-foreground"
-                : "border-transparent text-muted-foreground hover:border-border/70 hover:bg-accent hover:text-foreground",
+                ? "border-primary/55 bg-primary/14 text-foreground shadow-(--shadow-soft)"
+                : "border-transparent text-muted-foreground hover:border-border/80 hover:bg-muted/70 hover:text-foreground",
             )}
           >
             <p className="font-medium">{item.label}</p>

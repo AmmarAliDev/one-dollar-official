@@ -195,7 +195,7 @@ export function ConfirmationDialog({
       ) : null}
 
       {open ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/62 p-4 backdrop-blur-sm">
           <button
             type="button"
             className="absolute inset-0 cursor-default"
@@ -214,7 +214,7 @@ export function ConfirmationDialog({
             aria-labelledby={titleId}
             aria-describedby={descriptionId}
             tabIndex={-1}
-            className={cn("relative z-10 w-full max-w-md", className)}
+            className={cn("relative z-10 w-full max-w-md border-border/85 shadow-(--shadow-elevated)", className)}
           >
             <CardHeader>
               <div className="flex items-center gap-3">

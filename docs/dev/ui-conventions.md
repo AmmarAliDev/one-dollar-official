@@ -11,6 +11,18 @@
 - Theme selection supports `system`, `light`, and `dark` through `next-themes`.
 - Shared frontend notifications should use `notify.*()` from `src/lib/notify.ts`.
 - Keep theme-dependent visuals tied to semantic tokens like `bg-card`, `text-muted-foreground`, and `border-border`.
+- Current palette baseline:
+	- Light theme anchor colors: `--background: #ffffff`, `--primary: #431b52`
+	- Dark theme anchor colors: `--background: #000000`, `--primary: #431b52`
+- Avoid hardcoded one-off hex values in feature components. Prefer semantic tokens so palette updates remain centralized and safe.
+- Keep overlays, menus, and dialogs on semantic surfaces (`bg-popover`, `bg-card`) and preserve readable foreground contrast.
+
+## Surface Consistency Rules
+
+- Forms should rely on shared input controls (`Input`, `Textarea`, `Select`) that bind to semantic classes (`bg-background`, `text-foreground`, `border-input`, `focus:ring-ring`).
+- Cards and table containers should keep semantic surface classes and shared elevation tokens (`--shadow-soft`, `--shadow-elevated`) for consistent depth across desktop and mobile.
+- Navigation surfaces (sidebar and mobile nav) should use semantic hover/active states (`bg-muted`, `bg-accent`, `bg-primary/*`) instead of custom ad-hoc colors.
+- Confirmation and high-impact dialogs should keep backdrop contrast strong enough for readability while preserving focus and keyboard behavior.
 
 ## UI State Patterns
 
