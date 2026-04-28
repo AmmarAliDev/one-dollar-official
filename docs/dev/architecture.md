@@ -72,7 +72,7 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - Global design tokens live in `src/app/globals.css` and define semantic colors, spacing rhythm, radii, and shadow presets.
 - `src/components/ui` now contains reusable UI-state and presentation primitives like `Badge`, `PriceDisplay`, `SectionHeader`, `EmptyState`, `LoadingState`, `ErrorState`, `Skeleton`, and shared form controls (`Input`, `Textarea`, `Select`, `Checkbox`, `Switch`).
 - `src/components/forms` is the app-wide client form seam. It combines React Hook Form, Zod, shared field renderers, and a small server-action submit bridge so feature modules can choose schema-driven forms or explicit composition without duplicating validation wiring.
-- `src/features/admin/uploads` is the shared admin/content media-upload seam. It owns client upload orchestration, file validation, provider abstraction, and the reusable image-upload input used by banner, blog, and SEO image fields.
+- `src/features/admin/uploads` is the shared admin/content media-upload seam. It owns client upload orchestration, file validation, provider abstraction, and the reusable image-upload input used by product image rows, banner, blog, and SEO image fields.
 - The upload UI keeps current data-model assumptions intact by writing the final public image URL back into the same string fields already used by product, category, blog, banner, and SEO flows.
 - `PageContainer` and `PageShell` should be reused for page spacing instead of duplicating wrapper classes.
 - Shared frontend feedback uses `sonner` through `src/components/providers/app-toaster.tsx` and `src/lib/notify.ts`.
