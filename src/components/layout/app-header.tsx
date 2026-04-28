@@ -1,4 +1,4 @@
-import { Heart, Search, Store } from "lucide-react";
+import { Heart, Search, ShoppingCart, Store } from "lucide-react";
 import Link from "next/link";
 
 import { auth } from "@/auth";
@@ -6,12 +6,12 @@ import { routes } from "@/config/routes";
 import { siteConfig } from "@/config/site";
 import { CartMiniCart } from "@/features/cart/components/cart-mini-cart";
 
+import { RoleKey } from "@/lib/auth/roles";
 import { ThemeToggle } from "../theme-toggle";
 import { buttonVariants } from "../ui/button";
 import { PageContainer } from "../ui/page-container";
 import { StorefrontMobileNav } from "./storefront-mobile-nav";
 import UserMenu from "./user-menu";
-import { RoleKey } from "@/lib/auth/roles";
 
 export async function AppHeader() {
   const session = await auth();
@@ -28,24 +28,35 @@ export async function AppHeader() {
 
       <PageContainer className="relative flex flex-col gap-3 py-3">
         <div className="flex items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="bg-primary/10 text-primary rounded-2xl p-2.5" aria-hidden="true">
-              <Store className="size-5" />
-            </div>
+          <Link href={routes.storefront.home} className="text-base font-semibold tracking-tight">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="bg-primary/10 text-primary rounded-2xl p-2.5" aria-hidden="true">
+                <Store className="size-5" />
+              </div>
 
-            <div className="min-w-0">
-              <Link href={routes.storefront.home} className="text-base font-semibold tracking-tight">
-                {siteConfig.name}
-              </Link>
-              <p className="text-muted-foreground text-xs">Karachi-first storefront foundation</p>
+              <div className="min-w-0">
+                <div className="text-base font-semibold tracking-tight">
+                  {siteConfig.name}
+                </div>
+              </div>
             </div>
-          </div>
+          </Link>
 
           <div className="flex items-center gap-2 md:hidden">
-            <ThemeToggle />
+            <Link
+              href={routes.storefront.search}
+              className={buttonVariants({ variant: "outline", size: "icon" })}
+            >
+              <Search className="size-4" aria-hidden="true" />
+            </Link>
+            <Link
+              href={routes.storefront.cart}
+              className={buttonVariants({ variant: "outline", size: "icon", className: "md:hidden " })}
+            >
+              <ShoppingCart className="size-4" aria-hidden="true" />
+            </Link>
             <StorefrontMobileNav
               navItems={siteConfig.storefrontNav}
-              searchHref={routes.storefront.search}
               accountHref={routes.storefront.account}
               wishlistHref={routes.storefront.wishlist}
               cartHref={routes.storefront.cart}
@@ -75,7 +86,7 @@ export async function AppHeader() {
           </div>
         </div>
 
-        <nav aria-label="Storefront" className="hidden gap-1 overflow-x-auto pb-1 md:flex">
+        <nav aria-label="Storefront" className="hidden gap-1 overflow-x-auto pb-1 md:flex w-full justify-center">
           {siteConfig.storefrontNav.map((item) => (
             <Link
               key={item.href}

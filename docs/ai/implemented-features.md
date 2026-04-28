@@ -6,7 +6,7 @@ Use this as the quick implementation map for future AI prompts. Each section des
 
 ## Storefront and Catalog
 
-- Homepage with section-based rendering and admin-manageable content resolution
+- Homepage with section-based rendering and admin-manageable content resolution; featured categories section uses a responsive shadcn-compatible carousel with empty-state fallback
 - Category listing routes and product detail routes with SEO metadata support
 - Database-backed catalog visibility rules (published categories/products only; approved reviews only)
 - Storefront search with API transport seam and adapter-ready backend integration point
@@ -36,6 +36,7 @@ Use this as the quick implementation map for future AI prompts. Each section des
 - AuditLog-based activity feed with actor and model context
 - Revenue summary page with explicit inclusion assumptions
 - Category and product admin CRUD with SEO controls and ISR revalidation
+- Admin content image uploads via Vercel Blob: shared guarded route handler, provider abstraction (`src/features/admin/uploads/`), reusable `AdminImageUploadInput` component, and final-URL persistence into product image rows, banner, blog cover, and SEO image fields — no database migration required
 - Product admin SEO content helper (deterministic generation for title suggestions, SEO title/description, short description, highlights, FAQ ideas, schema-oriented specs, internal linking suggestions, and slug)
 - Storefront category SEO content generator (`src/features/catalog/seo/category-seo-content.ts`): deterministic, Pakistan-focused output — SEO title, meta description, introductory copy, FAQ items, internal link suggestions, blog topic ideas, and schema markup notes — for all category pages; per-slug templates for home-care, grocery, and personal-care with a generic fallback for any other slug
 - Blog admin CRUD with publish scheduling and SEO fields
@@ -54,7 +55,8 @@ Use this as the quick implementation map for future AI prompts. Each section des
 
 ## Shared Foundations
 
-- Shared UI primitives and fallback states
+- Shared UI primitives and fallback states; global design tokens enforce a white/black + `#431b52` palette via semantic CSS classes across light and dark themes
+- Shared carousel primitives (`src/components/ui/carousel.tsx`) used by homepage category surfaces; keyboard-accessible and touch-friendly
 - Shared form system (React Hook Form + Zod + server-action bridge)
 - Shared data-table foundation used by multiple admin pages
 - Shared server/db repository and transaction utilities
