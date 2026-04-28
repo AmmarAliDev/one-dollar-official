@@ -58,10 +58,29 @@ Validation is centralized in `src/config/env.ts`, and the safe shared config sna
 | `PRISMA_ALLOW_POOLED_MIGRATE_DEPLOY` | No                    | Break-glass override to permit deploy migrations without pooled/direct URL separation                      |
 | `APP_SECRET`               | Conditionally required          | Add before enabling a sensitive server-side integration that calls `getRequiredServerEnv("APP_SECRET")` |
 | `AUTH_SECRET`              | Yes outside development         | Auth.js secret for any non-development environment                                                      |
+| `BLOB_READ_WRITE_TOKEN`    | Yes for admin image uploads     | Vercel Blob token used by the guarded admin upload route to store banner, blog, SEO, and future content images |
 
 If a required or invalid value is detected, the app throws a readable `CONFIG_ERROR` with guidance for updating `.env.local`.
 
 The Prisma scripts in this repo read local environment files and fall back to `DATABASE_URL` when `POSTGRES_URL_NON_POOLING` is omitted during local development.
+
+## Admin Image Upload Setup
+
+The current admin image uploader uses server-side Vercel Blob uploads because it is simple for non-technical admins, inexpensive to start with, and keeps the storage backend isolated behind one feature module.
+
+1. Create a public Vercel Blob store for admin/content media.
+2. Add the generated `BLOB_READ_WRITE_TOKEN` to `.env.local`.
+3. Restart `pnpm dev` after changing the token.
+4. Upload through the admin form fields instead of pasting raw URLs manually.
+
+Current operational constraints:
+
+- uploads are limited to JPG, PNG, WEBP, AVIF, and GIF
+- the server-upload budget is capped at 4 MB per image to stay below the common Vercel server-upload limit and keep the workflow predictable
+- the uploader writes the final public URL back into the existing form field value, so no database migration is required for this step
+- SVG uploads are intentionally rejected to avoid inline-script/security issues in admin-managed content
+
+Future admin fields should reuse the shared upload control in `src/features/admin/uploads/components/admin-image-upload-input.tsx` and store only the returned URL in their existing string field.
 
 ## Database Workflow
 

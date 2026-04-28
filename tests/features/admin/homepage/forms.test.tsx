@@ -29,6 +29,7 @@ beforeAll(() => {
 
 afterEach(() => {
   cleanup();
+  vi.restoreAllMocks();
 });
 
 function readFormData(formData: FormData) {
@@ -49,8 +50,24 @@ describe("admin homepage shared forms", () => {
   it("submits banner values through the shared RHF flow", async () => {
     const user = userEvent.setup();
     const actionMock = vi.fn().mockResolvedValue(undefined);
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          url: "https://store.public.blob.vercel-storage.com/admin/banner/banner-123.png",
+          pathname: "admin/banner/banner-123.png",
+          size: 1024,
+          contentType: "image/png",
+        }),
+        {
+          status: 201,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      ),
+    );
 
-    render(
+    const { container } = render(
       <AdminBannerForm
         action={actionMock}
         submitLabel="Save banner"
@@ -59,7 +76,16 @@ describe("admin homepage shared forms", () => {
     );
 
     await user.type(screen.getByLabelText(/^Title/i), "Weekend banner");
-    await user.type(screen.getByLabelText(/Image URL/i), "https://example.com/banner.jpg");
+    const uploadInput = container.querySelector('input[type="file"]');
+    if (!(uploadInput instanceof HTMLInputElement)) {
+      throw new Error("Expected the banner upload file input to be rendered.");
+    }
+    await user.upload(uploadInput, new File(["banner"], "banner.png", { type: "image/png" }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
     await user.type(screen.getByLabelText(/Link target/i), "/categories");
     await user.clear(screen.getByLabelText(/^Order/i));
     await user.type(screen.getByLabelText(/^Order/i), "3");
@@ -75,7 +101,7 @@ describe("admin homepage shared forms", () => {
     expect(readFormData(formData)).toMatchObject({
       returnTo: "/admin/homepage/banners",
       title: "Weekend banner",
-      imageUrl: "https://example.com/banner.jpg",
+      imageUrl: "https://store.public.blob.vercel-storage.com/admin/banner/banner-123.png",
       href: "/categories",
       position: "3",
       startAt: "2026-04-20T08:00",
