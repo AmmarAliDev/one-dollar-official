@@ -12,7 +12,7 @@ export const metadata = buildMetadata({
 
 export default function ShippingPolicyPage() {
   return (
-    <PageShell className="max-w-3xl gap-10">
+    <PageShell className="max-w-7xl gap-10">
       {/* Header */}
       <div className="space-y-3">
         <Badge variant="secondary">Policy</Badge>
