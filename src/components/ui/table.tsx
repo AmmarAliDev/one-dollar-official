@@ -4,14 +4,14 @@ import { cn } from "@/lib/utils";
 
 function Table({ className, ...props }: React.ComponentProps<"table">) {
   return (
-    <div className="relative w-full overflow-x-auto">
+    <div className="border-border/80 bg-card text-card-foreground relative w-full overflow-x-auto rounded-(--radius-card) border shadow-(--shadow-soft)">
       <table className={cn("w-full caption-bottom text-sm", className)} {...props} />
     </div>
   );
 }
 
 function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
-  return <thead className={cn("[&_tr]:border-b", className)} {...props} />;
+  return <thead className={cn("bg-muted/45 [&_tr]:border-b", className)} {...props} />;
 }
 
 function TableBody({ className, ...props }: React.ComponentProps<"tbody">) {
@@ -55,7 +55,7 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
 function TableCell({ className, ...props }: React.ComponentProps<"td">) {
   return (
     <td
-      className={cn("p-3 align-middle [&:has([role=checkbox])]:pr-0", className)}
+      className={cn("text-foreground p-3 align-middle [&:has([role=checkbox])]:pr-0", className)}
       {...props}
     />
   );

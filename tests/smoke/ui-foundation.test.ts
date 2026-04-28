@@ -1,9 +1,21 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { readFileSync } from "node:fs";
+
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
+import { Input } from "@/components/ui/input";
+import { Table } from "@/components/ui/table";
 import { loadSiteConfig } from "@/config/site";
 import { themeOptions } from "@/config/theme";
 import { formatPrice } from "@/lib/currency";
 import type { AppTheme } from "@/types/app";
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url));
+const globalsCssPath = path.resolve(currentDir, "../../src/app/globals.css");
+const globalsCss = readFileSync(globalsCssPath, "utf8");
 
 describe("ui foundation", () => {
   it("supports light, dark, and system theme selection", () => {
@@ -27,5 +39,22 @@ describe("ui foundation", () => {
 
   it("returns a detectable placeholder for invalid amounts", () => {
     expect(formatPrice("not-a-number")).toBe("--");
+  });
+
+  it("uses the requested white/black and #431b52 palette in theme tokens", () => {
+    expect(globalsCss).toContain("--background: #ffffff;");
+    expect(globalsCss).toContain("--background: #000000;");
+    expect(globalsCss).toContain("--primary: #431b52;");
+  });
+
+  it("keeps shared form and table primitives bound to semantic design tokens", () => {
+    const inputMarkup = renderToStaticMarkup(createElement(Input, { placeholder: "Email" }));
+    const tableMarkup = renderToStaticMarkup(createElement(Table, null));
+
+    expect(inputMarkup).toContain("border-input");
+    expect(inputMarkup).toContain("bg-background");
+    expect(inputMarkup).toContain("text-foreground");
+    expect(tableMarkup).toContain("bg-card");
+    expect(tableMarkup).toContain("text-card-foreground");
   });
 });

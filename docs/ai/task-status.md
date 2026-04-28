@@ -2,6 +2,8 @@
 
 ## Current Milestone
 
+Theme and visual quality pass completed on 2026-04-28 (global light/dark tokens now enforce the requested white/black + `#431b52` palette, shared form/table/dialog/nav surfaces were refined through semantic classes, and smoke tests now include palette/token sanity coverage).
+
 Admin image upload expansion completed on 2026-04-28 (shared upload-enabled image fields now cover product image rows plus existing banner/blog/SEO flows, while preserving existing URL-based payload/data contracts).
 
 Deployment Prisma safety hardening completed on 2026-04-28 (deploy-path failure reproduced at `prisma migrate deploy` with `P3009`; added deploy workflow guard, hosted pooled-vs-direct migration URL safety checks, and explicit migration incident recovery commands/docs).
