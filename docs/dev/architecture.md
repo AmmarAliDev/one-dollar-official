@@ -72,6 +72,8 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - Global design tokens live in `src/app/globals.css` and define semantic colors, spacing rhythm, radii, and shadow presets.
 - `src/components/ui` now contains reusable UI-state and presentation primitives like `Badge`, `PriceDisplay`, `SectionHeader`, `EmptyState`, `LoadingState`, `ErrorState`, `Skeleton`, and shared form controls (`Input`, `Textarea`, `Select`, `Checkbox`, `Switch`).
 - `src/components/forms` is the app-wide client form seam. It combines React Hook Form, Zod, shared field renderers, and a small server-action submit bridge so feature modules can choose schema-driven forms or explicit composition without duplicating validation wiring.
+- `src/features/admin/uploads` is the shared admin/content media-upload seam. It owns client upload orchestration, file validation, provider abstraction, and the reusable image-upload input used by product image rows, banner, blog, and SEO image fields.
+- The upload UI keeps current data-model assumptions intact by writing the final public image URL back into the same string fields already used by product, category, blog, banner, and SEO flows.
 - `PageContainer` and `PageShell` should be reused for page spacing instead of duplicating wrapper classes.
 - Shared frontend feedback uses `sonner` through `src/components/providers/app-toaster.tsx` and `src/lib/notify.ts`.
 - Catalog listing UI lives in `src/features/catalog/components`; keep product-grid and filter scaffolds there instead of placing listing-specific markup directly in route files.
@@ -114,7 +116,10 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `src/config/env.ts` validates public env input with a typed schema and throws readable `CONFIG_ERROR` messages.
 - `src/config/app-config.ts` builds a safe application config snapshot for future server and feature modules.
 - `src/config/feature-flags.ts` derives preview flags from validated env values instead of raw `process.env` access.
+- Admin image uploads currently use a server-side Vercel Blob integration behind `createAdminImageStorageProvider()`. The provider can be replaced later without rewriting form integrations because forms only depend on the shared upload route and final URL contract.
+- `BLOB_READ_WRITE_TOKEN` is the only required secret for the current upload provider. When it is missing, the upload route returns a user-safe configuration message instead of a raw storage error.
 - Homepage fallback preview-only artifacts should be gated by validated runtime env (`env.nodeEnv !== "production"`) so development helpers never leak into production storefront UI.
+- Storefront homepage `featured-categories` is now rendered through the shared shadcn-compatible carousel primitives with responsive card density and empty-state fallback, preserving the existing section registry architecture (`renderHomepageSection` + typed section contracts).
 - `getRequiredServerEnv()` should be used when a future integration needs a non-public secret at runtime.
 - `DATABASE_URL` must be available anywhere Prisma queries or CLI workflows run.
 - Prisma CLI commands are routed through `scripts/prisma-cli.mjs`, which respects local env files, falls back `POSTGRES_URL_NON_POOLING` to `DATABASE_URL` for local use, blocks obvious hosted `migrate dev` mistakes, and validates hosted `migrate deploy` URL safety (pooled vs direct URL separation).
@@ -209,6 +214,7 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `src/lib/errors` centralizes reusable error abstractions and user-facing messaging through `toUserMessage()` and `getFormErrorMessages()`.
 - `src/lib/logger.ts` offers a client/server-safe logger with sensitive field redaction for operational diagnostics.
 - Admin dashboard metric queries are wrapped with an `AppError` code (`ADMIN_DASHBOARD_METRICS_QUERY_FAILED`) so the UI can keep rendering with user-safe fallback messaging when the database is temporarily unavailable.
+- Admin image uploads follow the same user-safe error policy: route-handler validation rejects unsupported types and oversize files early, storage configuration failures resolve to a clear admin-facing message, and form fields always preserve manual URL entry as a fallback.
 
 ## Admin Dashboard Metrics Strategy
 

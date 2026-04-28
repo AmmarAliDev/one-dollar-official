@@ -6,6 +6,7 @@ import { DynamicFormField, useAppForm, useServerActionSubmit } from "@/component
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormErrorSummary } from "@/components/ui/form-error-summary";
 import { AdminSeoSection } from "@/features/admin/components/admin-seo-section";
+import { AdminImageUploadInput } from "@/features/admin/uploads";
 
 import type { AdminBlogRecord } from "../service";
 import { adminBlogMutationSchema } from "../validation";
@@ -240,9 +241,25 @@ export function AdminBlogForm({ mode, action, returnTo, submitLabel, post }: Adm
             fieldConfig={{
               id: "blog-cover-image-url",
               name: "coverImageUrl",
-              type: "text",
-              label: "Cover image URL",
+              type: "custom",
+              label: "Cover image",
               placeholder: "/blog/my-cover-image.svg",
+              description: "Upload a cover image or paste an existing URL/path.",
+              render: ({ field, fieldState, inputId, describedBy, disabled }) => (
+                <AdminImageUploadInput
+                  inputId={inputId}
+                  value={typeof field.value === "string" ? field.value : ""}
+                  onChange={(nextValue) => {
+                    field.onChange(nextValue);
+                  }}
+                  onBlur={field.onBlur}
+                  purpose="blog"
+                  placeholder="https://example.com/blog-cover.jpg"
+                  describedBy={describedBy}
+                  disabled={disabled}
+                  invalid={Boolean(fieldState.error)}
+                />
+              ),
             }}
           />
 

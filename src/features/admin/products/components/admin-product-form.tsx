@@ -14,6 +14,7 @@ import { FormErrorSummary } from "@/components/ui/form-error-summary";
 import { Input } from "@/components/ui/input";
 import { routes } from "@/config/routes";
 import { AdminSeoSection } from "@/features/admin/components/admin-seo-section";
+import { AdminImageUploadInput } from "@/features/admin/uploads";
 import { formatPrice } from "@/lib/currency";
 
 import type { AdminProductCategoryOption, AdminProductFormRecord, AdminRelatedProductOption } from "../service";
@@ -600,9 +601,24 @@ export function AdminProductForm({ mode, action, returnTo, submitLabel, categori
                       disabled={isPending}
                       fieldConfig={{
                         name: fieldPath(`images.${index}.url`),
-                        type: "text",
+                        type: "custom",
                         label: index === 0 ? "Image URL" : undefined,
                         placeholder: "https://example.com/product-image.jpg",
+                        render: ({ field, fieldState, inputId, describedBy, disabled }) => (
+                          <AdminImageUploadInput
+                            inputId={inputId}
+                            value={typeof field.value === "string" ? field.value : ""}
+                            onChange={(nextValue) => {
+                              field.onChange(nextValue);
+                            }}
+                            onBlur={field.onBlur}
+                            purpose="product"
+                            placeholder="https://example.com/product-image.jpg"
+                            describedBy={describedBy}
+                            disabled={disabled}
+                            invalid={Boolean(fieldState.error)}
+                          />
+                        ),
                       }}
                     />
                     <DynamicFormField

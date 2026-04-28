@@ -92,7 +92,7 @@ export function ContactForm() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-4xl mx-auto">
       {formState === "error" && (
         <Alert variant="destructive" className="mb-6">
           <AlertCircle className="h-5 w-5" />

@@ -11,6 +11,18 @@
 - Theme selection supports `system`, `light`, and `dark` through `next-themes`.
 - Shared frontend notifications should use `notify.*()` from `src/lib/notify.ts`.
 - Keep theme-dependent visuals tied to semantic tokens like `bg-card`, `text-muted-foreground`, and `border-border`.
+- Current palette baseline:
+	- Light theme anchor colors: `--background: #ffffff`, `--primary: #431b52`
+	- Dark theme anchor colors: `--background: #000000`, `--primary: #431b52`
+- Avoid hardcoded one-off hex values in feature components. Prefer semantic tokens so palette updates remain centralized and safe.
+- Keep overlays, menus, and dialogs on semantic surfaces (`bg-popover`, `bg-card`) and preserve readable foreground contrast.
+
+## Surface Consistency Rules
+
+- Forms should rely on shared input controls (`Input`, `Textarea`, `Select`) that bind to semantic classes (`bg-background`, `text-foreground`, `border-input`, `focus:ring-ring`).
+- Cards and table containers should keep semantic surface classes and shared elevation tokens (`--shadow-soft`, `--shadow-elevated`) for consistent depth across desktop and mobile.
+- Navigation surfaces (sidebar and mobile nav) should use semantic hover/active states (`bg-muted`, `bg-accent`, `bg-primary/*`) instead of custom ad-hoc colors.
+- Confirmation and high-impact dialogs should keep backdrop contrast strong enough for readability while preserving focus and keyboard behavior.
 
 ## UI State Patterns
 
@@ -36,6 +48,13 @@
 - Mobile navigation behavior lives in `src/components/layout/storefront-mobile-nav.tsx` and must keep `aria-expanded`, `aria-controls`, and a labeled toggle button.
 - `AppFooter` now has three sections: company links, policy links, and a newsletter placeholder block.
 - Static storefront placeholders live under `src/app/(storefront)` for `/about`, `/contact`, `/privacy`, `/terms`, `/shipping-policy`, and `/return-policy`.
+
+## Homepage Carousel Conventions
+
+- Homepage category surfaces should use the shared shadcn-compatible carousel primitives in `src/components/ui/carousel.tsx` instead of bespoke slider logic.
+- Featured category cards should use responsive carousel basis classes so card density scales with viewport width (`basis-[85%]`, `sm:basis-1/2`, `lg:basis-1/3`, `xl:basis-1/4`).
+- Keep carousel controls keyboard accessible and touch-friendly: swipe/drag remains the primary interaction on mobile, while previous/next icon controls are shown on wider screens.
+- Empty category payloads must render a user-safe `EmptyState` instead of a blank section.
 
 ## Product Listing Conventions (Prompt 3.3)
 
@@ -99,10 +118,12 @@
 - For variant-based products, turn on the variant toggle and enter one row per sellable option combination with its own SKU, price, and stock.
 - Variant titles should be human-friendly, such as "Small / Blue" or "500ml / Lemon".
 - Specifications should use plain labels customers recognize, such as Material, Size, or Fragrance.
+- Product, banner, blog cover, and SEO image URL fields should use the shared `AdminImageUploadInput` so admins can upload directly while still retaining manual URL entry.
+- Keep image form payload contracts stable by persisting final uploaded values back into the same string URL fields already used by server actions.
 - Add alt text for important images so listings remain accessible and easier to manage later.
 - Keep SEO titles under 70 characters and SEO descriptions under 160 characters. Reuse the strongest shopper-facing language instead of keyword stuffing.
 
 ## Deferred Items
 
-- File uploads, multi-step wizards, and async remote field validation are still intentionally deferred.
+- Non-image file uploads, multi-step wizards, and async remote field validation are still intentionally deferred.
 - Future features should compose the current primitives instead of duplicating layout and state styling.

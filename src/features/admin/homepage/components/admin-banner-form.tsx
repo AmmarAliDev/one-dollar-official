@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { DynamicForm, type DynamicFormFieldConfig, useAppForm, useServerActionSubmit } from "@/components/forms";
 import { Button } from "@/components/ui/button";
+import { AdminImageUploadInput } from "@/features/admin/uploads";
 
 import { adminBannerMutationSchema } from "../validation";
 import { buildDateTimeField, toDateTimeLocalInputValue } from "./form-helpers";
@@ -46,10 +47,26 @@ const bannerFields: DynamicFormFieldConfig<AdminBannerFormValues>[] = [
   {
     id: "banner-image-url",
     name: "imageUrl",
-    type: "text",
-    label: "Image URL",
+    type: "custom",
+    label: "Image",
     placeholder: "https://example.com/banner.jpg",
     required: true,
+    description: "Upload the banner artwork or paste an existing absolute URL.",
+    render: ({ field, fieldState, inputId, describedBy, disabled }) => (
+      <AdminImageUploadInput
+        inputId={inputId}
+        value={typeof field.value === "string" ? field.value : ""}
+        onChange={(nextValue) => {
+          field.onChange(nextValue);
+        }}
+        onBlur={field.onBlur}
+        purpose="banner"
+        placeholder="https://example.com/banner.jpg"
+        describedBy={describedBy}
+        disabled={disabled}
+        invalid={Boolean(fieldState.error)}
+      />
+    ),
   },
   {
     id: "banner-href",
