@@ -26,7 +26,7 @@ export function AdminShell({ children, role, user }: AdminShellProps) {
 
   return (
     <div className="bg-muted/25 min-h-screen">
-      <div className="mx-auto grid min-h-screen max-w-384 lg:grid-cols-[280px_1fr]">
+      <div className="mx-auto grid min-h-screen lg:grid-cols-[280px_1fr]">
         <aside className="border-border/70 bg-card/95 flex flex-col gap-6 border-b p-4 shadow-(--shadow-soft) lg:border-r lg:border-b-0 lg:p-6">
           <div className="space-y-2">
             <Badge variant="info">Admin workspace</Badge>

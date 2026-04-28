@@ -12,7 +12,7 @@ export const metadata = buildMetadata({
 
 export default function AboutPage() {
   return (
-    <PageShell className="max-w-3xl gap-10">
+    <PageShell className="max-w-7xl gap-10">
       {/* Hero */}
       <div className="space-y-3">
         <Badge variant="secondary">Company</Badge>
