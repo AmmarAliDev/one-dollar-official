@@ -119,6 +119,7 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - Admin image uploads currently use a server-side Vercel Blob integration behind `createAdminImageStorageProvider()`. The provider can be replaced later without rewriting form integrations because forms only depend on the shared upload route and final URL contract.
 - `BLOB_READ_WRITE_TOKEN` is the only required secret for the current upload provider. When it is missing, the upload route returns a user-safe configuration message instead of a raw storage error.
 - Homepage fallback preview-only artifacts should be gated by validated runtime env (`env.nodeEnv !== "production"`) so development helpers never leak into production storefront UI.
+- Storefront homepage `featured-categories` is now rendered through the shared shadcn-compatible carousel primitives with responsive card density and empty-state fallback, preserving the existing section registry architecture (`renderHomepageSection` + typed section contracts).
 - `getRequiredServerEnv()` should be used when a future integration needs a non-public secret at runtime.
 - `DATABASE_URL` must be available anywhere Prisma queries or CLI workflows run.
 - Prisma CLI commands are routed through `scripts/prisma-cli.mjs`, which respects local env files, falls back `POSTGRES_URL_NON_POOLING` to `DATABASE_URL` for local use, blocks obvious hosted `migrate dev` mistakes, and validates hosted `migrate deploy` URL safety (pooled vs direct URL separation).
