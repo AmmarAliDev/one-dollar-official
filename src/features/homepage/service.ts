@@ -1,13 +1,25 @@
 import { getBlogPosts, type BlogListingItem } from "@/features/blog";
+import { getCatalogCategoryListing, type CatalogProductCard } from "@/features/catalog";
+import { ONE_DOLLAR_CATEGORY_SLUG } from "@/features/catalog/one-dollar";
 import { routes } from "@/config/routes";
 import { loadHomepageContentForStorefront } from "@/features/admin/homepage/service";
 import { createLogger } from "@/lib/logger";
 
 import { resolveHomepageSections } from "./resolver";
-import type { BlogHighlightItem, BlogHighlightsSection, HomepageContent, HomepageContentResult, HomepageSection } from "./types";
+import type {
+  BlogHighlightItem,
+  BlogHighlightsSection,
+  FeaturedProductItem,
+  HomepageContent,
+  HomepageContentResult,
+  HomepageSection,
+  OneDollarSection,
+} from "./types";
 
 const logger = createLogger("homepage.service");
 const HOMEPAGE_BLOG_HIGHLIGHTS_LIMIT = 3;
+/** Maximum number of One Dollar products shown in the homepage section. */
+const HOMEPAGE_ONE_DOLLAR_PRODUCTS_LIMIT = 6;
 
 function toBlogHighlightItem(post: BlogListingItem): BlogHighlightItem {
   return {
@@ -58,6 +70,66 @@ async function hydrateHomepageBlogHighlights(sections: HomepageSection[]): Promi
   }
 }
 
+function isOneDollarSection(section: HomepageSection): section is OneDollarSection {
+  return section.kind === "one-dollar";
+}
+
+/**
+ * Maps a CatalogProductCard to a FeaturedProductItem for use in the One Dollar
+ * homepage section. Adds a "One Dollar" badge to surface the value proposition.
+ */
+function toOneDollarProductItem(card: CatalogProductCard): FeaturedProductItem {
+  return {
+    id: card.id,
+    name: card.name,
+    ...(card.description ? { description: card.description } : {}),
+    href: card.href,
+    price: card.price,
+    ...(typeof card.compareAt === "number" ? { compareAt: card.compareAt } : {}),
+    badge: "One Dollar",
+  };
+}
+
+/**
+ * Hydrates any `one-dollar` sections in the resolved list with live catalog
+ * products. If the catalog fetch fails, the section renders its empty state
+ * gracefully instead of breaking the page.
+ */
+async function hydrateOneDollarSections(sections: HomepageSection[]): Promise<HomepageSection[]> {
+  const hasOneDollarSection = sections.some(isOneDollarSection);
+
+  if (!hasOneDollarSection) {
+    return sections;
+  }
+
+  try {
+    const listing = await getCatalogCategoryListing({
+      slug: ONE_DOLLAR_CATEGORY_SLUG,
+      searchParams: {
+        sort: "featured",
+        page: "1",
+        pageSize: String(HOMEPAGE_ONE_DOLLAR_PRODUCTS_LIMIT),
+      },
+    });
+
+    const products: FeaturedProductItem[] = listing
+      ? listing.products.slice(0, HOMEPAGE_ONE_DOLLAR_PRODUCTS_LIMIT).map(toOneDollarProductItem)
+      : [];
+
+    return sections.map((section) => {
+      if (!isOneDollarSection(section)) {
+        return section;
+      }
+
+      return { ...section, products };
+    });
+  } catch (error) {
+    logger.error("Failed to hydrate One Dollar homepage section from catalog.", error);
+    // Return sections unchanged so the component renders its placeholder state.
+    return sections;
+  }
+}
+
 export async function fetchHomepageContentFromCms(): Promise<HomepageContent | null> {
   try {
     const content = await loadHomepageContentForStorefront();
@@ -77,7 +149,8 @@ export async function fetchHomepageContentFromCms(): Promise<HomepageContent | n
 export async function getHomepageContent(): Promise<HomepageContentResult> {
   const cmsContent = await fetchHomepageContentFromCms();
   const resolved = resolveHomepageSections(cmsContent?.sections);
-  const hydratedSections = await hydrateHomepageBlogHighlights(resolved.sections);
+  const hydratedWithBlog = await hydrateHomepageBlogHighlights(resolved.sections);
+  const hydratedSections = await hydrateOneDollarSections(hydratedWithBlog);
 
   return {
     ...resolved,

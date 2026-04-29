@@ -6,6 +6,7 @@ import { DealSpotlightSectionBlock } from "./components/deal-spotlight-section";
 import { FeaturedCategoriesSectionBlock } from "./components/featured-categories-section";
 import { FeaturedProductsSectionBlock } from "./components/featured-products-section";
 import { HeroBannerSectionBlock } from "./components/hero-banner-section";
+import { OneDollarSectionBlock } from "./components/one-dollar-section";
 import type {
   AnnouncementBarSection,
   BlogHighlightsSection,
@@ -15,12 +16,14 @@ import type {
   HeroBannerSection,
   HomepageSection,
   HomepageSectionKind,
+  OneDollarSection,
 } from "./types";
 
 type SectionComponentMap = {
   "announcement-bar": ComponentType<{ section: AnnouncementBarSection }>;
   "hero-banner": ComponentType<{ section: HeroBannerSection }>;
   "featured-categories": ComponentType<{ section: FeaturedCategoriesSection }>;
+  "one-dollar": ComponentType<{ section: OneDollarSection }>;
   "featured-products": ComponentType<{ section: FeaturedProductsSection }>;
   "deal-spotlight": ComponentType<{ section: DealSpotlightSection }>;
   "blog-highlights": ComponentType<{ section: BlogHighlightsSection }>;
@@ -30,6 +33,7 @@ export const SECTION_COMPONENTS: SectionComponentMap = {
   "announcement-bar": AnnouncementBarSectionBlock,
   "hero-banner": HeroBannerSectionBlock,
   "featured-categories": FeaturedCategoriesSectionBlock,
+  "one-dollar": OneDollarSectionBlock,
   "featured-products": FeaturedProductsSectionBlock,
   "deal-spotlight": DealSpotlightSectionBlock,
   "blog-highlights": BlogHighlightsSectionBlock,

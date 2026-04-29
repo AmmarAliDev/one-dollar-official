@@ -2,6 +2,8 @@
 
 ## Current Milestone
 
+One Dollar homepage section completed on 2026-04-30 (new `one-dollar` section kind inserted between Featured Categories and Featured Products; products hydrated at runtime from live catalog via `getCatalogCategoryListing`; section renders a graceful empty/placeholder state when no qualifying products exist; `OneDollarSection` type added to the homepage type system; section registered in the render component map, resolver order, admin validation, and admin DB mapper; fallback content seeded with a default `one-dollar` shell; tests updated/added for hydration and graceful failure; docs updated in `homepage-section-contract.md` and `task-status.md`).
+
 One Dollar default category behavior completed on 2026-04-29 (implemented as a virtual/system storefront category rather than a persisted DB category; membership is now derived from published products priced at `<= 280 PKR`; products continue to belong to their original category relations; One Dollar is now consistently available in storefront navigation and category surfaces via the reserved `one-dollar` slug; added listing/menu test coverage for derived inclusion and fallback routing).
 
 Header category navigation dropdown update completed on 2026-04-29 (desktop header now uses a `One Dollar` dropdown menu with deterministic ordering: `One Dollar` first, published categories next, and `All Categories` last; mobile drawer now mirrors the same category ordering pattern in a grouped section; non-fatal category load failures now preserve header rendering with user-safe fallback messaging; added ordering tests in `tests/components/layout/storefront-category-menu.test.ts`).
