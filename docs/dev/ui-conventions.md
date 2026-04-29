@@ -99,6 +99,24 @@
 - Current baseline: auth forms, checkout, admin category/product forms, and query-string filter forms should all follow this shared pattern.
 - Keep form copy short, task-focused, and user-safe. Do not expose raw backend or schema internals in validation messages.
 
+### Form Success Behavior Standard
+
+Choose the correct success strategy based on where the form lives:
+
+| Pattern | When to use | Mechanism |
+|---|---|---|
+| **Server-side redirect** | Form submits to a server action that always navigates away on success (admin CRUD, checkout) | `redirect()` in the action; form unmounts naturally — no `form.reset()` needed |
+| **Success state + unmount** | Form stays on the same page but shows a distinct success UI that replaces the form | Conditional render (e.g., `if (formState === "success") return <SuccessUI />`) — form remounts fresh when the user wants to submit again |
+| **Inline reset** | Form stays mounted after success and should clear for the next submission (e.g., future "add comment" forms) | Pass `resetOnSuccess` prop to `DynamicForm`/`SchemaForm`, or call `form.reset()` in the `onSubmit` callback |
+| **`useActionState` + reset** | Form uses `useActionState` and needs to clear after the action signals success | `useEffect(() => { if (state?.success) form.reset(); }, [state, form])` |
+| **Modal/sheet/drawer close** | Form is inside an overlay that must dismiss on success | Call `onClose()` / `setOpen(false)` inside `useServerActionSubmit`'s `onSuccess` callback, or in the `onSubmit` handler after awaiting the action |
+
+**Rules:**
+- Never leave a successfully-submitted form both mounted and filled — it confuses the user and invites accidental re-submission.
+- Do not call `form.reset()` on error — the user needs to see and correct their input.
+- If a form redirects on success (server action), skip all client-side reset/close logic; the navigation discards the component tree.
+- For modal/sheet/drawer forms that save without redirecting, always close the overlay in the `onSuccess` callback of `useServerActionSubmit` and optionally reset the form.
+
 ## Shared Data Table Conventions
 
 - Use the shared TanStack table system in `src/components/data-table` for all new tabular UIs in admin and storefront-support tooling.

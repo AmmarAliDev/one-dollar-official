@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useTransition } from "react";
+import { useActionState, useEffect, useTransition } from "react";
 
 import { DynamicFormField, useAppForm } from "@/components/forms";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,14 @@ export function ForgotPasswordForm() {
 
   const errors = state?.errors ?? [];
   const successMessage = state?.success ? state.message ?? forgotPasswordSuccessMessage : null;
+
+  // Reset the form fields when the action succeeds so the email input is
+  // cleared and the user cannot accidentally re-submit the same request.
+  useEffect(() => {
+    if (state?.success) {
+      form.reset();
+    }
+  }, [state, form]);
 
   return (
     <form
@@ -79,7 +87,7 @@ export function ForgotPasswordForm() {
         }}
       />
 
-      <Button type="submit" className="w-full" disabled={isPending}>
+      <Button type="submit" className="w-full" disabled={isPending || !!successMessage}>
         {isPending ? <InlineSpinner /> : null}
         {isPending ? "Sending reset link…" : "Send reset link"}
       </Button>

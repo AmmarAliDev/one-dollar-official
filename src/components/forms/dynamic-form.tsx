@@ -28,6 +28,13 @@ export type DynamicFormProps<TFieldValues extends FieldValues> = Omit<
   showErrorSummary?: boolean;
   formErrorTitle?: string;
   fieldsClassName?: string;
+  /**
+   * When true, calls `form.reset()` after `onSubmit` completes without throwing.
+   * Use for inline forms that stay mounted and should clear their values after a
+   * successful save (e.g., an "add comment" form). Do not set this for forms that
+   * navigate away on success — server-side redirects already discard the form.
+   */
+  resetOnSuccess?: boolean;
 };
 
 export function DynamicForm<TFieldValues extends FieldValues>({
@@ -42,6 +49,7 @@ export function DynamicForm<TFieldValues extends FieldValues>({
   formErrorTitle,
   className,
   fieldsClassName,
+  resetOnSuccess = false,
   ...formProps
 }: DynamicFormProps<TFieldValues>) {
   const isSubmitting = form.formState.isSubmitting;
@@ -53,6 +61,9 @@ export function DynamicForm<TFieldValues extends FieldValues>({
       onSubmit={form.handleSubmit(async (values) => {
         try {
           await onSubmit(values);
+          if (resetOnSuccess) {
+            form.reset();
+          }
         } catch (error) {
           unstable_rethrow(error);
 

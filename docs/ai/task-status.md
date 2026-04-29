@@ -2,6 +2,8 @@
 
 ## Current Milestone
 
+Form success behavior audit and fix completed on 2026-04-29 (audited all forms for missing reset/close-on-success; fixed `ForgotPasswordForm` to call `form.reset()` and disable the submit button after a successful dispatch; added `resetOnSuccess` prop to `DynamicForm`/`SchemaForm` for inline forms that stay mounted after success; documented the four-pattern standard in `docs/dev/ui-conventions.md`; added tests covering forgot-password reset, button disable, and `DynamicForm.resetOnSuccess`). All admin forms, checkout, and customer-review intentionally left unchanged — they redirect via server action and do not need client-side reset.
+
 Theme and visual quality pass completed on 2026-04-28 (global light/dark tokens now enforce the requested white/black + `#431b52` palette, shared form/table/dialog/nav surfaces were refined through semantic classes, and smoke tests now include palette/token sanity coverage).
 
 Admin image upload expansion completed on 2026-04-28 (shared upload-enabled image fields now cover product image rows plus existing banner/blog/SEO flows, while preserving existing URL-based payload/data contracts).
