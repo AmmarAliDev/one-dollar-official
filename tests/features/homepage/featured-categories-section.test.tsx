@@ -22,15 +22,28 @@ import {
   FEATURED_CATEGORIES_CAROUSEL_ITEM_CLASS,
   FEATURED_CATEGORIES_CAROUSEL_OPTIONS,
 } from "@/features/homepage/components/featured-categories-carousel-config";
+import {
+  HOMEPAGE_CAROUSEL_ITEM_CLASS,
+  HOMEPAGE_CAROUSEL_MAX_ITEMS,
+  HOMEPAGE_CAROUSEL_OPTIONS,
+} from "@/features/homepage/components/homepage-carousel-config";
 import type { FeaturedCategoriesSection } from "@/features/homepage/types";
 
-function buildSection(categories: FeaturedCategoriesSection["categories"]): FeaturedCategoriesSection {
+function buildCategory(id: string): FeaturedCategoriesSection["categories"][number] {
+  return { id, title: `Category ${id}`, description: `Description ${id}`, href: `/categories/${id}` };
+}
+
+function buildSection(
+  categories: FeaturedCategoriesSection["categories"],
+  overrides?: Partial<FeaturedCategoriesSection>,
+): FeaturedCategoriesSection {
   return {
     id: "featured-categories",
     kind: "featured-categories",
     title: "Featured categories",
     description: "Shop by category",
     categories,
+    ...overrides,
   };
 }
 
@@ -43,18 +56,8 @@ describe("FeaturedCategoriesSectionBlock", () => {
     render(
       <FeaturedCategoriesSectionBlock
         section={buildSection([
-          {
-            id: "cat-1",
-            title: "Home care",
-            description: "Cleaning and essentials",
-            href: "/categories/home-care",
-          },
-          {
-            id: "cat-2",
-            title: "Grocery",
-            description: "Pantry basics",
-            href: "/categories/grocery",
-          },
+          { id: "cat-1", title: "Home care", description: "Cleaning and essentials", href: "/categories/home-care" },
+          { id: "cat-2", title: "Grocery", description: "Pantry basics", href: "/categories/grocery" },
         ])}
       />,
     );
@@ -74,14 +77,75 @@ describe("FeaturedCategoriesSectionBlock", () => {
     expect(screen.getByRole("link", { name: "Browse all categories" })).toBeInTheDocument();
     expect(screen.queryByTestId("carousel")).not.toBeInTheDocument();
   });
+
+  it("caps carousel items at HOMEPAGE_CAROUSEL_MAX_ITEMS when there are more categories", () => {
+    // Build 10 categories — only 8 should appear in the carousel.
+    const categories = Array.from({ length: 10 }, (_, i) => buildCategory(`cat-${i + 1}`));
+    render(<FeaturedCategoriesSectionBlock section={buildSection(categories)} />);
+
+    expect(screen.getAllByTestId("carousel-item")).toHaveLength(HOMEPAGE_CAROUSEL_MAX_ITEMS);
+  });
+
+  it("shows a View All link when categories are capped", () => {
+    const categories = Array.from({ length: 10 }, (_, i) => buildCategory(`cat-${i + 1}`));
+    render(<FeaturedCategoriesSectionBlock section={buildSection(categories)} />);
+
+    expect(screen.getByRole("link", { name: /view all categories/i })).toBeInTheDocument();
+  });
+
+  it("shows a View All link with custom label when viewAllHref is provided", () => {
+    const categories = Array.from({ length: 3 }, (_, i) => buildCategory(`cat-${i + 1}`));
+    render(
+      <FeaturedCategoriesSectionBlock
+        section={buildSection(categories, {
+          viewAllHref: "/categories",
+          viewAllLabel: "Explore all",
+        })}
+      />,
+    );
+
+    const link = screen.getByRole("link", { name: "Explore all" });
+    expect(link).toBeInTheDocument();
+    expect(link).toHaveAttribute("href", "/categories");
+  });
+
+  it("does not show a View All link when categories are within the cap and no explicit viewAllHref", () => {
+    const categories = Array.from({ length: 5 }, (_, i) => buildCategory(`cat-${i + 1}`));
+    render(<FeaturedCategoriesSectionBlock section={buildSection(categories)} />);
+
+    expect(screen.queryByRole("link", { name: /view all/i })).not.toBeInTheDocument();
+  });
+
+  it("applies shared carousel item class to each slide", () => {
+    const categories = Array.from({ length: 2 }, (_, i) => buildCategory(`cat-${i + 1}`));
+    render(<FeaturedCategoriesSectionBlock section={buildSection(categories)} />);
+
+    const items = screen.getAllByTestId("carousel-item");
+    for (const item of items) {
+      expect(item).toHaveClass(HOMEPAGE_CAROUSEL_ITEM_CLASS.split(" ")[0]);
+    }
+  });
 });
 
-describe("featured categories carousel config", () => {
-  it("exposes responsive item width classes and start-aligned behavior", () => {
-    expect(FEATURED_CATEGORIES_CAROUSEL_OPTIONS.align).toBe("start");
-    expect(FEATURED_CATEGORIES_CAROUSEL_ITEM_CLASS).toContain("basis-[85%]");
-    expect(FEATURED_CATEGORIES_CAROUSEL_ITEM_CLASS).toContain("sm:basis-1/2");
-    expect(FEATURED_CATEGORIES_CAROUSEL_ITEM_CLASS).toContain("lg:basis-1/3");
-    expect(FEATURED_CATEGORIES_CAROUSEL_ITEM_CLASS).toContain("xl:basis-1/4");
+describe("homepage carousel config (shared)", () => {
+  it("enforces start alignment and correct responsive basis classes", () => {
+    expect(HOMEPAGE_CAROUSEL_OPTIONS.align).toBe("start");
+    expect(HOMEPAGE_CAROUSEL_ITEM_CLASS).toContain("basis-[85%]");
+    expect(HOMEPAGE_CAROUSEL_ITEM_CLASS).toContain("sm:basis-1/2");
+    expect(HOMEPAGE_CAROUSEL_ITEM_CLASS).toContain("md:basis-1/3");
+    expect(HOMEPAGE_CAROUSEL_ITEM_CLASS).toContain("lg:basis-1/4");
+    expect(HOMEPAGE_CAROUSEL_ITEM_CLASS).toContain("xl:basis-1/5");
+    expect(HOMEPAGE_CAROUSEL_ITEM_CLASS).toContain("2xl:basis-1/6");
+  });
+
+  it("sets max items to 8", () => {
+    expect(HOMEPAGE_CAROUSEL_MAX_ITEMS).toBe(8);
+  });
+});
+
+describe("featured categories carousel config (legacy re-exports)", () => {
+  it("re-exports shared options and item class unchanged", () => {
+    expect(FEATURED_CATEGORIES_CAROUSEL_OPTIONS).toBe(HOMEPAGE_CAROUSEL_OPTIONS);
+    expect(FEATURED_CATEGORIES_CAROUSEL_ITEM_CLASS).toBe(HOMEPAGE_CAROUSEL_ITEM_CLASS);
   });
 });

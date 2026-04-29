@@ -70,6 +70,37 @@ Rendering map is in `src/features/homepage/section-components.tsx`.
 
 Section components are located in `src/features/homepage/components/`.
 
+### Carousel sections
+
+Sections that render categories or products use a standardized carousel pattern.
+Config lives in `src/features/homepage/components/homepage-carousel-config.ts`.
+
+| Constant | Value | Purpose |
+|---|---|---|
+| `HOMEPAGE_CAROUSEL_MAX_ITEMS` | `8` | Hard cap on items shown in the carousel |
+| `HOMEPAGE_CAROUSEL_ITEM_CLASS` | responsive basis classes | 1–6 visible cards across breakpoints |
+| `HOMEPAGE_CAROUSEL_OPTIONS` | `{ align: "start" }` | Shared Embla options |
+
+**View All button logic**
+
+- Shown automatically when `items.length > HOMEPAGE_CAROUSEL_MAX_ITEMS`.
+- Shown when the section payload supplies an explicit `viewAllHref`.
+- For `one-dollar` sections the CTA is always shown (links to the live One Dollar catalog).
+- Hidden when items fit within the cap and no explicit link is configured.
+
+**Navigation button behavior**
+
+- Hidden on mobile (`hidden sm:flex`); swipe is the primary gesture.
+- Hidden when scroll is not possible (`disabled:hidden` Tailwind class on `CarouselPrevious` / `CarouselNext`).
+
+**Sections currently using the carousel**
+
+| Section kind | Component | View All source |
+|---|---|---|
+| `featured-categories` | `FeaturedCategoriesSectionBlock` | `viewAllHref` prop or `routes.storefront.categories` |
+| `featured-products` | `FeaturedProductsSectionBlock` | `viewAllHref` prop (optional) |
+| `one-dollar` | `OneDollarSectionBlock` | `section.ctaHref` (always shown) |
+
 ## Service Layer
 
 `src/features/homepage/service.ts` now resolves admin-managed content through the homepage admin module.
