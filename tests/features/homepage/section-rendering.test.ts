@@ -16,6 +16,7 @@ describe("homepage section rendering", () => {
     expect(result.sections.map((section) => section.kind)).toEqual([
       "hero-banner",
       "featured-categories",
+      "one-dollar",
       "featured-products",
       "deal-spotlight",
       "blog-highlights",

@@ -3,7 +3,7 @@ import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
 import { routes } from "@/config/routes";
 import { HOMEPAGE_FALLBACK_SECTIONS } from "@/features/homepage/fallback-content";
-import type { AnnouncementBarSection, DealSpotlightSection, HomepageContent, HomepageSection } from "@/features/homepage/types";
+import type { AnnouncementBarSection, DealSpotlightSection, HomepageContent, HomepageSection, OneDollarSection } from "@/features/homepage/types";
 import { logAdminAction } from "@/lib/audit/admin-actions";
 import { AppError } from "@/lib/errors/app-error";
 import { createLogger } from "@/lib/logger";
@@ -364,6 +364,14 @@ export async function seedAdminHomepageSections({ actor }: { actor: AuditActorIn
               message: section.message,
               href: section.href,
               label: section.label,
+            };
+          case "one-dollar":
+            // Products are hydrated at runtime — only persist CMS-configurable shell fields.
+            return {
+              description: section.description,
+              ctaLabel: section.ctaLabel,
+              ctaHref: section.ctaHref,
+              placeholderMessage: section.placeholderMessage,
             };
           default:
             return {};
@@ -776,6 +784,26 @@ function mapSectionRecordToStorefrontSection(record: HomePageSectionRow, referen
         placeholderMessage: content.placeholderMessage,
         articles: content.articles,
       };
+    }
+    case "one-dollar": {
+      // Products are never stored in CMS — they are hydrated at runtime from
+      // the live catalog by hydrateOneDollarSections() in the homepage service.
+      const content = parsed.data.content as {
+        description?: string;
+        ctaLabel: string;
+        ctaHref: string;
+        placeholderMessage: string;
+      };
+      return {
+        ...base,
+        kind: "one-dollar",
+        title: parsed.data.title,
+        ...(content.description ? { description: content.description } : {}),
+        products: [],
+        ctaLabel: content.ctaLabel,
+        ctaHref: content.ctaHref,
+        placeholderMessage: content.placeholderMessage,
+      } satisfies OneDollarSection;
     }
     default:
       return null;

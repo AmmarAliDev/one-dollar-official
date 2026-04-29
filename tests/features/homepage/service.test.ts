@@ -13,6 +13,7 @@ const prismaMock = vi.hoisted(() => ({
 }));
 
 const mockGetBlogPosts = vi.hoisted(() => vi.fn());
+const mockGetCatalogCategoryListing = vi.hoisted(() => vi.fn());
 
 vi.mock("@/server/db", () => ({
   getPrismaClient: () => prismaMock,
@@ -20,6 +21,10 @@ vi.mock("@/server/db", () => ({
 
 vi.mock("@/features/blog", () => ({
   getBlogPosts: (...args: unknown[]) => mockGetBlogPosts(...args),
+}));
+
+vi.mock("@/features/catalog", () => ({
+  getCatalogCategoryListing: (...args: unknown[]) => mockGetCatalogCategoryListing(...args),
 }));
 
 import { getHomepageContent } from "@/features/homepage";
@@ -30,6 +35,8 @@ describe("homepage CMS service", () => {
     prismaMock.banner.findMany.mockResolvedValue([]);
     prismaMock.dealCampaign.findMany.mockResolvedValue([]);
     mockGetBlogPosts.mockResolvedValue([]);
+    // Default: catalog returns an empty listing so One Dollar section gets hydrated with []
+    mockGetCatalogCategoryListing.mockResolvedValue({ products: [], totalItems: 0 });
   });
 
   it("reflects valid admin homepage content on the storefront contract", async () => {
@@ -153,6 +160,99 @@ describe("homepage CMS service", () => {
     expect(blogSection).toMatchObject({
       kind: "blog-highlights",
       articles: [],
+    });
+  });
+
+  it("hydrates One Dollar section with live catalog products", async () => {
+    prismaMock.homePageSection.findMany.mockResolvedValue([
+      {
+        id: "section-one-dollar",
+        key: "one-dollar-deals",
+        title: "One Dollar deals",
+        type: "one-dollar",
+        content: {
+          description: "Best value picks",
+          ctaLabel: "View all One Dollar deals",
+          ctaHref: "/categories/one-dollar",
+          placeholderMessage: "No One Dollar products right now.",
+        },
+        meta: { enabled: true },
+        position: 25,
+        active: true,
+        createdAt: new Date("2026-04-28T08:00:00.000Z"),
+        updatedAt: new Date("2026-04-28T08:00:00.000Z"),
+      },
+    ]);
+
+    mockGetCatalogCategoryListing.mockResolvedValue({
+      products: [
+        {
+          id: "prod-1",
+          slug: "cheap-soap",
+          name: "Cheap Soap",
+          description: "Daily soap bar",
+          categorySlug: "personal-care",
+          price: 250,
+          compareAt: 350,
+          inventoryQuantity: 10,
+          averageRating: 4.5,
+          reviewCount: 12,
+          imageLabel: "Cheap Soap",
+          imageTone: "rose",
+          attributeSummary: [],
+          href: "/categories/personal-care/cheap-soap",
+        },
+      ],
+      totalItems: 1,
+    });
+
+    const result = await getHomepageContent();
+    const oneDollarSection = result.sections.find((section) => section.kind === "one-dollar");
+
+    expect(oneDollarSection).toMatchObject({
+      kind: "one-dollar",
+      title: "One Dollar deals",
+      products: [
+        {
+          id: "prod-1",
+          name: "Cheap Soap",
+          price: 250,
+          compareAt: 350,
+          badge: "One Dollar",
+        },
+      ],
+    });
+  });
+
+  it("renders One Dollar section empty state gracefully when catalog fetch fails", async () => {
+    prismaMock.homePageSection.findMany.mockResolvedValue([
+      {
+        id: "section-one-dollar",
+        key: "one-dollar-deals",
+        title: "One Dollar deals",
+        type: "one-dollar",
+        content: {
+          ctaLabel: "View all",
+          ctaHref: "/categories/one-dollar",
+          placeholderMessage: "No products right now.",
+        },
+        meta: { enabled: true },
+        position: 25,
+        active: true,
+        createdAt: new Date("2026-04-28T08:00:00.000Z"),
+        updatedAt: new Date("2026-04-28T08:00:00.000Z"),
+      },
+    ]);
+
+    mockGetCatalogCategoryListing.mockRejectedValue(new Error("Catalog DB unavailable"));
+
+    const result = await getHomepageContent();
+    const oneDollarSection = result.sections.find((section) => section.kind === "one-dollar");
+
+    // Section must still be present; products array will be empty (not hydrated)
+    expect(oneDollarSection).toMatchObject({
+      kind: "one-dollar",
+      products: [],
     });
   });
 });

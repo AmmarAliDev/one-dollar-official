@@ -1,5 +1,6 @@
 import { env, type RuntimeEnv } from "@/config/env";
 import { routes } from "@/config/routes";
+import { ONE_DOLLAR_CATEGORY_SLUG, ONE_DOLLAR_MAX_PRICE_PKR } from "@/features/catalog/one-dollar";
 
 import type { HomepageSection } from "./types";
 
@@ -49,6 +50,20 @@ export function buildHomepageFallbackSections(runtimeEnv: RuntimeEnv = env): Hom
           href: routes.storefront.category("personal-care"),
         },
       ],
+    },
+    {
+      // One Dollar section: products are hydrated at runtime from the catalog.
+      // This fallback defines the section shell; real products are injected by
+      // hydrateOneDollarSection() in the homepage service.
+      id: "fallback-one-dollar",
+      kind: "one-dollar",
+      title: "One Dollar deals",
+      description: `Products priced at PKR ${ONE_DOLLAR_MAX_PRICE_PKR} or less — the best value picks across all categories.`,
+      displayOrder: 25,
+      products: [],
+      ctaLabel: "View all One Dollar deals",
+      ctaHref: routes.storefront.category(ONE_DOLLAR_CATEGORY_SLUG),
+      placeholderMessage: "No One Dollar products are available right now. Check back soon for fresh picks.",
     },
     {
       id: "fallback-featured-products",

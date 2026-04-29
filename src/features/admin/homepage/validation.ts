@@ -8,6 +8,7 @@ export const adminHomepageSectionKindValues = [
   "announcement-bar",
   "hero-banner",
   "featured-categories",
+  "one-dollar",
   "featured-products",
   "deal-spotlight",
   "blog-highlights",
@@ -249,10 +250,35 @@ const blogHighlightsContentSchema = z.object({
   articles: z.array(blogHighlightSchema).default([]),
 });
 
+/**
+ * One Dollar section — admin configures the shell (title, description, CTA
+ * text and link, placeholder message). Products are never stored in CMS; they
+ * are auto-hydrated from the live catalog at render time.
+ */
+const oneDollarContentSchema = z.object({
+  description: optionalText,
+  ctaLabel: z.string().trim().min(1, "CTA label is required.").max(80, "CTA label is too long.").default("View all One Dollar deals"),
+  ctaHref: z
+    .string()
+    .trim()
+    .min(1, "CTA link is required.")
+    .refine((value) => isValidHref(value), {
+      message: "Please enter a valid relative path or URL for the CTA.",
+    })
+    .default("/categories/one-dollar"),
+  placeholderMessage: z
+    .string()
+    .trim()
+    .min(2, "Placeholder message is required.")
+    .max(240, "Placeholder message is too long.")
+    .default("No One Dollar products are available right now. Check back soon."),
+});
+
 const homepageSectionContentSchemas = {
   "announcement-bar": announcementBarContentSchema,
   "hero-banner": heroBannerContentSchema,
   "featured-categories": featuredCategoriesContentSchema,
+  "one-dollar": oneDollarContentSchema,
   "featured-products": featuredProductsContentSchema,
   "deal-spotlight": dealSpotlightContentSchema,
   "blog-highlights": blogHighlightsContentSchema,
@@ -378,6 +404,12 @@ const homepageSectionContentTemplates: Record<AdminHomepageSectionType, Record<s
   "featured-categories": {
     description: "Highlight key shopping categories.",
     categories: [],
+  },
+  "one-dollar": {
+    description: "Products priced at PKR 280 or less. Products are auto-loaded from the catalog.",
+    ctaLabel: "View all One Dollar deals",
+    ctaHref: "/categories/one-dollar",
+    placeholderMessage: "No One Dollar products are available right now. Check back soon.",
   },
   "featured-products": {
     description: "Feature products or hero SKUs.",
