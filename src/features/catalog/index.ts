@@ -14,6 +14,13 @@ export { ProductRelatedGrid } from "./components/product-related-grid";
 export { ProductReviews } from "./components/product-reviews";
 export { ProductSpecifications } from "./components/product-specifications";
 export { buildCategoryListingHref, parseCatalogSearchParams } from "./filters";
+export {
+  createOneDollarVirtualCategory,
+  isOneDollarCategorySlug,
+  ONE_DOLLAR_CATEGORY_LABEL,
+  ONE_DOLLAR_CATEGORY_SLUG,
+  ONE_DOLLAR_MAX_PRICE_PKR,
+} from "./one-dollar";
 export { getCatalogCategories, getCatalogCategory, getCatalogCategoryListing, getCatalogCategorySlugs, getProductBySlug, getProductSlugsWithCategory, getRelatedProducts, searchCatalogProducts } from "./service";
 export type { CatalogCategory, CatalogCategoryListing, CatalogListingFilters, CatalogProductCard, CatalogProductDetail, CatalogSearchResponse, ProductImage, ProductReview, ProductReviewSummary, ProductSpec, ProductVariantGroup, ProductVariantOption } from "./types";
 export {

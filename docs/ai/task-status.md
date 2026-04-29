@@ -2,6 +2,8 @@
 
 ## Current Milestone
 
+One Dollar default category behavior completed on 2026-04-29 (implemented as a virtual/system storefront category rather than a persisted DB category; membership is now derived from published products priced at `<= 280 PKR`; products continue to belong to their original category relations; One Dollar is now consistently available in storefront navigation and category surfaces via the reserved `one-dollar` slug; added listing/menu test coverage for derived inclusion and fallback routing).
+
 Header category navigation dropdown update completed on 2026-04-29 (desktop header now uses a `One Dollar` dropdown menu with deterministic ordering: `One Dollar` first, published categories next, and `All Categories` last; mobile drawer now mirrors the same category ordering pattern in a grouped section; non-fatal category load failures now preserve header rendering with user-safe fallback messaging; added ordering tests in `tests/components/layout/storefront-category-menu.test.ts`).
 
 Form success behavior audit and fix completed on 2026-04-29 (audited all forms for missing reset/close-on-success; fixed `ForgotPasswordForm` to call `form.reset()` and disable the submit button after a successful dispatch; added `resetOnSuccess` prop to `DynamicForm`/`SchemaForm` for inline forms that stay mounted after success; documented the four-pattern standard in `docs/dev/ui-conventions.md`; added tests covering forgot-password reset, button disable, and `DynamicForm.resetOnSuccess`). All admin forms, checkout, and customer-review intentionally left unchanged — they redirect via server action and do not need client-side reset.

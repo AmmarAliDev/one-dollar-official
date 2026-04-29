@@ -148,7 +148,7 @@ export async function AppHeader() {
               className="text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring inline-flex items-center gap-1 rounded-full px-3 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2"
               aria-label="One Dollar category navigation"
             >
-              One Dollar
+              Categories
               <ChevronDown className="size-4" aria-hidden="true" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="center" className="w-56" sideOffset={8}>

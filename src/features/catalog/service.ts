@@ -33,12 +33,19 @@ import {
   getPublishedCategoryBySlug,
   getPublishedProductBySlug as dbGetPublishedProductBySlug,
   getRelatedPublishedProducts,
+  listAllPublishedProducts,
   listPublishedProductsByIds,
   listPublishedCategories,
   listPublishedProductsByCategory,
 } from "@/server/db/catalog-queries";
 import type { CatalogSearchParams } from "./filters";
 import { parseCatalogSearchParams } from "./filters";
+import {
+  createOneDollarVirtualCategory,
+  isOneDollarCategorySlug,
+  ONE_DOLLAR_CATEGORY_SLUG,
+  ONE_DOLLAR_MAX_PRICE_PKR,
+} from "./one-dollar";
 import { getCatalogSearchAdapter } from "./search-adapter";
 import type {
   CatalogCategory,
@@ -343,6 +350,10 @@ function mapCategoryRecord(record: StorefrontCategoryRecord): CatalogCategory {
   };
 }
 
+function isOneDollarEligibleProduct(product: Pick<CatalogProductCard, "price">): boolean {
+  return product.price <= ONE_DOLLAR_MAX_PRICE_PKR;
+}
+
 // ---------------------------------------------------------------------------
 // Filter / sort helpers
 // ---------------------------------------------------------------------------
@@ -506,8 +517,30 @@ function buildReviewData(
  * Empty array if no categories have been published yet.
  */
 export async function getCatalogCategories(): Promise<CatalogCategory[]> {
-  const records = await listPublishedCategories();
-  return records.map(mapCategoryRecord);
+  const [categoryRecords, productRecords] = await Promise.all([
+    listPublishedCategories(),
+    listAllPublishedProducts(),
+  ]);
+
+  const hasReservedSlugCollision = categoryRecords.some((record) =>
+    isOneDollarCategorySlug(record.slug),
+  );
+
+  if (hasReservedSlugCollision) {
+    catalogServiceLogger.warn("reserved One Dollar slug found in published categories", {
+      code: "CATALOG_RESERVED_ONE_DOLLAR_SLUG_COLLISION",
+    });
+  }
+
+  const oneDollarProductCount = productRecords
+    .map(mapProductToCard)
+    .filter(isOneDollarEligibleProduct).length;
+
+  const categories = categoryRecords
+    .filter((record) => !isOneDollarCategorySlug(record.slug))
+    .map(mapCategoryRecord);
+
+  return [createOneDollarVirtualCategory(oneDollarProductCount), ...categories];
 }
 
 /**
@@ -516,6 +549,15 @@ export async function getCatalogCategories(): Promise<CatalogCategory[]> {
 export async function getCatalogCategory(
   slug: string,
 ): Promise<CatalogCategory | null> {
+  if (isOneDollarCategorySlug(slug)) {
+    const records = await listAllPublishedProducts();
+    const oneDollarProductCount = records
+      .map(mapProductToCard)
+      .filter(isOneDollarEligibleProduct).length;
+
+    return createOneDollarVirtualCategory(oneDollarProductCount);
+  }
+
   const record = await getPublishedCategoryBySlug(slug);
   return record ? mapCategoryRecord(record) : null;
 }
@@ -526,7 +568,12 @@ export async function getCatalogCategory(
  */
 export async function getCatalogCategorySlugs(): Promise<string[]> {
   const records = await listPublishedCategories();
-  return records.map((r) => r.slug);
+
+  const categorySlugs = records
+    .map((record) => record.slug)
+    .filter((slug) => !isOneDollarCategorySlug(slug));
+
+  return [ONE_DOLLAR_CATEGORY_SLUG, ...categorySlugs];
 }
 
 /**
@@ -539,6 +586,34 @@ export async function getCatalogCategoryListing({
   slug,
   searchParams,
 }: CategoryListingInput): Promise<CatalogCategoryListing | null> {
+  if (isOneDollarCategorySlug(slug)) {
+    const filters = parseCatalogSearchParams(searchParams);
+    const allCards = (await listAllPublishedProducts()).map(mapProductToCard);
+    const oneDollarCards = allCards.filter(isOneDollarEligibleProduct);
+    const filteredCards = sortProducts(applyFilters(oneDollarCards, filters), filters.sort);
+
+    const paginatedResult = createPaginatedResult({
+      items: filteredCards.slice(
+        (filters.page - 1) * filters.pageSize,
+        filters.page * filters.pageSize,
+      ),
+      totalItems: filteredCards.length,
+      pagination: {
+        page: filters.page,
+        pageSize: filters.pageSize,
+      },
+    });
+
+    return {
+      category: createOneDollarVirtualCategory(oneDollarCards.length),
+      products: paginatedResult.items,
+      filteredProductCount: filteredCards.length,
+      totalProductCount: oneDollarCards.length,
+      filters,
+      pagination: paginatedResult.meta,
+    };
+  }
+
   const [categoryRecord, productRecords] = await Promise.all([
     getPublishedCategoryBySlug(slug),
     listPublishedProductsByCategory(slug),
