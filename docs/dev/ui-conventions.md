@@ -41,6 +41,13 @@
 - Error summaries and page fallbacks should keep `role="alert"` / `aria-live` semantics so assistive tech announces important failures clearly.
 - Prefer server components by default; only use client components for interactivity like theme switching, toast triggers, and confirmation dialogs.
 
+## Mobile Interaction Guardrails
+
+- Keep root viewport standards-compliant through a typed `viewport` export from `src/app/layout.tsx` via shared config in `src/config/viewport.ts`.
+- Do not disable pinch zoom globally (`maximumScale=1`, `userScalable=false`) unless there is a strict legal/device requirement; prefer accessibility-safe defaults.
+- Shared text entry controls (`Input`, `Textarea`) should keep mobile-safe readable sizing (`text-base`) to avoid iOS focus zoom, while preserving desktop density with responsive classes (`md:text-sm`).
+- For app-shell navigation on mobile, prefer larger touch targets over denser rows (for example, sidebar inputs/menu controls should be at least 40px high on mobile where practical).
+
 ## Storefront Navigation (Prompt 3.1)
 
 - `AppHeader` now provides required storefront actions: logo, search trigger placeholder, account, wishlist, and cart links.
@@ -76,6 +83,9 @@
 	- Loading: `LoadingState` + `TableSkeleton` where tabular data is expected
 	- Error: `PageErrorFallback` for route-level failures and `SectionErrorState` for module-level failures
 - Keep admin actions discoverable in the top-right area (theme toggle, storefront shortcut, user menu) and avoid hidden critical controls.
+- Use the shared shadcn-style sidebar primitives in `src/components/ui/sidebar.tsx` (`SidebarProvider`, `Sidebar`, `SidebarInset`, `SidebarTrigger`) for app-level admin navigation shells. This keeps desktop collapse and mobile drawer behavior consistent across future admin modules.
+- Keep role-aware rendering in feature-level nav modules (for example `getVisibleAdminNavigation`) and pass only visible links into sidebar UI components.
+- If a role resolves to zero sidebar links, render a user-friendly empty sidebar status instead of a blank panel.
 
 ## Form System Conventions
 

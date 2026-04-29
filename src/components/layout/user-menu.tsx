@@ -24,7 +24,6 @@ const UserMenu = ({ isSignedIn, isAdmin }: { isSignedIn: boolean; isAdmin: boole
       <DropdownMenuTrigger asChild>
         <button type="button" className={buttonVariants({ variant: "outline", size: "sm" })}>
           <User className="size-4" aria-hidden="true" />
-          Profile
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="flex min-w-40 flex-col gap-1 bg-card">
