@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Layers } from "lucide-react";
+import { ArrowRight, Layers } from "lucide-react";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -36,21 +36,27 @@ export function FeaturedCategoriesSectionBlock({ section }: FeaturedCategoriesSe
           <CarouselContent>
             {section.categories.map((category) => (
               <CarouselItem key={category.id} className={FEATURED_CATEGORIES_CAROUSEL_ITEM_CLASS}>
-                <Card className="h-full">
-                  <CardHeader>
-                    <CardTitle>{category.title}</CardTitle>
-                    <CardDescription>{category.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Link
-                      href={category.href}
-                      className="text-primary text-sm font-medium hover:underline"
-                      aria-label={`Browse ${category.title} category`}
-                    >
-                      Browse category
-                    </Link>
-                  </CardContent>
-                </Card>
+                <Link
+                  href={category.href}
+                  className="group focus-visible:ring-ring block h-full rounded-lg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                  aria-label={`Browse ${category.title} category`}
+                >
+                  <Card className="h-full transition-transform duration-200 group-hover:-translate-y-0.5">
+                    <CardHeader>
+                      <CardTitle>{category.title}</CardTitle>
+                      <CardDescription>{category.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <span className="text-primary inline-flex items-center gap-1 text-sm font-medium">
+                        <span className="transition-[text-decoration-color] group-hover:underline">Browse category</span>
+                        <ArrowRight
+                          className="size-4 transition-transform group-hover:translate-x-1"
+                          aria-hidden="true"
+                        />
+                      </span>
+                    </CardContent>
+                  </Card>
+                </Link>
               </CarouselItem>
             ))}
           </CarouselContent>

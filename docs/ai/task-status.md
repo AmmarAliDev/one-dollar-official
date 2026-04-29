@@ -2,6 +2,8 @@
 
 ## Current Milestone
 
+Storefront category card clickability improvement completed on 2026-04-30 (homepage featured category cards now use full-card `Link` wrappers so the whole card is keyboard and pointer clickable; card-level focus-visible rings are preserved; nested interactive semantics were avoided by removing inline nested link-only CTA behavior; targeted homepage section tests were updated to assert title-to-link containment and expected href mapping).
+
 One Dollar homepage section completed on 2026-04-30 (new `one-dollar` section kind inserted between Featured Categories and Featured Products; products hydrated at runtime from live catalog via `getCatalogCategoryListing`; section renders a graceful empty/placeholder state when no qualifying products exist; `OneDollarSection` type added to the homepage type system; section registered in the render component map, resolver order, admin validation, and admin DB mapper; fallback content seeded with a default `one-dollar` shell; tests updated/added for hydration and graceful failure; docs updated in `homepage-section-contract.md` and `task-status.md`).
 
 One Dollar default category behavior completed on 2026-04-29 (implemented as a virtual/system storefront category rather than a persisted DB category; membership is now derived from published products priced at `<= 280 PKR`; products continue to belong to their original category relations; One Dollar is now consistently available in storefront navigation and category surfaces via the reserved `one-dollar` slug; added listing/menu test coverage for derived inclusion and fallback routing).
