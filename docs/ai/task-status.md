@@ -14,6 +14,10 @@ Homepage featured categories carousel update completed on 2026-04-28 (section no
 
 Cart session separation hardening completed on 2026-04-28 (guest vs authenticated context isolation, explicit merge guardrails, sign-out context reset).
 
+Admin sidebar standardization completed on 2026-04-28 (custom admin sidebar shell migrated to shared shadcn-style sidebar primitives with consistent desktop collapse + mobile drawer behavior, while preserving existing permission-aware navigation filtering and routes).
+
+Scope note for this slice: storefront category filter side panels remain unchanged because they are feature-level content filters (not app-shell navigation); migration focused on app-level admin navigation sidebars only.
+
 Related products reliability pass completed on 2026-04-28 (explicit admin-curated handling hardened, same-category fallback behavior stabilized, self-exclusion enforced by slug/id, and PDP related-section empty-state made explicit when no valid recommendations exist).
 
 ## Purpose of this File

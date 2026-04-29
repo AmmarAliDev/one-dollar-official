@@ -48,32 +48,24 @@ export function StorefrontMobileNav({
           className="border-border/80 bg-card/98 absolute inset-x-0 top-full z-50 border-b px-4 py-4 shadow-(--shadow-soft) backdrop-blur"
         >
           <div className="mx-auto flex w-full max-w-(--container-width) flex-col gap-4">
-            <div className={cn("grid gap-2 place-items-center", isSignedIn ? "grid-cols-5" : "grid-cols-4")}>
+            <div className={cn("grid gap-2 place-items-center", isSignedIn ? "grid-cols-4" : "grid-cols-3")}>
               <ThemeToggle />
               <Link
                 href={wishlistHref}
                 className={buttonVariants({ variant: "outline", size: "icon" })}
                 onClick={() => setIsOpen(false)}
+                aria-label="Wishlist"
               >
                 <Heart className="size-4" aria-hidden="true" />
               </Link>
               <Link
-                href={cartHref}
-                className={buttonVariants({ variant: "outline", size: "icon" })}
-                onClick={() => setIsOpen(false)}
-              >
-                <ShoppingCart className="size-4" aria-hidden="true" />
-              </Link>
-
-              
-              <Link
                 href={accountHref}
                 className={buttonVariants({ variant: "outline", size: "icon" })}
                 onClick={() => setIsOpen(false)}
+                aria-label="Account"
               >
                 <User className="size-4" aria-hidden="true" />
               </Link>
-
               {isSignedIn && (
                 <SignOutButton
                   variant="outline"
@@ -82,7 +74,6 @@ export function StorefrontMobileNav({
                   formClassName="w-max"
                   fullWidth
                   showText={false}
-                  // className="text-destructive"
                   onBeforeSubmit={() => setIsOpen(false)}
                 />
               )}
@@ -104,6 +95,14 @@ export function StorefrontMobileNav({
 
 
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-4 w-full"
+            onClick={() => setIsOpen(false)}
+          >
+            Close menu
+          </Button>
         </div>
       ) : null}
     </div>

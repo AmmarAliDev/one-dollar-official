@@ -10,7 +10,7 @@ export const metadata = buildMetadata({
 
 export default function ContactPage() {
   return (
-    <PageShell className=" py-12 px-4">
+    <PageShell className="py-12 px-4">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
           <h1 className="text-3xl font-bold tracking-tight mb-4">Contact Us</h1>

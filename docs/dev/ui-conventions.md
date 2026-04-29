@@ -76,6 +76,9 @@
 	- Loading: `LoadingState` + `TableSkeleton` where tabular data is expected
 	- Error: `PageErrorFallback` for route-level failures and `SectionErrorState` for module-level failures
 - Keep admin actions discoverable in the top-right area (theme toggle, storefront shortcut, user menu) and avoid hidden critical controls.
+- Use the shared shadcn-style sidebar primitives in `src/components/ui/sidebar.tsx` (`SidebarProvider`, `Sidebar`, `SidebarInset`, `SidebarTrigger`) for app-level admin navigation shells. This keeps desktop collapse and mobile drawer behavior consistent across future admin modules.
+- Keep role-aware rendering in feature-level nav modules (for example `getVisibleAdminNavigation`) and pass only visible links into sidebar UI components.
+- If a role resolves to zero sidebar links, render a user-friendly empty sidebar status instead of a blank panel.
 
 ## Form System Conventions
 

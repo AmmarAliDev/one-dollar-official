@@ -46,12 +46,14 @@ export async function AppHeader() {
             <Link
               href={routes.storefront.search}
               className={buttonVariants({ variant: "outline", size: "icon" })}
+              aria-label="Search"
             >
               <Search className="size-4" aria-hidden="true" />
             </Link>
             <Link
               href={routes.storefront.cart}
-              className={buttonVariants({ variant: "outline", size: "icon", className: "md:hidden " })}
+              className={buttonVariants({ variant: "outline", size: "icon" })}
+              aria-label="Shopping cart"
             >
               <ShoppingCart className="size-4" aria-hidden="true" />
             </Link>
@@ -76,6 +78,7 @@ export async function AppHeader() {
             <Link
               href={routes.storefront.wishlist}
               className={buttonVariants({ variant: "outline", size: "sm" })}
+              aria-label="Wishlist"
             >
               <Heart className="size-4" aria-hidden="true" />
               Wishlist
