@@ -31,7 +31,7 @@ export function AdminSidebarNav({ items }: AdminSidebarNavProps) {
 
           return (
             <SidebarMenuItem key={item.href} >
-              <SidebarMenuButton asChild className="h-full">
+              <SidebarMenuButton asChild className="h-full!">
                 <Link
                   href={item.href}
                   aria-current={isActive ? "page" : undefined}

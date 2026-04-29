@@ -41,6 +41,13 @@
 - Error summaries and page fallbacks should keep `role="alert"` / `aria-live` semantics so assistive tech announces important failures clearly.
 - Prefer server components by default; only use client components for interactivity like theme switching, toast triggers, and confirmation dialogs.
 
+## Mobile Interaction Guardrails
+
+- Keep root viewport standards-compliant through a typed `viewport` export from `src/app/layout.tsx` via shared config in `src/config/viewport.ts`.
+- Do not disable pinch zoom globally (`maximumScale=1`, `userScalable=false`) unless there is a strict legal/device requirement; prefer accessibility-safe defaults.
+- Shared text entry controls (`Input`, `Textarea`) should keep mobile-safe readable sizing (`text-base`) to avoid iOS focus zoom, while preserving desktop density with responsive classes (`md:text-sm`).
+- For app-shell navigation on mobile, prefer larger touch targets over denser rows (for example, sidebar inputs/menu controls should be at least 40px high on mobile where practical).
+
 ## Storefront Navigation (Prompt 3.1)
 
 - `AppHeader` now provides required storefront actions: logo, search trigger placeholder, account, wishlist, and cart links.

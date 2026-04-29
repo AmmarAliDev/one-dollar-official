@@ -5,6 +5,7 @@ import { getRequiredServerEnv, loadRuntimeEnv } from "../../src/config/env";
 import { featureFlags } from "../../src/config/feature-flags";
 import { buildMetadata } from "../../src/config/metadata";
 import { routes } from "../../src/config/routes";
+import { appViewport } from "../../src/config/viewport";
 
 describe("architecture scaffold", () => {
   it("builds consistent metadata for top-level pages", () => {
@@ -27,6 +28,14 @@ describe("architecture scaffold", () => {
 });
 
 describe("engineering quality config", () => {
+  it("keeps a standards-compliant base viewport without disabling zoom", () => {
+    expect(appViewport.width).toBe("device-width");
+    expect(appViewport.initialScale).toBe(1);
+    expect(appViewport.interactiveWidget).toBe("resizes-visual");
+    expect(appViewport.maximumScale).toBeUndefined();
+    expect(appViewport.userScalable).toBeUndefined();
+  });
+
   it("loads safe shared config from a validated env snapshot", () => {
     const config = loadAppConfig({
       NODE_ENV: "test",

@@ -1,8 +1,6 @@
 import { cn } from "@/lib/utils";
 
-type SkeletonProps = {
-  className?: string;
-};
+type SkeletonProps = React.HTMLAttributes<HTMLDivElement>;
 
 type CardSkeletonProps = SkeletonProps & {
   lines?: number;
@@ -18,8 +16,8 @@ type TableSkeletonProps = SkeletonProps & {
   columns?: number;
 };
 
-export function Skeleton({ className }: SkeletonProps) {
-  return <div aria-hidden="true" className={cn("bg-muted animate-pulse rounded-md", className)} />;
+export function Skeleton({ className, ...props }: SkeletonProps) {
+  return <div aria-hidden="true" className={cn("bg-muted animate-pulse rounded-md", className)} {...props} />;
 }
 
 export function CardSkeleton({ className, lines = 4, showImage = false }: CardSkeletonProps) {
