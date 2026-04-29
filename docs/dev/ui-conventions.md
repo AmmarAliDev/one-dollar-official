@@ -52,6 +52,9 @@
 
 - `AppHeader` now provides required storefront actions: logo, search trigger placeholder, account, wishlist, and cart links.
 - Desktop and mobile navigation share the same `siteConfig.storefrontNav` source to avoid duplicated link logic.
+- Header category navigation now uses a dedicated `One Dollar` dropdown pattern instead of a flat `Categories` top-level link.
+- Category dropdown ordering is deterministic and must remain: `One Dollar` first, published categories in alphabetical order next, and `All Categories` last.
+- Desktop uses an accessible dropdown menu (`DropdownMenuTrigger` + keyboard navigation), while mobile keeps category links grouped inside the drawer for touch-first navigation.
 - Mobile navigation behavior lives in `src/components/layout/storefront-mobile-nav.tsx` and must keep `aria-expanded`, `aria-controls`, and a labeled toggle button.
 - `AppFooter` now has three sections: company links, policy links, and a newsletter placeholder block.
 - Static storefront placeholders live under `src/app/(storefront)` for `/about`, `/contact`, `/privacy`, `/terms`, `/shipping-policy`, and `/return-policy`.

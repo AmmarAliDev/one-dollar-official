@@ -1,21 +1,56 @@
-import { Heart, Search, ShoppingCart, Store } from "lucide-react";
+import { ChevronDown, Heart, Search, ShoppingCart, Store } from "lucide-react";
 import Link from "next/link";
 
 import { auth } from "@/auth";
 import { routes } from "@/config/routes";
 import { siteConfig } from "@/config/site";
+import { getCatalogCategories } from "@/features/catalog";
 import { CartMiniCart } from "@/features/cart/components/cart-mini-cart";
 
 import { RoleKey } from "@/lib/auth/roles";
+import { logger } from "@/lib/logger";
 import { ThemeToggle } from "../theme-toggle";
 import { buttonVariants } from "../ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
 import { PageContainer } from "../ui/page-container";
+import { buildStorefrontCategoryMenu } from "./storefront-category-menu";
 import { StorefrontMobileNav } from "./storefront-mobile-nav";
 import UserMenu from "./user-menu";
 
 export async function AppHeader() {
-  const session = await auth();
-  const isSignedIn = Boolean(session?.user?.id);
+  const [session, categoriesResult] = await Promise.allSettled([auth(), getCatalogCategories()]);
+
+  const resolvedSession = session.status === "fulfilled" ? session.value : null;
+  const isSignedInResolved = Boolean(resolvedSession?.user?.id);
+
+  const categories =
+    categoriesResult.status === "fulfilled"
+      ? categoriesResult.value
+      : [];
+
+  if (categoriesResult.status === "rejected") {
+    logger.error("Failed to load header categories", {
+      code: "HEADER_CATEGORY_NAV_LOAD_FAILED",
+      error: categoriesResult.reason,
+    });
+  }
+
+  const categoryMenuItems = buildStorefrontCategoryMenu(
+    categories.map((category) => ({
+      name: category.name,
+      href: category.href,
+    })),
+  );
+
+  const topLevelNavItems = siteConfig.storefrontNav.filter(
+    (item) => item.href !== routes.storefront.categories,
+  );
 
   return (
     <header className="border-border/70 bg-background/95 sticky top-0 z-40 border-b backdrop-blur">
@@ -58,11 +93,17 @@ export async function AppHeader() {
               <ShoppingCart className="size-4" aria-hidden="true" />
             </Link>
             <StorefrontMobileNav
-              navItems={siteConfig.storefrontNav}
+              navItems={topLevelNavItems}
+              categoryMenuItems={categoryMenuItems}
+              categoryMenuError={
+                categoriesResult.status === "rejected"
+                  ? "Categories are temporarily unavailable."
+                  : null
+              }
               accountHref={routes.storefront.account}
               wishlistHref={routes.storefront.wishlist}
               cartHref={routes.storefront.cart}
-              isSignedIn={isSignedIn}
+              isSignedIn={isSignedInResolved}
             />
           </div>
 
@@ -85,12 +126,15 @@ export async function AppHeader() {
             </Link>
             <CartMiniCart />
             <ThemeToggle />
-            <UserMenu isSignedIn={isSignedIn} isAdmin={Boolean(session?.user?.role === RoleKey.SUPER_ADMIN)} />
+            <UserMenu
+              isSignedIn={isSignedInResolved}
+              isAdmin={Boolean(resolvedSession?.user?.role === RoleKey.SUPER_ADMIN)}
+            />
           </div>
         </div>
 
         <nav aria-label="Storefront" className="hidden gap-1 overflow-x-auto pb-1 md:flex w-full justify-center">
-          {siteConfig.storefrontNav.map((item) => (
+          {topLevelNavItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
@@ -99,6 +143,44 @@ export async function AppHeader() {
               {item.title}
             </Link>
           ))}
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              className="text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring inline-flex items-center gap-1 rounded-full px-3 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2"
+              aria-label="One Dollar category navigation"
+            >
+              One Dollar
+              <ChevronDown className="size-4" aria-hidden="true" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="center" className="w-56" sideOffset={8}>
+              {categoryMenuItems.map((item, index) => {
+                const isLastItem = index === categoryMenuItems.length - 1;
+                return (
+                  <div key={`${item.kind}-${item.href}-${item.title}`}>
+                    <DropdownMenuItem asChild>
+                      <Link href={item.href}>{item.title}</Link>
+                    </DropdownMenuItem>
+                    {isLastItem ? null : item.kind === "category" ? null : <DropdownMenuSeparator />}
+                  </div>
+                );
+              })}
+              {categoriesResult.status === "rejected" ? (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem disabled>
+                    Categories are temporarily unavailable.
+                  </DropdownMenuItem>
+                </>
+              ) : null}
+              {categoriesResult.status === "fulfilled" && categories.length === 0 ? (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem disabled>
+                    No categories are available yet.
+                  </DropdownMenuItem>
+                </>
+              ) : null}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </nav>
       </PageContainer>
     </header>
