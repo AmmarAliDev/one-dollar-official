@@ -18,8 +18,12 @@ import type {
 
 const logger = createLogger("homepage.service");
 const HOMEPAGE_BLOG_HIGHLIGHTS_LIMIT = 3;
-/** Maximum number of One Dollar products shown in the homepage section. */
-const HOMEPAGE_ONE_DOLLAR_PRODUCTS_LIMIT = 6;
+/**
+ * Maximum number of One Dollar products fetched from the catalog for the
+ * homepage section. Matches HOMEPAGE_CAROUSEL_MAX_ITEMS so the carousel can
+ * display the full set without server-side truncation.
+ */
+const HOMEPAGE_ONE_DOLLAR_PRODUCTS_LIMIT = 8;
 
 function toBlogHighlightItem(post: BlogListingItem): BlogHighlightItem {
   return {

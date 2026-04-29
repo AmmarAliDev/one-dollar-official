@@ -61,12 +61,20 @@
 
 ## Homepage Carousel Conventions
 
-- Homepage category surfaces should use the shared shadcn-compatible carousel primitives in `src/components/ui/carousel.tsx` instead of bespoke slider logic.
-- Featured category cards should use responsive carousel basis classes so card density scales with viewport width (`basis-[85%]`, `sm:basis-1/2`, `lg:basis-1/3`, `xl:basis-1/4`).
-- Storefront-facing category cards should be fully clickable by wrapping the entire card in a single `Link` surface instead of placing a small CTA link inside the card body.
-- Keep full-card links keyboard-visible (`focus-visible` ring styles) and avoid nested interactive children (`button`, nested `a`) to preserve valid, accessible semantics.
-- Keep carousel controls keyboard accessible and touch-friendly: swipe/drag remains the primary interaction on mobile, while previous/next icon controls are shown on wider screens.
-- Empty category payloads must render a user-safe `EmptyState` instead of a blank section.
+- All homepage sections that render categories or products must use a shared carousel pattern (Embla via `src/components/ui/carousel.tsx`) — **not** a static grid.
+- Shared carousel configuration lives in `src/features/homepage/components/homepage-carousel-config.ts`.
+- `HOMEPAGE_CAROUSEL_MAX_ITEMS = 8`: sections slice their data at 8 before passing to the carousel. Items beyond the cap are not rendered.
+- `HOMEPAGE_CAROUSEL_ITEM_CLASS`: responsive basis classes that show 1 card on mobile up to 6 cards on `2xl` (≥ 1536 px). The full breakpoint ladder is: `basis-[85%] sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5 2xl:basis-1/6`.
+- `HOMEPAGE_CAROUSEL_OPTIONS.align = "start"` so scroll position anchors to the left edge.
+- Navigation buttons (`CarouselPrevious`, `CarouselNext`) must include `disabled:hidden` in their `className` so they disappear when scroll is no longer possible, rather than remaining as visible-but-disabled controls.
+- Buttons are hidden on mobile (`hidden sm:flex`) and only appear on `sm+` viewports; swipe/drag is the primary mobile interaction.
+- **View All button rules**:
+  - Always shown when the data was capped (`totalItems > HOMEPAGE_CAROUSEL_MAX_ITEMS`).
+  - Optionally shown when the section payload includes an explicit `viewAllHref` (even if no cap was reached).
+  - For `one-dollar` sections the CTA is always rendered because those products link to the live One Dollar catalog page.
+  - Falls back to the relevant route (e.g. `routes.storefront.categories`) when no explicit href is supplied by the section payload.
+- Storefront-facing cards inside the carousel must remain fully clickable using a single wrapping `Link` (for category cards) or include an explicit labelled `View product` link (for product cards) — avoid nested interactive children.
+- Empty category/product payloads must render a user-safe `EmptyState` instead of a blank section or an empty carousel.
 
 ## Product Listing Conventions (Prompt 3.3)
 

@@ -45,6 +45,10 @@ export type FeaturedCategoriesSection = {
   title: string;
   description?: string;
   categories: FeaturedCategoryItem[];
+  /** Optional label for the "View All" CTA shown when categories are capped. */
+  viewAllLabel?: string;
+  /** Optional href for the "View All" CTA. Falls back to the categories route. */
+  viewAllHref?: string;
 };
 
 export type FeaturedProductItem = {
@@ -65,6 +69,10 @@ export type FeaturedProductsSection = {
   title: string;
   description?: string;
   products: FeaturedProductItem[];
+  /** Optional label for the "View All" CTA shown when products are capped. */
+  viewAllLabel?: string;
+  /** Optional href for the "View All" CTA. Falls back to the products/categories route. */
+  viewAllHref?: string;
 };
 
 /**
