@@ -79,6 +79,9 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - Shared frontend feedback uses `sonner` through `src/components/providers/app-toaster.tsx` and `src/lib/notify.ts`.
 - Catalog listing UI lives in `src/features/catalog/components`; keep product-grid and filter scaffolds there instead of placing listing-specific markup directly in route files.
 - PDP UI also lives in `src/features/catalog/components` (gallery, product panel, variants, specs, reviews, related products, and skeleton states); route files should compose these primitives instead of duplicating product-detail markup.
+- Header category navigation is assembled in `AppHeader` using live catalog categories (`getCatalogCategories`) plus a small ordering helper (`buildStorefrontCategoryMenu`) so the navigation contract is explicit and testable.
+- The category menu contract is stable: `One Dollar` pinned first, other categories sorted by name, and `All Categories` pinned last to preserve SEO-friendly listing discoverability at `/categories`.
+- Header category load failures are non-fatal: errors are logged server-side, and both desktop/mobile navigation continue rendering with user-safe fallback messaging.
 - Customer account shell UI lives in `src/features/account/components/account-shell.tsx` and should be reused for future account sections.
 - Wishlist client controls live in `src/features/wishlist/components` and call the dedicated wishlist API route.
 

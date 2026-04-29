@@ -10,9 +10,12 @@ import type { NavItem } from "@/types/app";
 
 import { ThemeToggle } from "../theme-toggle";
 import { Button, buttonVariants } from "../ui/button";
+import type { StorefrontCategoryMenuItem } from "./storefront-category-menu";
 
 type StorefrontMobileNavProps = {
   navItems: NavItem[];
+  categoryMenuItems: StorefrontCategoryMenuItem[];
+  categoryMenuError: string | null;
   accountHref: string;
   wishlistHref: string;
   cartHref: string;
@@ -21,6 +24,8 @@ type StorefrontMobileNavProps = {
 
 export function StorefrontMobileNav({
   navItems,
+  categoryMenuItems,
+  categoryMenuError,
   accountHref,
   wishlistHref,
   cartHref,
@@ -90,10 +95,28 @@ export function StorefrontMobileNav({
                   {item.title}
                 </Link>
               ))}
+
+              <div className="border-border/80 mt-2 grid gap-1 border-t pt-2">
+                <p className="text-muted-foreground px-3 py-1 text-xs font-semibold uppercase tracking-wide">
+                  One Dollar
+                </p>
+                {categoryMenuItems.map((item) => (
+                  <Link
+                    key={`${item.kind}-${item.href}-${item.title}`}
+                    href={item.href}
+                    onClick={() => setIsOpen(false)}
+                    className="text-foreground hover:bg-accent hover:text-accent-foreground rounded-md px-3 py-2 text-sm font-medium transition-colors"
+                  >
+                    {item.title}
+                  </Link>
+                ))}
+                {categoryMenuError ? (
+                  <p className="text-muted-foreground px-3 py-2 text-sm" role="status" aria-live="polite">
+                    {categoryMenuError}
+                  </p>
+                ) : null}
+              </div>
             </nav>
-
-
-
           </div>
           <Button
             variant="outline"
