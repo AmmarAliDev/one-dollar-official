@@ -175,6 +175,25 @@ export async function listPublishedProductsByCategory(categorySlug: string) {
 }
 
 /**
+ * Returns all PUBLISHED products whose category is also PUBLISHED.
+ * Ordered by `createdAt DESC` (newest first).
+ *
+ * Used by virtual/system storefront collections that derive membership
+ * from product attributes instead of direct category relations.
+ */
+export async function listAllPublishedProducts() {
+  const db = getPrismaClient();
+  return db.product.findMany({
+    where: {
+      status: "PUBLISHED",
+      category: { status: "PUBLISHED" },
+    },
+    orderBy: { createdAt: "desc" },
+    select: storefrontProductSelect,
+  });
+}
+
+/**
  * Returns the full detail record for a single PUBLISHED product identified by slug.
  * Includes APPROVED review body text (for PDP review section).
  *

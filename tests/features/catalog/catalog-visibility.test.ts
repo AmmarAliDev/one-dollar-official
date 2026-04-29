@@ -27,11 +27,13 @@ const mockListPublishedCategories = vi.fn();
 const mockGetPublishedCategoryBySlug = vi.fn();
 const mockListPublishedProductsByCategory = vi.fn();
 const mockGetPublishedProductBySlug = vi.fn();
+const mockListAllPublishedProducts = vi.fn();
 
 vi.mock("@/server/db/catalog-queries", () => ({
   listPublishedCategories: (...args: unknown[]) => mockListPublishedCategories(...args),
   getPublishedCategoryBySlug: (...args: unknown[]) => mockGetPublishedCategoryBySlug(...args),
   listPublishedProductsByCategory: (...args: unknown[]) => mockListPublishedProductsByCategory(...args),
+  listAllPublishedProducts: (...args: unknown[]) => mockListAllPublishedProducts(...args),
   listPublishedProductsByIds: vi.fn().mockResolvedValue([]),
   getPublishedProductBySlug: (...args: unknown[]) => mockGetPublishedProductBySlug(...args),
   getRelatedPublishedProducts: vi.fn().mockResolvedValue([]),
@@ -91,21 +93,23 @@ function makeProduct(overrides: Partial<{ id: string; slug: string }> = {}) {
 describe("category publish visibility", () => {
   it("returns published categories to the storefront", async () => {
     mockListPublishedCategories.mockResolvedValue([PUBLISHED_CATEGORY]);
+    mockListAllPublishedProducts.mockResolvedValue([]);
+
+    const categories = await getCatalogCategories();
+
+    expect(categories).toHaveLength(2);
+    expect(categories[0]?.slug).toBe("one-dollar");
+    expect(categories.some((category) => category.slug === "grocery")).toBe(true);
+  });
+
+  it("returns only One Dollar when no physical categories are published", async () => {
+    mockListPublishedCategories.mockResolvedValue([]);
+    mockListAllPublishedProducts.mockResolvedValue([]);
 
     const categories = await getCatalogCategories();
 
     expect(categories).toHaveLength(1);
-    expect(categories[0]?.slug).toBe("grocery");
-  });
-
-  it("returns an empty array when no categories are published", async () => {
-    // The DB query layer already excludes DRAFT/ARCHIVED; returning [] here
-    // simulates a store with no published categories.
-    mockListPublishedCategories.mockResolvedValue([]);
-
-    const categories = await getCatalogCategories();
-
-    expect(categories).toHaveLength(0);
+    expect(categories[0]?.slug).toBe("one-dollar");
   });
 
   it("returns null for a DRAFT category slug", async () => {
@@ -138,8 +142,10 @@ describe("category publish visibility", () => {
     mockListPublishedCategories.mockResolvedValue([
       { ...PUBLISHED_CATEGORY, _count: { products: 7 } },
     ]);
+    mockListAllPublishedProducts.mockResolvedValue([]);
 
-    const [category] = await getCatalogCategories();
+    const categories = await getCatalogCategories();
+    const category = categories.find((entry) => entry.slug === "grocery");
 
     expect(category?.productCount).toBe(7);
   });

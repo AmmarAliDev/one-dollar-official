@@ -149,6 +149,9 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `src/features/catalog` is the storefront catalog feature module. It reads exclusively from the PostgreSQL database via Prisma.
 - `src/server/db/catalog-queries.ts` is the Prisma query layer for the storefront. It enforces all publish-state visibility rules: only PUBLISHED categories and products are returned, and only APPROVED reviews reach the storefront.
 - `src/features/catalog/service.ts` owns listing + PDP assembly (`getCatalogCategoryListing`, `getProductBySlug`, `getRelatedProducts`) by calling the query layer and mapping DB records to storefront types.
+- `One Dollar` is implemented as a virtual/system storefront category (`slug: one-dollar`) in `src/features/catalog/one-dollar.ts`; it is not persisted as a `Category` row and does not alter product-to-category relationships.
+- One Dollar membership is derived at read-time from published products: include when default selling price is `<= 280 PKR`; products stay assigned to their original categories while also appearing in this special listing.
+- The `one-dollar` slug is reserved for the virtual category. If a published DB category collides with this slug, storefront category surfaces suppress the physical duplicate and log a warning for operator follow-up.
 - Related products on PDP follow a two-stage strategy in `getRelatedProducts`: (1) explicit admin-curated metadata (`relatedProductIds`, plus legacy `relatedProducts` entries with `id`) in saved order, then (2) same-category published fallback recommendations to fill remaining slots.
 - Related products always exclude the current product by slug and id, deduplicate curated/fallback overlap, and cap at 4 cards.
 - Related product failures are treated as non-fatal: lookup errors are logged server-side and the PDP renders with an explicit empty-state related section instead of failing the route.

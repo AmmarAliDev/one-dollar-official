@@ -30,14 +30,14 @@ describe("buildStorefrontCategoryMenu", () => {
     });
   });
 
-  it("falls back to storefront home when a One Dollar category does not exist", () => {
+  it("falls back to the One Dollar category route when category data is unavailable", () => {
     const menu = buildStorefrontCategoryMenu([
       { name: "Personal Care", href: "/categories/personal-care" },
     ]);
 
     expect(menu[0]).toMatchObject({
       title: "One Dollar",
-      href: "/",
+      href: "/categories/one-dollar",
       kind: "one-dollar",
     });
   });

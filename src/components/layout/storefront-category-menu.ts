@@ -1,4 +1,5 @@
 import { routes } from "@/config/routes";
+import { ONE_DOLLAR_CATEGORY_SLUG } from "@/features/catalog/one-dollar";
 
 type CategoryMenuInput = {
   name: string;
@@ -31,7 +32,7 @@ export function buildStorefrontCategoryMenu(
   return [
     {
       title: ONE_DOLLAR_LABEL,
-      href: oneDollarCategory?.href ?? routes.storefront.home,
+      href: oneDollarCategory?.href ?? routes.storefront.category(ONE_DOLLAR_CATEGORY_SLUG),
       kind: "one-dollar",
     },
     ...otherCategories.map((category) => ({
