@@ -63,6 +63,8 @@
 
 - Homepage category surfaces should use the shared shadcn-compatible carousel primitives in `src/components/ui/carousel.tsx` instead of bespoke slider logic.
 - Featured category cards should use responsive carousel basis classes so card density scales with viewport width (`basis-[85%]`, `sm:basis-1/2`, `lg:basis-1/3`, `xl:basis-1/4`).
+- Storefront-facing category cards should be fully clickable by wrapping the entire card in a single `Link` surface instead of placing a small CTA link inside the card body.
+- Keep full-card links keyboard-visible (`focus-visible` ring styles) and avoid nested interactive children (`button`, nested `a`) to preserve valid, accessible semantics.
 - Keep carousel controls keyboard accessible and touch-friendly: swipe/drag remains the primary interaction on mobile, while previous/next icon controls are shown on wider screens.
 - Empty category payloads must render a user-safe `EmptyState` instead of a blank section.
 

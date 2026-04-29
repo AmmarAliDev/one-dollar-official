@@ -63,6 +63,8 @@ describe("FeaturedCategoriesSectionBlock", () => {
     expect(screen.getByText("Home care")).toBeInTheDocument();
     expect(screen.getByText("Grocery")).toBeInTheDocument();
     expect(screen.getAllByRole("link", { name: /browse .* category/i })).toHaveLength(2);
+    expect(screen.getByText("Home care").closest("a")).toHaveAttribute("href", "/categories/home-care");
+    expect(screen.getByText("Grocery").closest("a")).toHaveAttribute("href", "/categories/grocery");
   });
 
   it("renders a friendly empty state when categories are missing", () => {
