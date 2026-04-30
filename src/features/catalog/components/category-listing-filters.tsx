@@ -237,9 +237,9 @@ export function CategoryListingFilters({ listing }: { listing: CatalogCategoryLi
       <div className="lg:hidden" data-testid="catalog-mobile-filter-trigger-wrap">
         <Sheet open={isMobileSheetOpen} onOpenChange={setMobileSheetOpen}>
           <SheetTrigger asChild>
-            <Button variant="outline" className="w-full justify-start gap-2" aria-label="Open filters and sorting panel">
+            <Button variant="outline" size="sm" className="justify-start gap-2" aria-label="Open filters and sorting panel">
               <SlidersHorizontal className="size-4" />
-              Filter and sort
+              {/* Filter and sort */}
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-full sm:max-w-md">

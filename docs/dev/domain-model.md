@@ -82,6 +82,7 @@ Internationalization & future features
 
 Seeding and migrations
 - Minimal seed script `prisma/seed.js` creates roles and a default category. Keep seed data lightweight.
+- Local/dev demo catalog populator `prisma/populate-dev-catalog.js` (run via `pnpm prisma:seed:dev-catalog`) upserts a deterministic multi-category dataset with SEO/image fields and mixed price bands so One Dollar eligibility (`<= 280 PKR`) can be tested without production data.
 - The included `prisma/schema.prisma` is the source of truth. Run `npm run prisma:validate` and `npm run prisma:migrate:dev` locally to generate migrations and apply them.
 
 Notes and next steps
