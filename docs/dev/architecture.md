@@ -186,9 +186,21 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 
 ## Cache Strategy
 
-- ISR with `revalidate = 900` (15 minutes) is declared on all three storefront category routes.
-- On-demand ISR is triggered by admin server actions: publishing or updating a product/category calls `revalidatePath('/categories')`, immediately clearing the cache for the affected path tree.
-- For faster individual product page invalidation, the admin product update action can additionally call `revalidatePath('/categories/[slug]/[productSlug]', 'page')` once product-slug tracking is added to the action.
+- SEO-sensitive storefront content routes now share one ISR policy (`revalidate = 900`).
+- Static generation / ISR is now active for:
+	- `/blog` (ISR)
+	- `/blog/[slug]` (SSG + ISR with `generateStaticParams` from published blog slugs)
+	- `/categories` (ISR)
+	- `/categories/[slug]/[productSlug]` (SSG + ISR with `generateStaticParams` from published product+category slugs)
+- `/categories/[slug]` intentionally remains dynamic because listing filters/sort/pagination are request query driven (`searchParams`) and can vary combinatorially; this route still uses published-category static-param enumeration for canonical slug coverage and keeps route-level revalidation enabled for freshness.
+- `generateStaticParams` mapping is centralized into typed helpers (`toBlogStaticParams`, `toCategoryStaticParams`, `toProductStaticParams`) so page files stay small and behavior is testable, while route segment config exports stay literal (required by current Next segment-config validation).
+- Shared storefront shell no longer performs request-time auth in `AppHeader`; auth state for user controls is resolved client-side (`StorefrontHeaderAuthControls` + `useSession`) so SEO pages are not forced dynamic by header personalization.
+- Product-review personalization on PDP was moved to a client/API island (`ProductReviewComposer` + `GET /api/reviews/composer-context`) so product HTML can remain cacheable while review eligibility stays user-specific.
+- On-demand ISR is triggered by admin mutations:
+	- Blog mutations revalidate `/blog` and `/blog/[slug]`.
+	- Category and product mutations revalidate `/categories`, `/categories/[slug]`, and `/categories/[slug]/[productSlug]`.
+	- Admin list pages are still revalidated for operator freshness.
+- Dynamic rendering remains intentional for truly personalized/request-bound routes (account, cart, checkout, wishlist, order confirmation, and admin surfaces).
 
 ## Search Strategy
 

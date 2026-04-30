@@ -124,6 +124,12 @@ async function requireProductWriteAccess() {
   };
 }
 
+function revalidateStorefrontCatalogPaths() {
+  revalidatePath(routes.storefront.categories);
+  revalidatePath(routes.storefront.category("[slug]"), "page");
+  revalidatePath(routes.storefront.product("[slug]", "[productSlug]"), "page");
+}
+
 export async function createAdminProductAction(formData: FormData) {
   const returnTo = getReturnTo(formData, routes.admin.productCreate);
 
@@ -141,8 +147,8 @@ export async function createAdminProductAction(formData: FormData) {
       actor,
     });
 
-    // Revalidate storefront catalog so published products appear without delay
-    revalidatePath(routes.storefront.categories);
+    // Revalidate storefront catalog tree so listing + PDP pages refresh on next request
+    revalidateStorefrontCatalogPaths();
     revalidatePath(routes.admin.products);
     redirect(appendFlash(routes.admin.productEdit(created.id), "notice", "created"));  } catch (error) {
     unstable_rethrow(error);
@@ -184,8 +190,8 @@ export async function updateAdminProductAction(formData: FormData) {
     redirect(appendFlash(returnTo, "error", errorCode));
   }
 
-  // Revalidate storefront catalog so published products appear without delay
-  revalidatePath(routes.storefront.categories);
+  // Revalidate storefront catalog tree so listing + PDP pages refresh on next request
+  revalidateStorefrontCatalogPaths();
   revalidatePath(routes.admin.products);
   redirect(appendFlash(returnTo, "notice", "updated"));
 }

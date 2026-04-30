@@ -74,6 +74,12 @@ async function requireCategoryWriteAccess() {
   };
 }
 
+function revalidateStorefrontCategoryPaths() {
+  revalidatePath(routes.storefront.categories);
+  revalidatePath(routes.storefront.category("[slug]"), "page");
+  revalidatePath(routes.storefront.product("[slug]", "[productSlug]"), "page");
+}
+
 export async function createAdminCategoryAction(formData: FormData) {
   const returnTo = getReturnTo(formData, routes.admin.categories);
 
@@ -97,8 +103,8 @@ export async function createAdminCategoryAction(formData: FormData) {
     redirect(appendFlash(returnTo, "error", getCategoryErrorCode(appError, "createFailed")));
   }
 
-  // Revalidate storefront category index so new published categories appear without delay
-  revalidatePath(routes.storefront.categories);
+  // Revalidate storefront category tree so index, listing, and PDP pages refresh on next request
+  revalidateStorefrontCategoryPaths();
   revalidatePath(routes.admin.categories);
   redirect(appendFlash(returnTo, "notice", "created"));
 }
@@ -135,8 +141,8 @@ export async function updateAdminCategoryAction(formData: FormData) {
     redirect(appendFlash(returnTo, "error", errorCode));
   }
 
-  // Revalidate storefront category index so status changes appear without delay
-  revalidatePath(routes.storefront.categories);
+  // Revalidate storefront category tree so index, listing, and PDP pages refresh on next request
+  revalidateStorefrontCategoryPaths();
   revalidatePath(routes.admin.categories);
   redirect(appendFlash(returnTo, "notice", "updated"));
 }
@@ -164,8 +170,8 @@ export async function deleteAdminCategoryAction(formData: FormData) {
     redirect(appendFlash(returnTo, "error", getCategoryErrorCode(appError, "deleteFailed")));
   }
 
-  // Revalidate storefront so deleted/unpublished categories are removed
-  revalidatePath(routes.storefront.categories);
+  // Revalidate storefront category tree so deleted/unpublished pages stop serving stale HTML
+  revalidateStorefrontCategoryPaths();
   revalidatePath(routes.admin.categories);
   redirect(appendFlash(returnTo, "notice", "deleted"));
 }
