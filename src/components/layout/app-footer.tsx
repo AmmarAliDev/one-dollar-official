@@ -28,47 +28,55 @@ export function AppFooter() {
   return (
     <footer className="border-border/70 bg-background/95 border-t">
       <PageContainer className="grid gap-6 py-8 md:grid-cols-3">
-        <div className="space-y-3">
+        <section className="space-y-3" aria-labelledby="footer-brand-heading">
           <Badge variant="outline">{siteConfig.defaultCity} launch focus</Badge>
           <div>
-            <p className="text-base font-semibold tracking-tight">{siteConfig.name}</p>
+            <h2 id="footer-brand-heading" className="text-base font-semibold tracking-tight">
+              {siteConfig.name}
+            </h2>
             <p className="text-muted-foreground max-w-xl text-sm">
               Karachi-first storefront shell for a single-vendor commerce experience in Pakistan.
               Product catalog and checkout workflows are intentionally deferred to upcoming prompts.
             </p>
           </div>
-        </div>
+        </section>
 
-        <div className="space-y-3 text-sm">
-          <p className="font-medium">Company</p>
-          <div className="flex flex-wrap gap-2">
+        <section className="space-y-3 text-sm" aria-labelledby="footer-company-heading">
+          <h2 id="footer-company-heading" className="font-medium">Company</h2>
+          <nav aria-label="Company links">
+            <ul className="flex flex-wrap gap-2">
             {companyLinks.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="text-muted-foreground hover:text-foreground rounded-full border border-border/70 px-3 py-1.5 transition-colors"
-              >
-                {item.title}
-              </Link>
+              <li key={item.href} className="list-none">
+                <Link
+                  href={item.href}
+                  className="text-muted-foreground hover:text-foreground rounded-full border border-border/70 px-3 py-1.5 transition-colors"
+                >
+                  {item.title}
+                </Link>
+              </li>
             ))}
-          </div>
+            </ul>
+          </nav>
 
-          <p className="mt-4 font-medium">Policies</p>
-          <div className="flex flex-wrap gap-2">
+          <h2 className="mt-4 font-medium" id="footer-policies-heading">Policies</h2>
+          <nav aria-label="Policy links">
+            <ul className="flex flex-wrap gap-2">
             {policyLinks.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="text-muted-foreground hover:text-foreground rounded-full border border-border/70 px-3 py-1.5 transition-colors"
-              >
-                {item.title}
-              </Link>
+              <li key={item.href} className="list-none">
+                <Link
+                  href={item.href}
+                  className="text-muted-foreground hover:text-foreground rounded-full border border-border/70 px-3 py-1.5 transition-colors"
+                >
+                  {item.title}
+                </Link>
+              </li>
             ))}
-          </div>
-        </div>
+            </ul>
+          </nav>
+        </section>
 
-        <div className="space-y-3 text-sm">
-          <p className="font-medium">Newsletter</p>
+        <section className="space-y-3 text-sm" aria-labelledby="footer-newsletter-heading">
+          <h2 id="footer-newsletter-heading" className="font-medium">Newsletter</h2>
           {showNewsletterPlaceholder ? (
             <>
               <p className="text-muted-foreground">
@@ -89,7 +97,7 @@ export function AppFooter() {
               Contact support for updates on newsletter availability.
             </p>
           )}
-        </div>
+        </section>
       </PageContainer>
     </footer>
   );

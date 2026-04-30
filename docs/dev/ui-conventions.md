@@ -52,6 +52,15 @@
 - Error summaries and page fallbacks should keep `role="alert"` / `aria-live` semantics so assistive tech announces important failures clearly.
 - Prefer server components by default; only use client components for interactivity like theme switching, toast triggers, and confirmation dialogs.
 
+## SEO Semantic HTML Conventions
+
+- Key storefront content pages should expose exactly one clear primary heading (`h1`) near the top of `main` content (for example category listing, blog listing, and blog detail routes).
+- Use `SectionHeader.titleAs` and `SectionHeader.titleId` instead of ad-hoc heading markup when a page needs to promote a section intro to `h1`.
+- Card collections that represent sets of categories, products, or articles should use list semantics (`ul` + `li`) even when styled as responsive grids.
+- Prefer one canonical link target per card. Avoid duplicate links that point to the same destination from multiple nested card regions.
+- Blog/article publication metadata should use `<time datetime="...">` when a published date is available.
+- Keep landmark and list semantics compatible with current visual design; semantic upgrades should not regress interaction, keyboard navigation, or loading/empty/error states.
+
 ## Mobile Interaction Guardrails
 
 - Keep root viewport standards-compliant through a typed `viewport` export from `src/app/layout.tsx` via shared config in `src/config/viewport.ts`.

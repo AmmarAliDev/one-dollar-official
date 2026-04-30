@@ -12,38 +12,37 @@ type BlogPostCardProps = {
 };
 
 export function BlogPostCard({ post }: BlogPostCardProps) {
+  const blogPostHref = routes.storefront.blogPost(post.slug);
+
   return (
-    <Card className="overflow-hidden">
-      <Image
-        src={post.coverImage.src}
-        alt={post.coverImage.alt}
-        width={post.coverImage.width}
-        height={post.coverImage.height}
-        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-        className="bg-muted h-48 w-full object-cover"
-      />
+    <article>
+      <Card className="overflow-hidden">
+        <Link href={blogPostHref} className="group block" aria-label={`Read article: ${post.title}`}>
+          <Image
+            src={post.coverImage.src}
+            alt={post.coverImage.alt}
+            width={post.coverImage.width}
+            height={post.coverImage.height}
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            className="bg-muted h-48 w-full object-cover"
+          />
 
-      <CardHeader>
-        <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
-          Published {formatBlogPublishedDate(post.publishedAt)}
-        </p>
-        <CardTitle className="text-xl">
-          <Link href={routes.storefront.blogPost(post.slug)} className="hover:text-primary transition-colors">
-            {post.title}
-          </Link>
-        </CardTitle>
-        <CardDescription>{post.excerpt}</CardDescription>
-      </CardHeader>
+          <CardHeader>
+            <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
+              Published{" "}
+              <time dateTime={post.publishedAt}>{formatBlogPublishedDate(post.publishedAt)}</time>
+            </p>
+            <CardTitle className="text-xl transition-colors group-hover:text-primary">{post.title}</CardTitle>
+            <CardDescription>{post.excerpt}</CardDescription>
+          </CardHeader>
 
-      <CardContent>
-        <Link
-          href={routes.storefront.blogPost(post.slug)}
-          className="text-primary text-sm font-semibold hover:underline"
-          aria-label={`Read article: ${post.title}`}
-        >
-          Read article
+          <CardContent>
+            <span className="text-primary text-sm font-semibold group-hover:underline">
+              Read article
+            </span>
+          </CardContent>
         </Link>
-      </CardContent>
-    </Card>
+      </Card>
+    </article>
   );
 }

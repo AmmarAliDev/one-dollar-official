@@ -29,6 +29,7 @@ describe("CategoryOverviewCard media behavior", () => {
     const link = screen.getByRole("link");
     expect(link).toHaveAttribute("href", "/categories/home-care");
     expect(link).toContainElement(screen.getByText("Home Care"));
+    expect(link.querySelector("article")).not.toBeNull();
   });
 
   it("renders the category card background image when image URL exists", () => {

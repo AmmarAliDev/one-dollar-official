@@ -50,6 +50,7 @@ describe("ProductGridCard media behavior", () => {
     const link = screen.getByRole("link");
     expect(link).toHaveAttribute("href", "/categories/personal-care/daily-face-wash");
     expect(link).toContainElement(screen.getByText("Daily Face Wash"));
+    expect(link.querySelector("article")).not.toBeNull();
   });
 
   it("renders the product image area when a valid image URL exists", () => {

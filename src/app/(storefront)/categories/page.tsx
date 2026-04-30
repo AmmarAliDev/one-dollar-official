@@ -24,6 +24,8 @@ export default async function CategoriesPage() {
       <SectionHeader
         eyebrow="Catalog"
         title="Shop by Category"
+        titleAs="h1"
+        titleId="categories-page-heading"
         description="Browse our categories to find exactly what you're looking for — from everyday essentials to hard-to-find items, all at one-dollar prices."
       />
 
@@ -34,14 +36,17 @@ export default async function CategoriesPage() {
           description="Catalog categories will appear here once the product catalog is connected to real data."
         />
       ) : (
-        <div
+        <ul
+          aria-labelledby="categories-page-heading"
           className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
           data-testid={testIds.storefront.categoryGrid}
         >
           {categories.map((category) => (
-            <CategoryOverviewCard key={category.id} category={category} />
+            <li key={category.id} className="list-none">
+              <CategoryOverviewCard category={category} />
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </PageShell>
   );
