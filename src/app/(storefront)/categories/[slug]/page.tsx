@@ -59,12 +59,14 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
       <SectionHeader
         eyebrow="Category listing"
         title={listing.category.name}
+        titleAs="h1"
+        titleId="category-page-heading"
         description={listing.category.description}
         actions={
-          <div className="text-muted-foreground flex flex-wrap items-center gap-3 text-sm">
-            <span>{listing.filteredProductCount} matching products</span>
-            <span>{listing.totalProductCount} total in category</span>
-          </div>
+          <ul className="text-muted-foreground flex flex-wrap items-center gap-3 text-sm">
+            <li>{listing.filteredProductCount} matching products</li>
+            <li>{listing.totalProductCount} total in category</li>
+          </ul>
         }
       />
 

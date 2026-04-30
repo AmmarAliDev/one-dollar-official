@@ -44,6 +44,8 @@ export default async function BlogListingPage() {
       <SectionHeader
         eyebrow="Blog"
         title="Guides and updates"
+        titleAs="h1"
+        titleId="blog-listing-heading"
         description="Explore practical articles focused on smart shopping, planning, and better household routines."
       />
 
@@ -55,11 +57,13 @@ export default async function BlogListingPage() {
           eyebrow="Empty state"
         />
       ) : (
-        <div className="grid gap-6 md:grid-cols-2">
+        <ul aria-labelledby="blog-listing-heading" className="grid gap-6 md:grid-cols-2">
           {posts.map((post) => (
-            <BlogPostCard key={post.id} post={post} />
+            <li key={post.id} className="list-none">
+              <BlogPostCard post={post} />
+            </li>
           ))}
-        </div>
+        </ul>
       )}
 
       <script

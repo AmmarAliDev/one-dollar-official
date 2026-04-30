@@ -65,17 +65,17 @@ export async function AppHeader() {
       <PageContainer className="relative flex flex-col gap-3 py-3">
         <div className="flex items-center justify-between gap-3">
           <Link href={routes.storefront.home} className="text-base font-semibold tracking-tight">
-            <div className="flex min-w-0 items-center gap-3">
-              <div className="bg-primary/10 text-primary rounded-2xl p-2.5" aria-hidden="true">
+            <span className="flex min-w-0 items-center gap-3">
+              <span className="bg-primary/10 text-primary rounded-2xl p-2.5" aria-hidden="true">
                 <Store className="size-5" />
-              </div>
+              </span>
 
-              <div className="min-w-0">
-                <div className="text-base font-semibold tracking-tight">
+              <span className="min-w-0">
+                <span className="text-base font-semibold tracking-tight">
                   {siteConfig.name}
-                </div>
-              </div>
-            </div>
+                </span>
+              </span>
+            </span>
           </Link>
 
           <div className="flex items-center gap-2 md:hidden">
@@ -128,54 +128,59 @@ export async function AppHeader() {
           </div>
         </div>
 
-        <nav aria-label="Storefront" className="hidden gap-1 overflow-x-auto pb-1 md:flex w-full justify-center">
-          {topLevelNavItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="text-muted-foreground hover:bg-accent hover:text-foreground rounded-full px-3 py-2 text-sm transition-colors"
-            >
-              {item.title}
-            </Link>
-          ))}
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              className="text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring inline-flex items-center gap-1 rounded-full px-3 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2"
-              aria-label="One Dollar category navigation"
-            >
-              Categories
-              <ChevronDown className="size-4" aria-hidden="true" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="center" className="w-56" sideOffset={8}>
-              {categoryMenuItems.map((item, index) => {
-                const isLastItem = index === categoryMenuItems.length - 1;
-                return (
-                  <div key={`${item.kind}-${item.href}-${item.title}`}>
-                    <DropdownMenuItem asChild>
-                      <Link href={item.href}>{item.title}</Link>
-                    </DropdownMenuItem>
-                    {isLastItem ? null : item.kind === "category" ? null : <DropdownMenuSeparator />}
-                  </div>
-                );
-              })}
-              {categoriesResult.status === "rejected" ? (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem disabled>
-                    Categories are temporarily unavailable.
-                  </DropdownMenuItem>
-                </>
-              ) : null}
-              {categoriesResult.status === "fulfilled" && categories.length === 0 ? (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem disabled>
-                    No categories are available yet.
-                  </DropdownMenuItem>
-                </>
-              ) : null}
-            </DropdownMenuContent>
-          </DropdownMenu>
+        <nav aria-label="Storefront" className="hidden w-full justify-center overflow-x-auto pb-1 md:flex">
+          <ul className="flex items-center gap-1">
+            {topLevelNavItems.map((item) => (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  className="text-muted-foreground hover:bg-accent hover:text-foreground rounded-full px-3 py-2 text-sm transition-colors"
+                >
+                  {item.title}
+                </Link>
+              </li>
+            ))}
+            <li>
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  className="text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring inline-flex items-center gap-1 rounded-full px-3 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2"
+                  aria-label="One Dollar category navigation"
+                >
+                  Categories
+                  <ChevronDown className="size-4" aria-hidden="true" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" className="w-56" sideOffset={8}>
+                  {categoryMenuItems.map((item, index) => {
+                    const isLastItem = index === categoryMenuItems.length - 1;
+                    return (
+                      <div key={`${item.kind}-${item.href}-${item.title}`}>
+                        <DropdownMenuItem asChild>
+                          <Link href={item.href}>{item.title}</Link>
+                        </DropdownMenuItem>
+                        {isLastItem ? null : item.kind === "category" ? null : <DropdownMenuSeparator />}
+                      </div>
+                    );
+                  })}
+                  {categoriesResult.status === "rejected" ? (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem disabled>
+                        Categories are temporarily unavailable.
+                      </DropdownMenuItem>
+                    </>
+                  ) : null}
+                  {categoriesResult.status === "fulfilled" && categories.length === 0 ? (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem disabled>
+                        No categories are available yet.
+                      </DropdownMenuItem>
+                    </>
+                  ) : null}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </li>
+          </ul>
         </nav>
       </PageContainer>
     </header>

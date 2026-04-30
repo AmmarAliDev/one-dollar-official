@@ -112,14 +112,16 @@ export function CategoryInfiniteProductGrid({ listing }: CategoryInfiniteProduct
             <p className="text-muted-foreground py-4 text-center text-sm">You have reached the end of this category.</p>
           }
         >
-          <div
+          <ul
             className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
             data-testid={testIds.storefront.productGrid}
           >
             {products.map((product) => (
-              <ProductGridCard key={product.id} product={product} />
+              <li key={product.id} className="list-none">
+                <ProductGridCard product={product} />
+              </li>
             ))}
-          </div>
+          </ul>
         </InfiniteScroll>
       )}
 

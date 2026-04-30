@@ -37,45 +37,47 @@ export function ProductGridCard({ product }: { product: CatalogProductCard }) {
       className="group focus-visible:ring-primary rounded-[var(--radius-card)] focus-visible:ring-2 focus-visible:outline-none"
       data-testid={testIds.storefront.productCard(product.slug)}
     >
-      <Card className="border-border/70 overflow-hidden shadow-[var(--shadow-soft)] transition-shadow group-hover:shadow-md">
-        <ProductCardMedia
-          productName={product.name}
-          {...(product.imageUrl ? { imageUrl: product.imageUrl } : {})}
-          imageLabel={product.imageLabel}
-          imageTone={product.imageTone}
-          attributeSummary={product.attributeSummary}
-        />
-
-        <CardContent className="space-y-4 p-5">
-          <div className="space-y-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant={stockBadge.variant}>{stockBadge.label}</Badge>
-              {product.compareAt && product.compareAt > product.price ? (
-                <Badge variant="info">Discount available</Badge>
-              ) : null}
-            </div>
-            <h3 className="group-hover:text-primary text-lg font-semibold tracking-tight transition-colors">
-              {product.name}
-            </h3>
-            <p className="text-muted-foreground text-sm">{product.description}</p>
-          </div>
-
-          <PriceDisplay
-            amount={product.price}
-            {...(typeof product.compareAt === "number" ? { compareAt: product.compareAt } : {})}
-            size="sm"
+      <article>
+        <Card className="border-border/70 overflow-hidden shadow-[var(--shadow-soft)] transition-shadow group-hover:shadow-md">
+          <ProductCardMedia
+            productName={product.name}
+            {...(product.imageUrl ? { imageUrl: product.imageUrl } : {})}
+            imageLabel={product.imageLabel}
+            imageTone={product.imageTone}
+            attributeSummary={product.attributeSummary}
           />
 
-          <div className="text-muted-foreground flex items-center justify-between gap-3 text-xs sm:text-sm">
-            <span>{getReviewSummary(product)}</span>
-            <span>
-              {product.inventoryQuantity > 0
-                ? `${product.inventoryQuantity} available`
-                : "Notify me later"}
-            </span>
-          </div>
-        </CardContent>
-      </Card>
+          <CardContent className="space-y-4 p-5">
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant={stockBadge.variant}>{stockBadge.label}</Badge>
+                {product.compareAt && product.compareAt > product.price ? (
+                  <Badge variant="info">Discount available</Badge>
+                ) : null}
+              </div>
+              <h3 className="group-hover:text-primary text-lg font-semibold tracking-tight transition-colors">
+                {product.name}
+              </h3>
+              <p className="text-muted-foreground text-sm">{product.description}</p>
+            </div>
+
+            <PriceDisplay
+              amount={product.price}
+              {...(typeof product.compareAt === "number" ? { compareAt: product.compareAt } : {})}
+              size="sm"
+            />
+
+            <div className="text-muted-foreground flex items-center justify-between gap-3 text-xs sm:text-sm">
+              <span>{getReviewSummary(product)}</span>
+              <span>
+                {product.inventoryQuantity > 0
+                  ? `${product.inventoryQuantity} available`
+                  : "Notify me later"}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      </article>
     </Link>
   );
 }
