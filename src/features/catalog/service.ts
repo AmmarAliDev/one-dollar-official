@@ -46,6 +46,7 @@ import {
   ONE_DOLLAR_CATEGORY_SLUG,
   ONE_DOLLAR_MAX_PRICE_PKR,
 } from "./one-dollar";
+import { normalizeCatalogImageUrl } from "./lib/product-image-url";
 import { getCatalogSearchAdapter } from "./search-adapter";
 import type {
   CatalogCategory,
@@ -115,13 +116,17 @@ function mapProductImages(
 
   const tone = deriveTone(categorySlug, productSlug);
 
-  return images.map((image, index) => ({
-    id: image.id,
-    url: image.url,
-    label: image.alt?.trim() || productName,
-    tone,
-    isPrimary: index === 0,
-  }));
+  return images.map((image, index) => {
+    const normalizedUrl = normalizeCatalogImageUrl(image.url);
+
+    return {
+      id: image.id,
+      ...(normalizedUrl ? { url: normalizedUrl } : {}),
+      label: image.alt?.trim() || productName,
+      tone,
+      isPrimary: index === 0,
+    };
+  });
 }
 
 /**
@@ -327,6 +332,7 @@ function mapProductToCard(record: StorefrontProductRecord): CatalogProductCard {
     inventoryQuantity: computeTotalInventory(record.variants),
     averageRating,
     reviewCount,
+    ...(primaryImage.url ? { imageUrl: primaryImage.url } : {}),
     imageLabel: primaryImage.label,
     imageTone: primaryImage.tone,
     attributeSummary: deriveAttributeSummary(record.specifications),
