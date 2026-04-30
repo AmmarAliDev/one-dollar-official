@@ -17,9 +17,11 @@ import { routes } from "@/config/routes";
 
 import type { FeaturedCategoriesSection } from "../types";
 import {
-  HOMEPAGE_CAROUSEL_ITEM_CLASS,
+  FEATURED_CATEGORIES_CAROUSEL_ITEM_CLASS,
+  FEATURED_CATEGORIES_CAROUSEL_OPTIONS,
+} from "./featured-categories-carousel-config";
+import {
   HOMEPAGE_CAROUSEL_MAX_ITEMS,
-  HOMEPAGE_CAROUSEL_OPTIONS,
 } from "./homepage-carousel-config";
 
 type FeaturedCategoriesSectionProps = {
@@ -47,10 +49,10 @@ export function FeaturedCategoriesSectionBlock({ section }: FeaturedCategoriesSe
 
       {hasCategories ? (
         <>
-          <Carousel opts={HOMEPAGE_CAROUSEL_OPTIONS} className="w-full">
+          <Carousel opts={FEATURED_CATEGORIES_CAROUSEL_OPTIONS} className="w-full">
             <CarouselContent>
               {visibleCategories.map((category) => (
-                <CarouselItem key={category.id} className={HOMEPAGE_CAROUSEL_ITEM_CLASS}>
+                <CarouselItem key={category.id} className={FEATURED_CATEGORIES_CAROUSEL_ITEM_CLASS}>
                   <Link
                     href={category.href}
                     className="group focus-visible:ring-ring block h-full rounded-lg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"

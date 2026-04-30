@@ -91,6 +91,7 @@
 - Shared carousel configuration lives in `src/features/homepage/components/homepage-carousel-config.ts`.
 - `HOMEPAGE_CAROUSEL_MAX_ITEMS = 8`: sections slice their data at 8 before passing to the carousel. Items beyond the cap are not rendered.
 - `HOMEPAGE_CAROUSEL_ITEM_CLASS`: responsive basis classes that show 1 card on mobile up to 6 cards on `2xl` (≥ 1536 px). The full breakpoint ladder is: `basis-[85%] sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5 2xl:basis-1/6`.
+- Featured categories may use a section-specific item class when readability requires lower density on large screens. Current rule for `featured-categories`: keep shared behavior through `lg`, then clamp to 4-up on `xl`/`2xl` using `FEATURED_CATEGORIES_CAROUSEL_ITEM_CLASS = "basis-[85%] sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:!basis-1/4 2xl:!basis-1/4"`.
 - `HOMEPAGE_CAROUSEL_OPTIONS.align = "start"` so scroll position anchors to the left edge.
 - Navigation buttons (`CarouselPrevious`, `CarouselNext`) must include `disabled:hidden` in their `className` so they disappear when scroll is no longer possible, rather than remaining as visible-but-disabled controls.
 - Buttons are hidden on mobile (`hidden sm:flex`) and only appear on `sm+` viewports; swipe/drag is the primary mobile interaction.

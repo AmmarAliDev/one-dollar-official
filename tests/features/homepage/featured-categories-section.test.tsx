@@ -116,13 +116,13 @@ describe("FeaturedCategoriesSectionBlock", () => {
     expect(screen.queryByRole("link", { name: /view all/i })).not.toBeInTheDocument();
   });
 
-  it("applies shared carousel item class to each slide", () => {
+  it("applies featured categories carousel item class to each slide", () => {
     const categories = Array.from({ length: 2 }, (_, i) => buildCategory(`cat-${i + 1}`));
     render(<FeaturedCategoriesSectionBlock section={buildSection(categories)} />);
 
     const items = screen.getAllByTestId("carousel-item");
     for (const item of items) {
-      expect(item).toHaveClass(HOMEPAGE_CAROUSEL_ITEM_CLASS.split(" ")[0]);
+      expect(item).toHaveClass(FEATURED_CATEGORIES_CAROUSEL_ITEM_CLASS.split(" ")[0]);
     }
   });
 });
@@ -144,8 +144,14 @@ describe("homepage carousel config (shared)", () => {
 });
 
 describe("featured categories carousel config (legacy re-exports)", () => {
-  it("re-exports shared options and item class unchanged", () => {
+  it("re-uses shared options but keeps a roomier large-screen item class", () => {
     expect(FEATURED_CATEGORIES_CAROUSEL_OPTIONS).toBe(HOMEPAGE_CAROUSEL_OPTIONS);
-    expect(FEATURED_CATEGORIES_CAROUSEL_ITEM_CLASS).toBe(HOMEPAGE_CAROUSEL_ITEM_CLASS);
+    expect(FEATURED_CATEGORIES_CAROUSEL_ITEM_CLASS).toContain("basis-[85%]");
+    expect(FEATURED_CATEGORIES_CAROUSEL_ITEM_CLASS).toContain("sm:basis-1/2");
+    expect(FEATURED_CATEGORIES_CAROUSEL_ITEM_CLASS).toContain("md:basis-1/3");
+    expect(FEATURED_CATEGORIES_CAROUSEL_ITEM_CLASS).toContain("lg:basis-1/4");
+    expect(FEATURED_CATEGORIES_CAROUSEL_ITEM_CLASS).toContain("xl:!basis-1/4");
+    expect(FEATURED_CATEGORIES_CAROUSEL_ITEM_CLASS).toContain("2xl:!basis-1/4");
+    expect(FEATURED_CATEGORIES_CAROUSEL_ITEM_CLASS).not.toBe(HOMEPAGE_CAROUSEL_ITEM_CLASS);
   });
 });
