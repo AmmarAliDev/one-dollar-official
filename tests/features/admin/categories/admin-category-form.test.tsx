@@ -81,27 +81,11 @@ describe("AdminCategoryForm", () => {
     expect(screen.queryByText(/something went wrong on our side/i)).toBeNull();
   });
 
-  it("validates on change and preserves the existing category action payload", async () => {
+  it("validates on change and includes category and SEO image fields in payload", async () => {
     const user = userEvent.setup();
     const actionMock = vi.fn().mockResolvedValue(undefined);
-    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          url: "https://store.public.blob.vercel-storage.com/admin/seo/category-og-123.png",
-          pathname: "admin/seo/category-og-123.png",
-          size: 2048,
-          contentType: "image/png",
-        }),
-        {
-          status: 201,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        },
-      ),
-    );
 
-    const { container } = render(
+    render(
       <AdminCategoryForm
         action={actionMock}
         submitLabel="Create category"
@@ -119,16 +103,8 @@ describe("AdminCategoryForm", () => {
     await user.type(screen.getByLabelText(/name/i), "Home Care");
     await user.clear(screen.getByLabelText(/slug/i));
     await user.type(screen.getByLabelText(/slug/i), "home-care");
-
-    const uploadInput = container.querySelector('input[type="file"]');
-    if (!(uploadInput instanceof HTMLInputElement)) {
-      throw new Error("Expected the shared SEO upload input to be rendered.");
-    }
-    await user.upload(uploadInput, new File(["og"], "category-og.png", { type: "image/png" }));
-
-    await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(1);
-    });
+    await user.type(screen.getByLabelText(/category card image/i), "https://cdn.example.com/categories/home-care.jpg");
+    await user.type(screen.getByLabelText(/^og image$/i), "https://cdn.example.com/seo/home-care-og.jpg");
 
     await user.click(screen.getByRole("button", { name: /create category/i }));
 
@@ -143,6 +119,7 @@ describe("AdminCategoryForm", () => {
     expect(payload.get("slug")).toBe("home-care");
     expect(payload.get("status")).toBe("DRAFT");
     expect(payload.get("returnTo")).toBe("/admin/categories");
-    expect(payload.get("seoImageUrl")).toBe("https://store.public.blob.vercel-storage.com/admin/seo/category-og-123.png");
+    expect(payload.get("categoryCardImageUrl")).toBe("https://cdn.example.com/categories/home-care.jpg");
+    expect(payload.get("seoImageUrl")).toBe("https://cdn.example.com/seo/home-care-og.jpg");
   });
 });

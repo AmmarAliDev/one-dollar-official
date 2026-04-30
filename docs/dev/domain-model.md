@@ -44,7 +44,7 @@ Key entities
 - `Role` — authoritative role records. `permissions` is a flexible JSON blob for feature flags and fine-grained permissions.
 - `Account` / `Session` — NextAuth-compatible tables are included to make integration straightforward.
 - `Address` — user addresses. Orders use `OrderAddress` snapshots so address changes do not mutate historic orders.
-- `Category` — currently managed as simple categories in admin (no parent assignment), with `name`, `slug`, `description`, `status`, and SEO fields.
+- `Category` — currently managed as simple categories in admin (no parent assignment), with `name`, `slug`, `description`, optional `cardImageUrl` (storefront category-card background media), `status`, and SEO fields.
 - `One Dollar` storefront category is intentionally virtual/system-level (not persisted in `Category`). Membership is derived from published products priced at `<= 280 PKR`, and does not remove products from their original category assignments.
 - `BlogPost` — CMS-style article record for storefront blog content with locale, title, slug, excerpt, structured content JSON blocks, cover-image metadata, publication status/date, and SEO fields.
 - `Product` — product master record for both simple and variant-based products. Admin management covers content copy, related product links, images, specifications, status, an optional `masterSku`/`product_code` parent identifier, and shared SEO/metadata.

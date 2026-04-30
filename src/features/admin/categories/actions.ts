@@ -49,6 +49,7 @@ function readCategoryPayload(formData: FormData) {
     name: `${formData.get("name") ?? ""}`,
     slug: `${formData.get("slug") ?? ""}`,
     description: `${formData.get("description") ?? ""}`,
+    categoryCardImageUrl: `${formData.get("categoryCardImageUrl") ?? ""}`,
     status: `${formData.get("status") ?? ""}`,
     seoTitle: `${formData.get("seoTitle") ?? ""}`,
     seoDescription: `${formData.get("seoDescription") ?? ""}`,

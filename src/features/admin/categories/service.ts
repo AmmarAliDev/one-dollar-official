@@ -21,6 +21,7 @@ export type AdminCategoryRecord = {
   name: string;
   slug: string;
   description: string | null;
+  cardImageUrl: string | null;
   status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
   seoTitle: string | null;
   seoDescription: string | null;
@@ -125,6 +126,7 @@ export async function listAdminCategories(filters: AdminCategoryListFilters = {}
       name: true,
       slug: true,
       description: true,
+      cardImageUrl: true,
       status: true,
       seoTitle: true,
       seoDescription: true,
@@ -150,6 +152,7 @@ export async function getAdminCategoryById(categoryId: string): Promise<AdminCat
       name: true,
       slug: true,
       description: true,
+      cardImageUrl: true,
       status: true,
       seoTitle: true,
       seoDescription: true,
@@ -174,6 +177,7 @@ export async function createAdminCategory(input: {
     name: input.data.name,
     slug: input.data.slug,
     description: input.data.description ?? null,
+    cardImageUrl: input.data.categoryCardImageUrl ?? null,
     status: input.data.status,
     seoTitle: input.data.seoTitle ?? null,
     seoDescription: input.data.seoDescription ?? null,
@@ -194,6 +198,7 @@ export async function createAdminCategory(input: {
         name: true,
         slug: true,
         description: true,
+        cardImageUrl: true,
         status: true,
         seoTitle: true,
         seoDescription: true,
@@ -243,6 +248,7 @@ export async function updateAdminCategory(input: {
     name: input.data.name,
     slug: input.data.slug,
     description: input.data.description ?? null,
+    cardImageUrl: input.data.categoryCardImageUrl ?? null,
     status: input.data.status,
     seoTitle: input.data.seoTitle ?? null,
     seoDescription: input.data.seoDescription ?? null,
@@ -286,6 +292,7 @@ export async function updateAdminCategory(input: {
         name: true,
         slug: true,
         description: true,
+        cardImageUrl: true,
         status: true,
         seoTitle: true,
         seoDescription: true,

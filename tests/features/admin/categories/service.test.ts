@@ -56,6 +56,7 @@ describe("admin categories service", () => {
       name: "Home Care",
       slug: "home-care",
       description: "x",
+      cardImageUrl: "https://cdn.example.com/category/home-care.jpg",
       status: "DRAFT",
       seoTitle: null,
       seoDescription: null,
@@ -69,6 +70,7 @@ describe("admin categories service", () => {
         name: "Home Care",
         slug: "home-care",
         description: "x",
+        categoryCardImageUrl: "https://cdn.example.com/category/home-care.jpg",
         status: "DRAFT",
         seoTitle: undefined,
         seoDescription: undefined,
@@ -86,6 +88,13 @@ describe("admin categories service", () => {
     });
 
     expect(prismaMock.category.create).toHaveBeenCalledTimes(1);
+    expect(prismaMock.category.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          cardImageUrl: "https://cdn.example.com/category/home-care.jpg",
+        }),
+      }),
+    );
     expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
@@ -103,6 +112,7 @@ describe("admin categories service", () => {
       name: "Home Care",
       slug: "home-care",
       description: "x",
+      cardImageUrl: "https://cdn.example.com/category/home-care.jpg",
       status: "DRAFT",
       seoTitle: null,
       seoDescription: null,
@@ -114,6 +124,7 @@ describe("admin categories service", () => {
       name: "Home + Kitchen",
       slug: "home-kitchen",
       description: "y",
+      cardImageUrl: "https://cdn.example.com/category/home-kitchen.jpg",
       status: "PUBLISHED",
       seoTitle: null,
       seoDescription: null,
@@ -128,6 +139,7 @@ describe("admin categories service", () => {
         name: "Home + Kitchen",
         slug: "home-kitchen",
         description: "y",
+        categoryCardImageUrl: "https://cdn.example.com/category/home-kitchen.jpg",
         status: "PUBLISHED",
         seoTitle: undefined,
         seoDescription: undefined,
@@ -145,6 +157,13 @@ describe("admin categories service", () => {
     });
 
     expect(prismaMock.category.update).toHaveBeenCalledTimes(1);
+    expect(prismaMock.category.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          cardImageUrl: "https://cdn.example.com/category/home-kitchen.jpg",
+        }),
+      }),
+    );
     expect(prismaMock.category.update).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.not.objectContaining({

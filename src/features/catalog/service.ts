@@ -344,11 +344,14 @@ function mapProductToCard(record: StorefrontProductRecord): CatalogProductCard {
  * Maps a DB category record to a CatalogCategory.
  */
 function mapCategoryRecord(record: StorefrontCategoryRecord): CatalogCategory {
+  const cardImageUrl = normalizeCatalogImageUrl(record.cardImageUrl);
+
   return {
     id: record.id,
     name: record.name,
     slug: record.slug,
     description: record.description ?? "",
+    ...(cardImageUrl ? { cardImageUrl } : {}),
     ...(record.seoTitle != null && { seoTitle: record.seoTitle }),
     ...(record.seoDescription != null && { seoDescription: record.seoDescription }),
     productCount: record._count.products,
