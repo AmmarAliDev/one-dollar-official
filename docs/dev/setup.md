@@ -24,7 +24,10 @@ pnpm prisma:migrate:dev --name init
 # 5. Seed roles and the default category
 pnpm prisma:seed
 
-# 6. Start the dev server
+# 6. Populate realistic local/dev demo catalog data (optional but recommended)
+pnpm prisma:seed:dev-catalog
+
+# 7. Start the dev server
 pnpm dev
 ```
 
@@ -63,6 +66,29 @@ Validation is centralized in `src/config/env.ts`, and the safe shared config sna
 If a required or invalid value is detected, the app throws a readable `CONFIG_ERROR` with guidance for updating `.env.local`.
 
 The Prisma scripts in this repo read local environment files and fall back to `DATABASE_URL` when `POSTGRES_URL_NON_POOLING` is omitted during local development.
+
+### Local/dev demo catalog population
+
+Use the dedicated local/dev catalog script when you want realistic storefront/admin test data:
+
+```bash
+pnpm prisma:seed:dev-catalog
+```
+
+What it does:
+
+- upserts the demo categories used by local/dev flows (including HomeDecor, HomeLiving, KitchenDining, HealthBeauty, CleaningEss, Tumbler, StorageOrg, Electronics, Gadgets, Cosmetics, PersonalCare, ToysHobbies, BedroomBath, LadiesCorner)
+- creates deterministic product sets (4 to 8 products per category)
+- creates one default variant per product with mixed pricing and inventory
+- writes category/product SEO fields and demo image URLs
+- guarantees One Dollar-eligible products (`<= 280 PKR`) inside every category so the virtual One Dollar storefront category can be verified
+
+Safety behavior:
+
+- the script is intentionally blocked in production/deployment-like runtime (`NODE_ENV=production`, `CI=true`, or `VERCEL=1`)
+- hosted database URLs are blocked by default; use `PRISMA_ALLOW_HOSTED_DEV_SEED=true` only for intentional disposable remote dev databases
+
+This script is for local/dev verification only and should not be used as a production data workflow.
 
 ## Admin Image Upload Setup
 

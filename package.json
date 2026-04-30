@@ -18,6 +18,7 @@
     "prisma:migrate:resolve": "node scripts/prisma-cli.mjs migrate resolve",
     "prisma:studio": "node scripts/prisma-cli.mjs studio",
     "prisma:seed": "node prisma/seed.js",
+    "prisma:seed:dev-catalog": "node prisma/populate-dev-catalog.js",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
