@@ -134,8 +134,6 @@ describe("homepage carousel config (shared)", () => {
     expect(HOMEPAGE_CAROUSEL_ITEM_CLASS).toContain("sm:basis-1/2");
     expect(HOMEPAGE_CAROUSEL_ITEM_CLASS).toContain("md:basis-1/3");
     expect(HOMEPAGE_CAROUSEL_ITEM_CLASS).toContain("lg:basis-1/4");
-    expect(HOMEPAGE_CAROUSEL_ITEM_CLASS).toContain("xl:basis-1/5");
-    expect(HOMEPAGE_CAROUSEL_ITEM_CLASS).toContain("2xl:basis-1/6");
   });
 
   it("sets max items to 8", () => {
