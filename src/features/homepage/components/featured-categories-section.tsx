@@ -92,8 +92,8 @@ export function FeaturedCategoriesSectionBlock({ section }: FeaturedCategoriesSe
       ) : (
         <EmptyState
           icon={Layers}
-          title="Categories coming soon"
-          description="We are preparing curated category collections for this section."
+          title="No featured categories yet"
+          description="Featured categories will appear here when this section is configured."
           action={
             <Link href={routes.storefront.categories} className="text-primary text-sm font-medium hover:underline">
               Browse all categories

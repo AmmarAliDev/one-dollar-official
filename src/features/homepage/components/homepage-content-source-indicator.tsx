@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { PageContainer } from "@/components/ui/page-container";
+import { shouldRenderGuardedSurface } from "@/config/production-visibility";
 
 type HomepageContentSourceIndicatorProps = {
   source: "cms" | "fallback";
@@ -7,6 +8,10 @@ type HomepageContentSourceIndicatorProps = {
 
 export function HomepageContentSourceIndicator({ source }: HomepageContentSourceIndicatorProps) {
   if (source === "cms") {
+    return null;
+  }
+
+  if (!shouldRenderGuardedSurface("homepageFallbackIndicator")) {
     return null;
   }
 

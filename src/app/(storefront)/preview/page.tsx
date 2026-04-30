@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { Palette } from "lucide-react";
 
 import { PageShell } from "@/components/layout/page-shell";
@@ -16,6 +17,7 @@ import { SectionHeader } from "@/components/ui/section-header";
 import { PageSkeleton, TableSkeleton } from "@/components/ui/skeleton";
 import { env } from "@/config/env";
 import { buildMetadata } from "@/config/metadata";
+import { shouldRenderGuardedSurface } from "@/config/production-visibility";
 import { routes } from "@/config/routes";
 
 export const metadata = buildMetadata({
@@ -25,6 +27,10 @@ export const metadata = buildMetadata({
 });
 
 export default function StorefrontPreviewPage() {
+  if (!shouldRenderGuardedSurface("storefrontPreviewRoute")) {
+    notFound();
+  }
+
   return (
     <PageShell className="gap-8">
       <SectionHeader

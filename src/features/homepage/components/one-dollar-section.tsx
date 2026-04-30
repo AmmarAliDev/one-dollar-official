@@ -101,7 +101,7 @@ export function OneDollarSectionBlock({ section }: OneDollarSectionProps) {
       ) : (
         <EmptyState
           icon={Tag}
-          title="One Dollar deals coming soon"
+          title="No One Dollar deals right now"
           description={section.placeholderMessage}
           action={
             <Link href={section.ctaHref} className="text-primary text-sm font-medium hover:underline">

@@ -75,6 +75,13 @@
 - `AppFooter` now has three sections: company links, policy links, and a newsletter placeholder block.
 - Static storefront placeholders live under `src/app/(storefront)` for `/about`, `/contact`, `/privacy`, `/terms`, `/shipping-policy`, and `/return-policy`.
 
+### Production Placeholder Visibility Rule
+
+- Development-only or incomplete storefront surfaces must use `shouldRenderGuardedSurface()` from `src/config/production-visibility.ts`.
+- In production, guarded surfaces are hidden (or route handlers resolve to `notFound()` for placeholder-only pages).
+- In development and test, guarded surfaces remain visible for QA and iteration.
+- Do not hide complete, functional sections just because they are empty. Prefer neutral empty-state copy (for example, "No featured products yet") over "coming soon" placeholder language.
+
 ## Homepage Carousel Conventions
 
 - All homepage sections that render categories or products must use a shared carousel pattern (Embla via `src/components/ui/carousel.tsx`) — **not** a static grid.

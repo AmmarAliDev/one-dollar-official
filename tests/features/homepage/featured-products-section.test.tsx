@@ -58,7 +58,7 @@ describe("FeaturedProductsSectionBlock", () => {
   it("renders a friendly empty state when products are missing", () => {
     render(<FeaturedProductsSectionBlock section={buildSection([])} />);
 
-    expect(screen.getByText("Products coming soon")).toBeInTheDocument();
+    expect(screen.getByText("No featured products yet")).toBeInTheDocument();
     expect(screen.queryByTestId("carousel")).not.toBeInTheDocument();
   });
 

@@ -73,7 +73,7 @@ describe("FeaturedCategoriesSectionBlock", () => {
   it("renders a friendly empty state when categories are missing", () => {
     render(<FeaturedCategoriesSectionBlock section={buildSection([])} />);
 
-    expect(screen.getByText("Categories coming soon")).toBeInTheDocument();
+    expect(screen.getByText("No featured categories yet")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Browse all categories" })).toBeInTheDocument();
     expect(screen.queryByTestId("carousel")).not.toBeInTheDocument();
   });
