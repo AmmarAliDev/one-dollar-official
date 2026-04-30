@@ -62,6 +62,7 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `(admin)/admin/activity` now reads a dedicated AuditLog-backed feed through `src/features/admin/activity/service.ts`, with non-technical event summaries and actor context when available
 - `(admin)/admin/revenue` now reads a dedicated DB-backed report through `src/features/admin/revenue/service.ts`, showing recognized revenue, recent period summaries, order totals, and explicit inclusion assumptions
 - `(admin)/admin/categories` now provides category CRUD with shared typed create/edit/filter forms and SEO field controls
+- Admin category create/edit now includes a dedicated category card image field wired to the shared admin upload foundation (`purpose: category`), persisting a URL into `Category.cardImageUrl`.
 - `(admin)/admin/products` now provides product CRUD with reusable RHF + Zod form composition for simple and variant-based catalog entries
 - `(admin)/admin/blog` now provides blog post CRUD with structured content JSON, publish scheduling, and SEO controls
 - `(admin)/admin/inventory` now supports low-stock monitoring plus inline manual stock adjustments for authorized catalog admins
@@ -155,6 +156,7 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `src/features/catalog` is the storefront catalog feature module. It reads exclusively from the PostgreSQL database via Prisma.
 - `src/server/db/catalog-queries.ts` is the Prisma query layer for the storefront. It enforces all publish-state visibility rules: only PUBLISHED categories and products are returned, and only APPROVED reviews reach the storefront.
 - `src/features/catalog/service.ts` owns listing + PDP assembly (`getCatalogCategoryListing`, `getProductBySlug`, `getRelatedProducts`) by calling the query layer and mapping DB records to storefront types.
+- Storefront category cards (`src/features/catalog/components/category-overview-card.tsx`) render category-specific background media when `cardImageUrl` is available; when absent, they intentionally fall back to a stable gradient preview so cards remain readable and layout-safe.
 - `One Dollar` is implemented as a virtual/system storefront category (`slug: one-dollar`) in `src/features/catalog/one-dollar.ts`; it is not persisted as a `Category` row and does not alter product-to-category relationships.
 - One Dollar membership is derived at read-time from published products: include when default selling price is `<= 280 PKR`; products stay assigned to their original categories while also appearing in this special listing.
 - The `one-dollar` slug is reserved for the virtual category. If a published DB category collides with this slug, storefront category surfaces suppress the physical duplicate and log a warning for operator follow-up.

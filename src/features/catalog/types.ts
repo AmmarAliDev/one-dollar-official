@@ -120,6 +120,7 @@ export type CatalogCategory = {
   name: string;
   slug: string;
   description: string;
+  cardImageUrl?: string;
   seoTitle?: string;
   seoDescription?: string;
   productCount: number;

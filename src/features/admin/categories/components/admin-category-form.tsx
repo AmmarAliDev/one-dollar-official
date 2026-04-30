@@ -7,6 +7,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { FormErrorSummary } from "@/components/ui/form-error-summary";
 import { routes } from "@/config/routes";
 import { AdminSeoSection } from "@/features/admin/components/admin-seo-section";
+import { AdminImageUploadInput } from "@/features/admin/uploads";
 
 import { type CategoryCreateInput, categoryMutationSchema } from "../validation";
 
@@ -32,6 +33,7 @@ function buildCategoryFormData(values: AdminCategoryFormValues, input: { returnT
   formData.set("name", values.name);
   formData.set("slug", values.slug);
   formData.set("description", values.description ?? "");
+  formData.set("categoryCardImageUrl", values.categoryCardImageUrl ?? "");
   formData.set("status", values.status);
   formData.set("seoTitle", values.seoTitle ?? "");
   formData.set("seoDescription", values.seoDescription ?? "");
@@ -62,6 +64,7 @@ export function AdminCategoryForm({
       name: initialValues?.name ?? "",
       slug: initialValues?.slug ?? "",
       description: initialValues?.description ?? "",
+      categoryCardImageUrl: initialValues?.categoryCardImageUrl ?? "",
       status: initialValues?.status ?? "DRAFT",
       seoTitle: initialValues?.seoTitle ?? "",
       seoDescription: initialValues?.seoDescription ?? "",
@@ -129,6 +132,36 @@ export function AdminCategoryForm({
               label: "Description",
               placeholder: "Short summary shown in admin and listings.",
               rows: 4,
+            }}
+          />
+        </div>
+
+        <div className="md:col-span-2">
+          <DynamicFormField
+            control={form.control}
+            disabled={isPending}
+            fieldConfig={{
+              id: "category-card-image",
+              name: "categoryCardImageUrl",
+              type: "custom",
+              label: "Category card image",
+              placeholder: "https://example.com/category-card.jpg",
+              description: "Optional background image used on storefront category cards. Leave empty to use the default fallback style.",
+              render: ({ field, fieldState, inputId, describedBy, disabled }) => (
+                <AdminImageUploadInput
+                  inputId={inputId}
+                  value={typeof field.value === "string" ? field.value : ""}
+                  onChange={(nextValue) => {
+                    field.onChange(nextValue);
+                  }}
+                  onBlur={field.onBlur}
+                  purpose="category"
+                  placeholder="https://example.com/category-card.jpg"
+                  describedBy={describedBy}
+                  disabled={disabled}
+                  invalid={Boolean(fieldState.error)}
+                />
+              ),
             }}
           />
         </div>

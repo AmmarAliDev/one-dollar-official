@@ -107,6 +107,7 @@ export async function listPublishedCategories() {
       name: true,
       slug: true,
       description: true,
+      cardImageUrl: true,
       seoTitle: true,
       seoDescription: true,
       _count: {
@@ -138,6 +139,7 @@ export async function getPublishedCategoryBySlug(slug: string) {
       name: true,
       slug: true,
       description: true,
+      cardImageUrl: true,
       seoTitle: true,
       seoDescription: true,
       _count: {

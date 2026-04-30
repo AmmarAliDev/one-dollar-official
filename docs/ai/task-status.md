@@ -2,6 +2,8 @@
 
 ## Current Milestone
 
+Category card background image support completed on 2026-05-01 (added a dedicated nullable `Category.cardImageUrl` persistence field and migration; wired admin category create/edit payload parsing, validation, form controls, and Prisma writes so product/catalog admins can add/update/remove category card image URLs through the existing shared upload input pattern with `purpose: category`; updated storefront category query mapping and category-card rendering to display category-specific background media when available; preserved safe visual fallback rendering when no image exists; added focused tests for admin category image validation/save payload behavior and storefront category-card image/fallback rendering; updated developer and AI task docs for the new contract).
+
 Catalog product-card media image-first update completed on 2026-05-01 (updated storefront catalog card media area to render product images when a valid `imageUrl` is available; retained deterministic gradient placeholder behavior when image data is missing/invalid; added load-error fallback in card media so broken image responses gracefully switch to the existing placeholder treatment instead of displaying broken media; preserved media aspect ratio and card layout stability; introduced URL normalization guard for catalog image URLs to accept only root-relative and absolute HTTP(S) values; added focused catalog card rendering tests for image-present, image-missing fallback, and load-error fallback scenarios; updated UI conventions documentation with the new image-first + graceful-fallback contract).
 
 Add-to-cart success sonner CTA theme alignment completed on 2026-05-01 (fixed mobile add-to-cart toast action label typo to `Proceed to Checkout` to match existing UX/tests; updated shared `AppToaster` Sonner classNames so action/cancel toast buttons now use app `buttonVariants` styling instead of Sonner's default black action button, keeping CTA visuals consistent across light/dark themes; preserved toast duration, mobile-only CTA behavior, and checkout routing callback contract; added focused provider tests in `tests/components/providers/app-toaster.test.tsx`).
@@ -78,7 +80,7 @@ This file is now intentionally concise. Detailed implementation state is split i
 
 ## Active Deferred Buckets
 
-- Category hero/media uploads beyond SEO and image URLs embedded inside JSON content editors remain intentionally deferred to follow-up slices.
+- Advanced category media variants beyond card background imagery (for example separate hero/campaign assets) and image URLs embedded inside JSON content editors remain intentionally deferred to follow-up slices.
 - Online payment providers and webhook processing
 - Advanced inventory operations (history filters are the recommended next implementation step)
 - Advanced revenue analytics and export workflows
