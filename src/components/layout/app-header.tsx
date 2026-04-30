@@ -1,4 +1,4 @@
-import { ChevronDown, Heart, Search, ShoppingCart, Store } from "lucide-react";
+import { ChevronDown, Heart, Search, Store } from "lucide-react";
 import Link from "next/link";
 
 import { auth } from "@/auth";
@@ -6,6 +6,7 @@ import { routes } from "@/config/routes";
 import { siteConfig } from "@/config/site";
 import { getCatalogCategories } from "@/features/catalog";
 import { CartMiniCart } from "@/features/cart/components/cart-mini-cart";
+import { MobileCartButton } from "@/features/cart/components/mobile-cart-button";
 
 import { RoleKey } from "@/lib/auth/roles";
 import { logger } from "@/lib/logger";
@@ -85,13 +86,7 @@ export async function AppHeader() {
             >
               <Search className="size-4" aria-hidden="true" />
             </Link>
-            <Link
-              href={routes.storefront.cart}
-              className={buttonVariants({ variant: "outline", size: "icon" })}
-              aria-label="Shopping cart"
-            >
-              <ShoppingCart className="size-4" aria-hidden="true" />
-            </Link>
+            <MobileCartButton />
             <StorefrontMobileNav
               navItems={topLevelNavItems}
               categoryMenuItems={categoryMenuItems}

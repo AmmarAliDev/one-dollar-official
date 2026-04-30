@@ -81,7 +81,18 @@ Stock is validated in two places:
 - PDP add-to-cart button now calls `POST /api/cart`
 - Cart page (`/cart`) now renders real line items and order summary
 - Header mini-cart shows count + quick preview + subtotal
+- Header mobile cart button now shows the same total cart item count via shared client state
 - Cart loading/error routes are implemented with dedicated states
+
+## Global cart count state
+
+- `src/features/cart/cart-count-state.ts` is the client-side global state seam for cart item count.
+- The state only stores derived count metadata (`itemCount`, loading, and user-safe error message) and does not duplicate full cart line-item truth.
+- Initial synchronization happens via `GET /api/cart` with `cache: "no-store"`.
+- Ongoing synchronization uses the existing `cart:changed` browser event:
+	- when event detail includes a cart payload, count is updated immediately from `cart.itemCount`
+	- when event detail is omitted, the state re-fetches from `/api/cart` as a safe fallback
+- This keeps guest and authenticated behavior unchanged because `/api/cart` already resolves context using existing cookie/session rules.
 
 ## Persistence behavior
 

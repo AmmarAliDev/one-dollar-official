@@ -203,6 +203,16 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - Authenticated cart APIs preserve a guest-context cookie token to avoid leaking authenticated cart identity into post-sign-out guest browsing.
 - Sign-out rotates to a fresh guest token before session clear so the next anonymous request starts from a clean guest cart context.
 
+## Cart Client Count State Strategy
+
+- `src/features/cart/cart-count-state.ts` is the global client-side count state seam for cart badge surfaces.
+- The store is intentionally minimal and derived: it keeps only `itemCount` and sync status, while full cart details remain owned by existing cart APIs and feature components.
+- Synchronization contract:
+	- bootstrap from `GET /api/cart` (`no-store`) on first subscriber
+	- subscribe once to `cart:changed` and update immediately when cart detail is provided
+	- fallback to API refresh when an event omits cart detail
+- The mobile cart button (`src/features/cart/components/mobile-cart-button.tsx`) consumes this shared state so cart count remains consistent across mobile and desktop entry points without changing cart business logic.
+
 ## Review Workflow Strategy
 
 - `src/features/reviews/service.ts` is the customer review service layer for submission eligibility, account listing, and safe status mapping.
