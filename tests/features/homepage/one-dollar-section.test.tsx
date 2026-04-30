@@ -54,6 +54,14 @@ describe("OneDollarSectionBlock", () => {
     expect(screen.getByText("Deal d2")).toBeInTheDocument();
   });
 
+  it("renders each one-dollar product card as a full clickable link", () => {
+    render(<OneDollarSectionBlock section={buildSection([buildProduct("d1")])} />);
+
+    const link = screen.getByRole("link", { name: "View Deal d1" });
+    expect(link).toHaveAttribute("href", "/products/d1");
+    expect(link).toContainElement(screen.getByText("View product"));
+  });
+
   it("always shows the View All CTA when products are present", () => {
     render(<OneDollarSectionBlock section={buildSection([buildProduct("d1")])} />);
 

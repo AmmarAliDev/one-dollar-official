@@ -23,6 +23,14 @@ afterEach(() => {
 });
 
 describe("CategoryOverviewCard media behavior", () => {
+  it("renders the category card as a single full clickable link", () => {
+    render(<CategoryOverviewCard category={makeCategory()} />);
+
+    const link = screen.getByRole("link");
+    expect(link).toHaveAttribute("href", "/categories/home-care");
+    expect(link).toContainElement(screen.getByText("Home Care"));
+  });
+
   it("renders the category card background image when image URL exists", () => {
     render(
       <CategoryOverviewCard

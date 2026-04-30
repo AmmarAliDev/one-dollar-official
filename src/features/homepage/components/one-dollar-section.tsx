@@ -53,35 +53,37 @@ export function OneDollarSectionBlock({ section }: OneDollarSectionProps) {
             <CarouselContent>
               {visibleProducts.map((product) => (
                 <CarouselItem key={product.id} className={HOMEPAGE_CAROUSEL_ITEM_CLASS}>
-                  <Card className="h-full">
-                    <CardHeader className="space-y-3">
-                      <div className="flex items-start justify-between gap-3">
-                        <CardTitle className="text-base">{product.name}</CardTitle>
-                        {product.badge ? (
-                          <Badge variant="secondary" className="shrink-0">
-                            {product.badge}
-                          </Badge>
+                  <Link
+                    href={product.href}
+                    className="group focus-visible:ring-ring block h-full rounded-lg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                    aria-label={`View ${product.name}`}
+                  >
+                    <Card className="h-full transition-transform duration-200 group-hover:-translate-y-0.5">
+                      <CardHeader className="space-y-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <CardTitle className="text-base">{product.name}</CardTitle>
+                          {product.badge ? (
+                            <Badge variant="secondary" className="shrink-0">
+                              {product.badge}
+                            </Badge>
+                          ) : null}
+                        </div>
+                        {product.description ? (
+                          <CardDescription>{product.description}</CardDescription>
                         ) : null}
-                      </div>
-                      {product.description ? (
-                        <CardDescription>{product.description}</CardDescription>
-                      ) : null}
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <PriceDisplay
-                        amount={product.price}
-                        size="sm"
-                        {...(typeof product.compareAt === "number" ? { compareAt: product.compareAt } : undefined)}
-                      />
-                      <Link
-                        href={product.href}
-                        className="text-primary text-sm font-medium hover:underline"
-                        aria-label={`View ${product.name}`}
-                      >
-                        View product
-                      </Link>
-                    </CardContent>
-                  </Card>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <PriceDisplay
+                          amount={product.price}
+                          size="sm"
+                          {...(typeof product.compareAt === "number" ? { compareAt: product.compareAt } : undefined)}
+                        />
+                        <span className="text-primary text-sm font-medium transition-[text-decoration-color] group-hover:underline">
+                          View product
+                        </span>
+                      </CardContent>
+                    </Card>
+                  </Link>
                 </CarouselItem>
               ))}
             </CarouselContent>
