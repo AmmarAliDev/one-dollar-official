@@ -9,6 +9,8 @@
 ## Theme and Feedback
 
 - Theme selection supports `system`, `light`, and `dark` through `next-themes`.
+- Default initial theme is `light` (via `ThemeProvider.defaultTheme`) for first-time visits before a stored preference is present.
+- System-following behavior remains available through the `system` option and should continue to be treated as an explicit user preference.
 - Shared frontend notifications should use `notify.*()` from `src/lib/notify.ts`.
 - `notify.*()` supports typed Sonner option passthrough as a third argument when a feature needs scoped behaviors like custom duration or toast actions.
 - Keep theme-dependent visuals tied to semantic tokens like `bg-card`, `text-muted-foreground`, and `border-border`.
