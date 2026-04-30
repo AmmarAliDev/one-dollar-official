@@ -1,13 +1,19 @@
 import { StaticPagePlaceholder } from "@/components/layout/static-page-placeholder";
 import { buildMetadata } from "@/config/metadata";
+import { shouldRenderGuardedSurface } from "@/config/production-visibility";
+import { notFound } from "next/navigation";
 
 export const metadata = buildMetadata({
   title: "Return Policy",
   path: "/return-policy",
-  description: "Return policy placeholder for the storefront.",
+  description: "Return policy information for One Dollar customers.",
 });
 
 export default function ReturnPolicyPage() {
+  if (!shouldRenderGuardedSurface("returnPolicyPlaceholderPage")) {
+    notFound();
+  }
+
   return (
     <StaticPagePlaceholder
       pageTag="Policy"

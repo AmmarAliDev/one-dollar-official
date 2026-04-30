@@ -1,4 +1,5 @@
 import { buildMetadata } from "@/config/metadata";
+import { shouldRenderGuardedSurface } from "@/config/production-visibility";
 import { Badge } from "@/components/ui/badge";
 import { PageShell } from "@/components/layout/page-shell";
 import { Separator } from "@/components/ui/separator";
@@ -11,6 +12,8 @@ export const metadata = buildMetadata({
 });
 
 export default function AboutPage() {
+  const showInterimNarrativeNote = shouldRenderGuardedSurface("aboutInterimNarrativeNote");
+
   return (
     <PageShell className="max-w-7xl gap-10">
       {/* Hero */}
@@ -67,11 +70,13 @@ export default function AboutPage() {
           </a>{" "}
           — we&apos;re happy to hear from you.
         </p>
-        <p className="text-muted-foreground text-sm">
-          {/* TODO: Replace with real brand story, team details, and founding narrative */}
-          Content above is an interim version and should be updated to reflect the real brand story
-          and mission.
-        </p>
+        {showInterimNarrativeNote ? (
+          <p className="text-muted-foreground text-sm">
+            {/* TODO: Replace with real brand story, team details, and founding narrative */}
+            Content above is an interim version and should be updated to reflect the real brand story
+            and mission.
+          </p>
+        ) : null}
       </section>
     </PageShell>
   );

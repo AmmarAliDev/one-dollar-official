@@ -1,11 +1,12 @@
 import { env, type RuntimeEnv } from "@/config/env";
+import { shouldRenderGuardedSurface } from "@/config/production-visibility";
 import { routes } from "@/config/routes";
 import { ONE_DOLLAR_CATEGORY_SLUG, ONE_DOLLAR_MAX_PRICE_PKR } from "@/features/catalog/one-dollar";
 
 import type { HomepageSection } from "./types";
 
 function shouldShowHomepagePreviewArtifacts(runtimeEnv: RuntimeEnv) {
-  return runtimeEnv.nodeEnv !== "production";
+  return shouldRenderGuardedSurface("homepagePreviewCta", runtimeEnv);
 }
 
 export function buildHomepageFallbackSections(runtimeEnv: RuntimeEnv = env): HomepageSection[] {
@@ -69,7 +70,7 @@ export function buildHomepageFallbackSections(runtimeEnv: RuntimeEnv = env): Hom
       id: "fallback-featured-products",
       kind: "featured-products",
       title: "Featured products",
-      description: "Placeholder product highlights until catalog modules are connected.",
+      description: "A rotating set of featured products from the current catalog.",
       displayOrder: 30,
       products: [
         {
@@ -114,8 +115,8 @@ export function buildHomepageFallbackSections(runtimeEnv: RuntimeEnv = env): Hom
       id: "fallback-blog-highlights",
       kind: "blog-highlights",
       title: "Blog highlights",
-      description: "Editorial slots can be wired once content tooling is connected.",
-      placeholderMessage: "No published blog content yet. This area is reserved for CMS highlights.",
+      description: "Latest published stories and practical buying guides.",
+      placeholderMessage: "No published blog highlights are available right now.",
       displayOrder: 50,
       articles: [],
     },

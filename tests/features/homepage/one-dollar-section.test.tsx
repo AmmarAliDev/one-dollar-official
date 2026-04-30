@@ -65,7 +65,7 @@ describe("OneDollarSectionBlock", () => {
   it("renders the empty state with CTA when no products are available", () => {
     render(<OneDollarSectionBlock section={buildSection([])} />);
 
-    expect(screen.getByText("One Dollar deals coming soon")).toBeInTheDocument();
+    expect(screen.getByText("No One Dollar deals right now")).toBeInTheDocument();
     expect(screen.getByText("No deals available right now.")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "View all deals" })).toBeInTheDocument();
     expect(screen.queryByTestId("carousel")).not.toBeInTheDocument();

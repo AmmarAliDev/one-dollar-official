@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { shouldRenderGuardedSurface } from "@/config/production-visibility";
 import { routes } from "@/config/routes";
 import { siteConfig } from "@/config/site";
 
@@ -9,7 +10,9 @@ import { PageContainer } from "../ui/page-container";
 const companyLinks = [
   { title: "About", href: routes.storefront.about },
   { title: "Contact", href: routes.storefront.contact },
-  { title: "Storefront Preview", href: routes.storefront.preview },
+  ...(shouldRenderGuardedSurface("footerPreviewLink")
+    ? [{ title: "Storefront Preview", href: routes.storefront.preview }]
+    : []),
 ];
 
 const policyLinks = [
@@ -20,6 +23,8 @@ const policyLinks = [
 ];
 
 export function AppFooter() {
+  const showNewsletterPlaceholder = shouldRenderGuardedSurface("footerNewsletterPlaceholder");
+
   return (
     <footer className="border-border/70 bg-background/95 border-t">
       <PageContainer className="grid gap-6 py-8 md:grid-cols-3">
@@ -64,18 +69,26 @@ export function AppFooter() {
 
         <div className="space-y-3 text-sm">
           <p className="font-medium">Newsletter</p>
-          <p className="text-muted-foreground">
-            Newsletter signup will be connected in a later content and marketing prompt.
-          </p>
-          <div className="bg-muted/40 rounded-[var(--radius)] border border-dashed border-border px-3 py-4">
-            <p className="text-xs font-medium">Placeholder</p>
-            <p className="text-muted-foreground text-xs">
-              Email capture form and consent copy are intentionally deferred.
+          {showNewsletterPlaceholder ? (
+            <>
+              <p className="text-muted-foreground">
+                Newsletter signup will be connected in a later content and marketing prompt.
+              </p>
+              <div className="bg-muted/40 rounded-[var(--radius)] border border-dashed border-border px-3 py-4">
+                <p className="text-xs font-medium">Placeholder</p>
+                <p className="text-muted-foreground text-xs">
+                  Email capture form and consent copy are intentionally deferred.
+                </p>
+              </div>
+              <p className="text-muted-foreground text-xs">
+                For now, customer inquiries can use the contact page placeholder.
+              </p>
+            </>
+          ) : (
+            <p className="text-muted-foreground">
+              Contact support for updates on newsletter availability.
             </p>
-          </div>
-          <p className="text-muted-foreground text-xs">
-            For now, customer inquiries can use the contact page placeholder.
-          </p>
+          )}
         </div>
       </PageContainer>
     </footer>

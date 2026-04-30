@@ -96,8 +96,8 @@ export function FeaturedProductsSectionBlock({ section }: FeaturedProductsSectio
       ) : (
         <EmptyState
           icon={ShoppingBag}
-          title="Products coming soon"
-          description="We are curating top picks for this section."
+          title="No featured products yet"
+          description="Featured products will appear here when this section is configured."
         />
       )}
     </PageContainer>
