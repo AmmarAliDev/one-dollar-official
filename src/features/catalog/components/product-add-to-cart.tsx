@@ -1,9 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
+import { routes } from "@/config/routes";
 import { dispatchCartChanged } from "@/features/cart/client-events";
+import { buildAddToCartToastPayload } from "@/features/catalog/lib/add-to-cart-toast";
 import type { CartSummary } from "@/features/cart/types";
 import { AppError } from "@/lib/errors/app-error";
 import { toUserMessage } from "@/lib/errors/error-messages";
@@ -28,7 +31,24 @@ export function ProductAddToCart({
   productName,
   isAvailable,
 }: ProductAddToCartProps) {
+  const router = useRouter();
   const [pending, setPending] = useState(false);
+
+  function isMobileViewport() {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+      return false;
+    }
+
+    return window.matchMedia("(max-width: 767px)").matches;
+  }
+
+  function proceedToCheckout() {
+    try {
+      router.push(routes.storefront.checkout);
+    } catch (error) {
+      notify.error("Could not open checkout", toUserMessage(error));
+    }
+  }
 
   async function handleAddToCart() {
     if (!isAvailable || pending) return;
@@ -73,7 +93,14 @@ export function ProductAddToCart({
       }
 
       dispatchCartChanged(payload.cart ?? null);
-      notify.success(`${productName} added to cart`, "Cart updated.");
+
+      const toastPayload = buildAddToCartToastPayload({
+        productName,
+        isMobileViewport: isMobileViewport(),
+        onProceedToCheckout: proceedToCheckout,
+      });
+
+      notify.success(toastPayload.title, toastPayload.description, toastPayload.options);
     } catch (error) {
       notify.error("Could not add to cart", toUserMessage(error));
     } finally {
