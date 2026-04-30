@@ -119,6 +119,27 @@ describe("catalog listing service", () => {
     expect(listing?.products).toHaveLength(3);
   });
 
+  it("defaults to an initial page size of 6 products", async () => {
+    mockGetPublishedCategoryBySlug.mockResolvedValue(makeCategoryRecord());
+    mockListPublishedProductsByCategory.mockResolvedValue(
+      Array.from({ length: 9 }, (_, index) =>
+        makeProductRecord({
+          id: `p${index + 1}`,
+          slug: `product-${index + 1}`,
+          price: 200 + index,
+        }),
+      ),
+    );
+
+    const listing = await getCatalogCategoryListing({ slug: "home-care" });
+
+    expect(listing).not.toBeNull();
+    expect(listing?.products).toHaveLength(6);
+    expect(listing?.pagination.currentPage).toBe(1);
+    expect(listing?.pagination.pageSize).toBe(6);
+    expect(listing?.pagination.hasNextPage).toBe(true);
+  });
+
   it("returns null when the category is not published", async () => {
     mockGetPublishedCategoryBySlug.mockResolvedValue(null);
     mockListPublishedProductsByCategory.mockResolvedValue([]);
