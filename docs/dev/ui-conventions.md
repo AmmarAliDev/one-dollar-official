@@ -89,6 +89,8 @@
 - Category discovery lives at `/categories`, while individual listing pages live at `/categories/[slug]` for clean, SEO-friendly storefront URLs.
 - `src/features/catalog/components/product-grid-card.tsx` is the reusable catalog card; keep product price, compare price, stock badge, and review summary placeholder logic there.
 - Listing filter UI should remain query-string-based, but it should now use the shared form layer for consistent labels, validation, and reset/apply actions.
+- On mobile category pages, filter/sort controls should be exposed through a `Sheet` panel triggered by a clear `Filter and sort` button; desktop should keep the persistent sidebar card.
+- Mobile and desktop filter surfaces must share the same filter contract and URL behavior (`buildCategoryListingHref`), including resetting pagination to page 1 on apply.
 - Use the shared empty and loading primitives for listing states instead of bespoke skeleton or empty-state markup.
 - Treat variant-aware attributes as an additive scaffold for now; future implementation should extend the current filter contract instead of replacing it.
 
