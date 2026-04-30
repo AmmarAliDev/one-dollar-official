@@ -12,12 +12,19 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 
-function mockMatchMedia(matches: boolean) {
+function mockViewport(width: number) {
+  Object.defineProperty(window, "innerWidth", {
+    writable: true,
+    configurable: true,
+    value: width,
+  })
+
   Object.defineProperty(window, "matchMedia", {
     writable: true,
-    value: vi.fn().mockImplementation(() => ({
-      matches,
-      media: "(min-width: 1024px)",
+    configurable: true,
+    value: vi.fn().mockImplementation((query: string) => ({
+      matches: query.includes("max-width") ? width < 768 : width >= 1024,
+      media: query,
       onchange: null,
       addEventListener: vi.fn(),
       removeEventListener: vi.fn(),
@@ -30,7 +37,7 @@ function mockMatchMedia(matches: boolean) {
 
 function TestSidebarHarness() {
   return (
-    <SidebarProvider defaultOpenDesktop>
+    <SidebarProvider defaultOpen>
       <Sidebar aria-label="Test sidebar">
         <SidebarContent>Sidebar links</SidebarContent>
       </Sidebar>
@@ -48,30 +55,32 @@ afterEach(() => {
 
 describe("Sidebar primitives", () => {
   it("supports desktop hide/show from the trigger", async () => {
-    mockMatchMedia(true)
+    mockViewport(1280)
     const user = userEvent.setup()
 
     render(<TestSidebarHarness />)
 
-    expect(screen.getByLabelText("Test sidebar")).toBeInTheDocument()
+    const sidebarRoot = document.querySelector('[data-slot="sidebar"][data-side="left"]')
 
-    await user.click(screen.getByRole("button", { name: "Toggle sidebar" }))
+    expect(sidebarRoot).toHaveAttribute("data-state", "expanded")
 
-    expect(screen.queryByLabelText("Test sidebar")).not.toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: "Toggle Sidebar" }))
+
+    expect(sidebarRoot).toHaveAttribute("data-state", "collapsed")
   })
 
   it("supports mobile open and close behavior", async () => {
-    mockMatchMedia(false)
+    mockViewport(375)
     const user = userEvent.setup()
 
     render(<TestSidebarHarness />)
 
-    expect(screen.queryByLabelText("Test sidebar")).not.toBeInTheDocument()
+    expect(screen.queryByRole("dialog", { name: "Sidebar" })).not.toBeInTheDocument()
 
-    await user.click(screen.getByRole("button", { name: "Toggle sidebar" }))
-    expect(screen.getByLabelText("Test sidebar")).toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: "Toggle Sidebar" }))
+    expect(screen.getByRole("dialog", { name: "Sidebar" })).toBeInTheDocument()
 
-    await user.click(screen.getAllByRole("button", { name: "Close sidebar" })[0])
-    expect(screen.queryByLabelText("Test sidebar")).not.toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: "Close" }))
+    expect(screen.queryByRole("dialog", { name: "Sidebar" })).not.toBeInTheDocument()
   })
 })

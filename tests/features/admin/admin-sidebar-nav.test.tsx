@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 
 import { cleanup, render, screen } from "@testing-library/react"
-import { afterEach, describe, expect, it, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
+import { SidebarProvider } from "@/components/ui/sidebar"
 import { AdminSidebarNav } from "@/features/admin/components/admin-sidebar-nav"
 import { getVisibleAdminNavigation } from "@/features/admin/navigation"
 import { RoleKey } from "@/lib/auth/roles"
@@ -25,12 +26,33 @@ afterEach(() => {
   mockedPathname = "/admin"
 })
 
+beforeEach(() => {
+  Object.defineProperty(window, "matchMedia", {
+    writable: true,
+    configurable: true,
+    value: vi.fn().mockImplementation((query: string) => ({
+      matches: query.includes("max-width") ? false : true,
+      media: query,
+      onchange: null,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+  })
+})
+
 describe("AdminSidebarNav", () => {
   it("renders role-visible items and marks the active route", () => {
     mockedPathname = "/admin/orders"
     const items = getVisibleAdminNavigation(RoleKey.ORDER_MANAGER)
 
-    render(<AdminSidebarNav items={items} />)
+    render(
+      <SidebarProvider defaultOpen>
+        <AdminSidebarNav items={items} />
+      </SidebarProvider>
+    )
 
     const activeLink = screen.getByRole("link", { name: /orders/i })
 
@@ -39,7 +61,11 @@ describe("AdminSidebarNav", () => {
   })
 
   it("shows a user-friendly empty state when no nav items are provided", () => {
-    render(<AdminSidebarNav items={[]} />)
+    render(
+      <SidebarProvider defaultOpen>
+        <AdminSidebarNav items={[]} />
+      </SidebarProvider>
+    )
 
     expect(screen.getByRole("status")).toHaveTextContent("No navigation items are available for this role yet.")
   })

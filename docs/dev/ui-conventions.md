@@ -26,6 +26,7 @@
 - The add-to-cart success toast duration is standardized to `5000ms` (an extra 1 second over Sonner defaults) to give users enough time to act.
 - Mobile viewports (`max-width: 767px`) add a toast action labeled `Proceed to Checkout` that routes to `/checkout`.
 - Desktop keeps the same success title/description and duration, but no action CTA, preserving current desktop interaction density.
+- Sonner CTA buttons must inherit shared app button variants through `AppToaster` (`actionButton`/`cancelButton` classNames) instead of relying on Sonner defaults, so toast actions stay theme-aware across light and dark modes.
 
 ## Surface Consistency Rules
 

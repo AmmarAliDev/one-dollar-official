@@ -25,7 +25,7 @@ export function buildAddToCartToastPayload({
 
   if (isMobileViewport) {
     options.action = {
-      label: "Proceed to Checkouts",
+      label: "Proceed to Checkout",
       onClick: onProceedToCheckout,
     };
   }
