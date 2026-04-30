@@ -5,6 +5,9 @@ import { PageShell } from "@/components/layout/page-shell";
 import { SectionHeader } from "@/components/ui/section-header";
 import { buildMetadata } from "@/config/metadata";
 import {
+  toCategoryStaticParams,
+} from "@/features/rendering/seo-content-rendering";
+import {
   CategoryInfiniteProductGrid,
   CategoryListingFilters,
   getCatalogCategory,
@@ -21,8 +24,7 @@ type CategoryPageProps = {
 
 export async function generateStaticParams() {
   const slugs = await getCatalogCategorySlugs();
-
-  return slugs.map((slug) => ({ slug }));
+  return toCategoryStaticParams(slugs);
 }
 
 export async function generateMetadata({

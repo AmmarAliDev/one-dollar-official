@@ -7,6 +7,9 @@ import { PageErrorFallback } from "@/components/ui/page-error-fallback";
 import { SectionHeader } from "@/components/ui/section-header";
 import { buildMetadata } from "@/config/metadata";
 import {
+  toBlogStaticParams,
+} from "@/features/rendering/seo-content-rendering";
+import {
   BlogPostCard,
   BlogPostContent,
   buildBlogPostBreadcrumbJsonLd,
@@ -18,13 +21,15 @@ import {
   toBlogMetadataInput,
 } from "@/features/blog";
 
+export const revalidate = 900;
+
 type BlogPostPageProps = {
   params: Promise<{ slug: string }>;
 };
 
 export async function generateStaticParams() {
   const slugs = await getBlogPostSlugs("en");
-  return slugs.map((slug) => ({ slug }));
+  return toBlogStaticParams(slugs);
 }
 
 export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {

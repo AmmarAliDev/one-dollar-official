@@ -7,6 +7,8 @@ import { SectionHeader } from "@/components/ui/section-header";
 import { buildMetadata } from "@/config/metadata";
 import { BlogPostCard, buildBlogListingJsonLd, getBlogPosts } from "@/features/blog";
 
+export const revalidate = 900;
+
 export const metadata = buildMetadata({
   title: "Blog",
   path: "/blog",

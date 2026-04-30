@@ -1,14 +1,12 @@
 import { ChevronDown, Heart, Search, Store } from "lucide-react";
 import Link from "next/link";
 
-import { auth } from "@/auth";
 import { routes } from "@/config/routes";
 import { siteConfig } from "@/config/site";
 import { getCatalogCategories } from "@/features/catalog";
 import { CartMiniCart } from "@/features/cart/components/cart-mini-cart";
 import { MobileCartButton } from "@/features/cart/components/mobile-cart-button";
 
-import { RoleKey } from "@/lib/auth/roles";
 import { logger } from "@/lib/logger";
 import { ThemeToggle } from "../theme-toggle";
 import { buttonVariants } from "../ui/button";
@@ -20,25 +18,20 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { PageContainer } from "../ui/page-container";
+import { StorefrontHeaderAuthControls } from "./storefront-header-auth-controls";
 import { buildStorefrontCategoryMenu } from "./storefront-category-menu";
-import { StorefrontMobileNav } from "./storefront-mobile-nav";
-import UserMenu from "./user-menu";
 
 export async function AppHeader() {
-  const [session, categoriesResult] = await Promise.allSettled([auth(), getCatalogCategories()]);
+  let categoriesError = false;
+  let categories = [] as Awaited<ReturnType<typeof getCatalogCategories>>;
 
-  const resolvedSession = session.status === "fulfilled" ? session.value : null;
-  const isSignedInResolved = Boolean(resolvedSession?.user?.id);
-
-  const categories =
-    categoriesResult.status === "fulfilled"
-      ? categoriesResult.value
-      : [];
-
-  if (categoriesResult.status === "rejected") {
+  try {
+    categories = await getCatalogCategories();
+  } catch (error) {
+    categoriesError = true;
     logger.error("Failed to load header categories", {
       code: "HEADER_CATEGORY_NAV_LOAD_FAILED",
-      error: categoriesResult.reason,
+      error,
     });
   }
 
@@ -87,18 +80,15 @@ export async function AppHeader() {
               <Search className="size-4" aria-hidden="true" />
             </Link>
             <MobileCartButton />
-            <StorefrontMobileNav
-              navItems={topLevelNavItems}
+            <StorefrontHeaderAuthControls
+              topLevelNavItems={topLevelNavItems}
               categoryMenuItems={categoryMenuItems}
               categoryMenuError={
-                categoriesResult.status === "rejected"
+                categoriesError
                   ? "Categories are temporarily unavailable."
                   : null
               }
-              accountHref={routes.storefront.account}
-              wishlistHref={routes.storefront.wishlist}
-              cartHref={routes.storefront.cart}
-              isSignedIn={isSignedInResolved}
+              mode="mobile"
             />
           </div>
 
@@ -121,9 +111,15 @@ export async function AppHeader() {
             </Link>
             <CartMiniCart />
             <ThemeToggle />
-            <UserMenu
-              isSignedIn={isSignedInResolved}
-              isAdmin={Boolean(resolvedSession?.user?.role === RoleKey.SUPER_ADMIN)}
+            <StorefrontHeaderAuthControls
+              topLevelNavItems={topLevelNavItems}
+              categoryMenuItems={categoryMenuItems}
+              categoryMenuError={
+                categoriesError
+                  ? "Categories are temporarily unavailable."
+                  : null
+              }
+              mode="desktop"
             />
           </div>
         </div>
@@ -161,7 +157,7 @@ export async function AppHeader() {
                       </div>
                     );
                   })}
-                  {categoriesResult.status === "rejected" ? (
+                  {categoriesError ? (
                     <>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem disabled>
@@ -169,7 +165,7 @@ export async function AppHeader() {
                       </DropdownMenuItem>
                     </>
                   ) : null}
-                  {categoriesResult.status === "fulfilled" && categories.length === 0 ? (
+                  {!categoriesError && categories.length === 0 ? (
                     <>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem disabled>
