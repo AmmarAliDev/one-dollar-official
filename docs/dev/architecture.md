@@ -227,6 +227,8 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - Customer edits to an existing review are allowed and intentionally reset moderation fields to `PENDING`/`approved=false` so updated content is re-reviewed.
 - `src/features/reviews/actions.ts` owns CSRF-safe server action handling, auth redirects, validation, flash codes, and route revalidation for storefront PDP/account pages plus admin moderation.
 - `src/app/(storefront)/categories/[slug]/[productSlug]/page.tsx` now composes `CustomerReviewForm` above `ProductReviews`, with user-friendly notice/error banners and eligibility messaging.
+- `src/features/reviews/components/customer-review-form.tsx` now follows the shared shadcn dynamic form architecture (`useAppForm` + `DynamicForm` + `useServerActionSubmit`) so validation, error summary rendering, and reset conventions stay aligned with other feature forms.
+- Review submit contract compatibility is preserved: field names and payload shape (`productId`, `returnTo`, `rating`, `title`, `body`) remain unchanged for moderation and server-action flow safety.
 - `src/app/(storefront)/account/reviews/page.tsx` now renders live user-scoped review history (status badge, storefront visibility state, customer-facing `moderationReason`, product deep link) instead of an empty placeholder.
 - Storefront visibility remains strictly moderation-driven: only `APPROVED` reviews are queried by `src/server/db/catalog-queries.ts` and rendered in PDP review sections.
 

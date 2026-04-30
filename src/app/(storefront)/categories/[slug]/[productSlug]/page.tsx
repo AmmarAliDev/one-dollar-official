@@ -148,6 +148,11 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
       <CustomerReviewForm
         productId={product.id}
         returnTo={returnTo}
+        reviewNoticeCode={
+          resolvedSearchParams.reviewNotice === "submitted" || resolvedSearchParams.reviewNotice === "updated"
+            ? resolvedSearchParams.reviewNotice
+            : undefined
+        }
         canSubmit={composerContext.canSubmit}
         disabledReason={
           composerContext.reason === "AUTH_REQUIRED"

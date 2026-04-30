@@ -15,11 +15,11 @@ export const storefrontNav: NavItem[] = [
     href: routes.storefront.categories,
     description: "Browse storefront category listing pages.",
   },
-  // {
-  //   title: "About",
-  //   href: routes.storefront.about,
-  //   description: "Company story and mission placeholder.",
-  // },
+  {
+    title: "About",
+    href: routes.storefront.about,
+    description: "Company story and mission placeholder.",
+  },
   {
     title: "Blog",
     href: routes.storefront.blog,
