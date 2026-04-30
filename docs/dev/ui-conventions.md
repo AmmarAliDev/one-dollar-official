@@ -10,12 +10,20 @@
 
 - Theme selection supports `system`, `light`, and `dark` through `next-themes`.
 - Shared frontend notifications should use `notify.*()` from `src/lib/notify.ts`.
+- `notify.*()` supports typed Sonner option passthrough as a third argument when a feature needs scoped behaviors like custom duration or toast actions.
 - Keep theme-dependent visuals tied to semantic tokens like `bg-card`, `text-muted-foreground`, and `border-border`.
 - Current palette baseline:
 	- Light theme anchor colors: `--background: #ffffff`, `--primary: #431b52`
 	- Dark theme anchor colors: `--background: #000000`, `--primary: #431b52`
 - Avoid hardcoded one-off hex values in feature components. Prefer semantic tokens so palette updates remain centralized and safe.
 - Keep overlays, menus, and dialogs on semantic surfaces (`bg-popover`, `bg-card`) and preserve readable foreground contrast.
+
+### Storefront Add-to-Cart Toast Pattern
+
+- Add-to-cart success toasts use `buildAddToCartToastPayload` in `src/features/catalog/lib/add-to-cart-toast.ts` so message shape, duration, and CTA logic stay centralized and testable.
+- The add-to-cart success toast duration is standardized to `5000ms` (an extra 1 second over Sonner defaults) to give users enough time to act.
+- Mobile viewports (`max-width: 767px`) add a toast action labeled `Proceed to Checkout` that routes to `/checkout`.
+- Desktop keeps the same success title/description and duration, but no action CTA, preserving current desktop interaction density.
 
 ## Surface Consistency Rules
 
