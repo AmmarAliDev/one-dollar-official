@@ -101,7 +101,8 @@
   - Optionally shown when the section payload includes an explicit `viewAllHref` (even if no cap was reached).
   - For `one-dollar` sections the CTA is always rendered because those products link to the live One Dollar catalog page.
   - Falls back to the relevant route (e.g. `routes.storefront.categories`) when no explicit href is supplied by the section payload.
-- Storefront-facing cards inside the carousel must remain fully clickable using a single wrapping `Link` (for category cards) or include an explicit labelled `View product` link (for product cards) — avoid nested interactive children.
+- Storefront-facing category and product cards must be fully clickable with one semantic wrapping `Link` per card. Do not place additional nested anchors or buttons inside those linked cards.
+- Keep card headings and key metadata inside the same wrapping link so keyboard users and crawlers get a single coherent navigation target.
 - Empty category/product payloads must render a user-safe `EmptyState` instead of a blank section or an empty carousel.
 
 ## Product Listing Conventions (Prompt 3.3)

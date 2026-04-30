@@ -44,6 +44,14 @@ afterEach(() => {
 });
 
 describe("ProductGridCard media behavior", () => {
+  it("renders the product card as a single full clickable link", () => {
+    render(<ProductGridCard product={makeProduct()} />);
+
+    const link = screen.getByRole("link");
+    expect(link).toHaveAttribute("href", "/categories/personal-care/daily-face-wash");
+    expect(link).toContainElement(screen.getByText("Daily Face Wash"));
+  });
+
   it("renders the product image area when a valid image URL exists", () => {
     render(<ProductGridCard product={makeProduct()} />);
 

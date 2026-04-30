@@ -55,6 +55,18 @@ describe("FeaturedProductsSectionBlock", () => {
     expect(screen.getByText("Product p2")).toBeInTheDocument();
   });
 
+  it("renders each product card as a full clickable link", () => {
+    render(
+      <FeaturedProductsSectionBlock
+        section={buildSection([buildProduct("p1")])}
+      />,
+    );
+
+    const link = screen.getByRole("link", { name: "View Product p1" });
+    expect(link).toHaveAttribute("href", "/products/p1");
+    expect(link).toContainElement(screen.getByText("View product"));
+  });
+
   it("renders a friendly empty state when products are missing", () => {
     render(<FeaturedProductsSectionBlock section={buildSection([])} />);
 
