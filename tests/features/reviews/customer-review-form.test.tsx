@@ -10,6 +10,9 @@
  * - Collapse via toggle button when already expanded on mobile
  * - Re-mount (simulating post-submit redirect) restores collapsed default on mobile
  * - Toggle button absent on desktop
+ * - Shared form validation blocks invalid submission
+ * - Submission payload shape remains compatible with server action contract
+ * - Successful submit resets values through shared form conventions
  */
 
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
@@ -20,15 +23,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("@/features/reviews/actions", () => ({
   submitCustomerReviewAction: vi.fn(),
 }));
-
-// Mock useFormStatus so SubmitButton renders predictably without a form ancestor
-vi.mock("react-dom", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("react-dom")>();
-  return {
-    ...actual,
-    useFormStatus: () => ({ pending: false }),
-  };
-});
 
 // Mock useIsMobile so tests control mobile/desktop viewport independently
 // of jsdom's window.innerWidth, making assertions deterministic.
@@ -183,6 +177,96 @@ describe("CustomerReviewForm – desktop behavior", () => {
     expect(screen.queryByRole("button", { name: /add review/i })).not.toBeInTheDocument();
     // No collapse toggle either
     expect(screen.queryByRole("button", { name: /collapse/i })).not.toBeInTheDocument();
+  });
+});
+
+describe("CustomerReviewForm – submission behavior", () => {
+  beforeEach(() => {
+    useIsMobileMock.mockReturnValue(false);
+  });
+
+  it("shows validation feedback and blocks submit when review body is too short", async () => {
+    const user = userEvent.setup();
+    const { CustomerReviewForm } = await import(
+      "@/features/reviews/components/customer-review-form"
+    );
+    const { submitCustomerReviewAction } = await import("@/features/reviews/actions");
+
+    render(<CustomerReviewForm {...BASE_PROPS} />);
+
+    await user.clear(screen.getByLabelText(/review/i));
+    await user.type(screen.getByLabelText(/review/i), "Too short");
+    await user.click(screen.getByRole("button", { name: /submit review/i }));
+
+    expect(
+      await screen.findAllByText(/please write at least 20 characters so your feedback is meaningful/i),
+    ).toHaveLength(2);
+    expect(vi.mocked(submitCustomerReviewAction)).not.toHaveBeenCalled();
+  });
+
+  it("submits the same payload contract and resets fields after success", async () => {
+    const user = userEvent.setup();
+    const { CustomerReviewForm } = await import(
+      "@/features/reviews/components/customer-review-form"
+    );
+    const { submitCustomerReviewAction } = await import("@/features/reviews/actions");
+    const submitActionMock = vi.mocked(submitCustomerReviewAction);
+    submitActionMock.mockResolvedValue(undefined);
+
+    render(<CustomerReviewForm {...BASE_PROPS} />);
+
+    await user.selectOptions(screen.getByLabelText(/rating/i), "4");
+    await user.type(screen.getByLabelText(/title/i), "Solid quality");
+    await user.type(
+      screen.getByLabelText(/review/i),
+      "This product worked well for my daily routine and delivered consistent results.",
+    );
+    await user.click(screen.getByRole("button", { name: /submit review/i }));
+
+    await waitFor(() => {
+      expect(submitActionMock).toHaveBeenCalledTimes(1);
+    });
+
+    const submittedFormData = submitActionMock.mock.calls[0]?.[0];
+    expect(submittedFormData).toBeInstanceOf(FormData);
+    expect(submittedFormData?.get("productId")).toBe(BASE_PROPS.productId);
+    expect(submittedFormData?.get("returnTo")).toBe(BASE_PROPS.returnTo);
+    expect(submittedFormData?.get("rating")).toBe("4");
+    expect(submittedFormData?.get("title")).toBe("Solid quality");
+    expect(submittedFormData?.get("body")).toBe(
+      "This product worked well for my daily routine and delivered consistent results.",
+    );
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/rating/i)).toHaveValue("5");
+      expect(screen.getByLabelText(/title/i)).toHaveValue("");
+      expect(screen.getByLabelText(/review/i)).toHaveValue("");
+    });
+  });
+
+  it("clears existing hydrated review values when success notice code is present", async () => {
+    const { CustomerReviewForm } = await import(
+      "@/features/reviews/components/customer-review-form"
+    );
+
+    render(
+      <CustomerReviewForm
+        {...BASE_PROPS}
+        reviewNoticeCode="updated"
+        existingReview={{
+          rating: 4,
+          title: "Previously saved",
+          body: "This is an existing stored review body that should clear after success.",
+          statusLabel: "Pending",
+        }}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/rating/i)).toHaveValue("5");
+      expect(screen.getByLabelText(/title/i)).toHaveValue("");
+      expect(screen.getByLabelText(/review/i)).toHaveValue("");
+    });
   });
 });
 
