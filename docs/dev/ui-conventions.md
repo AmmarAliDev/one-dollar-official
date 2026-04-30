@@ -56,6 +56,14 @@
 - Shared text entry controls (`Input`, `Textarea`) should keep mobile-safe readable sizing (`text-base`) to avoid iOS focus zoom, while preserving desktop density with responsive classes (`md:text-sm`).
 - For app-shell navigation on mobile, prefer larger touch targets over denser rows (for example, sidebar inputs/menu controls should be at least 40px high on mobile where practical).
 
+### Mobile Collapsible Form Sections
+
+- Long forms that appear below the fold on mobile (e.g. the product-page review form) should default to **collapsed** on mobile and **expanded** on desktop.
+- Use `useIsMobile()` (`src/hooks/use-mobile.ts`) to detect the viewport at runtime. Initialize state as `true` (expanded) for SSR safety, then collapse once in a `useEffect` when `isMobile` becomes `true`, guarded by a `ref` so user overrides are not clobbered on re-renders.
+- The toggle control must have `aria-expanded` on the button and `aria-controls` pointing to the collapsible body element's `id`.
+- After a successful server-action form submit the action redirects, which re-mounts the component — the mobile auto-collapse fires again, naturally restoring the collapsed default without extra prop wiring.
+- The pattern lives in `src/features/reviews/components/customer-review-form.tsx` and its tests in `tests/features/reviews/customer-review-form.test.tsx`.
+
 ## Storefront Navigation (Prompt 3.1)
 
 - `AppHeader` now provides required storefront actions: logo, search trigger placeholder, account, wishlist, and cart links.
