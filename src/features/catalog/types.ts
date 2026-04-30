@@ -141,6 +141,8 @@ export type CatalogProductCard = {
   inventoryQuantity: number;
   averageRating: number;
   reviewCount: number;
+  /** Validated storefront image URL for card media; undefined means fallback placeholder mode. */
+  imageUrl?: string;
   imageLabel: string;
   imageTone: CatalogProductImageTone;
   attributeSummary: string[];
