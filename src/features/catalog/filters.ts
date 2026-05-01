@@ -103,6 +103,17 @@ export function buildCategoryListingHref(
   filters: CatalogListingFilters,
   overrides: Partial<CatalogListingFilters> = {},
 ) {
+  const params = buildCategoryListingSearchParams(filters, overrides);
+  const query = params.toString();
+  const path = routes.storefront.category(slug);
+
+  return query ? `${path}?${query}` : path;
+}
+
+export function buildCategoryListingSearchParams(
+  filters: CatalogListingFilters,
+  overrides: Partial<CatalogListingFilters> = {},
+) {
   const nextFilters = {
     ...filters,
     ...overrides,
@@ -141,8 +152,5 @@ export function buildCategoryListingHref(
     params.set("page", String(nextFilters.page));
   }
 
-  const query = params.toString();
-  const path = routes.storefront.category(slug);
-
-  return query ? `${path}?${query}` : path;
+  return params;
 }

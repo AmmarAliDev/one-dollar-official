@@ -9,13 +9,24 @@
 ## Theme and Feedback
 
 - Theme selection supports `system`, `light`, and `dark` through `next-themes`.
+- Default initial theme is `light` (via `ThemeProvider.defaultTheme`) for first-time visits before a stored preference is present.
+- System-following behavior remains available through the `system` option and should continue to be treated as an explicit user preference.
 - Shared frontend notifications should use `notify.*()` from `src/lib/notify.ts`.
+- `notify.*()` supports typed Sonner option passthrough as a third argument when a feature needs scoped behaviors like custom duration or toast actions.
 - Keep theme-dependent visuals tied to semantic tokens like `bg-card`, `text-muted-foreground`, and `border-border`.
 - Current palette baseline:
 	- Light theme anchor colors: `--background: #ffffff`, `--primary: #431b52`
 	- Dark theme anchor colors: `--background: #000000`, `--primary: #431b52`
 - Avoid hardcoded one-off hex values in feature components. Prefer semantic tokens so palette updates remain centralized and safe.
 - Keep overlays, menus, and dialogs on semantic surfaces (`bg-popover`, `bg-card`) and preserve readable foreground contrast.
+
+### Storefront Add-to-Cart Toast Pattern
+
+- Add-to-cart success toasts use `buildAddToCartToastPayload` in `src/features/catalog/lib/add-to-cart-toast.ts` so message shape, duration, and CTA logic stay centralized and testable.
+- The add-to-cart success toast duration is standardized to `5000ms` (an extra 1 second over Sonner defaults) to give users enough time to act.
+- Mobile viewports (`max-width: 767px`) add a toast action labeled `Proceed to Checkout` that routes to `/checkout`.
+- Desktop keeps the same success title/description and duration, but no action CTA, preserving current desktop interaction density.
+- Sonner CTA buttons must inherit shared app button variants through `AppToaster` (`actionButton`/`cancelButton` classNames) instead of relying on Sonner defaults, so toast actions stay theme-aware across light and dark modes.
 
 ## Surface Consistency Rules
 
@@ -41,26 +52,78 @@
 - Error summaries and page fallbacks should keep `role="alert"` / `aria-live` semantics so assistive tech announces important failures clearly.
 - Prefer server components by default; only use client components for interactivity like theme switching, toast triggers, and confirmation dialogs.
 
+## SEO Semantic HTML Conventions
+
+- Key storefront content pages should expose exactly one clear primary heading (`h1`) near the top of `main` content (for example category listing, blog listing, and blog detail routes).
+- Use `SectionHeader.titleAs` and `SectionHeader.titleId` instead of ad-hoc heading markup when a page needs to promote a section intro to `h1`.
+- Card collections that represent sets of categories, products, or articles should use list semantics (`ul` + `li`) even when styled as responsive grids.
+- Prefer one canonical link target per card. Avoid duplicate links that point to the same destination from multiple nested card regions.
+- Blog/article publication metadata should use `<time datetime="...">` when a published date is available.
+- Keep landmark and list semantics compatible with current visual design; semantic upgrades should not regress interaction, keyboard navigation, or loading/empty/error states.
+
+## Mobile Interaction Guardrails
+
+- Keep root viewport standards-compliant through a typed `viewport` export from `src/app/layout.tsx` via shared config in `src/config/viewport.ts`.
+- Do not disable pinch zoom globally (`maximumScale=1`, `userScalable=false`) unless there is a strict legal/device requirement; prefer accessibility-safe defaults.
+- Shared text entry controls (`Input`, `Textarea`) should keep mobile-safe readable sizing (`text-base`) to avoid iOS focus zoom, while preserving desktop density with responsive classes (`md:text-sm`).
+- For app-shell navigation on mobile, prefer larger touch targets over denser rows (for example, sidebar inputs/menu controls should be at least 40px high on mobile where practical).
+
+### Mobile Collapsible Form Sections
+
+- Long forms that appear below the fold on mobile (e.g. the product-page review form) should default to **collapsed** on mobile and **expanded** on desktop.
+- Use `useIsMobile()` (`src/hooks/use-mobile.ts`) to detect the viewport at runtime. Initialize state as `true` (expanded) for SSR safety, then collapse once in a `useEffect` when `isMobile` becomes `true`, guarded by a `ref` so user overrides are not clobbered on re-renders.
+- The toggle control must have `aria-expanded` on the button and `aria-controls` pointing to the collapsible body element's `id`.
+- The product-page review form now uses the shared form stack (`useAppForm` + `DynamicForm` + `useServerActionSubmit`) while preserving the same field contract (`productId`, `returnTo`, `rating`, `title`, `body`) expected by `submitCustomerReviewAction`.
+- For non-redirect success paths, reset behavior is standardized via `useServerActionSubmit(..., { onSuccess })` and `form.reset()` so stale values are cleared consistently; redirect-driven success still unmounts naturally.
+- The pattern lives in `src/features/reviews/components/customer-review-form.tsx` and its tests in `tests/features/reviews/customer-review-form.test.tsx`.
+
 ## Storefront Navigation (Prompt 3.1)
 
 - `AppHeader` now provides required storefront actions: logo, search trigger placeholder, account, wishlist, and cart links.
 - Desktop and mobile navigation share the same `siteConfig.storefrontNav` source to avoid duplicated link logic.
+- Header category navigation now uses a dedicated `One Dollar` dropdown pattern instead of a flat `Categories` top-level link.
+- Category dropdown ordering is deterministic and must remain: `One Dollar` first, published categories in alphabetical order next, and `All Categories` last.
+- Desktop uses an accessible dropdown menu (`DropdownMenuTrigger` + keyboard navigation), while mobile keeps category links grouped inside the drawer for touch-first navigation.
 - Mobile navigation behavior lives in `src/components/layout/storefront-mobile-nav.tsx` and must keep `aria-expanded`, `aria-controls`, and a labeled toggle button.
 - `AppFooter` now has three sections: company links, policy links, and a newsletter placeholder block.
 - Static storefront placeholders live under `src/app/(storefront)` for `/about`, `/contact`, `/privacy`, `/terms`, `/shipping-policy`, and `/return-policy`.
 
+### Production Placeholder Visibility Rule
+
+- Development-only or incomplete storefront surfaces must use `shouldRenderGuardedSurface()` from `src/config/production-visibility.ts`.
+- In production, guarded surfaces are hidden (or route handlers resolve to `notFound()` for placeholder-only pages).
+- In development and test, guarded surfaces remain visible for QA and iteration.
+- Do not hide complete, functional sections just because they are empty. Prefer neutral empty-state copy (for example, "No featured products yet") over "coming soon" placeholder language.
+
 ## Homepage Carousel Conventions
 
-- Homepage category surfaces should use the shared shadcn-compatible carousel primitives in `src/components/ui/carousel.tsx` instead of bespoke slider logic.
-- Featured category cards should use responsive carousel basis classes so card density scales with viewport width (`basis-[85%]`, `sm:basis-1/2`, `lg:basis-1/3`, `xl:basis-1/4`).
-- Keep carousel controls keyboard accessible and touch-friendly: swipe/drag remains the primary interaction on mobile, while previous/next icon controls are shown on wider screens.
-- Empty category payloads must render a user-safe `EmptyState` instead of a blank section.
+- All homepage sections that render categories or products must use a shared carousel pattern (Embla via `src/components/ui/carousel.tsx`) — **not** a static grid.
+- Shared carousel configuration lives in `src/features/homepage/components/homepage-carousel-config.ts`.
+- `HOMEPAGE_CAROUSEL_MAX_ITEMS = 8`: sections slice their data at 8 before passing to the carousel. Items beyond the cap are not rendered.
+- `HOMEPAGE_CAROUSEL_ITEM_CLASS`: responsive basis classes that show 1 card on mobile up to 6 cards on `2xl` (≥ 1536 px). The full breakpoint ladder is: `basis-[85%] sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5 2xl:basis-1/6`.
+- Featured categories may use a section-specific item class when readability requires lower density on large screens. Current rule for `featured-categories`: keep shared behavior through `lg`, then clamp to 4-up on `xl`/`2xl` using `FEATURED_CATEGORIES_CAROUSEL_ITEM_CLASS = "basis-[85%] sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:!basis-1/4 2xl:!basis-1/4"`.
+- `HOMEPAGE_CAROUSEL_OPTIONS.align = "start"` so scroll position anchors to the left edge.
+- Navigation buttons (`CarouselPrevious`, `CarouselNext`) must include `disabled:hidden` in their `className` so they disappear when scroll is no longer possible, rather than remaining as visible-but-disabled controls.
+- Buttons are hidden on mobile (`hidden sm:flex`) and only appear on `sm+` viewports; swipe/drag is the primary mobile interaction.
+- **View All button rules**:
+  - Always shown when the data was capped (`totalItems > HOMEPAGE_CAROUSEL_MAX_ITEMS`).
+  - Optionally shown when the section payload includes an explicit `viewAllHref` (even if no cap was reached).
+  - For `one-dollar` sections the CTA is always rendered because those products link to the live One Dollar catalog page.
+  - Falls back to the relevant route (e.g. `routes.storefront.categories`) when no explicit href is supplied by the section payload.
+- Storefront-facing category and product cards must be fully clickable with one semantic wrapping `Link` per card. Do not place additional nested anchors or buttons inside those linked cards.
+- Keep card headings and key metadata inside the same wrapping link so keyboard users and crawlers get a single coherent navigation target.
+- Empty category/product payloads must render a user-safe `EmptyState` instead of a blank section or an empty carousel.
 
 ## Product Listing Conventions (Prompt 3.3)
 
 - Category discovery lives at `/categories`, while individual listing pages live at `/categories/[slug]` for clean, SEO-friendly storefront URLs.
 - `src/features/catalog/components/product-grid-card.tsx` is the reusable catalog card; keep product price, compare price, stock badge, and review summary placeholder logic there.
+- Product card media is image-first: when `CatalogProductCard.imageUrl` is present and valid, render the image in the card media area using `next/image` with responsive `sizes` and fixed aspect-ratio container sizing.
+- Product card media must gracefully fall back to the existing gradient placeholder treatment (`imageLabel` + `imageTone`) when no valid image URL is available or image loading fails.
+- Keep product card media height stable (`aspect-[4/3]`) across image and fallback modes to avoid layout shift in listings and carousels.
 - Listing filter UI should remain query-string-based, but it should now use the shared form layer for consistent labels, validation, and reset/apply actions.
+- On mobile category pages, filter/sort controls should be exposed through a `Sheet` panel triggered by a clear `Filter and sort` button; desktop should keep the persistent sidebar card.
+- Mobile and desktop filter surfaces must share the same filter contract and URL behavior (`buildCategoryListingHref`), including resetting pagination to page 1 on apply.
 - Use the shared empty and loading primitives for listing states instead of bespoke skeleton or empty-state markup.
 - Treat variant-aware attributes as an additive scaffold for now; future implementation should extend the current filter contract instead of replacing it.
 
@@ -76,6 +139,9 @@
 	- Loading: `LoadingState` + `TableSkeleton` where tabular data is expected
 	- Error: `PageErrorFallback` for route-level failures and `SectionErrorState` for module-level failures
 - Keep admin actions discoverable in the top-right area (theme toggle, storefront shortcut, user menu) and avoid hidden critical controls.
+- Use the shared shadcn-style sidebar primitives in `src/components/ui/sidebar.tsx` (`SidebarProvider`, `Sidebar`, `SidebarInset`, `SidebarTrigger`) for app-level admin navigation shells. This keeps desktop collapse and mobile drawer behavior consistent across future admin modules.
+- Keep role-aware rendering in feature-level nav modules (for example `getVisibleAdminNavigation`) and pass only visible links into sidebar UI components.
+- If a role resolves to zero sidebar links, render a user-friendly empty sidebar status instead of a blank panel.
 
 ## Form System Conventions
 
@@ -88,6 +154,24 @@
 - Reuse the shared shadcn-style form primitives in `src/components/ui` (`Input`, `Textarea`, `Select`, `Checkbox`, `Switch`) instead of raw ad-hoc control markup.
 - Current baseline: auth forms, checkout, admin category/product forms, and query-string filter forms should all follow this shared pattern.
 - Keep form copy short, task-focused, and user-safe. Do not expose raw backend or schema internals in validation messages.
+
+### Form Success Behavior Standard
+
+Choose the correct success strategy based on where the form lives:
+
+| Pattern | When to use | Mechanism |
+|---|---|---|
+| **Server-side redirect** | Form submits to a server action that always navigates away on success (admin CRUD, checkout) | `redirect()` in the action; form unmounts naturally — no `form.reset()` needed |
+| **Success state + unmount** | Form stays on the same page but shows a distinct success UI that replaces the form | Conditional render (e.g., `if (formState === "success") return <SuccessUI />`) — form remounts fresh when the user wants to submit again |
+| **Inline reset** | Form stays mounted after success and should clear for the next submission (e.g., future "add comment" forms) | Pass `resetOnSuccess` prop to `DynamicForm`/`SchemaForm`, or call `form.reset()` in the `onSubmit` callback |
+| **`useActionState` + reset** | Form uses `useActionState` and needs to clear after the action signals success | `useEffect(() => { if (state?.success) form.reset(); }, [state, form])` |
+| **Modal/sheet/drawer close** | Form is inside an overlay that must dismiss on success | Call `onClose()` / `setOpen(false)` inside `useServerActionSubmit`'s `onSuccess` callback, or in the `onSubmit` handler after awaiting the action |
+
+**Rules:**
+- Never leave a successfully-submitted form both mounted and filled — it confuses the user and invites accidental re-submission.
+- Do not call `form.reset()` on error — the user needs to see and correct their input.
+- If a form redirects on success (server action), skip all client-side reset/close logic; the navigation discards the component tree.
+- For modal/sheet/drawer forms that save without redirecting, always close the overlay in the `onSuccess` callback of `useServerActionSubmit` and optionally reset the form.
 
 ## Shared Data Table Conventions
 

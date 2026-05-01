@@ -11,11 +11,6 @@ export const storefrontNav: NavItem[] = [
     description: "Storefront landing page.",
   },
   {
-    title: "Blog",
-    href: routes.storefront.blog,
-    description: "English-first storefront blog and buying guides.",
-  },
-  {
     title: "Categories",
     href: routes.storefront.categories,
     description: "Browse storefront category listing pages.",
@@ -26,20 +21,25 @@ export const storefrontNav: NavItem[] = [
     description: "Company story and mission placeholder.",
   },
   {
+    title: "Blog",
+    href: routes.storefront.blog,
+    description: "English-first storefront blog and buying guides.",
+  },
+  {
     title: "Contact",
     href: routes.storefront.contact,
     description: "Customer contact page placeholder.",
   },
-  {
-    title: "Shipping Policy",
-    href: routes.storefront.shippingPolicy,
-    description: "Delivery policy placeholder.",
-  },
-  {
-    title: "Returns",
-    href: routes.storefront.returnPolicy,
-    description: "Return policy placeholder.",
-  },
+  // {
+  //   title: "Shipping Policy",
+  //   href: routes.storefront.shippingPolicy,
+  //   description: "Delivery policy placeholder.",
+  // },
+  // {
+  //   title: "Returns",
+  //   href: routes.storefront.returnPolicy,
+  //   description: "Return policy placeholder.",
+  // },
 ];
 
 export const adminNav: NavItem[] = [

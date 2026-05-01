@@ -13,6 +13,7 @@ This project now uses a section-based homepage foundation backed by admin-manage
 - `announcement-bar`
 - `hero-banner`
 - `featured-categories`
+- `one-dollar` *(hydrated at runtime from the live catalog)*
 - `featured-products`
 - `deal-spotlight`
 - `blog-highlights`
@@ -51,9 +52,10 @@ Resolution logic is in `src/features/homepage/resolver.ts`.
   1. `announcement-bar`
   2. `hero-banner`
   3. `featured-categories`
-  4. `featured-products`
-  5. `deal-spotlight`
-  6. `blog-highlights`
+  4. `one-dollar`
+  5. `featured-products`
+  6. `deal-spotlight`
+  7. `blog-highlights`
 - Invalid content payloads are skipped safely and do not break storefront rendering.
 - Scheduled records render only when the current time is inside their active window.
 - Banner and deal-campaign records can contribute storefront-visible promotional blocks alongside directly managed homepage sections.
@@ -68,12 +70,50 @@ Rendering map is in `src/features/homepage/section-components.tsx`.
 
 Section components are located in `src/features/homepage/components/`.
 
+### Carousel sections
+
+Sections that render categories or products use a standardized carousel pattern.
+Config lives in `src/features/homepage/components/homepage-carousel-config.ts`.
+
+| Constant | Value | Purpose |
+|---|---|---|
+| `HOMEPAGE_CAROUSEL_MAX_ITEMS` | `8` | Hard cap on items shown in the carousel |
+| `HOMEPAGE_CAROUSEL_ITEM_CLASS` | responsive basis classes | 1–6 visible cards across breakpoints |
+| `HOMEPAGE_CAROUSEL_OPTIONS` | `{ align: "start" }` | Shared Embla options |
+
+**View All button logic**
+
+- Shown automatically when `items.length > HOMEPAGE_CAROUSEL_MAX_ITEMS`.
+- Shown when the section payload supplies an explicit `viewAllHref`.
+- For `one-dollar` sections the CTA is always shown (links to the live One Dollar catalog).
+- Hidden when items fit within the cap and no explicit link is configured.
+
+**Navigation button behavior**
+
+- Hidden on mobile (`hidden sm:flex`); swipe is the primary gesture.
+- Hidden when scroll is not possible (`disabled:hidden` Tailwind class on `CarouselPrevious` / `CarouselNext`).
+
+**Sections currently using the carousel**
+
+| Section kind | Component | View All source |
+|---|---|---|
+| `featured-categories` | `FeaturedCategoriesSectionBlock` | `viewAllHref` prop or `routes.storefront.categories` |
+| `featured-products` | `FeaturedProductsSectionBlock` | `viewAllHref` prop (optional) |
+| `one-dollar` | `OneDollarSectionBlock` | `section.ctaHref` (always shown) |
+
 ## Service Layer
 
 `src/features/homepage/service.ts` now resolves admin-managed content through the homepage admin module.
 
 - `fetchHomepageContentFromCms()`: loads validated section records, active banners, and scheduled deal campaigns.
 - `getHomepageContent()`: resolves those records through the fallback-aware rules.
+
+### Runtime hydration
+
+Some section kinds carry live data that is never stored in CMS:
+
+- **`one-dollar`** — `products[]` is always `[]` when stored. `hydrateOneDollarSections()` in `service.ts` calls `getCatalogCategoryListing({ slug: "one-dollar", ... })` and populates up to 6 product cards before the final payload is passed to the page. If the catalog fetch fails, the section renders its empty/placeholder state without blocking the rest of the page.
+- **`blog-highlights`** — `articles[]` is similarly hydrated from `getBlogPosts()` at render time.
 
 Implementation notes:
 

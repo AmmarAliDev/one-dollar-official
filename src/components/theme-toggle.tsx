@@ -26,7 +26,7 @@ export function ThemeToggle() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button aria-label="Color theme" variant="outline" size="icon">
+        <Button aria-label="Color theme" variant="outline" size={"icon"}>
           <ActiveIcon className="size-4" aria-hidden="true" />
         </Button>
       </DropdownMenuTrigger>

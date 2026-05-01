@@ -84,11 +84,13 @@ function makeProductRecord(
 const mockListPublishedCategories = vi.fn();
 const mockGetPublishedCategoryBySlug = vi.fn();
 const mockListPublishedProductsByCategory = vi.fn();
+const mockListAllPublishedProducts = vi.fn();
 
 vi.mock("@/server/db/catalog-queries", () => ({
   listPublishedCategories: (...args: unknown[]) => mockListPublishedCategories(...args),
   getPublishedCategoryBySlug: (...args: unknown[]) => mockGetPublishedCategoryBySlug(...args),
   listPublishedProductsByCategory: (...args: unknown[]) => mockListPublishedProductsByCategory(...args),
+  listAllPublishedProducts: (...args: unknown[]) => mockListAllPublishedProducts(...args),
   listPublishedProductsByIds: vi.fn().mockResolvedValue([]),
   getPublishedProductBySlug: vi.fn().mockResolvedValue(null),
   getRelatedPublishedProducts: vi.fn().mockResolvedValue([]),
@@ -115,6 +117,27 @@ describe("catalog listing service", () => {
     expect(listing?.category.slug).toBe("home-care");
     expect(listing?.totalProductCount).toBe(3);
     expect(listing?.products).toHaveLength(3);
+  });
+
+  it("defaults to an initial page size of 6 products", async () => {
+    mockGetPublishedCategoryBySlug.mockResolvedValue(makeCategoryRecord());
+    mockListPublishedProductsByCategory.mockResolvedValue(
+      Array.from({ length: 9 }, (_, index) =>
+        makeProductRecord({
+          id: `p${index + 1}`,
+          slug: `product-${index + 1}`,
+          price: 200 + index,
+        }),
+      ),
+    );
+
+    const listing = await getCatalogCategoryListing({ slug: "home-care" });
+
+    expect(listing).not.toBeNull();
+    expect(listing?.products).toHaveLength(6);
+    expect(listing?.pagination.currentPage).toBe(1);
+    expect(listing?.pagination.pageSize).toBe(6);
+    expect(listing?.pagination.hasNextPage).toBe(true);
   });
 
   it("returns null when the category is not published", async () => {
@@ -191,6 +214,24 @@ describe("catalog listing service", () => {
 
     expect(listing?.filteredProductCount).toBe(0);
     expect(listing?.products).toHaveLength(0);
+  });
+
+  it("builds One Dollar listing from derived <= 280 PKR membership", async () => {
+    mockListAllPublishedProducts.mockResolvedValue([
+      makeProductRecord({ id: "p1", slug: "eligible-100", price: 100 }),
+      makeProductRecord({ id: "p2", slug: "eligible-280", price: 280 }),
+      makeProductRecord({ id: "p3", slug: "excluded-281", price: 281 }),
+    ]);
+
+    const listing = await getCatalogCategoryListing({ slug: "one-dollar" });
+
+    expect(listing).not.toBeNull();
+    expect(listing?.category.slug).toBe("one-dollar");
+    expect(listing?.totalProductCount).toBe(2);
+    expect(listing?.products.map((product) => product.slug)).toEqual([
+      "eligible-100",
+      "eligible-280",
+    ]);
   });
 });
 

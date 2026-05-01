@@ -78,6 +78,7 @@ export default async function EditAdminCategoryPage({ params, searchParams }: Ed
               name: category.name,
               slug: category.slug,
               description: category.description ?? "",
+              categoryCardImageUrl: category.cardImageUrl ?? "",
               status: category.status,
               seoTitle: category.seoTitle ?? "",
               seoDescription: category.seoDescription ?? "",

@@ -16,6 +16,11 @@ vi.mock("@/features/auth/actions/sign-up", () => ({
   signUpAction: vi.fn(),
 }));
 
+vi.mock("@/features/auth/actions/forgot-password", () => ({
+  forgotPasswordAction: vi.fn(),
+  forgotPasswordSuccessMessage: "If an account exists for that address, we've sent a reset link.",
+}));
+
 vi.mock("react", async () => {
   const actual = await vi.importActual("react");
 
@@ -95,5 +100,57 @@ describe("auth form migration", () => {
     expect(payload.get("email")).toBe("ammar@example.com");
     expect(payload.get("password")).toBe("supersecret123");
     expect(payload.get("confirmPassword")).toBe("supersecret123");
+  });
+
+  it("forgot-password: resets the email field after the action reports success", async () => {
+    const user = userEvent.setup();
+    const { ForgotPasswordForm } = await import("@/features/auth/components/forgot-password-form");
+
+    // Initial state — no result yet.
+    useActionStateMock.mockReturnValue([null, dispatchMock, false]);
+    const { rerender } = render(<ForgotPasswordForm />);
+
+    // Type an email address.
+    await user.type(screen.getByLabelText(/email address/i), "test@example.com");
+    expect(screen.getByLabelText(/email address/i)).toHaveValue("test@example.com");
+
+    // Simulate the server action returning a success state (e.g. after dispatch).
+    useActionStateMock.mockReturnValue([
+      { success: true, message: "If an account exists for that address, we've sent a reset link." },
+      dispatchMock,
+      false,
+    ]);
+    rerender(<ForgotPasswordForm />);
+
+    // The useEffect should reset the form — the email field should be cleared.
+    await waitFor(() => {
+      expect(screen.getByLabelText(/email address/i)).toHaveValue("");
+    });
+  });
+
+  it("forgot-password: disables the submit button after a successful submission", async () => {
+    const { ForgotPasswordForm } = await import("@/features/auth/components/forgot-password-form");
+
+    useActionStateMock.mockReturnValue([
+      { success: true, message: "If an account exists for that address, we've sent a reset link." },
+      dispatchMock,
+      false,
+    ]);
+
+    render(<ForgotPasswordForm />);
+
+    expect(screen.getByRole("button", { name: /send reset link/i })).toBeDisabled();
+  });
+
+  it("forgot-password: shows the success message after a successful submission", async () => {
+    const { ForgotPasswordForm } = await import("@/features/auth/components/forgot-password-form");
+
+    const message = "If an account exists for that address, we've sent a reset link.";
+
+    useActionStateMock.mockReturnValue([{ success: true, message }, dispatchMock, false]);
+
+    render(<ForgotPasswordForm />);
+
+    expect(screen.getByRole("status")).toHaveTextContent(message);
   });
 });

@@ -1,20 +1,19 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { PackageSearch } from "lucide-react";
 
 import { PageShell } from "@/components/layout/page-shell";
-import { EmptyState } from "@/components/ui/empty-state";
 import { SectionHeader } from "@/components/ui/section-header";
 import { buildMetadata } from "@/config/metadata";
 import {
-  CatalogPagination,
+  toCategoryStaticParams,
+} from "@/features/rendering/seo-content-rendering";
+import {
+  CategoryInfiniteProductGrid,
   CategoryListingFilters,
   getCatalogCategory,
   getCatalogCategoryListing,
   getCatalogCategorySlugs,
-  ProductGridCard,
 } from "@/features/catalog";
-import { testIds } from "@/lib/test-selectors";
 
 export const revalidate = 900;
 
@@ -25,8 +24,7 @@ type CategoryPageProps = {
 
 export async function generateStaticParams() {
   const slugs = await getCatalogCategorySlugs();
-
-  return slugs.map((slug) => ({ slug }));
+  return toCategoryStaticParams(slugs);
 }
 
 export async function generateMetadata({
@@ -63,12 +61,14 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
       <SectionHeader
         eyebrow="Category listing"
         title={listing.category.name}
+        titleAs="h1"
+        titleId="category-page-heading"
         description={listing.category.description}
         actions={
-          <div className="text-muted-foreground flex flex-wrap items-center gap-3 text-sm">
-            <span>{listing.filteredProductCount} matching products</span>
-            <span>{listing.totalProductCount} total in category</span>
-          </div>
+          <ul className="text-muted-foreground flex flex-wrap items-center gap-3 text-sm">
+            <li>{listing.filteredProductCount} matching products</li>
+            <li>{listing.totalProductCount} total in category</li>
+          </ul>
         }
       />
 
@@ -78,25 +78,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
         </aside>
 
         <div className="space-y-6">
-          {listing.products.length === 0 ? (
-            <EmptyState
-              icon={PackageSearch}
-              title="No products match these filters"
-              description="Try adjusting your filters to see more products."
-              eyebrow="Empty state"
-            />
-          ) : (
-            <div
-              className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
-              data-testid={testIds.storefront.productGrid}
-            >
-              {listing.products.map((product) => (
-                <ProductGridCard key={product.id} product={product} />
-              ))}
-            </div>
-          )}
-
-          <CatalogPagination listing={listing} />
+          <CategoryInfiniteProductGrid listing={listing} />
         </div>
       </div>
     </PageShell>

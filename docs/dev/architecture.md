@@ -57,10 +57,12 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `(storefront)/account/*` now provides customer account routes for profile, addresses, order history, order detail, and reviews
 - `(storefront)` now uses the shared `SignOutButton` convention for authenticated logout controls across the header dropdown, mobile drawer, and account profile surface
 - `(admin)` now uses `AdminShell` with a responsive sidebar, topbar, breadcrumb, and user menu, plus the same form-based sign-out pattern and role-aware navigation filtering protected by the RBAC proxy/layout guards
+- Admin navigation UI is standardized through shared shadcn-style sidebar primitives in `src/components/ui/sidebar.tsx`; `AdminShell` composes these primitives while `src/features/admin/navigation.ts` remains the source of truth for permission-aware link visibility.
 - `(admin)/admin` dashboard now reads live operational metrics through `src/features/admin/dashboard/service.ts` (pending orders, delivered-order revenue summary, low-stock count, and recent audit activity preview)
 - `(admin)/admin/activity` now reads a dedicated AuditLog-backed feed through `src/features/admin/activity/service.ts`, with non-technical event summaries and actor context when available
 - `(admin)/admin/revenue` now reads a dedicated DB-backed report through `src/features/admin/revenue/service.ts`, showing recognized revenue, recent period summaries, order totals, and explicit inclusion assumptions
 - `(admin)/admin/categories` now provides category CRUD with shared typed create/edit/filter forms and SEO field controls
+- Admin category create/edit now includes a dedicated category card image field wired to the shared admin upload foundation (`purpose: category`), persisting a URL into `Category.cardImageUrl`.
 - `(admin)/admin/products` now provides product CRUD with reusable RHF + Zod form composition for simple and variant-based catalog entries
 - `(admin)/admin/blog` now provides blog post CRUD with structured content JSON, publish scheduling, and SEO controls
 - `(admin)/admin/inventory` now supports low-stock monitoring plus inline manual stock adjustments for authorized catalog admins
@@ -71,13 +73,18 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 
 - Global design tokens live in `src/app/globals.css` and define semantic colors, spacing rhythm, radii, and shadow presets.
 - `src/components/ui` now contains reusable UI-state and presentation primitives like `Badge`, `PriceDisplay`, `SectionHeader`, `EmptyState`, `LoadingState`, `ErrorState`, `Skeleton`, and shared form controls (`Input`, `Textarea`, `Select`, `Checkbox`, `Switch`).
-- `src/components/forms` is the app-wide client form seam. It combines React Hook Form, Zod, shared field renderers, and a small server-action submit bridge so feature modules can choose schema-driven forms or explicit composition without duplicating validation wiring.
+- Storefront category filtering uses a responsive composition in `src/features/catalog/components/category-listing-filters.tsx`: mobile uses shadcn `Sheet` with explicit open/close controls, while desktop keeps the existing sticky sidebar card.
+- `src/components/forms` is the app-wide client form seam. It combines React Hook Form, Zod, shared field renderers, and a small server-action submit bridge so feature modules can choose schema-driven forms or explicit composition without duplicating validation wiring. `DynamicForm` and `SchemaForm` support a `resetOnSuccess` prop; forms that redirect on success via server action do not need it — navigation discards the component tree automatically. Forms using `useActionState` that must clear after success should call `form.reset()` inside a `useEffect` keyed on the success flag.
 - `src/features/admin/uploads` is the shared admin/content media-upload seam. It owns client upload orchestration, file validation, provider abstraction, and the reusable image-upload input used by product image rows, banner, blog, and SEO image fields.
 - The upload UI keeps current data-model assumptions intact by writing the final public image URL back into the same string fields already used by product, category, blog, banner, and SEO flows.
 - `PageContainer` and `PageShell` should be reused for page spacing instead of duplicating wrapper classes.
+- Shared section intros now support explicit heading levels through `SectionHeader.titleAs`/`titleId` so route pages can declare a clear primary `h1` while nested modules continue using lower heading levels.
 - Shared frontend feedback uses `sonner` through `src/components/providers/app-toaster.tsx` and `src/lib/notify.ts`.
 - Catalog listing UI lives in `src/features/catalog/components`; keep product-grid and filter scaffolds there instead of placing listing-specific markup directly in route files.
 - PDP UI also lives in `src/features/catalog/components` (gallery, product panel, variants, specs, reviews, related products, and skeleton states); route files should compose these primitives instead of duplicating product-detail markup.
+- Header category navigation is assembled in `AppHeader` using live catalog categories (`getCatalogCategories`) plus a small ordering helper (`buildStorefrontCategoryMenu`) so the navigation contract is explicit and testable.
+- The category menu contract is stable: `One Dollar` pinned first, other categories sorted by name, and `All Categories` pinned last to preserve SEO-friendly listing discoverability at `/categories`.
+- Header category load failures are non-fatal: errors are logged server-side, and both desktop/mobile navigation continue rendering with user-safe fallback messaging.
 - Customer account shell UI lives in `src/features/account/components/account-shell.tsx` and should be reused for future account sections.
 - Wishlist client controls live in `src/features/wishlist/components` and call the dedicated wishlist API route.
 
@@ -116,9 +123,14 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `src/config/env.ts` validates public env input with a typed schema and throws readable `CONFIG_ERROR` messages.
 - `src/config/app-config.ts` builds a safe application config snapshot for future server and feature modules.
 - `src/config/feature-flags.ts` derives preview flags from validated env values instead of raw `process.env` access.
+- `src/config/production-visibility.ts` is the centralized guard map for development-only preview/placeholder surfaces. Any customer-facing placeholder or incomplete shell should be wired through `shouldRenderGuardedSurface()` instead of scattered `NODE_ENV` checks.
 - Admin image uploads currently use a server-side Vercel Blob integration behind `createAdminImageStorageProvider()`. The provider can be replaced later without rewriting form integrations because forms only depend on the shared upload route and final URL contract.
 - `BLOB_READ_WRITE_TOKEN` is the only required secret for the current upload provider. When it is missing, the upload route returns a user-safe configuration message instead of a raw storage error.
 - Homepage fallback preview-only artifacts should be gated by validated runtime env (`env.nodeEnv !== "production"`) so development helpers never leak into production storefront UI.
+- Guard behavior is intentionally conservative:
+	- `production`: guarded surfaces are hidden from customers.
+	- `development` and `test`: guarded surfaces stay visible for staging/debug workflows.
+- Current guarded surfaces include: homepage fallback indicator and preview CTA, `/preview` route, footer preview/newsletter placeholder artifacts, return-policy placeholder route, interim about-page note, and not-found admin placeholder action.
 - Storefront homepage `featured-categories` is now rendered through the shared shadcn-compatible carousel primitives with responsive card density and empty-state fallback, preserving the existing section registry architecture (`renderHomepageSection` + typed section contracts).
 - `getRequiredServerEnv()` should be used when a future integration needs a non-public secret at runtime.
 - `DATABASE_URL` must be available anywhere Prisma queries or CLI workflows run.
@@ -145,10 +157,18 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `src/features/catalog` is the storefront catalog feature module. It reads exclusively from the PostgreSQL database via Prisma.
 - `src/server/db/catalog-queries.ts` is the Prisma query layer for the storefront. It enforces all publish-state visibility rules: only PUBLISHED categories and products are returned, and only APPROVED reviews reach the storefront.
 - `src/features/catalog/service.ts` owns listing + PDP assembly (`getCatalogCategoryListing`, `getProductBySlug`, `getRelatedProducts`) by calling the query layer and mapping DB records to storefront types.
+- Storefront category cards (`src/features/catalog/components/category-overview-card.tsx`) render category-specific background media when `cardImageUrl` is available; when absent, they intentionally fall back to a stable gradient preview so cards remain readable and layout-safe.
+- `One Dollar` is implemented as a virtual/system storefront category (`slug: one-dollar`) in `src/features/catalog/one-dollar.ts`; it is not persisted as a `Category` row and does not alter product-to-category relationships.
+- One Dollar membership is derived at read-time from published products: include when default selling price is `<= 280 PKR`; products stay assigned to their original categories while also appearing in this special listing.
+- The `one-dollar` slug is reserved for the virtual category. If a published DB category collides with this slug, storefront category surfaces suppress the physical duplicate and log a warning for operator follow-up.
 - Related products on PDP follow a two-stage strategy in `getRelatedProducts`: (1) explicit admin-curated metadata (`relatedProductIds`, plus legacy `relatedProducts` entries with `id`) in saved order, then (2) same-category published fallback recommendations to fill remaining slots.
 - Related products always exclude the current product by slug and id, deduplicate curated/fallback overlap, and cap at 4 cards.
 - Related product failures are treated as non-fatal: lookup errors are logged server-side and the PDP renders with an explicit empty-state related section instead of failing the route.
 - `filters.ts` owns query-string parsing and href rebuilding for sorting, filtering, and pagination (unchanged).
+- Category listing now uses an SSR-first + client-continuation pattern: first render includes page 1 (6 products) from `getCatalogCategoryListing`, then `CategoryInfiniteProductGrid` progressively loads next pages via `GET /api/catalog/categories/[slug]/products`.
+- Infinite loading preserves existing filter/sort semantics by reusing the same query-param contract from `filters.ts` (`buildCategoryListingSearchParams` + `parseCatalogSearchParams`) for both route rendering and API page fetches.
+- The old button-based next/previous listing controls are replaced by scroll-triggered loading states with explicit progress, retry, and end-of-list messaging so users can understand when more products exist and when the list is complete.
+- The mobile filter/sort sheet intentionally reuses the same listing filter schema and URL builder flow as desktop to keep sorting/filtering semantics and query-string state stable across viewport sizes.
 - The admin mutation layer (`src/features/admin/products/actions.ts`, `src/features/admin/categories/actions.ts`) now calls `revalidatePath('/categories')` after any create/update/delete so the storefront ISR cache is invalidated and reflects changes within the next request.
 - `src/app/(storefront)/categories/page.tsx` is the category index (ISR: 900s). `src/app/(storefront)/categories/[slug]/page.tsx` is the SEO-friendly category listing route. `src/app/(storefront)/categories/[slug]/[productSlug]/page.tsx` is the SEO-friendly PDP route.
 - `generateStaticParams` in both listing and PDP routes fetches from the DB so newly published products are picked up on next ISR/build cycle.
@@ -159,15 +179,29 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `src/features/blog/service.ts` is now database-backed and reads from `BlogPost` rows through `src/server/db/blog-queries.ts`.
 - Storefront blog visibility is enforced in the service layer: only `PUBLISHED` posts with `publishedAt <= now` are shown by default; drafts/archived/future posts stay hidden unless `includeDrafts` is explicitly requested.
 - `src/app/(storefront)/blog/page.tsx` and `src/app/(storefront)/blog/[slug]/page.tsx` continue to generate metadata and JSON-LD using the same helper contracts, but now consume async DB reads.
+- Storefront SEO markup now standardizes crawler-friendly structure across key surfaces: route-level primary headings (`h1`), list semantics (`ul`/`li`) for card grids, and single-target canonical links in blog cards to reduce duplicate-link ambiguity.
 - Homepage blog highlights now hydrate from the same DB-backed storefront blog service (`getBlogPosts`) so listing, detail, and homepage surfaces share one primary source of truth.
 - Admin/homepage `blog-highlights.content.articles` is now treated as non-primary legacy payload data; storefront hydration replaces it with DB results and clears it on DB read failures so hardcoded/manual article arrays are isolated from production rendering.
 - Admin blog mutations (`src/features/admin/blog/actions.ts`) revalidate `/blog`, dynamic blog detail pages, and `/admin/blog` so published/unpublished changes are reflected promptly.
 
 ## Cache Strategy
 
-- ISR with `revalidate = 900` (15 minutes) is declared on all three storefront category routes.
-- On-demand ISR is triggered by admin server actions: publishing or updating a product/category calls `revalidatePath('/categories')`, immediately clearing the cache for the affected path tree.
-- For faster individual product page invalidation, the admin product update action can additionally call `revalidatePath('/categories/[slug]/[productSlug]', 'page')` once product-slug tracking is added to the action.
+- SEO-sensitive storefront content routes now share one ISR policy (`revalidate = 900`).
+- Static generation / ISR is now active for:
+	- `/blog` (ISR)
+	- `/blog/[slug]` (SSG + ISR with `generateStaticParams` from published blog slugs)
+	- `/categories` (ISR)
+	- `/categories/[slug]/[productSlug]` (SSG + ISR with `generateStaticParams` from published product+category slugs)
+- `/categories/[slug]` intentionally remains dynamic because listing filters/sort/pagination are request query driven (`searchParams`) and can vary combinatorially; this route still uses published-category static-param enumeration for canonical slug coverage and keeps route-level revalidation enabled for freshness.
+- `generateStaticParams` mapping is centralized into typed helpers (`toBlogStaticParams`, `toCategoryStaticParams`, `toProductStaticParams`) so page files stay small and behavior is testable, while route segment config exports stay literal (required by current Next segment-config validation).
+- Shared storefront shell no longer performs request-time auth in `AppHeader`; auth state for user controls is resolved client-side (`StorefrontHeaderAuthControls` + `useSession`) so SEO pages are not forced dynamic by header personalization.
+- Product-review personalization on PDP was moved to a client/API island (`ProductReviewComposer` + `GET /api/reviews/composer-context`) so product HTML can remain cacheable while review eligibility stays user-specific.
+- **Build-time connection-pool protection:** `listPublishedCategories` and `listAllPublishedProducts` in `src/server/db/catalog-queries.ts` are wrapped with `unstable_cache` (TTL 900 s, tags `catalog:categories` / `catalog:products`). During `next build`, Next.js pre-renders many pages concurrently — each including `<AppHeader />` which calls `getCatalogCategories()`. Without caching, every concurrent static render fires independent Prisma queries, exhausting the 3-connection pool (Prisma error P2024). With `unstable_cache`, all renders share the first DB result for the build window.
+- On-demand ISR is triggered by admin mutations:
+	- Blog mutations revalidate `/blog` and `/blog/[slug]`.
+	- Category and product mutations revalidate `/categories`, `/categories/[slug]`, and `/categories/[slug]/[productSlug]`, and also call `revalidateTag(CATALOG_CACHE_TAGS.categories, "max")` / `revalidateTag(CATALOG_CACHE_TAGS.products, "max")` to bust the `unstable_cache` entries immediately.
+	- Admin list pages are still revalidated for operator freshness.
+- Dynamic rendering remains intentional for truly personalized/request-bound routes (account, cart, checkout, wishlist, order confirmation, and admin surfaces).
 
 ## Search Strategy
 
@@ -196,6 +230,16 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - Authenticated cart APIs preserve a guest-context cookie token to avoid leaking authenticated cart identity into post-sign-out guest browsing.
 - Sign-out rotates to a fresh guest token before session clear so the next anonymous request starts from a clean guest cart context.
 
+## Cart Client Count State Strategy
+
+- `src/features/cart/cart-count-state.ts` is the global client-side count state seam for cart badge surfaces.
+- The store is intentionally minimal and derived: it keeps only `itemCount` and sync status, while full cart details remain owned by existing cart APIs and feature components.
+- Synchronization contract:
+	- bootstrap from `GET /api/cart` (`no-store`) on first subscriber
+	- subscribe once to `cart:changed` and update immediately when cart detail is provided
+	- fallback to API refresh when an event omits cart detail
+- The mobile cart button (`src/features/cart/components/mobile-cart-button.tsx`) consumes this shared state so cart count remains consistent across mobile and desktop entry points without changing cart business logic.
+
 ## Review Workflow Strategy
 
 - `src/features/reviews/service.ts` is the customer review service layer for submission eligibility, account listing, and safe status mapping.
@@ -203,6 +247,8 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - Customer edits to an existing review are allowed and intentionally reset moderation fields to `PENDING`/`approved=false` so updated content is re-reviewed.
 - `src/features/reviews/actions.ts` owns CSRF-safe server action handling, auth redirects, validation, flash codes, and route revalidation for storefront PDP/account pages plus admin moderation.
 - `src/app/(storefront)/categories/[slug]/[productSlug]/page.tsx` now composes `CustomerReviewForm` above `ProductReviews`, with user-friendly notice/error banners and eligibility messaging.
+- `src/features/reviews/components/customer-review-form.tsx` now follows the shared shadcn dynamic form architecture (`useAppForm` + `DynamicForm` + `useServerActionSubmit`) so validation, error summary rendering, and reset conventions stay aligned with other feature forms.
+- Review submit contract compatibility is preserved: field names and payload shape (`productId`, `returnTo`, `rating`, `title`, `body`) remain unchanged for moderation and server-action flow safety.
 - `src/app/(storefront)/account/reviews/page.tsx` now renders live user-scoped review history (status badge, storefront visibility state, customer-facing `moderationReason`, product deep link) instead of an empty placeholder.
 - Storefront visibility remains strictly moderation-driven: only `APPROVED` reviews are queried by `src/server/db/catalog-queries.ts` and rendered in PDP review sections.
 

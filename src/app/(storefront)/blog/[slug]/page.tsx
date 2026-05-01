@@ -7,6 +7,9 @@ import { PageErrorFallback } from "@/components/ui/page-error-fallback";
 import { SectionHeader } from "@/components/ui/section-header";
 import { buildMetadata } from "@/config/metadata";
 import {
+  toBlogStaticParams,
+} from "@/features/rendering/seo-content-rendering";
+import {
   BlogPostCard,
   BlogPostContent,
   buildBlogPostBreadcrumbJsonLd,
@@ -18,13 +21,15 @@ import {
   toBlogMetadataInput,
 } from "@/features/blog";
 
+export const revalidate = 900;
+
 type BlogPostPageProps = {
   params: Promise<{ slug: string }>;
 };
 
 export async function generateStaticParams() {
   const slugs = await getBlogPostSlugs("en");
-  return slugs.map((slug) => ({ slug }));
+  return toBlogStaticParams(slugs);
 }
 
 export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
@@ -106,6 +111,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         <SectionHeader
           eyebrow="Blog"
           title={post.title}
+          titleAs="h1"
           description={post.excerpt}
           actions={
             <span className="text-muted-foreground text-sm">{formatBlogPublishedDate(post.publishedAt)}</span>
@@ -135,11 +141,13 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
             Related articles will appear here as more posts are published.
           </p>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2">
+          <ul className="grid gap-6 md:grid-cols-2">
             {relatedPosts.map((relatedPost) => (
-              <BlogPostCard key={relatedPost.id} post={relatedPost} />
+              <li key={relatedPost.id} className="list-none">
+                <BlogPostCard post={relatedPost} />
+              </li>
             ))}
-          </div>
+          </ul>
         )}
       </section>
 

@@ -37,7 +37,7 @@ export function BlogHighlightsSectionBlock({ section }: BlogHighlightsSectionPro
       ) : (
         <EmptyState
           icon={Newspaper}
-          title="Blog highlights coming soon"
+          title="No blog highlights yet"
           description={section.placeholderMessage}
           action={
             <Link href={routes.storefront.blog} className="text-primary text-sm font-medium hover:underline">

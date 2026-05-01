@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect, unstable_rethrow } from "next/navigation";
 
 import { routes } from "@/config/routes";
@@ -8,6 +8,7 @@ import { requireRouteAccess } from "@/lib/auth/guards";
 import { rbacPermissions } from "@/lib/auth/rbac";
 import { captureServerError } from "@/lib/errors/handling";
 import { assertTrustedOrigin } from "@/lib/security/csrf";
+import { CATALOG_CACHE_TAGS } from "@/server/db/catalog-queries";
 
 import { getProductErrorCode, type ProductErrorCode } from "./flash";
 import { createAdminProduct, updateAdminProduct } from "./service";
@@ -124,6 +125,15 @@ async function requireProductWriteAccess() {
   };
 }
 
+function revalidateStorefrontCatalogPaths() {
+  // Bust unstable_cache entries so admin changes are reflected immediately
+  revalidateTag(CATALOG_CACHE_TAGS.categories, "max");
+  revalidateTag(CATALOG_CACHE_TAGS.products, "max");
+  revalidatePath(routes.storefront.categories);
+  revalidatePath(routes.storefront.category("[slug]"), "page");
+  revalidatePath(routes.storefront.product("[slug]", "[productSlug]"), "page");
+}
+
 export async function createAdminProductAction(formData: FormData) {
   const returnTo = getReturnTo(formData, routes.admin.productCreate);
 
@@ -141,8 +151,8 @@ export async function createAdminProductAction(formData: FormData) {
       actor,
     });
 
-    // Revalidate storefront catalog so published products appear without delay
-    revalidatePath(routes.storefront.categories);
+    // Revalidate storefront catalog tree so listing + PDP pages refresh on next request
+    revalidateStorefrontCatalogPaths();
     revalidatePath(routes.admin.products);
     redirect(appendFlash(routes.admin.productEdit(created.id), "notice", "created"));  } catch (error) {
     unstable_rethrow(error);
@@ -184,8 +194,8 @@ export async function updateAdminProductAction(formData: FormData) {
     redirect(appendFlash(returnTo, "error", errorCode));
   }
 
-  // Revalidate storefront catalog so published products appear without delay
-  revalidatePath(routes.storefront.categories);
+  // Revalidate storefront catalog tree so listing + PDP pages refresh on next request
+  revalidateStorefrontCatalogPaths();
   revalidatePath(routes.admin.products);
   redirect(appendFlash(returnTo, "notice", "updated"));
 }

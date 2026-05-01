@@ -18,6 +18,7 @@
     "prisma:migrate:resolve": "node scripts/prisma-cli.mjs migrate resolve",
     "prisma:studio": "node scripts/prisma-cli.mjs studio",
     "prisma:seed": "node prisma/seed.js",
+    "prisma:seed:dev-catalog": "node prisma/populate-dev-catalog.js",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -55,6 +56,7 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-hook-form": "^7.72.1",
+    "react-infinite-scroll-component": "^7.2.0",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.5.0",
     "zod": "^4.3.6"

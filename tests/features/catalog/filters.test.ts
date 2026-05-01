@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { buildCategoryListingHref, parseCatalogSearchParams } from "@/features/catalog";
+import {
+  buildCategoryListingHref,
+  buildCategoryListingSearchParams,
+  parseCatalogSearchParams,
+} from "@/features/catalog";
 
 describe("catalog filter parsing", () => {
   it("uses stable defaults for an empty query", () => {
@@ -56,5 +60,24 @@ describe("catalog filter parsing", () => {
     });
 
     expect(href).toBe("/categories/grocery?minPrice=500&availability=in-stock&discount=on-sale&attribute=bottle&page=2");
+  });
+
+  it("builds stable listing search params for infinite paging", () => {
+    const params = buildCategoryListingSearchParams(
+      {
+        minPrice: undefined,
+        maxPrice: undefined,
+        availability: "all",
+        rating: "all",
+        discount: "all",
+        sort: "featured",
+        attribute: "",
+        page: 1,
+        pageSize: 6,
+      },
+      { page: 3, sort: "price-desc", discount: "on-sale" },
+    );
+
+    expect(params.toString()).toBe("discount=on-sale&sort=price-desc&page=3");
   });
 });

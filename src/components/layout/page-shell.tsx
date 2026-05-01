@@ -11,7 +11,7 @@ export function PageShell({ children, className, ...props }: PageShellProps) {
   return (
     <PageContainer
       as="section"
-      className={cn("flex w-full flex-1 flex-col gap-6 py-[var(--space-section)]", className)}
+      className={cn("flex w-full flex-1 flex-col gap-6 py-(--space-section)", className)}
       {...props}
     >
       {children}

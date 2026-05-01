@@ -11,6 +11,7 @@ type SignOutButtonProps = Omit<ButtonProps, "children" | "type"> & {
   label?: string;
   pendingLabel?: string;
   showIcon?: boolean;
+  showText?: boolean;
   fullWidth?: boolean;
   formClassName?: string;
   onBeforeSubmit?: () => void;
@@ -23,6 +24,7 @@ function SubmitButton({
   pendingLabel = "Signing out...",
   showIcon = true,
   fullWidth = false,
+  showText = true,
   className,
   disabled,
   ...buttonProps
@@ -38,7 +40,7 @@ function SubmitButton({
       {...buttonProps}
     >
       {showIcon ? <LogOut className="size-4" aria-hidden="true" /> : null}
-      {pending ? pendingLabel : label}
+      {showText ? (pending ? pendingLabel : label) : null}
     </Button>
   );
 }

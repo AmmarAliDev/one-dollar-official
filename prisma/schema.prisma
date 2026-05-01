@@ -251,6 +251,7 @@ model Category {
   name           String
   slug           String         @unique
   description    String?
+  cardImageUrl   String?        @map("card_image_url")
   status         CategoryStatus @default(DRAFT)
   parentId       String?        @map("parent_id")
   parent         Category?      @relation("CategoryToCategory", fields: [parentId], references: [id])

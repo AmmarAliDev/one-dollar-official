@@ -13,4 +13,5 @@ export type {
   HomepageContentResult,
   HomepageSection,
   HomepageSectionKind,
+  OneDollarSection,
 } from "./types";

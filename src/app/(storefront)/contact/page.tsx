@@ -1,5 +1,6 @@
 import { ContactForm } from "@/features/contact";
 import { buildMetadata } from "@/config/metadata";
+import { PageShell } from "@/components/layout/page-shell";
 
 export const metadata = buildMetadata({
   title: "Contact Us",
@@ -9,7 +10,7 @@ export const metadata = buildMetadata({
 
 export default function ContactPage() {
   return (
-    <div className="container py-12">
+    <PageShell className="py-12 px-4">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
           <h1 className="text-3xl font-bold tracking-tight mb-4">Contact Us</h1>
@@ -21,7 +22,7 @@ export default function ContactPage() {
 
         <ContactForm />
       </div>
-    </div>
+    </PageShell>
   );
 }
 
