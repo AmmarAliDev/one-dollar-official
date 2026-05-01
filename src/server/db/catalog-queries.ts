@@ -9,11 +9,74 @@
  * Consumed by:
  *   - src/features/catalog/service.ts   — listing, detail, and related products
  *   - src/features/catalog/search-adapter.ts — DB-backed keyword search
+ *
+ * Build-time caching:
+ *   - `listPublishedCategories` and `listAllPublishedProducts` are wrapped with
+ *     `unstable_cache` (revalidate: 900 s) to deduplicate the many concurrent
+ *     Prisma calls that Next.js fires during static generation.  Without this
+ *     cache every page that renders <AppHeader /> issues independent DB queries
+ *     and exhausts the connection pool (Prisma P2024).
+ *   - Admin server actions MUST call `revalidateTag(CATALOG_CACHE_TAGS.*)` after
+ *     any create/update/delete so the cache is invalidated immediately.
  */
+
+import { unstable_cache } from "next/cache";
 
 import type { Prisma } from "@prisma/client";
 
 import { getPrismaClient } from "@/server/db";
+
+const CATALOG_CACHE_REVALIDATE_SECONDS = 900;
+const PRISMA_POOL_TIMEOUT_ERROR_CODE = "P2024";
+const PRISMA_POOL_TIMEOUT_MAX_ATTEMPTS = 2;
+
+function isPrismaPoolTimeoutError(error: unknown): boolean {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  return (
+    "code" in error &&
+    (error as { code?: unknown }).code === PRISMA_POOL_TIMEOUT_ERROR_CODE
+  );
+}
+
+async function withPrismaPoolTimeoutRetry<T>(operation: () => Promise<T>): Promise<T> {
+  let attempt = 1;
+
+  while (attempt <= PRISMA_POOL_TIMEOUT_MAX_ATTEMPTS) {
+    try {
+      return await operation();
+    } catch (error) {
+      if (!isPrismaPoolTimeoutError(error) || attempt >= PRISMA_POOL_TIMEOUT_MAX_ATTEMPTS) {
+        throw error;
+      }
+
+      // Retry once for transient pool contention spikes during concurrent prerender.
+      attempt += 1;
+    }
+  }
+
+  throw new Error("unreachable: prisma pool-timeout retry loop exited unexpectedly");
+}
+
+// ---------------------------------------------------------------------------
+// Cache tags — imported by admin server actions for on-demand revalidation
+// ---------------------------------------------------------------------------
+
+/**
+ * Stable string tags used with Next.js `unstable_cache` / `revalidateTag`.
+ *
+ * Admin actions that mutate catalog data must call `revalidateTag` with the
+ * appropriate tag so storefront pages reflect changes without waiting for the
+ * 15-minute ISR window to expire.
+ */
+export const CATALOG_CACHE_TAGS = {
+  /** Tag covering all published-category list queries. */
+  categories: "catalog:categories",
+  /** Tag covering all published-product list queries. */
+  products: "catalog:products",
+} as const;
 
 // ---------------------------------------------------------------------------
 // Shared product field selection
@@ -94,10 +157,9 @@ export type StorefrontProductRecord = Prisma.ProductGetPayload<{
 // ---------------------------------------------------------------------------
 
 /**
- * Returns all PUBLISHED categories, ordered by name.
- * The `productCount` field reflects the count of PUBLISHED products only.
+ * Implementation (not exported directly — callers use the cached wrapper below).
  */
-export async function listPublishedCategories() {
+async function _listPublishedCategoriesImpl() {
   const db = getPrismaClient();
   return db.category.findMany({
     where: { status: "PUBLISHED" },
@@ -121,36 +183,75 @@ export async function listPublishedCategories() {
   });
 }
 
+/**
+ * Returns all PUBLISHED categories, ordered by name.
+ * The `productCount` field reflects the count of PUBLISHED products only.
+ *
+ * Wrapped with `unstable_cache` (TTL 900 s) so concurrent static-generation
+ * renders during `next build` share a single DB round-trip instead of each
+ * opening a new Prisma connection — prevents P2024 connection-pool exhaustion.
+ *
+ * Bust this cache via `revalidateTag(CATALOG_CACHE_TAGS.categories)` after any
+ * admin category create/update/delete.
+ */
+export const listPublishedCategories = unstable_cache(
+  _listPublishedCategoriesImpl,
+  ["storefront:published-categories"],
+  {
+    revalidate: CATALOG_CACHE_REVALIDATE_SECONDS,
+    tags: [CATALOG_CACHE_TAGS.categories],
+  },
+);
+
 /** Inferred record type for a category row from listPublishedCategories. */
 export type StorefrontCategoryRecord = Awaited<
-  ReturnType<typeof listPublishedCategories>
+  ReturnType<typeof _listPublishedCategoriesImpl>
 >[number];
 
 /**
  * Returns a single PUBLISHED category by slug.
  * Returns `null` if the category does not exist or is not published.
  */
-export async function getPublishedCategoryBySlug(slug: string) {
+async function _getPublishedCategoryBySlugImpl(slug: string) {
   const db = getPrismaClient();
-  return db.category.findFirst({
-    where: { slug, status: "PUBLISHED" },
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-      description: true,
-      cardImageUrl: true,
-      seoTitle: true,
-      seoDescription: true,
-      _count: {
-        select: {
-          products: {
-            where: { status: "PUBLISHED" },
+  return withPrismaPoolTimeoutRetry(() =>
+    db.category.findFirst({
+      where: { slug, status: "PUBLISHED" },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        cardImageUrl: true,
+        seoTitle: true,
+        seoDescription: true,
+        _count: {
+          select: {
+            products: {
+              where: { status: "PUBLISHED" },
+            },
           },
         },
       },
-    },
-  });
+    }),
+  );
+}
+
+const _getPublishedCategoryBySlugCached = unstable_cache(
+  _getPublishedCategoryBySlugImpl,
+  ["storefront:published-category-by-slug"],
+  {
+    revalidate: CATALOG_CACHE_REVALIDATE_SECONDS,
+    tags: [CATALOG_CACHE_TAGS.categories],
+  },
+);
+
+/**
+ * Returns a single PUBLISHED category by slug.
+ * Returns `null` if the category does not exist or is not published.
+ */
+export async function getPublishedCategoryBySlug(slug: string) {
+  return _getPublishedCategoryBySlugCached(slug);
 }
 
 // ---------------------------------------------------------------------------
@@ -177,13 +278,9 @@ export async function listPublishedProductsByCategory(categorySlug: string) {
 }
 
 /**
- * Returns all PUBLISHED products whose category is also PUBLISHED.
- * Ordered by `createdAt DESC` (newest first).
- *
- * Used by virtual/system storefront collections that derive membership
- * from product attributes instead of direct category relations.
+ * Implementation (not exported directly — callers use the cached wrapper below).
  */
-export async function listAllPublishedProducts() {
+async function _listAllPublishedProductsImpl() {
   const db = getPrismaClient();
   return db.product.findMany({
     where: {
@@ -196,6 +293,76 @@ export async function listAllPublishedProducts() {
 }
 
 /**
+ * Returns all PUBLISHED products whose category is also PUBLISHED.
+ * Ordered by `createdAt DESC` (newest first).
+ *
+ * Used by virtual/system storefront collections that derive membership
+ * from product attributes instead of direct category relations.
+ *
+ * Wrapped with `unstable_cache` (TTL 900 s) for the same reason as
+ * `listPublishedCategories` — prevents P2024 during concurrent builds.
+ *
+ * Bust this cache via `revalidateTag(CATALOG_CACHE_TAGS.products)` after any
+ * admin product create/update/delete.
+ */
+export const listAllPublishedProducts = unstable_cache(
+  _listAllPublishedProductsImpl,
+  ["storefront:published-products-all"],
+  {
+    revalidate: CATALOG_CACHE_REVALIDATE_SECONDS,
+    tags: [CATALOG_CACHE_TAGS.products],
+  },
+);
+
+/**
+ * Returns the full detail record for a single PUBLISHED product identified by slug.
+ * Includes APPROVED review body text (for PDP review section).
+ *
+ * Returns `null` if the product does not exist, is not published, or belongs
+ * to a category that is not published.
+ */
+async function _getPublishedProductBySlugImpl(slug: string) {
+  const db = getPrismaClient();
+  return withPrismaPoolTimeoutRetry(() =>
+    db.product.findFirst({
+      where: {
+        slug,
+        status: "PUBLISHED",
+        category: { status: "PUBLISHED" },
+      },
+      select: {
+        ...storefrontProductSelect,
+        // For the detail page, also fetch full review text (APPROVED only)
+        reviews: {
+          where: { status: "APPROVED" },
+          orderBy: { createdAt: "desc" },
+          select: {
+            id: true,
+            rating: true,
+            title: true,
+            body: true,
+            status: true,
+            createdAt: true,
+            user: {
+              select: { name: true },
+            },
+          },
+        },
+      },
+    }),
+  );
+}
+
+const _getPublishedProductBySlugCached = unstable_cache(
+  _getPublishedProductBySlugImpl,
+  ["storefront:published-product-by-slug"],
+  {
+    revalidate: CATALOG_CACHE_REVALIDATE_SECONDS,
+    tags: [CATALOG_CACHE_TAGS.products],
+  },
+);
+
+/**
  * Returns the full detail record for a single PUBLISHED product identified by slug.
  * Includes APPROVED review body text (for PDP review section).
  *
@@ -203,33 +370,7 @@ export async function listAllPublishedProducts() {
  * to a category that is not published.
  */
 export async function getPublishedProductBySlug(slug: string) {
-  const db = getPrismaClient();
-  return db.product.findFirst({
-    where: {
-      slug,
-      status: "PUBLISHED",
-      category: { status: "PUBLISHED" },
-    },
-    select: {
-      ...storefrontProductSelect,
-      // For the detail page, also fetch full review text (APPROVED only)
-      reviews: {
-        where: { status: "APPROVED" },
-        orderBy: { createdAt: "desc" },
-        select: {
-          id: true,
-          rating: true,
-          title: true,
-          body: true,
-          status: true,
-          createdAt: true,
-          user: {
-            select: { name: true },
-          },
-        },
-      },
-    },
-  });
+  return _getPublishedProductBySlugCached(slug);
 }
 
 /** Inferred type for the product detail record. */
