@@ -26,6 +26,40 @@ import type { Prisma } from "@prisma/client";
 
 import { getPrismaClient } from "@/server/db";
 
+const CATALOG_CACHE_REVALIDATE_SECONDS = 900;
+const PRISMA_POOL_TIMEOUT_ERROR_CODE = "P2024";
+const PRISMA_POOL_TIMEOUT_MAX_ATTEMPTS = 2;
+
+function isPrismaPoolTimeoutError(error: unknown): boolean {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  return (
+    "code" in error &&
+    (error as { code?: unknown }).code === PRISMA_POOL_TIMEOUT_ERROR_CODE
+  );
+}
+
+async function withPrismaPoolTimeoutRetry<T>(operation: () => Promise<T>): Promise<T> {
+  let attempt = 1;
+
+  while (attempt <= PRISMA_POOL_TIMEOUT_MAX_ATTEMPTS) {
+    try {
+      return await operation();
+    } catch (error) {
+      if (!isPrismaPoolTimeoutError(error) || attempt >= PRISMA_POOL_TIMEOUT_MAX_ATTEMPTS) {
+        throw error;
+      }
+
+      // Retry once for transient pool contention spikes during concurrent prerender.
+      attempt += 1;
+    }
+  }
+
+  throw new Error("unreachable: prisma pool-timeout retry loop exited unexpectedly");
+}
+
 // ---------------------------------------------------------------------------
 // Cache tags — imported by admin server actions for on-demand revalidation
 // ---------------------------------------------------------------------------
@@ -163,7 +197,10 @@ async function _listPublishedCategoriesImpl() {
 export const listPublishedCategories = unstable_cache(
   _listPublishedCategoriesImpl,
   ["storefront:published-categories"],
-  { revalidate: 900, tags: [CATALOG_CACHE_TAGS.categories] },
+  {
+    revalidate: CATALOG_CACHE_REVALIDATE_SECONDS,
+    tags: [CATALOG_CACHE_TAGS.categories],
+  },
 );
 
 /** Inferred record type for a category row from listPublishedCategories. */
@@ -175,27 +212,46 @@ export type StorefrontCategoryRecord = Awaited<
  * Returns a single PUBLISHED category by slug.
  * Returns `null` if the category does not exist or is not published.
  */
-export async function getPublishedCategoryBySlug(slug: string) {
+async function _getPublishedCategoryBySlugImpl(slug: string) {
   const db = getPrismaClient();
-  return db.category.findFirst({
-    where: { slug, status: "PUBLISHED" },
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-      description: true,
-      cardImageUrl: true,
-      seoTitle: true,
-      seoDescription: true,
-      _count: {
-        select: {
-          products: {
-            where: { status: "PUBLISHED" },
+  return withPrismaPoolTimeoutRetry(() =>
+    db.category.findFirst({
+      where: { slug, status: "PUBLISHED" },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        cardImageUrl: true,
+        seoTitle: true,
+        seoDescription: true,
+        _count: {
+          select: {
+            products: {
+              where: { status: "PUBLISHED" },
+            },
           },
         },
       },
-    },
-  });
+    }),
+  );
+}
+
+const _getPublishedCategoryBySlugCached = unstable_cache(
+  _getPublishedCategoryBySlugImpl,
+  ["storefront:published-category-by-slug"],
+  {
+    revalidate: CATALOG_CACHE_REVALIDATE_SECONDS,
+    tags: [CATALOG_CACHE_TAGS.categories],
+  },
+);
+
+/**
+ * Returns a single PUBLISHED category by slug.
+ * Returns `null` if the category does not exist or is not published.
+ */
+export async function getPublishedCategoryBySlug(slug: string) {
+  return _getPublishedCategoryBySlugCached(slug);
 }
 
 // ---------------------------------------------------------------------------
@@ -252,7 +308,58 @@ async function _listAllPublishedProductsImpl() {
 export const listAllPublishedProducts = unstable_cache(
   _listAllPublishedProductsImpl,
   ["storefront:published-products-all"],
-  { revalidate: 900, tags: [CATALOG_CACHE_TAGS.products] },
+  {
+    revalidate: CATALOG_CACHE_REVALIDATE_SECONDS,
+    tags: [CATALOG_CACHE_TAGS.products],
+  },
+);
+
+/**
+ * Returns the full detail record for a single PUBLISHED product identified by slug.
+ * Includes APPROVED review body text (for PDP review section).
+ *
+ * Returns `null` if the product does not exist, is not published, or belongs
+ * to a category that is not published.
+ */
+async function _getPublishedProductBySlugImpl(slug: string) {
+  const db = getPrismaClient();
+  return withPrismaPoolTimeoutRetry(() =>
+    db.product.findFirst({
+      where: {
+        slug,
+        status: "PUBLISHED",
+        category: { status: "PUBLISHED" },
+      },
+      select: {
+        ...storefrontProductSelect,
+        // For the detail page, also fetch full review text (APPROVED only)
+        reviews: {
+          where: { status: "APPROVED" },
+          orderBy: { createdAt: "desc" },
+          select: {
+            id: true,
+            rating: true,
+            title: true,
+            body: true,
+            status: true,
+            createdAt: true,
+            user: {
+              select: { name: true },
+            },
+          },
+        },
+      },
+    }),
+  );
+}
+
+const _getPublishedProductBySlugCached = unstable_cache(
+  _getPublishedProductBySlugImpl,
+  ["storefront:published-product-by-slug"],
+  {
+    revalidate: CATALOG_CACHE_REVALIDATE_SECONDS,
+    tags: [CATALOG_CACHE_TAGS.products],
+  },
 );
 
 /**
@@ -263,33 +370,7 @@ export const listAllPublishedProducts = unstable_cache(
  * to a category that is not published.
  */
 export async function getPublishedProductBySlug(slug: string) {
-  const db = getPrismaClient();
-  return db.product.findFirst({
-    where: {
-      slug,
-      status: "PUBLISHED",
-      category: { status: "PUBLISHED" },
-    },
-    select: {
-      ...storefrontProductSelect,
-      // For the detail page, also fetch full review text (APPROVED only)
-      reviews: {
-        where: { status: "APPROVED" },
-        orderBy: { createdAt: "desc" },
-        select: {
-          id: true,
-          rating: true,
-          title: true,
-          body: true,
-          status: true,
-          createdAt: true,
-          user: {
-            select: { name: true },
-          },
-        },
-      },
-    },
-  });
+  return _getPublishedProductBySlugCached(slug);
 }
 
 /** Inferred type for the product detail record. */
