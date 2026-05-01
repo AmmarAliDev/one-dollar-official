@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect, unstable_rethrow } from "next/navigation";
 
 import { routes } from "@/config/routes";
@@ -8,6 +8,7 @@ import { requireRouteAccess } from "@/lib/auth/guards";
 import { rbacPermissions } from "@/lib/auth/rbac";
 import { captureServerError } from "@/lib/errors/handling";
 import { assertTrustedOrigin } from "@/lib/security/csrf";
+import { CATALOG_CACHE_TAGS } from "@/server/db/catalog-queries";
 
 import { getProductErrorCode, type ProductErrorCode } from "./flash";
 import { createAdminProduct, updateAdminProduct } from "./service";
@@ -125,6 +126,9 @@ async function requireProductWriteAccess() {
 }
 
 function revalidateStorefrontCatalogPaths() {
+  // Bust unstable_cache entries so admin changes are reflected immediately
+  revalidateTag(CATALOG_CACHE_TAGS.categories, "max");
+  revalidateTag(CATALOG_CACHE_TAGS.products, "max");
   revalidatePath(routes.storefront.categories);
   revalidatePath(routes.storefront.category("[slug]"), "page");
   revalidatePath(routes.storefront.product("[slug]", "[productSlug]"), "page");

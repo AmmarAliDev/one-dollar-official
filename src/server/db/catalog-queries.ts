@@ -9,11 +9,40 @@
  * Consumed by:
  *   - src/features/catalog/service.ts   — listing, detail, and related products
  *   - src/features/catalog/search-adapter.ts — DB-backed keyword search
+ *
+ * Build-time caching:
+ *   - `listPublishedCategories` and `listAllPublishedProducts` are wrapped with
+ *     `unstable_cache` (revalidate: 900 s) to deduplicate the many concurrent
+ *     Prisma calls that Next.js fires during static generation.  Without this
+ *     cache every page that renders <AppHeader /> issues independent DB queries
+ *     and exhausts the connection pool (Prisma P2024).
+ *   - Admin server actions MUST call `revalidateTag(CATALOG_CACHE_TAGS.*)` after
+ *     any create/update/delete so the cache is invalidated immediately.
  */
+
+import { unstable_cache } from "next/cache";
 
 import type { Prisma } from "@prisma/client";
 
 import { getPrismaClient } from "@/server/db";
+
+// ---------------------------------------------------------------------------
+// Cache tags — imported by admin server actions for on-demand revalidation
+// ---------------------------------------------------------------------------
+
+/**
+ * Stable string tags used with Next.js `unstable_cache` / `revalidateTag`.
+ *
+ * Admin actions that mutate catalog data must call `revalidateTag` with the
+ * appropriate tag so storefront pages reflect changes without waiting for the
+ * 15-minute ISR window to expire.
+ */
+export const CATALOG_CACHE_TAGS = {
+  /** Tag covering all published-category list queries. */
+  categories: "catalog:categories",
+  /** Tag covering all published-product list queries. */
+  products: "catalog:products",
+} as const;
 
 // ---------------------------------------------------------------------------
 // Shared product field selection
@@ -94,10 +123,9 @@ export type StorefrontProductRecord = Prisma.ProductGetPayload<{
 // ---------------------------------------------------------------------------
 
 /**
- * Returns all PUBLISHED categories, ordered by name.
- * The `productCount` field reflects the count of PUBLISHED products only.
+ * Implementation (not exported directly — callers use the cached wrapper below).
  */
-export async function listPublishedCategories() {
+async function _listPublishedCategoriesImpl() {
   const db = getPrismaClient();
   return db.category.findMany({
     where: { status: "PUBLISHED" },
@@ -121,9 +149,26 @@ export async function listPublishedCategories() {
   });
 }
 
+/**
+ * Returns all PUBLISHED categories, ordered by name.
+ * The `productCount` field reflects the count of PUBLISHED products only.
+ *
+ * Wrapped with `unstable_cache` (TTL 900 s) so concurrent static-generation
+ * renders during `next build` share a single DB round-trip instead of each
+ * opening a new Prisma connection — prevents P2024 connection-pool exhaustion.
+ *
+ * Bust this cache via `revalidateTag(CATALOG_CACHE_TAGS.categories)` after any
+ * admin category create/update/delete.
+ */
+export const listPublishedCategories = unstable_cache(
+  _listPublishedCategoriesImpl,
+  ["storefront:published-categories"],
+  { revalidate: 900, tags: [CATALOG_CACHE_TAGS.categories] },
+);
+
 /** Inferred record type for a category row from listPublishedCategories. */
 export type StorefrontCategoryRecord = Awaited<
-  ReturnType<typeof listPublishedCategories>
+  ReturnType<typeof _listPublishedCategoriesImpl>
 >[number];
 
 /**
@@ -177,13 +222,9 @@ export async function listPublishedProductsByCategory(categorySlug: string) {
 }
 
 /**
- * Returns all PUBLISHED products whose category is also PUBLISHED.
- * Ordered by `createdAt DESC` (newest first).
- *
- * Used by virtual/system storefront collections that derive membership
- * from product attributes instead of direct category relations.
+ * Implementation (not exported directly — callers use the cached wrapper below).
  */
-export async function listAllPublishedProducts() {
+async function _listAllPublishedProductsImpl() {
   const db = getPrismaClient();
   return db.product.findMany({
     where: {
@@ -194,6 +235,25 @@ export async function listAllPublishedProducts() {
     select: storefrontProductSelect,
   });
 }
+
+/**
+ * Returns all PUBLISHED products whose category is also PUBLISHED.
+ * Ordered by `createdAt DESC` (newest first).
+ *
+ * Used by virtual/system storefront collections that derive membership
+ * from product attributes instead of direct category relations.
+ *
+ * Wrapped with `unstable_cache` (TTL 900 s) for the same reason as
+ * `listPublishedCategories` — prevents P2024 during concurrent builds.
+ *
+ * Bust this cache via `revalidateTag(CATALOG_CACHE_TAGS.products)` after any
+ * admin product create/update/delete.
+ */
+export const listAllPublishedProducts = unstable_cache(
+  _listAllPublishedProductsImpl,
+  ["storefront:published-products-all"],
+  { revalidate: 900, tags: [CATALOG_CACHE_TAGS.products] },
+);
 
 /**
  * Returns the full detail record for a single PUBLISHED product identified by slug.
