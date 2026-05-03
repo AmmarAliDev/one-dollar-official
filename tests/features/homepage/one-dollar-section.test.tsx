@@ -59,7 +59,7 @@ describe("OneDollarSectionBlock", () => {
 
     const link = screen.getByRole("link", { name: "View Deal d1" });
     expect(link).toHaveAttribute("href", "/products/d1");
-    expect(link).toContainElement(screen.getByText("View product"));
+    expect(link).toContainElement(screen.getByText("Deal d1"));
   });
 
   it("always shows the View All CTA when products are present", () => {
@@ -86,13 +86,4 @@ describe("OneDollarSectionBlock", () => {
     expect(screen.getAllByTestId("carousel-item")).toHaveLength(HOMEPAGE_CAROUSEL_MAX_ITEMS);
   });
 
-  it("renders product badge when provided", () => {
-    render(
-      <OneDollarSectionBlock
-        section={buildSection([{ ...buildProduct("d1"), badge: "One Dollar" }])}
-      />,
-    );
-
-    expect(screen.getByText("One Dollar")).toBeInTheDocument();
-  });
 });

@@ -26,8 +26,7 @@ export default async function CategoriesPage() {
         title="Shop by Category"
         titleAs="h1"
         titleId="categories-page-heading"
-        description="Browse our categories to find exactly what you're looking for — from everyday essentials to hard-to-find items, all at one-dollar prices."
-      />
+        description="Browse our categories to find exactly what you're looking for — from everyday essentials to hard-to-find items, all in one place."      />
 
       {categories.length === 0 ? (
         <EmptyState

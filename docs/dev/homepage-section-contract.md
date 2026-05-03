@@ -34,6 +34,12 @@ Each section includes:
 - `enabled?`: optional admin toggle.
 - `displayOrder?`: optional ordering hint.
 
+Featured item media contract (for card layouts):
+
+- `FeaturedCategoryItem` supports optional `slug` and `cardImageUrl` for image-first category cards.
+- `FeaturedProductItem` supports optional `slug` and optional `images[]` (`url`, `alt?`, `isPrimary?`) for image-first product cards.
+- All fields above are optional so existing CMS/fallback payloads remain backward-compatible and render safe placeholder cards when media is absent.
+
 Admin management entrypoints now live under `/admin/homepage` with dedicated pages for:
 
 - section content editing and ordering
@@ -112,7 +118,7 @@ Config lives in `src/features/homepage/components/homepage-carousel-config.ts`.
 
 Some section kinds carry live data that is never stored in CMS:
 
-- **`one-dollar`** — `products[]` is always `[]` when stored. `hydrateOneDollarSections()` in `service.ts` calls `getCatalogCategoryListing({ slug: "one-dollar", ... })` and populates up to 6 product cards before the final payload is passed to the page. If the catalog fetch fails, the section renders its empty/placeholder state without blocking the rest of the page.
+- **`one-dollar`** — `products[]` is always `[]` when stored. `hydrateOneDollarSections()` in `service.ts` calls `getCatalogCategoryListing({ slug: "one-dollar", ... })` and populates up to 8 product cards before the final payload is passed to the page. Hydration now also maps optional `slug` and `images[]` for image-first card rendering. If the catalog fetch fails, the section renders its empty/placeholder state without blocking the rest of the page.
 - **`blog-highlights`** — `articles[]` is similarly hydrated from `getBlogPosts()` at render time.
 
 Implementation notes:

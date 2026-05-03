@@ -64,7 +64,7 @@ describe("FeaturedProductsSectionBlock", () => {
 
     const link = screen.getByRole("link", { name: "View Product p1" });
     expect(link).toHaveAttribute("href", "/products/p1");
-    expect(link).toContainElement(screen.getByText("View product"));
+    expect(link).toContainElement(screen.getByText("Product p1"));
   });
 
   it("renders a friendly empty state when products are missing", () => {
@@ -102,16 +102,6 @@ describe("FeaturedProductsSectionBlock", () => {
     render(<FeaturedProductsSectionBlock section={buildSection(products)} />);
 
     expect(screen.queryByRole("link", { name: /view all/i })).not.toBeInTheDocument();
-  });
-
-  it("renders product badge when provided", () => {
-    render(
-      <FeaturedProductsSectionBlock
-        section={buildSection([{ ...buildProduct("p1"), badge: "Sale" }])}
-      />,
-    );
-
-    expect(screen.getByText("Sale")).toBeInTheDocument();
   });
 
   it("renders optional product description when provided", () => {

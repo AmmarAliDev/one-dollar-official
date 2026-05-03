@@ -1,14 +1,14 @@
-import { ChevronDown, Heart, Search, Store } from "lucide-react";
+import { ChevronDown, Heart, Search } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 
 import { routes } from "@/config/routes";
 import { siteConfig } from "@/config/site";
-import { getCatalogCategories } from "@/features/catalog";
 import { CartMiniCart } from "@/features/cart/components/cart-mini-cart";
 import { MobileCartButton } from "@/features/cart/components/mobile-cart-button";
+import { getCatalogCategories } from "@/features/catalog";
 
 import { logger } from "@/lib/logger";
-import { ThemeToggle } from "../theme-toggle";
 import { buttonVariants } from "../ui/button";
 import {
   DropdownMenu,
@@ -18,8 +18,8 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { PageContainer } from "../ui/page-container";
-import { StorefrontHeaderAuthControls } from "./storefront-header-auth-controls";
 import { buildStorefrontCategoryMenu } from "./storefront-category-menu";
+import { StorefrontHeaderAuthControls } from "./storefront-header-auth-controls";
 
 export async function AppHeader() {
   let categoriesError = false;
@@ -47,7 +47,7 @@ export async function AppHeader() {
   );
 
   return (
-    <header className="border-border/70 bg-background/95 sticky top-0 z-40 border-b backdrop-blur">
+    <header className="border-border/70 bg-background-header-footer/95 sticky top-0 z-40 border-b backdrop-blur">
       <a
         href="#main-content"
         className="bg-background focus-visible:ring-ring sr-only absolute left-4 top-4 rounded-md px-3 py-2 focus:not-sr-only focus-visible:outline-none focus-visible:ring-2"
@@ -57,17 +57,26 @@ export async function AppHeader() {
 
       <PageContainer className="relative flex flex-col gap-3 py-3">
         <div className="flex items-center justify-between gap-3">
-          <Link href={routes.storefront.home} className="text-base font-semibold tracking-tight">
+          <Link
+            href={routes.storefront.home}
+            className="text-base font-semibold tracking-tight"
+            aria-label={`${siteConfig.name} homepage`}
+          >
             <span className="flex min-w-0 items-center gap-3">
-              <span className="bg-primary/10 text-primary rounded-2xl p-2.5" aria-hidden="true">
-                <Store className="size-5" />
-              </span>
+              <Image
+                src={siteConfig.logoPath}
+                alt={`${siteConfig.name} logo`}
+                width={200}
+                height={100}
+                className="h-25 w-50 rounded-md object-contain drop-shadow-md drop-shadow-white/50"
+                priority
+              />
 
-              <span className="min-w-0">
+              {/* <span className="min-w-0">
                 <span className="text-base font-semibold tracking-tight">
                   {siteConfig.name}
                 </span>
-              </span>
+              </span> */}
             </span>
           </Link>
 
@@ -110,7 +119,8 @@ export async function AppHeader() {
               Wishlist
             </Link>
             <CartMiniCart />
-            <ThemeToggle />
+            {/* Temporarily disabled */}
+            {/* <ThemeToggle /> */}
             <StorefrontHeaderAuthControls
               topLevelNavItems={topLevelNavItems}
               categoryMenuItems={categoryMenuItems}
@@ -130,7 +140,7 @@ export async function AppHeader() {
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  className="text-muted-foreground hover:bg-accent hover:text-foreground rounded-full px-3 py-2 text-sm transition-colors"
+                  className="text-muted hover:bg-accent hover:text-foreground rounded-full px-3 py-2 text-sm transition-colors"
                 >
                   {item.title}
                 </Link>
@@ -139,7 +149,7 @@ export async function AppHeader() {
             <li>
               <DropdownMenu>
                 <DropdownMenuTrigger
-                  className="text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring inline-flex items-center gap-1 rounded-full px-3 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2"
+                  className="text-muted hover:bg-accent hover:text-foreground focus-visible:ring-ring inline-flex items-center gap-1 rounded-full px-3 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2"
                   aria-label="One Dollar category navigation"
                 >
                   Categories

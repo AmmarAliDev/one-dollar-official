@@ -41,10 +41,10 @@ describe("ui foundation", () => {
     expect(formatPrice("not-a-number")).toBe("--");
   });
 
-  it("uses the requested white/black and #431b52 palette in theme tokens", () => {
+  it("uses the current light/dark palette tokens in globals", () => {
     expect(globalsCss).toContain("--background: #ffffff;");
-    expect(globalsCss).toContain("--background: #000000;");
-    expect(globalsCss).toContain("--primary: #431b52;");
+    expect(globalsCss).toContain("--background: #090305;");
+    expect(globalsCss).toContain("--primary: #8f0808;");
   });
 
   it("keeps shared form and table primitives bound to semantic design tokens", () => {

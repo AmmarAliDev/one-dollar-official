@@ -15,7 +15,7 @@ type DealSpotlightSectionProps = {
 export function DealSpotlightSectionBlock({ section }: DealSpotlightSectionProps) {
   return (
     <PageContainer as="section" className="py-8">
-      <Card className="from-primary/10 to-card overflow-hidden bg-gradient-to-r">
+      <Card className="overflow-hidden bg-card text-card-foreground shadow-(--shadow-soft)">
         <CardHeader className="gap-3">
           <Badge className="w-fit">{section.dealLabel}</Badge>
           <CardTitle className="text-2xl">{section.title}</CardTitle>
