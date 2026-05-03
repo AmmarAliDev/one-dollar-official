@@ -192,6 +192,7 @@ const featuredCategorySchema = z
       }),
     slug: optionalSlug,
     cardImageUrl: optionalHref,
+    imageUrl: optionalHref,
   })
   .superRefine((value, ctx) => {
     if (!value.name && !value.title) {
@@ -208,7 +209,7 @@ const featuredCategorySchema = z
     description: value.description,
     href: value.href,
     ...(value.slug ? { slug: value.slug } : {}),
-    ...(value.cardImageUrl ? { cardImageUrl: value.cardImageUrl } : {}),
+    ...((value.cardImageUrl ?? value.imageUrl) ? { cardImageUrl: value.cardImageUrl ?? value.imageUrl } : {}),
   }));
 
 const featuredProductSchema = z.object({

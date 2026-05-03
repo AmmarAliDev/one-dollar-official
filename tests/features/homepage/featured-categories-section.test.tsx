@@ -29,8 +29,11 @@ import {
 } from "@/features/homepage/components/homepage-carousel-config";
 import type { FeaturedCategoriesSection } from "@/features/homepage/types";
 
-function buildCategory(id: string): FeaturedCategoriesSection["categories"][number] {
-  return { id, name: `Category ${id}`, description: `Description ${id}`, href: `/categories/${id}` };
+function buildCategory(
+  id: string,
+  overrides?: Partial<FeaturedCategoriesSection["categories"][number]>,
+): FeaturedCategoriesSection["categories"][number] {
+  return { id, name: `Category ${id}`, description: `Description ${id}`, href: `/categories/${id}`, ...overrides };
 }
 
 function buildSection(
@@ -84,6 +87,41 @@ describe("FeaturedCategoriesSectionBlock", () => {
     render(<FeaturedCategoriesSectionBlock section={buildSection(categories)} />);
 
     expect(screen.getAllByTestId("carousel-item")).toHaveLength(HOMEPAGE_CAROUSEL_MAX_ITEMS);
+  });
+
+  it("renders the category image when cardImageUrl is present", () => {
+    render(
+      <FeaturedCategoriesSectionBlock
+        section={buildSection([
+          buildCategory("home-care", {
+            slug: "home-care",
+            cardImageUrl: "https://cdn.example.com/categories/home-care.jpg",
+          }),
+        ])}
+      />,
+    );
+
+    expect(screen.getByTestId("storefront-category-card-image-home-care")).toBeInTheDocument();
+    expect(screen.getByAltText("Category home-care")).toHaveAttribute(
+      "src",
+      expect.stringContaining(encodeURIComponent("https://cdn.example.com/categories/home-care.jpg")),
+    );
+    expect(screen.queryByTestId("storefront-category-card-fallback-home-care")).not.toBeInTheDocument();
+  });
+
+  it("renders the fallback artwork when category image data is missing", () => {
+    render(
+      <FeaturedCategoriesSectionBlock
+        section={buildSection([
+          buildCategory("home-care", {
+            slug: "home-care",
+          }),
+        ])}
+      />,
+    );
+
+    expect(screen.getByTestId("storefront-category-card-fallback-home-care")).toBeInTheDocument();
+    expect(screen.queryByTestId("storefront-category-card-image-home-care")).not.toBeInTheDocument();
   });
 
   it("shows a View All link when categories are capped", () => {

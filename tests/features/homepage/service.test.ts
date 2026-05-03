@@ -248,6 +248,54 @@ describe("homepage CMS service", () => {
     expect(categorySection?.categories[0]).not.toHaveProperty("title");
   });
 
+  it("normalizes legacy featured-category imageUrl fields into cardImageUrl when catalog hydration is unavailable", async () => {
+    prismaMock.homePageSection.findMany.mockResolvedValue([
+      {
+        id: "section-featured-categories",
+        key: "featured-categories-home",
+        title: "Featured categories",
+        type: "featured-categories",
+        content: {
+          description: "Legacy fallback categories",
+          categories: [
+            {
+              id: "legacy-category",
+              title: "Legacy category",
+              description: "Legacy content",
+              href: "/categories/legacy-category",
+              imageUrl: "https://cdn.example.com/categories/legacy-category.jpg",
+            },
+          ],
+        },
+        meta: { enabled: true },
+        position: 20,
+        active: true,
+        createdAt: new Date("2026-05-04T08:00:00.000Z"),
+        updatedAt: new Date("2026-05-04T08:00:00.000Z"),
+      },
+    ]);
+
+    mockGetCatalogCategories.mockRejectedValue(new Error("Catalog DB unavailable"));
+
+    const result = await getHomepageContent();
+    const categorySection = result.sections.find((section) => section.kind === "featured-categories");
+
+    expect(categorySection).toMatchObject({
+      kind: "featured-categories",
+      categories: [
+        {
+          id: "legacy-category",
+          name: "Legacy category",
+          description: "Legacy content",
+          href: "/categories/legacy-category",
+          cardImageUrl: "https://cdn.example.com/categories/legacy-category.jpg",
+        },
+      ],
+    });
+
+    expect(categorySection?.categories[0]).not.toHaveProperty("imageUrl");
+  });
+
   it("isolates manual fallback articles when homepage blog DB read fails", async () => {
     prismaMock.homePageSection.findMany.mockResolvedValue([
       {

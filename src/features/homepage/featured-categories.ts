@@ -1,3 +1,4 @@
+import { normalizeCatalogImageUrl } from "@/features/catalog/lib/product-image-url";
 import { ONE_DOLLAR_CATEGORY_SLUG } from "@/features/catalog/one-dollar";
 import type { CatalogCategory } from "@/features/catalog/types";
 
@@ -11,16 +12,25 @@ type LegacyFeaturedCategoryItem = {
   href: string;
   slug?: string;
   cardImageUrl?: string;
+  imageUrl?: string;
 };
 
+function resolveFeaturedCategoryCardImageUrl(
+  category: Pick<LegacyFeaturedCategoryItem, "cardImageUrl" | "imageUrl">,
+): string | undefined {
+  return normalizeCatalogImageUrl(category.cardImageUrl) ?? normalizeCatalogImageUrl(category.imageUrl);
+}
+
 export function toFeaturedCategoryItem(category: CatalogCategory): FeaturedCategoryItem {
+  const cardImageUrl = resolveFeaturedCategoryCardImageUrl(category);
+
   return {
     id: category.id,
     name: category.name,
     description: category.description,
     href: category.href,
     ...(category.slug ? { slug: category.slug } : {}),
-    ...(category.cardImageUrl ? { cardImageUrl: category.cardImageUrl } : {}),
+    ...(cardImageUrl ? { cardImageUrl } : {}),
   };
 }
 
@@ -28,6 +38,7 @@ export function normalizeFeaturedCategoryItem(
   category: LegacyFeaturedCategoryItem,
 ): FeaturedCategoryItem | null {
   const name = category.name?.trim() || category.title?.trim();
+  const cardImageUrl = resolveFeaturedCategoryCardImageUrl(category);
 
   if (!name) {
     return null;
@@ -39,7 +50,7 @@ export function normalizeFeaturedCategoryItem(
     description: category.description,
     href: category.href,
     ...(category.slug ? { slug: category.slug } : {}),
-    ...(category.cardImageUrl ? { cardImageUrl: category.cardImageUrl } : {}),
+    ...(cardImageUrl ? { cardImageUrl } : {}),
   };
 }
 
