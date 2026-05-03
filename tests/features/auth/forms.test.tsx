@@ -21,6 +21,10 @@ vi.mock("@/features/auth/actions/forgot-password", () => ({
   forgotPasswordSuccessMessage: "If an account exists for that address, we've sent a reset link.",
 }));
 
+vi.mock("@/features/auth/actions/reset-password", () => ({
+  resetPasswordAction: vi.fn(),
+}));
+
 vi.mock("react", async () => {
   const actual = await vi.importActual("react");
 
@@ -102,6 +106,38 @@ describe("auth form migration", () => {
     expect(payload.get("confirmPassword")).toBe("supersecret123");
   });
 
+  it("sign-up: resets fields after the action reports success", async () => {
+    const user = userEvent.setup();
+    const { SignUpForm } = await import("@/features/auth/components/sign-up-form");
+
+    useActionStateMock.mockReturnValue([null, dispatchMock, false]);
+    const { rerender } = render(<SignUpForm />);
+
+    await user.type(screen.getByLabelText(/full name/i), "Ammar Khan");
+    await user.type(screen.getByLabelText(/email address/i), "ammar@example.com");
+    await user.type(screen.getByLabelText(/^password/i), "supersecret123");
+    await user.type(screen.getByLabelText(/confirm password/i), "supersecret123");
+
+    expect(screen.getByLabelText(/full name/i)).toHaveValue("Ammar Khan");
+    expect(screen.getByLabelText(/email address/i)).toHaveValue("ammar@example.com");
+    expect(screen.getByLabelText(/^password/i)).toHaveValue("supersecret123");
+    expect(screen.getByLabelText(/confirm password/i)).toHaveValue("supersecret123");
+
+    useActionStateMock.mockReturnValue([
+      { success: true, message: "Account created. Check your inbox to verify your email." },
+      dispatchMock,
+      false,
+    ]);
+    rerender(<SignUpForm />);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/full name/i)).toHaveValue("");
+      expect(screen.getByLabelText(/email address/i)).toHaveValue("");
+      expect(screen.getByLabelText(/^password/i)).toHaveValue("");
+      expect(screen.getByLabelText(/confirm password/i)).toHaveValue("");
+    });
+  });
+
   it("forgot-password: resets the email field after the action reports success", async () => {
     const user = userEvent.setup();
     const { ForgotPasswordForm } = await import("@/features/auth/components/forgot-password-form");
@@ -152,5 +188,31 @@ describe("auth form migration", () => {
     render(<ForgotPasswordForm />);
 
     expect(screen.getByRole("status")).toHaveTextContent(message);
+  });
+
+  it("reset-password: clears password fields after the action reports success", async () => {
+    const user = userEvent.setup();
+    const { ResetPasswordForm } = await import("@/features/auth/components/reset-password-form");
+
+    useActionStateMock.mockReturnValue([null, dispatchMock, false]);
+    const { rerender } = render(<ResetPasswordForm token="test-token" />);
+
+    await user.type(screen.getByPlaceholderText(/at least 8 characters/i), "supersecret123");
+    await user.type(screen.getByPlaceholderText(/repeat password/i), "supersecret123");
+
+    expect(screen.getByPlaceholderText(/at least 8 characters/i)).toHaveValue("supersecret123");
+    expect(screen.getByPlaceholderText(/repeat password/i)).toHaveValue("supersecret123");
+
+    useActionStateMock.mockReturnValue([
+      { success: true, message: "Your password has been reset successfully." },
+      dispatchMock,
+      false,
+    ]);
+    rerender(<ResetPasswordForm token="test-token" />);
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText(/at least 8 characters/i)).toHaveValue("");
+      expect(screen.getByPlaceholderText(/repeat password/i)).toHaveValue("");
+    });
   });
 });

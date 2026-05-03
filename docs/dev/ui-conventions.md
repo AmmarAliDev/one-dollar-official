@@ -176,6 +176,14 @@ Choose the correct success strategy based on where the form lives:
 - If a form redirects on success (server action), skip all client-side reset/close logic; the navigation discards the component tree.
 - For modal/sheet/drawer forms that save without redirecting, always close the overlay in the `onSuccess` callback of `useServerActionSubmit` and optionally reset the form.
 
+Current production applications of this rule:
+- `ForgotPasswordForm`, `SignUpForm`, and `ResetPasswordForm` use `useActionState` + `useEffect` reset on `state.success` to clear sensitive and stale values after successful submission.
+- `CustomerReviewForm` resets on successful non-redirect callback and also guards against stale hydrated values after redirect-return notice codes.
+
+Intentional no-reset exceptions:
+- Query/filter forms keep user-entered values until explicit reset by the user.
+- Redirect-first admin CRUD and checkout submissions do not add client reset logic because navigation naturally unmounts and clears form state.
+
 ## Shared Data Table Conventions
 
 - Use the shared TanStack table system in `src/components/data-table` for all new tabular UIs in admin and storefront-support tooling.

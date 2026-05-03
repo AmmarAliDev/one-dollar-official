@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useTransition } from "react";
+import { useActionState, useEffect, useTransition } from "react";
 import Link from "next/link";
 
 import { DynamicFormField, useAppForm } from "@/components/forms";
@@ -33,6 +33,14 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
 
   const errors = state?.errors ?? [];
   const hasResetSucceeded = Boolean(state?.success);
+
+  // Clear password fields after successful reset to avoid retaining
+  // sensitive values in mounted input state.
+  useEffect(() => {
+    if (state?.success) {
+      form.reset();
+    }
+  }, [state, form]);
 
   return (
     <form
