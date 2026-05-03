@@ -149,6 +149,16 @@ function computeReviewStats(reviewRatings: Array<{ rating: number }>): {
   };
 }
 
+function toIsoDateString(value: unknown): string {
+  const date = value instanceof Date ? value : new Date(String(value ?? ""));
+
+  if (Number.isNaN(date.getTime())) {
+    return new Date(0).toISOString();
+  }
+
+  return date.toISOString();
+}
+
 /**
  * Derives a short attribute summary from the first two specification values.
  * Falls back to an empty array if the product has no specifications.
@@ -501,7 +511,7 @@ function buildReviewData(
       author: review.user?.name ?? "Anonymous",
       rating: review.rating,
       comment: review.body ?? review.title ?? "",
-      date: review.createdAt.toISOString(),
+      date: toIsoDateString(review.createdAt),
       verified: false,
       status: review.status as "APPROVED",
     };

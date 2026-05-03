@@ -18,7 +18,7 @@ function makeDetailRecord(overrides: Partial<{
   categorySlug: string;
   masterSku: string | null;
   variantsEnabled: boolean;
-  reviews: Array<{ id: string; rating: number; title: string | null; body: string | null; status: string; createdAt: Date; user: { name: string | null } | null }>;
+  reviews: Array<{ id: string; rating: number; title: string | null; body: string | null; status: string; createdAt: Date | string; user: { name: string | null } | null }>;
 }> = {}) {
   const {
     id = "prod-face-wash",
@@ -206,6 +206,26 @@ describe("product detail service", () => {
     expect(product?.reviewSummary.totalCount).toBe(3);
     expect(product?.reviewSummary.averageRating).toBe(4);
     expect(product?.reviews.every((r) => r.status === "APPROVED")).toBe(true);
+  });
+
+  it("maps review dates safely when cached records return createdAt as a string", async () => {
+    const stringDate = "2026-05-04T09:10:11.000Z";
+    const reviews = [
+      {
+        id: "r1",
+        rating: 5,
+        title: "Great",
+        body: "Loved it!",
+        status: "APPROVED",
+        createdAt: stringDate,
+        user: { name: "Alice" },
+      },
+    ];
+    mockGetPublishedProductBySlug.mockResolvedValue(makeDetailRecord({ reviews }));
+
+    const product = await getProductBySlug("hydra-care-face-wash");
+
+    expect(product?.reviews[0]?.date).toBe(stringDate);
   });
 
   it("returns empty review summary when no reviews exist", async () => {

@@ -66,7 +66,10 @@
 - Keep root viewport standards-compliant through a typed `viewport` export from `src/app/layout.tsx` via shared config in `src/config/viewport.ts`.
 - Do not disable pinch zoom globally (`maximumScale=1`, `userScalable=false`) unless there is a strict legal/device requirement; prefer accessibility-safe defaults.
 - Shared text entry controls (`Input`, `Textarea`) should keep mobile-safe readable sizing (`text-base`) to avoid iOS focus zoom, while preserving desktop density with responsive classes (`md:text-sm`).
+- Global styles in `src/app/globals.css` apply `touch-action: manipulation` on interactive controls (`a`, `button`, form controls, and role-button patterns) to reduce accidental double-tap zoom without locking page zoom.
+- Global styles also enforce `font-size: 16px` for native mobile touch form controls on WebKit touch devices to prevent iOS auto-zoom on focus for controls not using shared `Input`/`Textarea` primitives.
 - For app-shell navigation on mobile, prefer larger touch targets over denser rows (for example, sidebar inputs/menu controls should be at least 40px high on mobile where practical).
+- Platform tradeoff note: browser pinch zoom remains enabled by design for accessibility. The guardrails primarily target accidental interaction zoom (double-tap/focus). Browser behavior can still vary by engine/version, so avoid relying on CSS-only prevention for strict kiosk-like lockouts.
 
 ### Mobile Collapsible Form Sections
 

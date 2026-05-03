@@ -123,6 +123,29 @@
 
 html {
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+/*
+ * Reduce accidental double-tap zoom on interactive controls while preserving
+ * user pinch zoom at the page level.
+ */
+:where(a, button, [role="button"], input, label, select, summary, textarea) {
+  touch-action: manipulation;
+}
+
+/*
+ * iOS Safari can auto-zoom focused native controls when their font size is
+ * below 16px. Keep native form controls at 16px on mobile touch screens.
+ */
+@supports (-webkit-touch-callout: none) {
+  @media (hover: none) and (pointer: coarse) {
+    input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+    select,
+    textarea {
+      font-size: 16px;
+    }
+  }
 }
 
 body {
