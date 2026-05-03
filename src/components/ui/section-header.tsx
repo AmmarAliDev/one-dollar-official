@@ -32,11 +32,11 @@ export function SectionHeader({
         <div className="space-y-2">
           <TitleTag
             id={titleId}
-            className="text-2xl font-semibold tracking-tight text-balance sm:text-3xl"
+            className="text-2xl text-foreground font-semibold tracking-tight text-balance sm:text-3xl"
           >
             {title}
           </TitleTag>
-          {description ? <p className="text-muted-foreground max-w-2xl text-sm sm:text-base">{description}</p> : null}
+          {description ? <p className="text-primary max-w-2xl text-sm sm:text-base">{description}</p> : null}
         </div>
       </div>
 

@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { ArrowRight, Layers } from "lucide-react";
+import Link from "next/link";
 
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +15,7 @@ import { PageContainer } from "@/components/ui/page-container";
 import { SectionHeader } from "@/components/ui/section-header";
 import { routes } from "@/config/routes";
 
+import Image from "next/image";
 import type { FeaturedCategoriesSection } from "../types";
 import {
   FEATURED_CATEGORIES_CAROUSEL_ITEM_CLASS,
@@ -59,18 +60,37 @@ export function FeaturedCategoriesSectionBlock({ section }: FeaturedCategoriesSe
                     aria-label={`Browse ${category.title} category`}
                   >
                     <Card className="h-full transition-transform duration-200 group-hover:-translate-y-0.5">
-                      <CardHeader>
-                        <CardTitle>{category.title}</CardTitle>
-                        <CardDescription>{category.description}</CardDescription>
+                      <CardHeader className="p-0">
+                        <div className="relative overflow-hidden rounded-lg mb-4" aria-hidden="true">
+                          {category.cardImageUrl ? (
+                            <Image
+                              src={category.cardImageUrl}
+                              alt={category.title}
+                              height={214}
+                              width={365}
+                              className="h-54 w-full object-cover"
+                              data-testid={`storefront-category-card-image-${category.slug ?? category.id}`}
+                            />
+                          ) : (
+                            <div
+                              className="flex h-54 rounded-lg w-full items-center justify-center bg-linear-to-br from-slate-100 via-slate-200 to-slate-100 text-xs font-medium uppercase tracking-[0.16em] text-slate-600"
+                              data-testid={`storefront-category-card-fallback-${category.slug ?? category.id}`}
+                            >
+                              Category preview
+                            </div>
+                          )}
+                        </div>
                       </CardHeader>
-                      <CardContent>
-                        <span className="text-primary inline-flex items-center gap-1 text-sm font-medium">
-                          <span className="transition-[text-decoration-color] group-hover:underline">Browse category</span>
+                      <CardContent className="p-3 pt-0">
+                        <div className="flex items-center justify-between gap-4">
+                          <CardTitle>{category.title}</CardTitle>
                           <ArrowRight
-                            className="size-4 transition-transform group-hover:translate-x-1"
+                            className="text-muted-foreground size-4 transition-transform group-hover:translate-x-1"
                             aria-hidden="true"
                           />
-                        </span>
+                        </div>
+
+                        <CardDescription>{category.description}</CardDescription>
                       </CardContent>
                     </Card>
                   </Link>

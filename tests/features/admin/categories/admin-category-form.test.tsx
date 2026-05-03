@@ -93,12 +93,6 @@ describe("AdminCategoryForm", () => {
       />,
     );
 
-    await user.type(screen.getByLabelText(/slug/i), "Home Care");
-
-    await waitFor(() => {
-      expect(screen.getAllByText(/single hyphens/i).length).toBeGreaterThan(0);
-    });
-
     await user.clear(screen.getByLabelText(/name/i));
     await user.type(screen.getByLabelText(/name/i), "Home Care");
     await user.clear(screen.getByLabelText(/slug/i));

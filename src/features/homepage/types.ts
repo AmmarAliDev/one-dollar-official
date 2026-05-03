@@ -35,6 +35,14 @@ export type FeaturedCategoryItem = {
   title: string;
   description: string;
   href: string;
+  slug?: string;
+  cardImageUrl?: string;
+};
+
+export type FeaturedProductImage = {
+  url: string;
+  alt?: string;
+  isPrimary?: boolean;
 };
 
 export type FeaturedCategoriesSection = {
@@ -53,12 +61,14 @@ export type FeaturedCategoriesSection = {
 
 export type FeaturedProductItem = {
   id: string;
+  slug?: string;
   name: string;
   description?: string;
   href: string;
   price: number;
   compareAt?: number;
   badge?: string;
+  images?: FeaturedProductImage[];
 };
 
 export type FeaturedProductsSection = {

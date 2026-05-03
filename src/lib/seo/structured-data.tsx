@@ -9,7 +9,7 @@ export function generateOrganizationJsonLd() {
     "@type": "Organization",
     name: siteConfig.name,
     url: baseUrl,
-    logo: `${baseUrl}/icon.png`,
+    logo: `${baseUrl}${siteConfig.logoPath}`,
     description: siteConfig.description,
   };
 }
@@ -103,7 +103,7 @@ export function generateArticleJsonLd({
       name: siteConfig.name,
       logo: {
         "@type": "ImageObject",
-        url: `${baseUrl}/icon.png`,
+        url: `${baseUrl}${siteConfig.logoPath}`,
       },
     },
     mainEntityOfPage: {

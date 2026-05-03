@@ -28,7 +28,7 @@ export function ProductRelatedGrid({ products }: ProductRelatedGridProps) {
       </div>
 
       {products.length === 0 ? (
-        <p className="text-muted-foreground rounded-[var(--radius-card)] border border-dashed border-border/70 px-4 py-5 text-sm">
+        <p className="text-muted-foreground rounded-(--radius-card) border border-dashed border-border/70 px-4 py-5 text-sm">
           No related products are available right now.
         </p>
       ) : (
@@ -37,12 +37,12 @@ export function ProductRelatedGrid({ products }: ProductRelatedGridProps) {
             <li key={product.id} className="list-none">
               <Link
                 href={product.href}
-                className="group rounded-[var(--radius-card)] border border-border/70 overflow-hidden shadow-[var(--shadow-soft)] hover:shadow-md transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="group rounded-(--radius-card) overflow-hidden shadow-(--shadow-soft) hover:shadow-md transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
                 <article>
                   <div
                     aria-hidden
-                    className={`flex aspect-[4/3] items-end p-4 bg-gradient-to-br ${toneBg[product.imageTone]}`}
+                    className={`flex aspect-4/3 items-end p-4 bg-linear-to-br ${toneBg[product.imageTone]}`}
                   >
                     <p className="text-base font-semibold tracking-tight group-hover:underline">{product.imageLabel}</p>
                   </div>

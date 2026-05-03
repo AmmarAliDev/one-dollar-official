@@ -43,7 +43,7 @@ describe("CategoryOverviewCard media behavior", () => {
 
     const media = document.querySelector('[data-testid="storefront-category-card-image-home-care"]');
     expect(media).toBeInTheDocument();
-    expect(media).toHaveAttribute("style", expect.stringContaining("background-image"));
+    expect(media).toHaveAttribute("src", expect.stringContaining("cdn.example.com%2Fcategories%2Fhome-care.jpg"));
   });
 
   it("renders a fallback visual when no category image exists", () => {

@@ -47,7 +47,7 @@ export function ProductGridCard({ product }: { product: CatalogProductCard }) {
             attributeSummary={product.attributeSummary}
           />
 
-          <CardContent className="space-y-4 p-5">
+          <CardContent className="space-y-2 p-3">
             <div className="space-y-2">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant={stockBadge.variant}>{stockBadge.label}</Badge>
@@ -69,11 +69,6 @@ export function ProductGridCard({ product }: { product: CatalogProductCard }) {
 
             <div className="text-muted-foreground flex items-center justify-between gap-3 text-xs sm:text-sm">
               <span>{getReviewSummary(product)}</span>
-              <span>
-                {product.inventoryQuantity > 0
-                  ? `${product.inventoryQuantity} available`
-                  : "Notify me later"}
-              </span>
             </div>
           </CardContent>
         </Card>
