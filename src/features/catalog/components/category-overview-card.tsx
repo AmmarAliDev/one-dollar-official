@@ -25,7 +25,7 @@ export function CategoryOverviewCard({ category }: { category: CatalogCategory }
                   alt={category.name}
                   height={214}
                   width={365}
-                  className="h-54 w-full object-cover"
+                  className="h-54 w-full object-contain"
                   data-testid={`storefront-category-card-image-${category.slug}`}
                 />
               ) : (
