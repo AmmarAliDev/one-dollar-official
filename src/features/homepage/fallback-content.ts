@@ -34,20 +34,23 @@ export function buildHomepageFallbackSections(runtimeEnv: RuntimeEnv = env): Hom
       categories: [
         {
           id: "cat-home-care",
-          title: "Home Care",
+          name: "Home Care",
           description: "Cleaning and household essentials for weekly restocks.",
+          slug: "home-care",
           href: routes.storefront.category("home-care"),
         },
         {
           id: "cat-grocery",
-          title: "Grocery",
+          name: "Grocery",
           description: "Pantry staples, snacks, and quick top-ups.",
+          slug: "grocery",
           href: routes.storefront.category("grocery"),
         },
         {
           id: "cat-personal-care",
-          title: "Personal Care",
+          name: "Personal Care",
           description: "Daily hygiene and wellness picks.",
+          slug: "personal-care",
           href: routes.storefront.category("personal-care"),
         },
       ],

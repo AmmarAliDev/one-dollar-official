@@ -114,6 +114,23 @@ const optionalHref = z
     message: "Please enter a valid relative path or URL.",
   });
 
+const optionalSlug = z
+  .string()
+  .trim()
+  .max(120, "Slugs must be 120 characters or fewer.")
+  .optional()
+  .transform((value) => (value && value.length > 0 ? value : undefined))
+  .refine((value) => value === undefined || slugRegex.test(value), {
+    message: "Please enter a valid lowercase slug using letters, numbers, and hyphens.",
+  });
+
+const optionalCategoryName = z
+  .string()
+  .trim()
+  .max(120, "Category name is too long.")
+  .optional()
+  .transform((value) => (value && value.length > 0 ? value : undefined));
+
 const optionalDateTime = z.preprocess(
   parseDateish,
   z.date({ error: "Please enter a valid date and time." }).optional(),
@@ -160,18 +177,39 @@ const heroBannerContentSchema = z.object({
   eyebrow: optionalShortText,
 });
 
-const featuredCategorySchema = z.object({
-  id: z.string().trim().min(1, "Category item ID is required."),
-  title: z.string().trim().min(1, "Category title is required.").max(120, "Category title is too long."),
-  description: z.string().trim().min(1, "Category description is required.").max(240, "Category description is too long."),
-  href: z
-    .string()
-    .trim()
-    .min(1, "Category link is required.")
-    .refine((value) => isValidHref(value), {
-      message: "Please enter a valid relative path or URL for the category link.",
-    }),
-});
+const featuredCategorySchema = z
+  .object({
+    id: z.string().trim().min(1, "Category item ID is required."),
+    name: optionalCategoryName,
+    title: optionalCategoryName,
+    description: z.string().trim().min(1, "Category description is required.").max(240, "Category description is too long."),
+    href: z
+      .string()
+      .trim()
+      .min(1, "Category link is required.")
+      .refine((value) => isValidHref(value), {
+        message: "Please enter a valid relative path or URL for the category link.",
+      }),
+    slug: optionalSlug,
+    cardImageUrl: optionalHref,
+  })
+  .superRefine((value, ctx) => {
+    if (!value.name && !value.title) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["name"],
+        message: "Category name is required.",
+      });
+    }
+  })
+  .transform((value) => ({
+    id: value.id,
+    name: value.name ?? value.title ?? "",
+    description: value.description,
+    href: value.href,
+    ...(value.slug ? { slug: value.slug } : {}),
+    ...(value.cardImageUrl ? { cardImageUrl: value.cardImageUrl } : {}),
+  }));
 
 const featuredProductSchema = z.object({
   id: z.string().trim().min(1, "Product item ID is required."),

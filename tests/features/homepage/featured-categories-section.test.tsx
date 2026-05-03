@@ -30,7 +30,7 @@ import {
 import type { FeaturedCategoriesSection } from "@/features/homepage/types";
 
 function buildCategory(id: string): FeaturedCategoriesSection["categories"][number] {
-  return { id, title: `Category ${id}`, description: `Description ${id}`, href: `/categories/${id}` };
+  return { id, name: `Category ${id}`, description: `Description ${id}`, href: `/categories/${id}` };
 }
 
 function buildSection(
@@ -56,8 +56,8 @@ describe("FeaturedCategoriesSectionBlock", () => {
     render(
       <FeaturedCategoriesSectionBlock
         section={buildSection([
-          { id: "cat-1", title: "Home care", description: "Cleaning and essentials", href: "/categories/home-care" },
-          { id: "cat-2", title: "Grocery", description: "Pantry basics", href: "/categories/grocery" },
+          { id: "cat-1", name: "Home care", description: "Cleaning and essentials", href: "/categories/home-care" },
+          { id: "cat-2", name: "Grocery", description: "Pantry basics", href: "/categories/grocery" },
         ])}
       />,
     );

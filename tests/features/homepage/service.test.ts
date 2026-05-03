@@ -13,6 +13,7 @@ const prismaMock = vi.hoisted(() => ({
 }));
 
 const mockGetBlogPosts = vi.hoisted(() => vi.fn());
+const mockGetCatalogCategories = vi.hoisted(() => vi.fn());
 const mockGetCatalogCategoryListing = vi.hoisted(() => vi.fn());
 
 vi.mock("@/server/db", () => ({
@@ -24,6 +25,7 @@ vi.mock("@/features/blog", () => ({
 }));
 
 vi.mock("@/features/catalog", () => ({
+  getCatalogCategories: (...args: unknown[]) => mockGetCatalogCategories(...args),
   getCatalogCategoryListing: (...args: unknown[]) => mockGetCatalogCategoryListing(...args),
 }));
 
@@ -35,6 +37,7 @@ describe("homepage CMS service", () => {
     prismaMock.banner.findMany.mockResolvedValue([]);
     prismaMock.dealCampaign.findMany.mockResolvedValue([]);
     mockGetBlogPosts.mockResolvedValue([]);
+    mockGetCatalogCategories.mockResolvedValue([]);
     // Default: catalog returns an empty listing so One Dollar section gets hydrated with []
     mockGetCatalogCategoryListing.mockResolvedValue({ products: [], totalItems: 0 });
   });
@@ -128,6 +131,121 @@ describe("homepage CMS service", () => {
         },
       ],
     });
+  });
+
+  it("hydrates featured categories from DB-backed catalog categories", async () => {
+    prismaMock.homePageSection.findMany.mockResolvedValue([
+      {
+        id: "section-featured-categories",
+        key: "featured-categories-home",
+        title: "Featured categories",
+        type: "featured-categories",
+        content: {
+          description: "Legacy fallback categories",
+          categories: [
+            {
+              id: "legacy-category",
+              title: "Legacy category",
+              description: "Legacy content",
+              href: "/categories/legacy-category",
+            },
+          ],
+        },
+        meta: { enabled: true },
+        position: 20,
+        active: true,
+        createdAt: new Date("2026-05-04T08:00:00.000Z"),
+        updatedAt: new Date("2026-05-04T08:00:00.000Z"),
+      },
+    ]);
+
+    mockGetCatalogCategories.mockResolvedValue([
+      {
+        id: "one-dollar",
+        name: "One Dollar",
+        slug: "one-dollar",
+        description: "Virtual category",
+        cardImageUrl: "/images/one-dollar.png",
+        seoTitle: undefined,
+        seoDescription: undefined,
+        productCount: 4,
+        href: "/categories/one-dollar",
+      },
+      {
+        id: "category-home-care",
+        name: "Home Care",
+        slug: "home-care",
+        description: "Cleaning and household essentials.",
+        cardImageUrl: "/images/home-care.png",
+        seoTitle: undefined,
+        seoDescription: undefined,
+        productCount: 18,
+        href: "/categories/home-care",
+      },
+    ]);
+
+    const result = await getHomepageContent();
+    const categorySection = result.sections.find((section) => section.kind === "featured-categories");
+
+    expect(categorySection).toMatchObject({
+      kind: "featured-categories",
+      categories: [
+        {
+          id: "category-home-care",
+          name: "Home Care",
+          slug: "home-care",
+          description: "Cleaning and household essentials.",
+          href: "/categories/home-care",
+          cardImageUrl: "/images/home-care.png",
+        },
+      ],
+    });
+  });
+
+  it("preserves normalized fallback categories when the catalog category read is unavailable", async () => {
+    prismaMock.homePageSection.findMany.mockResolvedValue([
+      {
+        id: "section-featured-categories",
+        key: "featured-categories-home",
+        title: "Featured categories",
+        type: "featured-categories",
+        content: {
+          description: "Legacy fallback categories",
+          categories: [
+            {
+              id: "legacy-category",
+              title: "Legacy category",
+              description: "Legacy content",
+              href: "/categories/legacy-category",
+            },
+          ],
+        },
+        meta: { enabled: true },
+        position: 20,
+        active: true,
+        createdAt: new Date("2026-05-04T08:00:00.000Z"),
+        updatedAt: new Date("2026-05-04T08:00:00.000Z"),
+      },
+    ]);
+
+    mockGetCatalogCategories.mockRejectedValue(new Error("Catalog DB unavailable"));
+
+    const result = await getHomepageContent();
+    const categorySection = result.sections.find((section) => section.kind === "featured-categories");
+
+    expect(categorySection).toMatchObject({
+      kind: "featured-categories",
+      categories: [
+        {
+          id: "legacy-category",
+          name: "Legacy category",
+          description: "Legacy content",
+          href: "/categories/legacy-category",
+        },
+      ],
+    });
+
+    expect(categorySection?.categories[0]).not.toHaveProperty("title");
   });
 
   it("isolates manual fallback articles when homepage blog DB read fails", async () => {

@@ -1,3 +1,5 @@
+import type { CatalogCategory } from "@/features/catalog/types";
+
 export type HomepageSectionKind =
   | "announcement-bar"
   | "hero-banner"
@@ -30,13 +32,9 @@ export type HeroBannerSection = {
   eyebrow?: string;
 };
 
-export type FeaturedCategoryItem = {
-  id: string;
-  title: string;
-  description: string;
-  href: string;
-  slug?: string;
-  cardImageUrl?: string;
+export type FeaturedCategoryItem = Pick<CatalogCategory, "id" | "name" | "description" | "href"> & {
+  slug?: CatalogCategory["slug"];
+  cardImageUrl?: CatalogCategory["cardImageUrl"];
 };
 
 export type FeaturedProductImage = {

@@ -132,7 +132,7 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 	- `production`: guarded surfaces are hidden from customers.
 	- `development` and `test`: guarded surfaces stay visible for staging/debug workflows.
 - Current guarded surfaces include: homepage fallback indicator and preview CTA, `/preview` route, footer preview/newsletter placeholder artifacts, return-policy placeholder route, interim about-page note, and not-found admin placeholder action.
-- Storefront homepage `featured-categories` is now rendered through the shared shadcn-compatible carousel primitives with responsive card density and empty-state fallback, preserving the existing section registry architecture (`renderHomepageSection` + typed section contracts).
+- Storefront homepage `featured-categories` is rendered through the shared shadcn-compatible carousel primitives and is now hydrated from live Prisma-backed catalog categories while preserving the existing section registry architecture (`renderHomepageSection` + typed section contracts).
 - `getRequiredServerEnv()` should be used when a future integration needs a non-public secret at runtime.
 - `DATABASE_URL` must be available anywhere Prisma queries or CLI workflows run.
 - Prisma CLI commands are routed through `scripts/prisma-cli.mjs`, which respects local env files, falls back `POSTGRES_URL_NON_POOLING` to `DATABASE_URL` for local use, blocks obvious hosted `migrate dev` mistakes, and validates hosted `migrate deploy` URL safety (pooled vs direct URL separation).
@@ -158,6 +158,7 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `src/features/catalog` is the storefront catalog feature module. It reads exclusively from the PostgreSQL database via Prisma.
 - `src/server/db/catalog-queries.ts` is the Prisma query layer for the storefront. It enforces all publish-state visibility rules: only PUBLISHED categories and products are returned, and only APPROVED reviews reach the storefront.
 - `src/features/catalog/service.ts` owns listing + PDP assembly (`getCatalogCategoryListing`, `getProductBySlug`, `getRelatedProducts`) by calling the query layer and mapping DB records to storefront types.
+- Homepage `featured-categories` now consumes the same catalog-category source of truth (`getCatalogCategories`) as storefront category navigation and `/categories`, then normalizes the result into the homepage section contract so category naming/media fields stay consistent across surfaces.
 - Storefront category cards (`src/features/catalog/components/category-overview-card.tsx`) render category-specific background media when `cardImageUrl` is available; when absent, they intentionally fall back to a stable gradient preview so cards remain readable and layout-safe.
 - `One Dollar` is implemented as a virtual/system storefront category (`slug: one-dollar`) in `src/features/catalog/one-dollar.ts`; it is not persisted as a `Category` row and does not alter product-to-category relationships.
 - One Dollar membership is derived at read-time from published products: include when default selling price is `<= 280 PKR`; products stay assigned to their original categories while also appearing in this special listing.

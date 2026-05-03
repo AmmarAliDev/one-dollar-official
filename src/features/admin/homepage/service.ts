@@ -718,7 +718,14 @@ function mapSectionRecordToStorefrontSection(record: HomePageSectionRow, referen
     case "featured-categories": {
       const content = parsed.data.content as {
         description?: string;
-        categories: Array<{ id: string; title: string; description: string; href: string }>;
+        categories: Array<{
+          id: string;
+          name: string;
+          description: string;
+          href: string;
+          slug?: string;
+          cardImageUrl?: string;
+        }>;
       };
       return {
         ...base,
