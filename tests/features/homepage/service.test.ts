@@ -4,6 +4,9 @@ const prismaMock = vi.hoisted(() => ({
   homePageSection: {
     findMany: vi.fn(),
   },
+  orderItem: {
+    groupBy: vi.fn(),
+  },
   banner: {
     findMany: vi.fn(),
   },
@@ -15,6 +18,8 @@ const prismaMock = vi.hoisted(() => ({
 const mockGetBlogPosts = vi.hoisted(() => vi.fn());
 const mockGetCatalogCategories = vi.hoisted(() => vi.fn());
 const mockGetCatalogCategoryListing = vi.hoisted(() => vi.fn());
+const mockListAllPublishedProducts = vi.hoisted(() => vi.fn());
+const mockListPublishedProductsByIds = vi.hoisted(() => vi.fn());
 
 vi.mock("@/server/db", () => ({
   getPrismaClient: () => prismaMock,
@@ -29,15 +34,71 @@ vi.mock("@/features/catalog", () => ({
   getCatalogCategoryListing: (...args: unknown[]) => mockGetCatalogCategoryListing(...args),
 }));
 
+vi.mock("@/server/db/catalog-queries", () => ({
+  listAllPublishedProducts: (...args: unknown[]) => mockListAllPublishedProducts(...args),
+  listPublishedProductsByIds: (...args: unknown[]) => mockListPublishedProductsByIds(...args),
+}));
+
 import { getHomepageContent } from "@/features/homepage";
+import type { StorefrontProductRecord } from "@/server/db/catalog-queries";
+
+function buildStorefrontProductRecord(
+  id: string,
+  overrides: Partial<StorefrontProductRecord> = {},
+): StorefrontProductRecord {
+  return {
+    id,
+    name: `Product ${id}`,
+    slug: `product-${id}`,
+    shortDescription: `Short description for ${id}`,
+    description: `Long description for ${id}`,
+    masterSku: null,
+    metadata: null,
+    createdAt: new Date("2026-05-04T08:00:00.000Z"),
+    updatedAt: new Date("2026-05-04T08:00:00.000Z"),
+    category: {
+      id: `category-${id}`,
+      name: "Category",
+      slug: "category",
+    },
+    images: [
+      {
+        id: `image-${id}`,
+        url: `https://cdn.example.com/${id}.jpg`,
+        alt: `Image ${id}`,
+        position: 0,
+      },
+    ],
+    specifications: [],
+    variants: [
+      {
+        id: `variant-${id}`,
+        title: null,
+        sku: `SKU-${id}`,
+        options: null,
+        price: 1000,
+        compareAtPrice: 1200,
+        isDefault: true,
+        inventory: {
+          quantity: 12,
+        },
+      },
+    ],
+    reviews: [],
+    ...overrides,
+  };
+}
 
 describe("homepage CMS service", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    prismaMock.orderItem.groupBy.mockResolvedValue([]);
     prismaMock.banner.findMany.mockResolvedValue([]);
     prismaMock.dealCampaign.findMany.mockResolvedValue([]);
     mockGetBlogPosts.mockResolvedValue([]);
     mockGetCatalogCategories.mockResolvedValue([]);
+    mockListAllPublishedProducts.mockResolvedValue([]);
+    mockListPublishedProductsByIds.mockResolvedValue([]);
     // Default: catalog returns an empty listing so One Dollar section gets hydrated with []
     mockGetCatalogCategoryListing.mockResolvedValue({ products: [], totalItems: 0 });
   });
@@ -420,5 +481,207 @@ describe("homepage CMS service", () => {
       kind: "one-dollar",
       products: [],
     });
+  });
+
+  it("hydrates featured products from the top 4 most-sold published products", async () => {
+    prismaMock.homePageSection.findMany.mockResolvedValue([
+      {
+        id: "section-featured-products",
+        key: "featured-products-home",
+        title: "Featured products",
+        type: "featured-products",
+        content: {
+          description: "Legacy fallback products",
+          products: [
+            {
+              id: "fallback-1",
+              name: "Fallback product",
+              href: "/preview",
+              price: 999,
+            },
+          ],
+        },
+        meta: { enabled: true },
+        position: 30,
+        active: true,
+        createdAt: new Date("2026-05-04T08:00:00.000Z"),
+        updatedAt: new Date("2026-05-04T08:00:00.000Z"),
+      },
+    ]);
+
+    prismaMock.orderItem.groupBy.mockResolvedValue([
+      { productId: "product-4", _sum: { quantity: 40 }, _count: { _all: 4 } },
+      { productId: "product-2", _sum: { quantity: 30 }, _count: { _all: 3 } },
+      { productId: "product-5", _sum: { quantity: 20 }, _count: { _all: 2 } },
+      { productId: "product-1", _sum: { quantity: 10 }, _count: { _all: 1 } },
+      { productId: "product-3", _sum: { quantity: 5 }, _count: { _all: 1 } },
+    ]);
+
+    mockListPublishedProductsByIds.mockResolvedValue([
+      buildStorefrontProductRecord("product-1"),
+      buildStorefrontProductRecord("product-5"),
+      buildStorefrontProductRecord("product-2"),
+      buildStorefrontProductRecord("product-4"),
+      buildStorefrontProductRecord("product-3"),
+    ]);
+
+    const result = await getHomepageContent();
+    const featuredProductsSection = result.sections.find((section) => section.kind === "featured-products");
+
+    expect(featuredProductsSection).toMatchObject({
+      kind: "featured-products",
+      products: [
+        {
+          id: "product-4",
+          name: "Product product-4",
+          href: "/categories/category/product-product-4",
+          price: 1000,
+          compareAt: 1200,
+          badge: "Best seller",
+        },
+        {
+          id: "product-2",
+          name: "Product product-2",
+          href: "/categories/category/product-product-2",
+          price: 1000,
+          compareAt: 1200,
+          badge: "Best seller",
+        },
+        {
+          id: "product-5",
+          name: "Product product-5",
+          href: "/categories/category/product-product-5",
+          price: 1000,
+          compareAt: 1200,
+          badge: "Best seller",
+        },
+        {
+          id: "product-1",
+          name: "Product product-1",
+          href: "/categories/category/product-product-1",
+          price: 1000,
+          compareAt: 1200,
+          badge: "Best seller",
+        },
+      ],
+    });
+
+    expect(featuredProductsSection?.products).toHaveLength(4);
+  });
+
+  it("filters non-published sold products and fills remaining slots from published catalog products", async () => {
+    prismaMock.homePageSection.findMany.mockResolvedValue([
+      {
+        id: "section-featured-products",
+        key: "featured-products-home",
+        title: "Featured products",
+        type: "featured-products",
+        content: {
+          description: "Top sellers",
+          products: [],
+        },
+        meta: { enabled: true },
+        position: 30,
+        active: true,
+        createdAt: new Date("2026-05-04T08:00:00.000Z"),
+        updatedAt: new Date("2026-05-04T08:00:00.000Z"),
+      },
+    ]);
+
+    prismaMock.orderItem.groupBy.mockResolvedValue([
+      { productId: "product-1", _sum: { quantity: 18 }, _count: { _all: 2 } },
+      { productId: "product-2", _sum: { quantity: 17 }, _count: { _all: 2 } },
+      { productId: "product-3", _sum: { quantity: 16 }, _count: { _all: 2 } },
+      { productId: "product-4", _sum: { quantity: 15 }, _count: { _all: 2 } },
+    ]);
+
+    mockListPublishedProductsByIds.mockResolvedValue([buildStorefrontProductRecord("product-2")]);
+    mockListAllPublishedProducts.mockResolvedValue([
+      buildStorefrontProductRecord("product-2"),
+      buildStorefrontProductRecord("product-5"),
+      buildStorefrontProductRecord("product-6"),
+      buildStorefrontProductRecord("product-7"),
+    ]);
+
+    const result = await getHomepageContent();
+    const featuredProductsSection = result.sections.find((section) => section.kind === "featured-products");
+
+    expect(featuredProductsSection).toMatchObject({
+      kind: "featured-products",
+      products: [
+        { id: "product-2", badge: "Best seller" },
+        { id: "product-5", badge: "Best seller" },
+        { id: "product-6", badge: "Best seller" },
+        { id: "product-7", badge: "Best seller" },
+      ],
+    });
+  });
+
+  it("uses stored fallback featured products when meaningful sales data is still sparse", async () => {
+    prismaMock.homePageSection.findMany.mockResolvedValue([
+      {
+        id: "section-featured-products",
+        key: "featured-products-home",
+        title: "Featured products",
+        type: "featured-products",
+        content: {
+          description: "Top sellers",
+          products: [
+            {
+              id: "fallback-1",
+              name: "Fallback One",
+              description: "Pinned while sales mature.",
+              href: "/categories/home-care/fallback-one",
+              price: 1100,
+            },
+            {
+              id: "fallback-2",
+              name: "Fallback Two",
+              href: "/categories/home-care/fallback-two",
+              price: 1200,
+            },
+            {
+              id: "fallback-3",
+              name: "Fallback Three",
+              href: "/categories/home-care/fallback-three",
+              price: 1300,
+            },
+            {
+              id: "fallback-4",
+              name: "Fallback Four",
+              href: "/categories/home-care/fallback-four",
+              price: 1400,
+            },
+          ],
+        },
+        meta: { enabled: true },
+        position: 30,
+        active: true,
+        createdAt: new Date("2026-05-04T08:00:00.000Z"),
+        updatedAt: new Date("2026-05-04T08:00:00.000Z"),
+      },
+    ]);
+
+    prismaMock.orderItem.groupBy.mockResolvedValue([
+      { productId: "product-9", _sum: { quantity: 8 }, _count: { _all: 1 } },
+    ]);
+
+    mockListPublishedProductsByIds.mockResolvedValue([buildStorefrontProductRecord("product-9")]);
+    mockListAllPublishedProducts.mockResolvedValue([]);
+
+    const result = await getHomepageContent();
+    const featuredProductsSection = result.sections.find((section) => section.kind === "featured-products");
+
+    expect(featuredProductsSection).toMatchObject({
+      kind: "featured-products",
+      products: [
+        { id: "product-9", badge: "Best seller" },
+        { id: "fallback-1" },
+        { id: "fallback-2" },
+        { id: "fallback-3" },
+      ],
+    });
+
+    expect(featuredProductsSection?.products).toHaveLength(4);
   });
 });

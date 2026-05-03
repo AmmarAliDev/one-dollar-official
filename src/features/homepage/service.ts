@@ -6,11 +6,13 @@ import { loadHomepageContentForStorefront } from "@/features/admin/homepage/serv
 import { createLogger } from "@/lib/logger";
 
 import { mapCatalogCategoriesToFeaturedCategoryItems } from "./featured-categories";
+import { resolveHomepageFeaturedProducts } from "./featured-products";
 import { resolveHomepageSections } from "./resolver";
 import type {
   BlogHighlightItem,
   BlogHighlightsSection,
   FeaturedCategoriesSection,
+  FeaturedProductsSection,
   FeaturedProductItem,
   HomepageContent,
   HomepageContentResult,
@@ -42,6 +44,10 @@ function isBlogHighlightsSection(section: HomepageSection): section is BlogHighl
 
 function isFeaturedCategoriesSection(section: HomepageSection): section is FeaturedCategoriesSection {
   return section.kind === "featured-categories";
+}
+
+function isFeaturedProductsSection(section: HomepageSection): section is FeaturedProductsSection {
+  return section.kind === "featured-products";
 }
 
 async function hydrateHomepageBlogHighlights(sections: HomepageSection[]): Promise<HomepageSection[]> {
@@ -109,6 +115,28 @@ async function hydrateFeaturedCategorySections(sections: HomepageSection[]): Pro
     logger.error("Failed to hydrate homepage featured categories from catalog categories.", error);
     return sections;
   }
+}
+
+async function hydrateFeaturedProductsSections(sections: HomepageSection[]): Promise<HomepageSection[]> {
+  const featuredProductsSections = sections.filter(isFeaturedProductsSection);
+
+  if (featuredProductsSections.length === 0) {
+    return sections;
+  }
+
+  const fallbackProducts = featuredProductsSections[0]?.products ?? [];
+  const products = await resolveHomepageFeaturedProducts(fallbackProducts);
+
+  return sections.map((section) => {
+    if (!isFeaturedProductsSection(section)) {
+      return section;
+    }
+
+    return {
+      ...section,
+      products,
+    };
+  });
 }
 
 function isOneDollarSection(section: HomepageSection): section is OneDollarSection {
@@ -204,7 +232,8 @@ export async function getHomepageContent(): Promise<HomepageContentResult> {
   const resolved = resolveHomepageSections(cmsContent?.sections);
   const hydratedWithBlog = await hydrateHomepageBlogHighlights(resolved.sections);
   const hydratedWithCategories = await hydrateFeaturedCategorySections(hydratedWithBlog);
-  const hydratedSections = await hydrateOneDollarSections(hydratedWithCategories);
+  const hydratedWithFeaturedProducts = await hydrateFeaturedProductsSections(hydratedWithCategories);
+  const hydratedSections = await hydrateOneDollarSections(hydratedWithFeaturedProducts);
 
   return {
     ...resolved,

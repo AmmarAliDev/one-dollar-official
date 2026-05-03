@@ -73,7 +73,7 @@ export function buildHomepageFallbackSections(runtimeEnv: RuntimeEnv = env): Hom
       id: "fallback-featured-products",
       kind: "featured-products",
       title: "Featured products",
-      description: "A rotating set of featured products from the current catalog.",
+      description: "Top-selling products ranked from order volume, with temporary fallback picks while sales data matures.",
       displayOrder: 30,
       products: [
         {
@@ -99,6 +99,14 @@ export function buildHomepageFallbackSections(runtimeEnv: RuntimeEnv = env): Hom
           description: "Gentle daily cleanser for all skin types.",
           href: routes.storefront.preview,
           price: 699,
+        },
+        {
+          id: "prod-rice",
+          name: "Daily Select Basmati Rice 1kg",
+          description: "Reliable pantry staple for everyday meals and weekly restocks.",
+          href: routes.storefront.preview,
+          price: 549,
+          compareAt: 649,
         },
       ],
     },

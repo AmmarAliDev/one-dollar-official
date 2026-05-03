@@ -26,6 +26,7 @@ Provide a compact testing map for AI prompts so changes can target the right tes
 - Product admin SEO content generation coverage for output shape, schema/spec suggestion behavior, and missing-title failure messaging (`tests/features/admin/products/seo-content-generator.test.ts`)
 - Admin image upload module covered at client orchestration and validation layers (`tests/features/admin/uploads/`)
 - Homepage featured categories carousel covered with rendering, responsive card, and empty-state scenarios (`tests/features/homepage/featured-categories-section.test.tsx`)
+- Homepage service coverage now includes featured-products most-sold ordering, published-product filtering, and sparse-data fallback behavior (`tests/features/homepage/service.test.ts`)
 - Product admin form upload integration covered with file selection, upload progress, and URL-write-back scenarios (`tests/features/admin/products/admin-product-form.test.tsx`)
 - Smoke test suite extended with palette/token sanity checks for light/dark theme consistency (`tests/smoke/ui-foundation.test.ts`)
 
