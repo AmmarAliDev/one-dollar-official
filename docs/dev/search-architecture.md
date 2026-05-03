@@ -12,7 +12,9 @@ Provide a fast and simple storefront product search while keeping implementation
 4. API handler validates inputs with Zod and calls `searchCatalogProducts()`.
 5. `searchCatalogProducts()` delegates to a search adapter seam via `getCatalogSearchAdapter()`.
 6. The default `dbCatalogSearchAdapter` queries published products from PostgreSQL using a case-insensitive `ILIKE` match over `name`, `shortDescription`, and `description`.
-7. Results carry `source: "db"` in the response so callers and tests can verify the active backend.
+7. Search result shaping now aligns with catalog card media behavior: it resolves the first valid product image URL via the shared URL normalizer (accepting only root-relative and HTTP(S) URLs).
+8. When no valid image URL is available, results intentionally omit `imageUrl` so card rendering falls back to the existing gradient placeholder mode.
+9. Results carry `source: "db"` in the response so callers and tests can verify the active backend.
 
 ## Why This Is Upgrade-Ready
 
