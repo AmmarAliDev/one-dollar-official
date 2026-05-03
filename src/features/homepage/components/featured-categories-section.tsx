@@ -68,7 +68,7 @@ export function FeaturedCategoriesSectionBlock({ section }: FeaturedCategoriesSe
                               alt={category.title}
                               height={214}
                               width={365}
-                              className="h-54 w-full object-cover"
+                              className="h-54 w-full object-contain"
                               data-testid={`storefront-category-card-image-${category.slug ?? category.id}`}
                             />
                           ) : (

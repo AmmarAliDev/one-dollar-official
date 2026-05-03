@@ -70,7 +70,7 @@ export function OneDollarSectionBlock({ section }: OneDollarSectionProps) {
                                 alt={primary.alt ?? product.name}
                                 height={214}
                                 width={365}
-                                className="h-54 w-full object-cover"
+                                className="h-54 w-full object-contain"
                                 data-testid={`storefront-product-card-image-${productKey}`}
                               />
                             ) : (
