@@ -4,22 +4,25 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #160d1a;
+  --background-header-footer:#4d0303;
+  --foreground: #4d0303;
   --card: #ffffff;
-  --card-foreground: #160d1a;
+  --card-foreground: #8f0808;
+  --banner: #4d0303;
   --popover: #ffffff;
-  --popover-foreground: #160d1a;
+  --popover-foreground: #4d0303;
   --muted: #f6f1f8;
-  --muted-foreground: #5f4b68;
+  --muted-foreground: #ab2f59;
+  --footer-text:#efc0d0;
   --accent: #f1e8f5;
-  --accent-foreground: #2a1433;
-  --primary: #431b52;
+  --accent-foreground: #8f0808;
+  --primary: #8f0808;
   --primary-foreground: #ffffff;
   --secondary: #eee3f2;
-  --secondary-foreground: #2a1433;
-  --border: #dfd2e6;
+  --secondary-foreground: #4d0303;
+  --border: #8f0808;
   --input: #ceb9d8;
-  --ring: #431b52;
+  /* --ring: #4d0303; */
   --success: #15803d;
   --warning: #b45309;
   --destructive: #dc2626;
@@ -34,7 +37,7 @@
 }
 
 .dark {
-  --background: #000000;
+  /* --background: #000000;
   --foreground: #f4eefa;
   --card: #0b0610;
   --card-foreground: #f4eefa;
@@ -56,11 +59,35 @@
   --destructive: #f87171;
   --info: #60a5fa;
   --shadow-soft: 0 20px 44px -28px rgb(0 0 0 / 0.74);
-  --shadow-elevated: 0 30px 74px -36px rgb(0 0 0 / 0.82);
+  --shadow-elevated: 0 30px 74px -36px rgb(0 0 0 / 0.82); */
+
+  --background: #090305;
+  --foreground: #fff0f5;
+
+  --card: #14070b;
+  --card-foreground: #fff0f5;
+
+  --muted: #210a11;
+  --muted-foreground: #efc0d0;
+
+  --accent: #34101c;
+  --accent-foreground: #fff0f5;
+
+  --primary: #e11d48;
+  --primary-foreground: #ffffff;
+
+  --secondary: #220a12;
+  --secondary-foreground: #ffe4ec;
+
+  --border: #431221;
+  --input: #5d1930;
+  --ring: #e11d48;
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-background-header-footer: var(--background-header-footer);
+  --color-banner: var(--banner);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
@@ -68,6 +95,7 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+  --color-footer-text: var(--footer-text);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-primary: var(--primary);

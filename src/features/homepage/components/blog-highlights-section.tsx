@@ -25,7 +25,7 @@ export function BlogHighlightsSectionBlock({ section }: BlogHighlightsSectionPro
       {hasArticles ? (
         <div className="grid gap-4 md:grid-cols-3">
           {section.articles.map((article) => (
-            <article key={article.id} className="bg-card rounded-(--radius-card) border p-4">
+            <article key={article.id} className="bg-background rounded-(--radius-card) border-2 p-4">
               <h3 className="text-base font-semibold tracking-tight">{article.title}</h3>
               <p className="text-muted-foreground mt-2 line-clamp-3 text-sm">{article.excerpt}</p>
               <Link href={article.href} className="text-primary mt-4 inline-flex text-sm font-medium hover:underline">

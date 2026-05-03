@@ -85,12 +85,24 @@ function isOneDollarSection(section: HomepageSection): section is OneDollarSecti
 function toOneDollarProductItem(card: CatalogProductCard): FeaturedProductItem {
   return {
     id: card.id,
+    slug: card.slug,
     name: card.name,
     ...(card.description ? { description: card.description } : {}),
     href: card.href,
     price: card.price,
     ...(typeof card.compareAt === "number" ? { compareAt: card.compareAt } : {}),
     badge: "One Dollar",
+    ...(card.imageUrl
+      ? {
+          images: [
+            {
+              url: card.imageUrl,
+              alt: card.name,
+              isPrimary: true,
+            },
+          ],
+        }
+      : {}),
   };
 }
 

@@ -122,14 +122,14 @@ describe("FeaturedCategoriesSectionBlock", () => {
 
     const items = screen.getAllByTestId("carousel-item");
     for (const item of items) {
-      expect(item).toHaveClass(FEATURED_CATEGORIES_CAROUSEL_ITEM_CLASS.split(" ")[0]);
+      expect(item).toHaveClass("basis-[85%]");
     }
   });
 });
 
 describe("homepage carousel config (shared)", () => {
   it("enforces start alignment and correct responsive basis classes", () => {
-    expect(HOMEPAGE_CAROUSEL_OPTIONS.align).toBe("start");
+    expect(HOMEPAGE_CAROUSEL_OPTIONS).toMatchObject({ align: "start" });
     expect(HOMEPAGE_CAROUSEL_ITEM_CLASS).toContain("basis-[85%]");
     expect(HOMEPAGE_CAROUSEL_ITEM_CLASS).toContain("sm:basis-1/2");
     expect(HOMEPAGE_CAROUSEL_ITEM_CLASS).toContain("md:basis-1/3");

@@ -1,7 +1,6 @@
+import { ArrowRight, Tag } from "lucide-react";
 import Link from "next/link";
-import { Tag } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -16,6 +15,7 @@ import { PageContainer } from "@/components/ui/page-container";
 import { PriceDisplay } from "@/components/ui/price-display";
 import { SectionHeader } from "@/components/ui/section-header";
 
+import Image from "next/image";
 import type { OneDollarSection } from "../types";
 import {
   HOMEPAGE_CAROUSEL_ITEM_CLASS,
@@ -51,41 +51,61 @@ export function OneDollarSectionBlock({ section }: OneDollarSectionProps) {
         <>
           <Carousel opts={HOMEPAGE_CAROUSEL_OPTIONS} className="w-full">
             <CarouselContent>
-              {visibleProducts.map((product) => (
-                <CarouselItem key={product.id} className={HOMEPAGE_CAROUSEL_ITEM_CLASS}>
-                  <Link
-                    href={product.href}
-                    className="group focus-visible:ring-ring block h-full rounded-lg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
-                    aria-label={`View ${product.name}`}
-                  >
-                    <Card className="h-full transition-transform duration-200 group-hover:-translate-y-0.5">
-                      <CardHeader className="space-y-3">
-                        <div className="flex items-start justify-between gap-3">
-                          <CardTitle className="text-base">{product.name}</CardTitle>
-                          {product.badge ? (
-                            <Badge variant="secondary" className="shrink-0">
-                              {product.badge}
-                            </Badge>
+              {visibleProducts.map((product) => {
+                const primary = product?.images?.find((img) => img.isPrimary) ?? product?.images?.[0];
+                const productKey = product.slug ?? product.id;
+                return (
+                  <CarouselItem key={product.id} className={HOMEPAGE_CAROUSEL_ITEM_CLASS}>
+                    <Link
+                      href={product.href}
+                      className="group focus-visible:ring-ring block h-full rounded-lg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                      aria-label={`View ${product.name}`}
+                    >
+                      <Card className="h-full transition-transform duration-200 group-hover:-translate-y-0.5">
+                        <CardHeader className="space-y-1 p-0">
+                          <div className="relative overflow-hidden rounded-lg mb-4" aria-hidden="true">
+                            {primary ? (
+                              <Image
+                                src={primary.url}
+                                alt={primary.alt ?? product.name}
+                                height={214}
+                                width={365}
+                                className="h-54 w-full object-cover"
+                                data-testid={`storefront-product-card-image-${productKey}`}
+                              />
+                            ) : (
+                              <div
+                                className="flex h-54 rounded-lg w-full items-center justify-center bg-linear-to-br from-slate-100 via-slate-200 to-slate-100 text-xs font-medium uppercase tracking-[0.16em] text-slate-600"
+                                data-testid={`storefront-product-card-fallback-${productKey}`}
+                              >
+                                Product preview
+                              </div>
+                            )}
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-2 p-3 pt-1">
+                          <div className="flex items-center justify-between gap-4">
+                            <CardTitle className="text-base">{product.name}</CardTitle>
+                            <ArrowRight
+                              className="text-muted-foreground size-4 transition-transform group-hover:translate-x-1"
+                              aria-hidden="true"
+                            />
+                          </div>
+
+                          {product.description ? (
+                            <CardDescription>{product.description}</CardDescription>
                           ) : null}
-                        </div>
-                        {product.description ? (
-                          <CardDescription>{product.description}</CardDescription>
-                        ) : null}
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <PriceDisplay
-                          amount={product.price}
-                          size="sm"
-                          {...(typeof product.compareAt === "number" ? { compareAt: product.compareAt } : undefined)}
-                        />
-                        <span className="text-primary text-sm font-medium transition-[text-decoration-color] group-hover:underline">
-                          View product
-                        </span>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                </CarouselItem>
-              ))}
+                          <PriceDisplay
+                            amount={product.price}
+                            size="sm"
+                            {...(typeof product.compareAt === "number" ? { compareAt: product.compareAt } : undefined)}
+                          />
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  </CarouselItem>
+                )
+              })}
             </CarouselContent>
 
             {/* Nav buttons hide themselves on mobile and also when scroll is not possible */}
