@@ -1,6 +1,7 @@
 import { routes } from "@/config/routes";
 
 import { searchPublishedProducts } from "@/server/db/catalog-queries";
+import { normalizeCatalogImageUrl } from "./lib/product-image-url";
 import type { CatalogProductCard } from "./types";
 
 export type CatalogSearchRequest = {
@@ -72,6 +73,9 @@ const dbCatalogSearchAdapter: CatalogSearchAdapter = {
         0,
       );
       const primaryImage = record.images[0];
+      const normalizedImageUrl = record.images
+        .map((image) => normalizeCatalogImageUrl(image.url))
+        .find((imageUrl): imageUrl is string => typeof imageUrl === "string");
       const imageLabel = primaryImage?.alt?.trim() || record.name;
 
       return {
@@ -85,6 +89,7 @@ const dbCatalogSearchAdapter: CatalogSearchAdapter = {
         inventoryQuantity,
         averageRating,
         reviewCount,
+        ...(normalizedImageUrl ? { imageUrl: normalizedImageUrl } : {}),
         imageLabel,
         imageTone: "slate",
         attributeSummary: record.specifications.slice(0, 2).map((s) => s.value),

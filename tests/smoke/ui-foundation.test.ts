@@ -57,4 +57,10 @@ describe("ui foundation", () => {
     expect(tableMarkup).toContain("bg-card");
     expect(tableMarkup).toContain("text-card-foreground");
   });
+
+  it("applies mobile zoom safeguards without disabling page zoom", () => {
+    expect(globalsCss).toContain("touch-action: manipulation;");
+    expect(globalsCss).toContain("@supports (-webkit-touch-callout: none)");
+    expect(globalsCss).toContain("font-size: 16px;");
+  });
 });

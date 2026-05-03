@@ -29,7 +29,9 @@ vi.mock("@/server/db/catalog-queries", () => ({
 // Fixtures
 // ---------------------------------------------------------------------------
 
-function makeSearchProductRecord(overrides: Partial<{ id: string; slug: string; name: string }> = {}) {
+function makeSearchProductRecord(
+  overrides: Partial<{ id: string; slug: string; name: string; images: Array<{ id: string; url: string | null; alt: string | null; position: number }> }> = {},
+) {
   const { id = "p1", slug = "ultra-wash-detergent-1kg", name = "Ultra Wash Detergent 1kg" } = overrides;
   return {
     id,
@@ -42,7 +44,7 @@ function makeSearchProductRecord(overrides: Partial<{ id: string; slug: string; 
     createdAt: new Date(),
     updatedAt: new Date(),
     category: { id: "cat-hc", name: "Home Care", slug: "home-care" },
-    images: [],
+    images: overrides.images ?? [],
     specifications: [{ id: "s1", key: "Weight", value: "1kg" }],
     variants: [
       {
@@ -78,7 +80,35 @@ describe("catalog search service", () => {
 
     expect(result.total).toBeGreaterThan(0);
     expect(result.items[0]?.slug).toBe("ultra-wash-detergent-1kg");
+    expect(result.items[0]?.imageUrl).toBeUndefined();
     expect(result.source).toBe("db");
+  });
+
+  it("maps the first valid image URL into search card results", async () => {
+    mockSearchPublishedProducts.mockResolvedValue([
+      makeSearchProductRecord({
+        images: [
+          { id: "img-1", url: "", alt: "Broken", position: 0 },
+          { id: "img-2", url: "/uploads/catalog/detergent.png", alt: "Detergent pack", position: 1 },
+        ],
+      }),
+    ]);
+
+    const result = await searchCatalogProducts("detergent");
+
+    expect(result.items[0]?.imageUrl).toBe("/uploads/catalog/detergent.png");
+  });
+
+  it("skips unsafe image URLs and preserves placeholder fallback behavior", async () => {
+    mockSearchPublishedProducts.mockResolvedValue([
+      makeSearchProductRecord({
+        images: [{ id: "img-1", url: "javascript:alert('xss')", alt: "Unsafe", position: 0 }],
+      }),
+    ]);
+
+    const result = await searchCatalogProducts("detergent");
+
+    expect(result.items[0]?.imageUrl).toBeUndefined();
   });
 
   it("returns an empty result set for unknown terms (no DB matches)", async () => {

@@ -210,6 +210,7 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - Route-handler validation happens in `src/app/api/catalog/search/route.ts` and delegates to feature-level service logic.
 - `searchCatalogProducts()` in `src/features/catalog/service.ts` is the stable entrypoint used by API/UI layers.
 - `src/features/catalog/search-adapter.ts` is the upgrade seam. The current DB-backed ILIKE search can be replaced by a dedicated search provider (Algolia, Typesense) while preserving API and UI contracts.
+- Search result cards now follow the same media contract as catalog cards: adapters should pass a normalized `imageUrl` only when it is a safe renderable URL; otherwise omit it so UI fallback placeholders remain deterministic.
 - See `docs/dev/search-architecture.md` for flow details and phased upgrade guidance.
 
 ## Wishlist + Account Strategy
