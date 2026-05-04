@@ -196,6 +196,8 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `src/app/(storefront)/blog/page.tsx` and `src/app/(storefront)/blog/[slug]/page.tsx` continue to generate metadata and JSON-LD using the same helper contracts, but now consume async DB reads.
 - Storefront SEO markup now standardizes crawler-friendly structure across key surfaces: route-level primary headings (`h1`), list semantics (`ul`/`li`) for card grids, and single-target canonical links in blog cards to reduce duplicate-link ambiguity.
 - Homepage blog highlights now hydrate from the same DB-backed storefront blog service (`getBlogPosts`) so listing, detail, and homepage surfaces share one primary source of truth.
+- Homepage blog highlights now map blog cover-image metadata (`src`, `alt`, `width`, `height`) into homepage section articles so storefront cards can render media without introducing a second blog query path.
+- Storefront homepage blog highlight rendering (`src/features/homepage/components/blog-highlights-section.tsx`) follows the single-link-card semantic rule: each card has one canonical anchor to the blog detail route with image-first presentation and a deterministic visual fallback when image metadata is missing.
 - Admin/homepage `blog-highlights.content.articles` is now treated as non-primary legacy payload data; storefront hydration replaces it with DB results and clears it on DB read failures so hardcoded/manual article arrays are isolated from production rendering.
 - Admin blog mutations (`src/features/admin/blog/actions.ts`) revalidate `/blog`, dynamic blog detail pages, and `/admin/blog` so published/unpublished changes are reflected promptly.
 

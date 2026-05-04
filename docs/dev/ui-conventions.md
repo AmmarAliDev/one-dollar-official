@@ -117,6 +117,14 @@
 - Keep card headings and key metadata inside the same wrapping link so keyboard users and crawlers get a single coherent navigation target.
 - Empty category/product payloads must render a user-safe `EmptyState` instead of a blank section or an empty carousel.
 
+## Homepage Blog Highlights Conventions
+
+- Homepage blog highlight cards (`src/features/homepage/components/blog-highlights-section.tsx`) use one semantic wrapping `Link` per card so the full card is keyboard and pointer clickable.
+- Do not nest additional anchors or buttons inside a linked blog card. Keep one canonical target (`/blog/[slug]`) per card.
+- Blog cards should render cover imagery when available from hydrated blog data and fall back to a clean non-interactive placeholder surface when imagery is missing.
+- Keep card heading, excerpt, and CTA text inside the same link target so assistive technology and crawlers receive one coherent article destination.
+- If no articles are available, preserve the existing `EmptyState` + blog index CTA behavior instead of rendering empty containers.
+
 ## Product Listing Conventions (Prompt 3.3)
 
 - Category discovery lives at `/categories`, while individual listing pages live at `/categories/[slug]` for clean, SEO-friendly storefront URLs.

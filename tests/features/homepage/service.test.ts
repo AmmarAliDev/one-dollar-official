@@ -486,6 +486,12 @@ describe("homepage CMS service", () => {
           title: "DB First Post",
           excerpt: "From db",
           href: "/blog/db-first-post",
+          image: {
+            src: "/blog/db-post-1.svg",
+            alt: "DB First Post",
+            width: 1200,
+            height: 630,
+          },
         },
       ],
     });

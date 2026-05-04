@@ -138,6 +138,12 @@ export type BlogHighlightItem = {
   title: string;
   excerpt: string;
   href: string;
+  image?: {
+    src: string;
+    alt: string;
+    width: number;
+    height: number;
+  };
 };
 
 export type BlogHighlightsSection = {
