@@ -30,6 +30,10 @@ export type HeroBannerSection = {
   primaryCtaHref: string;
   secondaryCta?: { label: string; href: string };
   eyebrow?: string;
+  image?: {
+    url: string;
+    alt: string;
+  };
 };
 
 export type FeaturedCategoryItem = Pick<CatalogCategory, "id" | "name" | "description" | "href"> & {
@@ -123,6 +127,10 @@ export type DealSpotlightSection = {
   compareAt: number;
   ctaLabel: string;
   ctaHref: string;
+  image?: {
+    url: string;
+    alt: string;
+  };
 };
 
 export type BlogHighlightItem = {

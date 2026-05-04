@@ -98,7 +98,31 @@ Changes appear on the storefront within the next request (no stale cache window)
 
 - **Manage:** `/admin/homepage`
 
-Each block has a `status` (active/inactive) and a `sortOrder` integer. Only active blocks are rendered.
+Operational pages:
+
+- **Sections:** `/admin/homepage/sections` (hero banner, deal spotlight, featured categories/products, announcement, blog highlights, one-dollar shell)
+- **Banners:** `/admin/homepage/banners` (announcement-style promos)
+- **Deal campaigns:** `/admin/homepage/campaigns` (scheduled campaign overlays)
+
+Each section supports:
+
+- active/inactive (`active`)
+- ordering (`position`)
+- optional schedule window (`startAt` / `endAt` in section meta)
+- typed JSON content validated on save and revalidated on storefront reads
+
+Hero banner and deal spotlight are managed as section types (`hero-banner`, `deal-spotlight`) under sections. Both now support optional media payload:
+
+```json
+{
+  "image": {
+    "url": "https://store.public.blob.vercel-storage.com/admin/banner/hero.png",
+    "alt": "Descriptive image alt text"
+  }
+}
+```
+
+Image URL safety rules match storefront constraints: root-relative paths or configured hosts only.
 
 ### Adding new section types
 
@@ -150,5 +174,4 @@ The `SubscriberStatus` enum and service scaffolding are in place. Connecting a l
 | Localized blog routes (Urdu) | Deferred | Locale column exists on `BlogPost` |
 | Email campaign sending | Deferred | Subscriber list exists; delivery integration pending |
 | Double opt-in for newsletter | Deferred | `PENDING` status exists; confirmation flow not wired |
-| `DealCampaign` admin UI | Deferred | Model exists; dedicated admin section not built |
 

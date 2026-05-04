@@ -115,6 +115,10 @@ describe("homepage CMS service", () => {
           description: "Updated from homepage admin.",
           primaryCtaLabel: "Shop now",
           primaryCtaHref: "/categories",
+          image: {
+            url: "https://store.public.blob.vercel-storage.com/admin/banner/hero-banner.png",
+            alt: "Fresh essentials curated for weekly shopping",
+          },
         },
         meta: {
           enabled: true,
@@ -133,7 +137,60 @@ describe("homepage CMS service", () => {
       kind: "hero-banner",
       headline: "Admin managed hero",
       primaryCtaHref: "/categories",
+      image: {
+        url: "https://store.public.blob.vercel-storage.com/admin/banner/hero-banner.png",
+        alt: "Fresh essentials curated for weekly shopping",
+      },
     });
+  });
+
+  it("falls back safely when all admin homepage records are inactive", async () => {
+    prismaMock.homePageSection.findMany.mockResolvedValue([
+      {
+        id: "section-hero-disabled",
+        key: "hero-disabled",
+        title: "Hero",
+        type: "hero-banner",
+        content: {
+          headline: "Inactive hero",
+          description: "Should not render.",
+          primaryCtaLabel: "Shop now",
+          primaryCtaHref: "/categories",
+        },
+        meta: {},
+        position: 10,
+        active: false,
+        createdAt: new Date("2026-04-20T08:00:00.000Z"),
+        updatedAt: new Date("2026-04-20T08:00:00.000Z"),
+      },
+      {
+        id: "section-deal-disabled",
+        key: "deal-disabled",
+        title: "Deal spotlight",
+        type: "deal-spotlight",
+        content: {
+          description: "Should not render.",
+          dealLabel: "Inactive",
+          price: 899,
+          compareAt: 1099,
+          ctaLabel: "View",
+          ctaHref: "/categories",
+        },
+        meta: {},
+        position: 40,
+        active: false,
+        createdAt: new Date("2026-04-20T08:00:00.000Z"),
+        updatedAt: new Date("2026-04-20T08:00:00.000Z"),
+      },
+    ]);
+
+    const result = await getHomepageContent();
+
+    expect(result.source).toBe("fallback");
+    expect(result.sections.some((section) => section.id === "hero-disabled")).toBe(false);
+    expect(result.sections.some((section) => section.id === "deal-disabled")).toBe(false);
+    expect(result.sections.some((section) => section.kind === "hero-banner")).toBe(true);
+    expect(result.sections.some((section) => section.kind === "deal-spotlight")).toBe(true);
   });
 
   it("hydrates homepage blog highlights from DB-backed posts", async () => {

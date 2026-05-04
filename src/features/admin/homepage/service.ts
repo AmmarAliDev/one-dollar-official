@@ -703,6 +703,7 @@ function mapSectionRecordToStorefrontSection(record: HomePageSectionRow, referen
         primaryCtaHref: string;
         secondaryCta?: { label: string; href: string };
         eyebrow?: string;
+        image?: { url: string; alt: string };
       };
       return {
         ...base,
@@ -713,6 +714,7 @@ function mapSectionRecordToStorefrontSection(record: HomePageSectionRow, referen
         primaryCtaHref: content.primaryCtaHref,
         ...(content.secondaryCta ? { secondaryCta: content.secondaryCta } : {}),
         ...(content.eyebrow ? { eyebrow: content.eyebrow } : {}),
+        ...(content.image ? { image: content.image } : {}),
       };
     }
     case "featured-categories": {
@@ -764,6 +766,7 @@ function mapSectionRecordToStorefrontSection(record: HomePageSectionRow, referen
         compareAt: number;
         ctaLabel: string;
         ctaHref: string;
+        image?: { url: string; alt: string };
       };
       return {
         ...base,
@@ -775,6 +778,7 @@ function mapSectionRecordToStorefrontSection(record: HomePageSectionRow, referen
         compareAt: content.compareAt,
         ctaLabel: content.ctaLabel,
         ctaHref: content.ctaHref,
+        ...(content.image ? { image: content.image } : {}),
       };
     }
     case "blog-highlights": {

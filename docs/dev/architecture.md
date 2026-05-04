@@ -127,6 +127,7 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `src/config/production-visibility.ts` is the centralized guard map for development-only preview/placeholder surfaces. Any customer-facing placeholder or incomplete shell should be wired through `shouldRenderGuardedSurface()` instead of scattered `NODE_ENV` checks.
 - Admin image uploads currently use a server-side Vercel Blob integration behind `createAdminImageStorageProvider()`. The provider can be replaced later without rewriting form integrations because forms only depend on the shared upload route and final URL contract.
 - `BLOB_READ_WRITE_TOKEN` is the only required secret for the current upload provider. When it is missing, the upload route returns a user-safe configuration message instead of a raw storage error.
+- Admin-managed homepage `hero-banner` and `deal-spotlight` section images are validated against safe storefront image URL patterns (root-relative paths or configured hosts) so optional marketing media cannot break homepage rendering.
 - Homepage fallback preview-only artifacts should be gated by validated runtime env (`env.nodeEnv !== "production"`) so development helpers never leak into production storefront UI.
 - Guard behavior is intentionally conservative:
 	- `production`: guarded surfaces are hidden from customers.

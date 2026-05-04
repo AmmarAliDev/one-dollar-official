@@ -34,6 +34,13 @@ Each section includes:
 - `enabled?`: optional admin toggle.
 - `displayOrder?`: optional ordering hint.
 
+Hero and deal section media contract:
+
+- `hero-banner.image?`: `{ url: string; alt: string }`
+- `deal-spotlight.image?`: `{ url: string; alt: string }`
+- `url` must be a root-relative path or a configured image host URL.
+- image is optional; if omitted, storefront renders the section without media.
+
 Featured item media contract (for card layouts):
 
 - `FeaturedCategoryItem` now reuses the storefront catalog category card shape (`id`, `name`, `description`, `href`, optional `slug`, optional `cardImageUrl`) so homepage category cards and `/categories` cards render from one normalized contract.
@@ -46,6 +53,8 @@ Admin management entrypoints now live under `/admin/homepage` with dedicated pag
 - banners
 - deal campaigns
 - announcement-bar content via the section type or active banners
+
+Hero banner and deal spotlight content are managed through homepage sections (`/admin/homepage/sections`) using section types `hero-banner` and `deal-spotlight`.
 
 ## Resolution Rules
 
@@ -65,6 +74,7 @@ Resolution logic is in `src/features/homepage/resolver.ts`.
 - Invalid content payloads are skipped safely and do not break storefront rendering.
 - Scheduled records render only when the current time is inside their active window.
 - Banner and deal-campaign records can contribute storefront-visible promotional blocks alongside directly managed homepage sections.
+- If all admin-managed records are inactive or outside schedule windows, storefront falls back safely to static defaults.
 
 ## Rendering Model
 
