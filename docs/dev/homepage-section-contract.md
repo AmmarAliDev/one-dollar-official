@@ -62,7 +62,10 @@ Resolution logic is in `src/features/homepage/resolver.ts`.
 
 - If CMS payload is `null`, `undefined`, or has no sections, fallback content is used.
 - If all CMS sections are disabled (`enabled: false`), fallback content is used.
-- Otherwise, only enabled CMS sections render.
+- Otherwise, enabled CMS sections render.
+- `announcement-bar` sections are additive promotional content.
+- Campaign-generated `deal-spotlight` sections (ids prefixed with `campaign-`) are also treated as additive promotional overlays.
+- When CMS/admin content resolves only to these promotional overlays (for example active banners/campaigns with no active primary homepage sections), resolver keeps fallback primary sections so the homepage does not collapse.
 - Sections are sorted by `displayOrder` first, then by static kind order:
   1. `announcement-bar`
   2. `hero-banner`
@@ -75,6 +78,8 @@ Resolution logic is in `src/features/homepage/resolver.ts`.
 - Scheduled records render only when the current time is inside their active window.
 - Banner and deal-campaign records can contribute storefront-visible promotional blocks alongside directly managed homepage sections.
 - If all admin-managed records are inactive or outside schedule windows, storefront falls back safely to static defaults.
+- Malformed banner rows (for example empty title/message) are skipped safely and logged; malformed links are stripped so announcement text can still render without unsafe anchors.
+- When a campaign overlay is active, fallback `deal-spotlight` is intentionally omitted to prevent duplicate deal spotlight blocks.
 
 ## Rendering Model
 

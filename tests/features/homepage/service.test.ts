@@ -193,6 +193,95 @@ describe("homepage CMS service", () => {
     expect(result.sections.some((section) => section.kind === "deal-spotlight")).toBe(true);
   });
 
+  it("keeps baseline homepage sections when only admin banners are active", async () => {
+    prismaMock.homePageSection.findMany.mockResolvedValue([]);
+    prismaMock.banner.findMany.mockResolvedValue([
+      {
+        id: "banner-1",
+        title: "Weekend sale is live",
+        imageUrl: "https://store.public.blob.vercel-storage.com/admin/banner/weekend-sale.png",
+        href: "/categories",
+        position: 1,
+        active: true,
+        startAt: null,
+        endAt: null,
+        createdAt: new Date("2026-05-04T08:00:00.000Z"),
+        updatedAt: new Date("2026-05-04T08:00:00.000Z"),
+      },
+    ]);
+
+    const result = await getHomepageContent();
+
+    expect(result.source).toBe("cms");
+    expect(result.sections.some((section) => section.id === "banner-banner-1" && section.kind === "announcement-bar")).toBe(true);
+    expect(result.sections.some((section) => section.kind === "hero-banner")).toBe(true);
+    expect(result.sections.some((section) => section.kind === "featured-categories")).toBe(true);
+    expect(result.sections.some((section) => section.kind === "featured-products")).toBe(true);
+  });
+
+  it("keeps baseline homepage sections when admin content is only banners and campaign deal overlays", async () => {
+    prismaMock.homePageSection.findMany.mockResolvedValue([]);
+    prismaMock.banner.findMany.mockResolvedValue([
+      {
+        id: "banner-2",
+        title: "Limited offer this week",
+        imageUrl: "https://store.public.blob.vercel-storage.com/admin/banner/limited-offer.png",
+        href: "/categories",
+        position: 1,
+        active: true,
+        startAt: null,
+        endAt: null,
+        createdAt: new Date("2026-05-04T08:00:00.000Z"),
+        updatedAt: new Date("2026-05-04T08:00:00.000Z"),
+      },
+    ]);
+    prismaMock.dealCampaign.findMany.mockResolvedValue([
+      {
+        id: "campaign-1",
+        name: "Weekend campaign",
+        description: "Campaign deal block",
+        active: true,
+        startsAt: null,
+        endsAt: null,
+        updatedAt: new Date("2026-05-04T08:00:00.000Z"),
+        products: [],
+      },
+    ]);
+
+    const result = await getHomepageContent();
+
+    expect(result.source).toBe("cms");
+    expect(result.sections.some((section) => section.id === "banner-banner-2" && section.kind === "announcement-bar")).toBe(true);
+    expect(result.sections.some((section) => section.id === "campaign-campaign-1" && section.kind === "deal-spotlight")).toBe(true);
+    expect(result.sections.some((section) => section.kind === "hero-banner")).toBe(true);
+    expect(result.sections.some((section) => section.kind === "featured-categories")).toBe(true);
+    expect(result.sections.some((section) => section.id === "fallback-deal-spotlight")).toBe(false);
+  });
+
+  it("skips malformed banners safely and falls back when they are the only admin content", async () => {
+    prismaMock.homePageSection.findMany.mockResolvedValue([]);
+    prismaMock.banner.findMany.mockResolvedValue([
+      {
+        id: "banner-invalid",
+        title: "   ",
+        imageUrl: "https://store.public.blob.vercel-storage.com/admin/banner/invalid.png",
+        href: "javascript:alert('xss')",
+        position: 1,
+        active: true,
+        startAt: null,
+        endAt: null,
+        createdAt: new Date("2026-05-04T08:00:00.000Z"),
+        updatedAt: new Date("2026-05-04T08:00:00.000Z"),
+      },
+    ]);
+
+    const result = await getHomepageContent();
+
+    expect(result.source).toBe("fallback");
+    expect(result.sections.some((section) => section.id === "banner-banner-invalid")).toBe(false);
+    expect(result.sections.some((section) => section.kind === "hero-banner")).toBe(true);
+  });
+
   it("hydrates homepage blog highlights from DB-backed posts", async () => {
     prismaMock.homePageSection.findMany.mockResolvedValue([
       {

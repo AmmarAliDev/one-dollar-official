@@ -826,13 +826,31 @@ function mapBannerToStorefrontSection(record: BannerRow, referenceTime: Date): A
     return null;
   }
 
+  const message = record.title.trim();
+  if (message.length === 0) {
+    logger.warn("Skipping invalid banner with empty storefront message.", {
+      bannerId: record.id,
+    });
+    return null;
+  }
+
+  const normalizedHref = (record.href ?? "").trim();
+  const hasValidHref = normalizedHref.startsWith("/") || /^https?:\/\//i.test(normalizedHref);
+
+  if (normalizedHref.length > 0 && !hasValidHref) {
+    logger.warn("Skipping invalid banner href for storefront announcement link.", {
+      bannerId: record.id,
+      href: normalizedHref,
+    });
+  }
+
   return {
     id: `banner-${record.id}`,
     kind: "announcement-bar",
     enabled: true,
     displayOrder: record.position,
-    message: record.title,
-    ...(record.href ? { href: record.href, label: "View offer" } : {}),
+    message,
+    ...(hasValidHref ? { href: normalizedHref, label: "View offer" } : {}),
   };
 }
 

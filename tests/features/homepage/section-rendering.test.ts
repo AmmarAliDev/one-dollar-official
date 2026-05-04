@@ -71,6 +71,51 @@ describe("homepage section rendering", () => {
     expect(result.sections.map((section) => section.id)).toEqual(["cms-hero", "cms-deal", "cms-blog"]);
   });
 
+  it("keeps fallback primary sections when CMS provides only announcement bars", () => {
+    const cmsSections: HomepageSection[] = [
+      {
+        id: "cms-banner",
+        kind: "announcement-bar",
+        message: "Weekend savings",
+        href: "/categories",
+        displayOrder: 1,
+      },
+    ];
+
+    const result = resolveHomepageSections(cmsSections);
+
+    expect(result.source).toBe("cms");
+    expect(result.sections.some((section) => section.id === "cms-banner")).toBe(true);
+    expect(result.sections.some((section) => section.kind === "hero-banner")).toBe(true);
+    expect(result.sections.some((section) => section.kind === "featured-products")).toBe(true);
+    expect(result.sections.some((section) => section.kind === "blog-highlights")).toBe(true);
+  });
+
+  it("keeps fallback primary sections when CMS provides only campaign overlays", () => {
+    const cmsSections: HomepageSection[] = [
+      {
+        id: "campaign-abc123",
+        kind: "deal-spotlight",
+        title: "Campaign deal",
+        description: "Campaign-managed spotlight",
+        dealLabel: "Active campaign",
+        price: 899,
+        compareAt: 1199,
+        ctaLabel: "Shop campaign",
+        ctaHref: "/categories",
+        displayOrder: 40,
+      },
+    ];
+
+    const result = resolveHomepageSections(cmsSections);
+
+    expect(result.source).toBe("cms");
+    expect(result.sections.some((section) => section.id === "campaign-abc123")).toBe(true);
+    expect(result.sections.some((section) => section.kind === "hero-banner")).toBe(true);
+    expect(result.sections.some((section) => section.kind === "featured-products")).toBe(true);
+    expect(result.sections.some((section) => section.id === "fallback-deal-spotlight")).toBe(false);
+  });
+
   it("keeps section architecture modular with registry coverage for each section kind", () => {
     expect(SECTION_RENDER_ORDER.every((kind) => hasRegisteredSectionComponent(kind))).toBe(true);
   });

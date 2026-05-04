@@ -128,6 +128,9 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - Admin image uploads currently use a server-side Vercel Blob integration behind `createAdminImageStorageProvider()`. The provider can be replaced later without rewriting form integrations because forms only depend on the shared upload route and final URL contract.
 - `BLOB_READ_WRITE_TOKEN` is the only required secret for the current upload provider. When it is missing, the upload route returns a user-safe configuration message instead of a raw storage error.
 - Admin-managed homepage `hero-banner` and `deal-spotlight` section images are validated against safe storefront image URL patterns (root-relative paths or configured hosts) so optional marketing media cannot break homepage rendering.
+- Homepage promotional overlays from admin banners and active campaign-generated deal spotlights are additive: if these overlays are the only active admin homepage content, resolver composition preserves fallback primary sections to avoid storefront collapse.
+- Storefront banner mapping is defensive for legacy data quality: empty banner titles are skipped and invalid banner href values are omitted, preventing malformed admin records from breaking homepage rendering.
+- Resolver composition avoids duplicate deal spotlights by omitting fallback `deal-spotlight` when an active campaign overlay is present.
 - Homepage fallback preview-only artifacts should be gated by validated runtime env (`env.nodeEnv !== "production"`) so development helpers never leak into production storefront UI.
 - Guard behavior is intentionally conservative:
 	- `production`: guarded surfaces are hidden from customers.

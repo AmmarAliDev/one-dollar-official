@@ -19,6 +19,47 @@ const SECTION_ORDER_INDEX: Record<HomepageSectionKind, number> = SECTION_RENDER_
   {} as Record<HomepageSectionKind, number>,
 );
 
+function composeSectionsWithFallback(enabledCmsSections: HomepageSection[]): HomepageSection[] {
+  const hasCampaignOverlay = enabledCmsSections.some(
+    (section) => section.kind === "deal-spotlight" && section.id.startsWith("campaign-"),
+  );
+
+  const hasPrimaryHomepageSection = enabledCmsSections.some((section) => {
+    if (section.kind === "announcement-bar") {
+      return false;
+    }
+
+    if (section.kind === "deal-spotlight" && section.id.startsWith("campaign-")) {
+      return false;
+    }
+
+    return true;
+  });
+
+  // Announcement bars are additive promotional surfaces. If they are the only
+  // CMS-provided sections, keep baseline homepage sections from fallback so the
+  // page shell remains complete.
+  if (hasPrimaryHomepageSection) {
+    return enabledCmsSections;
+  }
+
+  const fallbackPrimarySections = HOMEPAGE_FALLBACK_SECTIONS.filter((section) => {
+    if (section.kind === "announcement-bar") {
+      return false;
+    }
+
+    // Avoid rendering duplicate deal spotlight content when an active campaign
+    // is already contributing a deal-spotlight section.
+    if (hasCampaignOverlay && section.kind === "deal-spotlight") {
+      return false;
+    }
+
+    return true;
+  });
+
+  return [...enabledCmsSections, ...fallbackPrimarySections];
+}
+
 function sortSections(sections: HomepageSection[]): HomepageSection[] {
   return [...sections].sort((left, right) => {
     const leftOrder = left.displayOrder ?? Number.POSITIVE_INFINITY;
@@ -49,8 +90,10 @@ export function resolveHomepageSections(cmsSections: HomepageSection[] | null | 
     };
   }
 
+  const composedSections = composeSectionsWithFallback(enabledCmsSections);
+
   return {
-    sections: sortSections(enabledCmsSections),
+    sections: sortSections(composedSections),
     source: "cms",
   };
 }
