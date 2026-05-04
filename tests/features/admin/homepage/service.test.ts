@@ -117,13 +117,13 @@ describe("admin homepage section deletion", () => {
     vi.clearAllMocks();
   });
 
-  it("deletes an existing spotlight section and records audit metadata", async () => {
+  it("deletes an existing homepage section and records audit metadata", async () => {
     prismaMock.tx.homePageSection.findUnique.mockResolvedValue({
       id: "section-1",
-      key: "deal-spotlight-primary",
-      title: "Weekly spotlight",
-      type: "deal-spotlight",
-      position: 40,
+      key: "hero-primary",
+      title: "Primary hero",
+      type: "hero-banner",
+      position: 10,
       active: true,
       content: {},
       meta: {},
@@ -164,7 +164,7 @@ describe("admin homepage section deletion", () => {
     expect(result).toEqual({ id: "section-1" });
   });
 
-  it("fails with not-found when deleting a missing spotlight section", async () => {
+  it("fails with not-found when deleting a missing section", async () => {
     prismaMock.tx.homePageSection.findUnique.mockResolvedValue(null);
 
     await expect(

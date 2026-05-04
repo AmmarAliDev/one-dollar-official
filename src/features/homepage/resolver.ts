@@ -19,36 +19,38 @@ const SECTION_ORDER_INDEX: Record<HomepageSectionKind, number> = SECTION_RENDER_
   {} as Record<HomepageSectionKind, number>,
 );
 
-function composeSectionsWithFallback(enabledCmsSections: HomepageSection[]): HomepageSection[] {
-  // Overlay sections are additive promotional surfaces that do not constitute a
-  // primary homepage structure on their own. Both announcement bars and deal
-  // spotlights fall into this category — whether the spotlight was created via
-  // the admin deal-campaign flow (id prefix "campaign-") or as a standalone
-  // HomePageSection record.
-  const isOverlaySection = (section: HomepageSection) =>
-    section.kind === "announcement-bar" || section.kind === "deal-spotlight";
+const OVERLAY_SECTION_KINDS: ReadonlySet<HomepageSectionKind> = new Set(["announcement-bar", "deal-spotlight"]);
 
-  const hasPrimaryHomepageSection = enabledCmsSections.some((section) => !isOverlaySection(section));
+const PRIMARY_SECTION_KINDS: ReadonlySet<HomepageSectionKind> = new Set(
+  SECTION_RENDER_ORDER.filter((kind) => !OVERLAY_SECTION_KINDS.has(kind)),
+);
 
-  // If at least one non-overlay section exists in CMS, treat the full CMS set
-  // as the homepage definition and skip fallback merging.
-  if (hasPrimaryHomepageSection) {
-    return enabledCmsSections;
-  }
+function isOverlaySection(section: HomepageSection) {
+  return OVERLAY_SECTION_KINDS.has(section.kind);
+}
 
-  // Only overlay sections are present in CMS. Merge them with the fallback
-  // homepage structure so the page shell remains complete.
-  const hasDealSpotlightSection = enabledCmsSections.some((section) => section.kind === "deal-spotlight");
+function composeSectionsWithFallback(cmsSections: HomepageSection[], enabledCmsSections: HomepageSection[]): HomepageSection[] {
+  const configuredKinds = new Set(cmsSections.map((section) => section.kind));
+
+  // Fallback sections are additive for any section kind not explicitly managed
+  // in CMS. This keeps composition stable for incremental CRUD (add one
+  // section at a time) without forcing operators to seed the full baseline.
+  const hasCmsDealSpotlight = enabledCmsSections.some((section) => section.kind === "deal-spotlight");
 
   const fallbackPrimarySections = HOMEPAGE_FALLBACK_SECTIONS.filter((section) => {
-    // Announcement bars from fallback would duplicate the additive CMS bars.
     if (section.kind === "announcement-bar") {
       return false;
     }
 
-    // Avoid rendering a duplicate deal spotlight when the CMS already provides
-    // one (either from an admin section record or an active campaign).
-    if (hasDealSpotlightSection && section.kind === "deal-spotlight") {
+    if (section.kind === "deal-spotlight") {
+      if (configuredKinds.has("deal-spotlight") || hasCmsDealSpotlight) {
+        return false;
+      }
+
+      return true;
+    }
+
+    if (PRIMARY_SECTION_KINDS.has(section.kind) && configuredKinds.has(section.kind)) {
       return false;
     }
 
@@ -88,7 +90,7 @@ export function resolveHomepageSections(cmsSections: HomepageSection[] | null | 
     };
   }
 
-  const composedSections = composeSectionsWithFallback(enabledCmsSections);
+  const composedSections = composeSectionsWithFallback(cmsSections, enabledCmsSections);
 
   return {
     sections: sortSections(composedSections),

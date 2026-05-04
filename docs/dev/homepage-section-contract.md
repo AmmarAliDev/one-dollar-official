@@ -58,6 +58,7 @@ Featured item media contract (for card layouts):
 Admin management entrypoints now live under `/admin/homepage` with dedicated pages for:
 
 - section content editing and ordering
+- section deletion/removal for all homepage section types
 - banners
 - deal campaigns
 - announcement-bar content via the section type or active banners
@@ -86,11 +87,15 @@ Sections are classified as either **overlay** (additive, promotional) or **prima
 | `one-dollar` | Primary | Core homepage structure |
 | `blog-highlights` | Primary | Core homepage structure |
 
-**Rule**: when CMS content resolves only to overlay sections, the resolver merges in fallback primary sections to keep the homepage complete. Overlay-only CMS content never replaces the page shell.
+**Rule**: resolver composition is additive by section kind. Enabled CMS records are always included, and fallback sections are merged only for kinds not explicitly configured in CMS.
+
+**Incremental CRUD safety**: adding a single section in admin no longer collapses the homepage into a partial composition. Missing, unconfigured kinds continue to render from fallback.
+
+**Explicit disable intent**: if CMS has a record for a section kind but it is disabled, fallback for that kind is not reintroduced.
 
 **Deduplication**: if CMS already provides a `deal-spotlight` (regardless of whether it was created as an admin section record or an active campaign), the fallback `deal-spotlight` is omitted to avoid duplicate deal blocks.
 
-**Historical note**: prior to 2026-05-04, `deal-spotlight` sections created directly through `/admin/homepage/sections` (not via the campaign flow) were incorrectly classified as primary, causing all other homepage sections to disappear when a standalone spotlight was the only active CMS section. This is now fixed — all `deal-spotlight` entries are overlay sections.
+**Historical note**: prior to 2026-05-05, homepage resolution still treated any enabled primary CMS set as a complete composition, so adding a single primary section could suppress other baseline sections unless a full seed had already happened. Resolver composition now fills missing, unconfigured kinds from fallback while preserving explicit disabled kinds.
 
 - Sections are sorted by `displayOrder` first, then by static kind order:
   1. `announcement-bar`

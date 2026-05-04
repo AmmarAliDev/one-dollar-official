@@ -35,7 +35,7 @@ export function DeleteAdminHomepageSectionButton({
           className="text-destructive border-2 border-destructive! hover:text-destructive"
           onClick={() => setOpen(true)}
         >
-          Delete spotlight section
+          Delete section
         </Button>
       </form>
 
@@ -43,8 +43,8 @@ export function DeleteAdminHomepageSectionButton({
         open={open}
         onOpenChange={setOpen}
         title={`Delete ${sectionTitle}?`}
-        description="This permanently removes the spotlight section from homepage section content."
-        confirmLabel="Delete spotlight"
+        description="This permanently removes the section from homepage content."
+        confirmLabel="Delete section"
         confirmVariant="destructive"
         onConfirm={() => formRef.current?.requestSubmit()}
       />

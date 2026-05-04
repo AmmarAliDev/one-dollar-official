@@ -149,15 +149,13 @@ export default async function AdminHomepageSectionsPage({ searchParams }: AdminH
                     content: section.contentJson,
                   }}
                 />
-                {section.type === "deal-spotlight" ? (
-                  <div className="mt-4 flex justify-end">
-                    <DeleteAdminHomepageSectionButton
-                      sectionId={section.id}
-                      sectionTitle={section.title}
-                      returnTo={routes.admin.homepageSections}
-                    />
-                  </div>
-                ) : null}
+                <div className="mt-4 flex justify-end">
+                  <DeleteAdminHomepageSectionButton
+                    sectionId={section.id}
+                    sectionTitle={section.title}
+                    returnTo={routes.admin.homepageSections}
+                  />
+                </div>
               </CardContent>
             </Card>
           ))

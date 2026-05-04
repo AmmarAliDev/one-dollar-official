@@ -23,7 +23,7 @@ describe("homepage section rendering", () => {
     ]);
   });
 
-  it("renders CMS sections in deterministic order and ignores disabled sections", () => {
+  it("renders CMS sections in deterministic order, merges missing fallback kinds, and respects disabled configured kinds", () => {
     const cmsSections: HomepageSection[] = [
       {
         id: "cms-blog",
@@ -68,7 +68,88 @@ describe("homepage section rendering", () => {
     const result = resolveHomepageSections(cmsSections);
 
     expect(result.source).toBe("cms");
-    expect(result.sections.map((section) => section.id)).toEqual(["cms-hero", "cms-deal", "cms-blog"]);
+    expect(result.sections.map((section) => section.id)).toEqual([
+      "cms-hero",
+      "fallback-featured-categories",
+      "cms-deal",
+      "fallback-one-dollar",
+      "cms-blog",
+    ]);
+    expect(result.sections.some((section) => section.id === "fallback-featured-products")).toBe(false);
+  });
+
+  it("keeps homepage composition stable when admin adds a single primary section", () => {
+    const cmsSections: HomepageSection[] = [
+      {
+        id: "cms-one-dollar",
+        kind: "one-dollar",
+        title: "One Dollar picks",
+        products: [],
+        ctaLabel: "View all",
+        ctaHref: "/categories/one-dollar",
+        placeholderMessage: "No products right now.",
+        displayOrder: 25,
+      },
+    ];
+
+    const result = resolveHomepageSections(cmsSections);
+
+    expect(result.source).toBe("cms");
+    expect(result.sections.some((section) => section.id === "cms-one-dollar" && section.kind === "one-dollar")).toBe(true);
+    expect(result.sections.some((section) => section.kind === "hero-banner")).toBe(true);
+    expect(result.sections.some((section) => section.kind === "featured-categories")).toBe(true);
+    expect(result.sections.some((section) => section.kind === "featured-products")).toBe(true);
+    expect(result.sections.some((section) => section.kind === "blog-highlights")).toBe(true);
+    expect(result.sections.filter((section) => section.kind === "one-dollar")).toHaveLength(1);
+  });
+
+  it("composes multiple section types without duplicating configured kinds", () => {
+    const cmsSections: HomepageSection[] = [
+      {
+        id: "cms-banner",
+        kind: "announcement-bar",
+        message: "Weekend savings",
+        href: "/categories",
+        displayOrder: 1,
+      },
+      {
+        id: "cms-categories",
+        kind: "featured-categories",
+        title: "CMS categories",
+        categories: [],
+        displayOrder: 20,
+      },
+      {
+        id: "cms-products",
+        kind: "featured-products",
+        title: "CMS products",
+        products: [],
+        displayOrder: 30,
+      },
+      {
+        id: "cms-hero-disabled",
+        kind: "hero-banner",
+        headline: "Disabled hero",
+        description: "Disabled",
+        primaryCtaLabel: "Shop",
+        primaryCtaHref: "/categories",
+        enabled: false,
+        displayOrder: 10,
+      },
+    ];
+
+    const result = resolveHomepageSections(cmsSections);
+
+    expect(result.source).toBe("cms");
+    expect(result.sections.map((section) => section.id)).toEqual([
+      "cms-banner",
+      "cms-categories",
+      "fallback-one-dollar",
+      "cms-products",
+      "fallback-deal-spotlight",
+      "fallback-blog-highlights",
+    ]);
+    expect(result.sections.some((section) => section.kind === "hero-banner")).toBe(false);
   });
 
   it("keeps fallback primary sections when CMS provides only announcement bars", () => {
