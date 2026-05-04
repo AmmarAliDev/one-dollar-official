@@ -57,7 +57,7 @@ export function FeaturedCategoriesSectionBlock({ section }: FeaturedCategoriesSe
                   <Link
                     href={category.href}
                     className="group focus-visible:ring-ring block h-full rounded-lg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
-                    aria-label={`Browse ${category.title} category`}
+                    aria-label={`Browse ${category.name} category`}
                   >
                     <Card className="h-full transition-transform duration-200 group-hover:-translate-y-0.5">
                       <CardHeader className="p-0">
@@ -65,7 +65,7 @@ export function FeaturedCategoriesSectionBlock({ section }: FeaturedCategoriesSe
                           {category.cardImageUrl ? (
                             <Image
                               src={category.cardImageUrl}
-                              alt={category.title}
+                              alt={category.name}
                               height={214}
                               width={365}
                               className="h-54 w-full object-contain"
@@ -83,7 +83,7 @@ export function FeaturedCategoriesSectionBlock({ section }: FeaturedCategoriesSe
                       </CardHeader>
                       <CardContent className="p-3 pt-0">
                         <div className="flex items-center justify-between gap-4">
-                          <CardTitle>{category.title}</CardTitle>
+                          <CardTitle>{category.name}</CardTitle>
                           <ArrowRight
                             className="text-muted-foreground size-4 transition-transform group-hover:translate-x-1"
                             aria-hidden="true"

@@ -1,14 +1,18 @@
 import { getBlogPosts, type BlogListingItem } from "@/features/blog";
-import { getCatalogCategoryListing, type CatalogProductCard } from "@/features/catalog";
+import { getCatalogCategories, getCatalogCategoryListing, type CatalogProductCard } from "@/features/catalog";
 import { ONE_DOLLAR_CATEGORY_SLUG } from "@/features/catalog/one-dollar";
 import { routes } from "@/config/routes";
 import { loadHomepageContentForStorefront } from "@/features/admin/homepage/service";
 import { createLogger } from "@/lib/logger";
 
+import { mapCatalogCategoriesToFeaturedCategoryItems } from "./featured-categories";
+import { resolveHomepageFeaturedProducts } from "./featured-products";
 import { resolveHomepageSections } from "./resolver";
 import type {
   BlogHighlightItem,
   BlogHighlightsSection,
+  FeaturedCategoriesSection,
+  FeaturedProductsSection,
   FeaturedProductItem,
   HomepageContent,
   HomepageContentResult,
@@ -31,11 +35,25 @@ function toBlogHighlightItem(post: BlogListingItem): BlogHighlightItem {
     title: post.title,
     excerpt: post.excerpt,
     href: routes.storefront.blogPost(post.slug),
+    image: {
+      src: post.coverImage.src,
+      alt: post.coverImage.alt,
+      width: post.coverImage.width,
+      height: post.coverImage.height,
+    },
   };
 }
 
 function isBlogHighlightsSection(section: HomepageSection): section is BlogHighlightsSection {
   return section.kind === "blog-highlights";
+}
+
+function isFeaturedCategoriesSection(section: HomepageSection): section is FeaturedCategoriesSection {
+  return section.kind === "featured-categories";
+}
+
+function isFeaturedProductsSection(section: HomepageSection): section is FeaturedProductsSection {
+  return section.kind === "featured-products";
 }
 
 async function hydrateHomepageBlogHighlights(sections: HomepageSection[]): Promise<HomepageSection[]> {
@@ -72,6 +90,59 @@ async function hydrateHomepageBlogHighlights(sections: HomepageSection[]): Promi
       };
     });
   }
+}
+
+async function hydrateFeaturedCategorySections(sections: HomepageSection[]): Promise<HomepageSection[]> {
+  const hasFeaturedCategoriesSection = sections.some(isFeaturedCategoriesSection);
+
+  if (!hasFeaturedCategoriesSection) {
+    return sections;
+  }
+
+  try {
+    const catalogCategories = await getCatalogCategories();
+    const categories = mapCatalogCategoriesToFeaturedCategoryItems(catalogCategories);
+
+    if (categories.length === 0) {
+      return sections;
+    }
+
+    return sections.map((section) => {
+      if (!isFeaturedCategoriesSection(section)) {
+        return section;
+      }
+
+      return {
+        ...section,
+        categories,
+      };
+    });
+  } catch (error) {
+    logger.error("Failed to hydrate homepage featured categories from catalog categories.", error);
+    return sections;
+  }
+}
+
+async function hydrateFeaturedProductsSections(sections: HomepageSection[]): Promise<HomepageSection[]> {
+  const featuredProductsSections = sections.filter(isFeaturedProductsSection);
+
+  if (featuredProductsSections.length === 0) {
+    return sections;
+  }
+
+  const fallbackProducts = featuredProductsSections[0]?.products ?? [];
+  const products = await resolveHomepageFeaturedProducts(fallbackProducts);
+
+  return sections.map((section) => {
+    if (!isFeaturedProductsSection(section)) {
+      return section;
+    }
+
+    return {
+      ...section,
+      products,
+    };
+  });
 }
 
 function isOneDollarSection(section: HomepageSection): section is OneDollarSection {
@@ -166,7 +237,9 @@ export async function getHomepageContent(): Promise<HomepageContentResult> {
   const cmsContent = await fetchHomepageContentFromCms();
   const resolved = resolveHomepageSections(cmsContent?.sections);
   const hydratedWithBlog = await hydrateHomepageBlogHighlights(resolved.sections);
-  const hydratedSections = await hydrateOneDollarSections(hydratedWithBlog);
+  const hydratedWithCategories = await hydrateFeaturedCategorySections(hydratedWithBlog);
+  const hydratedWithFeaturedProducts = await hydrateFeaturedProductsSections(hydratedWithCategories);
+  const hydratedSections = await hydrateOneDollarSections(hydratedWithFeaturedProducts);
 
   return {
     ...resolved,

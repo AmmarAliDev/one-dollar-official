@@ -47,6 +47,16 @@ const typeOptions = adminHomepageSectionKindValues.map((value) => ({
   label: value.replaceAll("-", " "),
 }));
 
+const sectionContentGuidance: Record<AdminHomepageSectionType, string> = {
+  "announcement-bar": "Fields: message, href?, label?",
+  "hero-banner": "Fields: headline, description, primaryCtaLabel, primaryCtaHref, secondaryCta?, eyebrow?, image? { url, alt }",
+  "featured-categories": "Fields: description?, categories[]",
+  "one-dollar": "Fields: description?, ctaLabel, ctaHref, placeholderMessage",
+  "featured-products": "Fields: description?, products[]",
+  "deal-spotlight": "Fields: description, dealLabel, price, compareAt, ctaLabel, ctaHref, image? { url, alt }",
+  "blog-highlights": "Fields: description?, placeholderMessage, articles[]",
+};
+
 const sectionFields: DynamicFormFieldConfig<AdminHomepageSectionFormValues>[] = [
   {
     id: "homepage-section-key",
@@ -197,6 +207,8 @@ export function AdminHomepageSectionForm({
           Load example JSON
         </Button>
       </div>
+
+      <p className="text-xs text-muted-foreground">{sectionContentGuidance[selectedType]}</p>
 
       <DynamicForm
         form={form}

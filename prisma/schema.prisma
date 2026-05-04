@@ -615,6 +615,9 @@ model DealCampaign {
   id          String                @id @default(uuid())
   name        String
   description String?
+  targetHref  String?               @map("target_href")
+  imageUrl    String?               @map("image_url")
+  imageAlt    String?               @map("image_alt")
   startsAt    DateTime?             @map("starts_at")
   endsAt      DateTime?             @map("ends_at")
   active      Boolean               @default(true)

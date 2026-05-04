@@ -117,6 +117,14 @@
 - Keep card headings and key metadata inside the same wrapping link so keyboard users and crawlers get a single coherent navigation target.
 - Empty category/product payloads must render a user-safe `EmptyState` instead of a blank section or an empty carousel.
 
+## Homepage Blog Highlights Conventions
+
+- Homepage blog highlight cards (`src/features/homepage/components/blog-highlights-section.tsx`) use one semantic wrapping `Link` per card so the full card is keyboard and pointer clickable.
+- Do not nest additional anchors or buttons inside a linked blog card. Keep one canonical target (`/blog/[slug]`) per card.
+- Blog cards should render cover imagery when available from hydrated blog data and fall back to a clean non-interactive placeholder surface when imagery is missing.
+- Keep card heading, excerpt, and CTA text inside the same link target so assistive technology and crawlers receive one coherent article destination.
+- If no articles are available, preserve the existing `EmptyState` + blog index CTA behavior instead of rendering empty containers.
+
 ## Product Listing Conventions (Prompt 3.3)
 
 - Category discovery lives at `/categories`, while individual listing pages live at `/categories/[slug]` for clean, SEO-friendly storefront URLs.
@@ -175,6 +183,14 @@ Choose the correct success strategy based on where the form lives:
 - Do not call `form.reset()` on error — the user needs to see and correct their input.
 - If a form redirects on success (server action), skip all client-side reset/close logic; the navigation discards the component tree.
 - For modal/sheet/drawer forms that save without redirecting, always close the overlay in the `onSuccess` callback of `useServerActionSubmit` and optionally reset the form.
+
+Current production applications of this rule:
+- `ForgotPasswordForm`, `SignUpForm`, and `ResetPasswordForm` use `useActionState` + `useEffect` reset on `state.success` to clear sensitive and stale values after successful submission.
+- `CustomerReviewForm` resets on successful non-redirect callback and also guards against stale hydrated values after redirect-return notice codes.
+
+Intentional no-reset exceptions:
+- Query/filter forms keep user-entered values until explicit reset by the user.
+- Redirect-first admin CRUD and checkout submissions do not add client reset logic because navigation naturally unmounts and clears form state.
 
 ## Shared Data Table Conventions
 

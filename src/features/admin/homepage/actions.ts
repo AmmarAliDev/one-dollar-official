@@ -14,6 +14,9 @@ import {
   createAdminBanner,
   createAdminDealCampaign,
   createAdminHomepageSection,
+  deleteAdminBanner,
+  deleteAdminDealCampaign,
+  deleteAdminHomepageSection,
   seedAdminHomepageSections,
   updateAdminBanner,
   updateAdminDealCampaign,
@@ -100,6 +103,9 @@ function readDealCampaignPayload(formData: FormData) {
     id: `${formData.get("id") ?? ""}`.trim() || undefined,
     name: `${formData.get("name") ?? ""}`,
     description: `${formData.get("description") ?? ""}`,
+    targetHref: `${formData.get("targetHref") ?? ""}`,
+    imageUrl: `${formData.get("imageUrl") ?? ""}`,
+    imageAlt: `${formData.get("imageAlt") ?? ""}`,
     startsAt: `${formData.get("startsAt") ?? ""}`,
     endsAt: `${formData.get("endsAt") ?? ""}`,
     active: formData.get("active") !== null,
@@ -180,6 +186,30 @@ export async function updateAdminHomepageSectionAction(formData: FormData) {
   }
 }
 
+export async function deleteAdminHomepageSectionAction(formData: FormData) {
+  const returnTo = getReturnTo(formData, routes.admin.homepageSections);
+
+  try {
+    await assertTrustedOrigin({ action: "admin:homepage:section:delete" });
+    const actor = await requireHomepageManageAccess();
+    const id = `${formData.get("id") ?? ""}`.trim();
+
+    if (id.length === 0) {
+      redirect(appendFlash(returnTo, "error", "missingId"));
+    }
+
+    await deleteAdminHomepageSection({ id, actor });
+
+    revalidateHomepageContentPaths();
+    redirect(appendFlash(returnTo, "notice", "deleted"));
+  } catch (error) {
+    unstable_rethrow(error);
+
+    const appError = captureServerError(error, "admin:homepage:section:delete");
+    redirect(appendFlash(returnTo, "error", getHomepageContentErrorCode(appError, "deleteFailed")));
+  }
+}
+
 export async function createAdminBannerAction(formData: FormData) {
   const returnTo = getReturnTo(formData, routes.admin.homepageBanners);
 
@@ -228,6 +258,30 @@ export async function updateAdminBannerAction(formData: FormData) {
   }
 }
 
+export async function deleteAdminBannerAction(formData: FormData) {
+  const returnTo = getReturnTo(formData, routes.admin.homepageBanners);
+
+  try {
+    await assertTrustedOrigin({ action: "admin:homepage:banner:delete" });
+    const actor = await requireHomepageManageAccess();
+    const id = `${formData.get("id") ?? ""}`.trim();
+
+    if (id.length === 0) {
+      redirect(appendFlash(returnTo, "error", "missingId"));
+    }
+
+    await deleteAdminBanner({ id, actor });
+
+    revalidateHomepageContentPaths();
+    redirect(appendFlash(returnTo, "notice", "deleted"));
+  } catch (error) {
+    unstable_rethrow(error);
+
+    const appError = captureServerError(error, "admin:homepage:banner:delete");
+    redirect(appendFlash(returnTo, "error", getHomepageContentErrorCode(appError, "deleteFailed")));
+  }
+}
+
 export async function createAdminDealCampaignAction(formData: FormData) {
   const returnTo = getReturnTo(formData, routes.admin.homepageCampaigns);
 
@@ -273,5 +327,29 @@ export async function updateAdminDealCampaignAction(formData: FormData) {
 
     const appError = captureServerError(error, "admin:homepage:campaign:update");
     redirect(appendFlash(returnTo, "error", getHomepageContentErrorCode(appError, "updateFailed")));
+  }
+}
+
+export async function deleteAdminDealCampaignAction(formData: FormData) {
+  const returnTo = getReturnTo(formData, routes.admin.homepageCampaigns);
+
+  try {
+    await assertTrustedOrigin({ action: "admin:homepage:campaign:delete" });
+    const actor = await requireHomepageManageAccess();
+    const id = `${formData.get("id") ?? ""}`.trim();
+
+    if (id.length === 0) {
+      redirect(appendFlash(returnTo, "error", "missingId"));
+    }
+
+    await deleteAdminDealCampaign({ id, actor });
+
+    revalidateHomepageContentPaths();
+    redirect(appendFlash(returnTo, "notice", "deleted"));
+  } catch (error) {
+    unstable_rethrow(error);
+
+    const appError = captureServerError(error, "admin:homepage:campaign:delete");
+    redirect(appendFlash(returnTo, "error", getHomepageContentErrorCode(appError, "deleteFailed")));
   }
 }

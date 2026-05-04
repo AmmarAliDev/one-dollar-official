@@ -8,6 +8,7 @@ Use this as the quick implementation map for future AI prompts. Each section des
 
 - Homepage with section-based rendering and admin-manageable content resolution; featured categories section uses a responsive shadcn-compatible carousel with empty-state fallback
 - Homepage featured item contracts now support optional media fields (`slug`, category `cardImageUrl`, product `images[]`) with backward-compatible fallbacks to placeholder cards when media is absent
+- Homepage featured-products section is now sales-driven: it ranks products by summed `OrderItem.quantity` across `CONFIRMED`/`PACKED`/`SHIPPED`/`DELIVERED` orders, filters through published storefront visibility rules, and fills sparse-data gaps from stored fallback picks plus recent published catalog items
 - Category listing routes and product detail routes with SEO metadata support
 - Database-backed catalog visibility rules (published categories/products only; approved reviews only)
 - Storefront search with API transport seam and adapter-ready backend integration point

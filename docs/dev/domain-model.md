@@ -48,13 +48,16 @@ Key entities
 - `One Dollar` storefront category is intentionally virtual/system-level (not persisted in `Category`). Membership is derived from published products priced at `<= 280 PKR`, and does not remove products from their original category assignments.
 - `BlogPost` — CMS-style article record for storefront blog content with locale, title, slug, excerpt, structured content JSON blocks, cover-image metadata, publication status/date, and SEO fields.
 - `Product` — product master record for both simple and variant-based products. Admin management covers content copy, related product links, images, specifications, status, an optional `masterSku`/`product_code` parent identifier, and shared SEO/metadata.
+- Homepage most-sold ranking reads published `Product` records indirectly through `OrderItem.productId`; storefront rendering still applies the same published product + published category visibility rules as the main catalog.
 - `ProductVariant` — SKU-level record used for inventory, pricing, fulfillment, and shopper options JSON such as color/size. `Inventory` is required per variant, and `ProductVariant.sku` is the authoritative SKU for orders and stock.
 - `Inventory` — tracks `quantity`, `reserved`, `safetyStock` and `location` (Karachi by default). Admin inventory now supports manual adjustments in the low-stock workspace, with server-side validation and optimistic concurrency protection using `updatedAt`. Low-stock reporting uses `onHand = (quantity - reserved)` and compares against an effective alert threshold: `safetyStock` when it is greater than zero, otherwise the global `StoreSettings.lowStockThreshold` fallback.
 - `Review` — customer product feedback now includes moderation-aware state (`PENDING`, `APPROVED`, `REJECTED`, `HIDDEN`) plus optional moderation reason/timestamps so admins can safely control storefront visibility without deleting the original text.
 - `Wishlist`, `Cart` (and their items) support shopper intent and purchase flows.
 - `Order` / `OrderItem` / `OrderAddress` — orders contain snapshot fields (productName, unitPrice, etc.) so historical data remains stable.
+- Homepage featured-products uses `OrderItem.productId` as the aggregation key and sums `OrderItem.quantity` for orders in `CONFIRMED`, `PACKED`, `SHIPPED`, or `DELIVERED` status to derive a practical "most sold" ranking.
 - `AuditLog` — simple auditing table to store actor, action and JSON diffs, including admin review moderation and admin inventory adjustment events (`inventory.adjusted`).
 - `HomePageSection`, `Banner`, `DealCampaign` — lightweight CMS / marketing placeholders.
+- `HomePageSection.content.products` for the `featured-products` section remains a temporary fallback seed list. Storefront homepage resolution prefers live most-sold data first, then uses this stored array only to fill gaps while real sales history is still sparse.
 - `StoreSettings` — singleton-style operational settings record (`id = default`) for store identity, support contact channels, shipping baseline defaults, and simple operations defaults used by admin workflows.
 
 Data and indexing strategy

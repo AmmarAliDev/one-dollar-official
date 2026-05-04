@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useTransition } from "react";
+import { useActionState, useEffect, useTransition } from "react";
 
 import { DynamicFormField, useAppForm } from "@/components/forms";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,14 @@ export function SignUpForm() {
       confirmPassword: "",
     },
   });
+
+  // Clear sensitive credential fields after a successful sign-up action.
+  // The success message remains visible while the form is reset to defaults.
+  useEffect(() => {
+    if (state?.success) {
+      form.reset();
+    }
+  }, [state, form]);
 
   return (
     <form

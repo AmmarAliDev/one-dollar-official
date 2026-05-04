@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
 import { routes } from "@/config/routes";
+import { normalizeCatalogImageUrl } from "@/features/catalog/lib/product-image-url";
 import { HOMEPAGE_FALLBACK_SECTIONS } from "@/features/homepage/fallback-content";
 import type { AnnouncementBarSection, DealSpotlightSection, HomepageContent, HomepageSection, OneDollarSection } from "@/features/homepage/types";
 import { logAdminAction } from "@/lib/audit/admin-actions";
@@ -61,6 +62,9 @@ export type AdminDealCampaignRecord = {
   id: string;
   name: string;
   description: string;
+  targetHref: string;
+  imageUrl: string;
+  imageAlt: string;
   active: boolean;
   startsAt: Date | null;
   endsAt: Date | null;
@@ -175,6 +179,9 @@ function mapAdminDealCampaignRecord(record: DealCampaignRow): AdminDealCampaignR
     id: record.id,
     name: record.name,
     description: record.description ?? "",
+    targetHref: record.targetHref ?? "",
+    imageUrl: record.imageUrl ?? "",
+    imageAlt: record.imageAlt ?? "",
     active: record.active,
     startsAt: record.startsAt,
     endsAt: record.endsAt,
@@ -224,9 +231,64 @@ function buildDealCampaignWriteData(input: AdminDealCampaignInput) {
   return {
     name: input.name,
     description: input.description ?? null,
+    targetHref: input.targetHref ?? null,
+    imageUrl: input.imageUrl ?? null,
+    imageAlt: input.imageAlt ?? null,
     startsAt: input.startsAt ?? null,
     endsAt: input.endsAt ?? null,
     active: input.active,
+  };
+}
+
+function isValidStorefrontHref(value: string) {
+  return value.startsWith("/") || /^https?:\/\//i.test(value);
+}
+
+function resolveCampaignSpotlightHref(
+  record: Pick<DealCampaignRow, "id" | "targetHref">,
+  featuredProduct: { slug: string; category: { slug: string } | null } | undefined,
+) {
+  const normalizedTargetHref = (record.targetHref ?? "").trim();
+
+  if (normalizedTargetHref.length > 0) {
+    if (isValidStorefrontHref(normalizedTargetHref)) {
+      return normalizedTargetHref;
+    }
+
+    logger.warn("Ignoring invalid campaign target href; using fallback spotlight destination.", {
+      campaignId: record.id,
+      targetHref: normalizedTargetHref,
+    });
+  }
+
+  if (featuredProduct?.category?.slug) {
+    return routes.storefront.product(featuredProduct.category.slug, featuredProduct.slug);
+  }
+
+  return routes.storefront.categories;
+}
+
+function resolveCampaignSpotlightImage(
+  record: Pick<DealCampaignRow, "imageUrl" | "imageAlt">,
+  featuredProductImage: { url: string; alt: string | null } | undefined,
+  campaignName: string,
+) {
+  const campaignImageUrl = normalizeCatalogImageUrl(record.imageUrl);
+  if (campaignImageUrl) {
+    return {
+      url: campaignImageUrl,
+      alt: record.imageAlt?.trim() || `${campaignName} spotlight image`,
+    };
+  }
+
+  const productImageUrl = normalizeCatalogImageUrl(featuredProductImage?.url);
+  if (!productImageUrl) {
+    return undefined;
+  }
+
+  return {
+    url: productImageUrl,
+    alt: featuredProductImage?.alt?.trim() || `${campaignName} spotlight image`,
   };
 }
 
@@ -492,6 +554,50 @@ export async function updateAdminHomepageSection({ data, actor }: { data: AdminH
   }
 }
 
+export async function deleteAdminHomepageSection({ id, actor }: { id: string; actor: AuditActorInput }) {
+  const sectionId = id.trim();
+
+  if (sectionId.length === 0) {
+    throw new AppError("Homepage section id is required.", "HOMEPAGE_CONTENT_INVALID", {
+      statusCode: 400,
+      userMessage: "The selected homepage section could not be removed because it is missing an id.",
+    });
+  }
+
+  const database = getPrismaClient();
+
+  try {
+    return await database.$transaction(async (tx) => {
+      const existing = await tx.homePageSection.findUnique({
+        where: { id: sectionId },
+      });
+
+      if (!existing) {
+        throw new AppError("Homepage section not found.", "HOMEPAGE_CONTENT_NOT_FOUND", {
+          statusCode: 404,
+          userMessage: "The selected homepage section could not be found.",
+        });
+      }
+
+      await tx.homePageSection.delete({
+        where: { id: sectionId },
+      });
+
+      await writeAuditLog(tx, actor, "homepage.section.deleted", "HomePageSection", sectionId, {
+        key: existing.key,
+        title: existing.title,
+        type: existing.type,
+        position: existing.position,
+        active: existing.active,
+      });
+
+      return { id: sectionId };
+    });
+  } catch (error) {
+    throw buildMutationError(error) ?? error;
+  }
+}
+
 export async function createAdminBanner({ data, actor }: { data: AdminBannerInput; actor: AuditActorInput }) {
   const parsed = validateAdminBannerInput(data);
   if (!parsed.success) {
@@ -566,6 +672,48 @@ export async function updateAdminBanner({ data, actor }: { data: AdminBannerInpu
       });
 
       return mapAdminBannerRecord(updated);
+    });
+  } catch (error) {
+    throw buildMutationError(error) ?? error;
+  }
+}
+
+export async function deleteAdminBanner({ id, actor }: { id: string; actor: AuditActorInput }) {
+  const bannerId = id.trim();
+
+  if (bannerId.length === 0) {
+    throw new AppError("Banner id is required.", "HOMEPAGE_CONTENT_INVALID", {
+      statusCode: 400,
+      userMessage: "The selected banner could not be removed because it is missing an id.",
+    });
+  }
+
+  const database = getPrismaClient();
+
+  try {
+    return await database.$transaction(async (tx) => {
+      const existing = await tx.banner.findUnique({
+        where: { id: bannerId },
+      });
+
+      if (!existing) {
+        throw new AppError("Banner not found.", "HOMEPAGE_CONTENT_NOT_FOUND", {
+          statusCode: 404,
+          userMessage: "The selected banner could not be found.",
+        });
+      }
+
+      await tx.banner.delete({
+        where: { id: bannerId },
+      });
+
+      await writeAuditLog(tx, actor, "homepage.banner.deleted", "Banner", bannerId, {
+        title: existing.title,
+        position: existing.position,
+        active: existing.active,
+      });
+
+      return { id: bannerId };
     });
   } catch (error) {
     throw buildMutationError(error) ?? error;
@@ -649,6 +797,47 @@ export async function updateAdminDealCampaign({ data, actor }: { data: AdminDeal
   }
 }
 
+export async function deleteAdminDealCampaign({ id, actor }: { id: string; actor: AuditActorInput }) {
+  const campaignId = id.trim();
+
+  if (campaignId.length === 0) {
+    throw new AppError("Deal campaign id is required.", "HOMEPAGE_CONTENT_INVALID", {
+      statusCode: 400,
+      userMessage: "The selected campaign could not be removed because it is missing an id.",
+    });
+  }
+
+  const database = getPrismaClient();
+
+  try {
+    return await database.$transaction(async (tx) => {
+      const existing = await tx.dealCampaign.findUnique({
+        where: { id: campaignId },
+      });
+
+      if (!existing) {
+        throw new AppError("Deal campaign not found.", "HOMEPAGE_CONTENT_NOT_FOUND", {
+          statusCode: 404,
+          userMessage: "The selected deal campaign could not be found.",
+        });
+      }
+
+      await tx.dealCampaign.delete({
+        where: { id: campaignId },
+      });
+
+      await writeAuditLog(tx, actor, "homepage.campaign.deleted", "DealCampaign", campaignId, {
+        name: existing.name,
+        active: existing.active,
+      });
+
+      return { id: campaignId };
+    });
+  } catch (error) {
+    throw buildMutationError(error) ?? error;
+  }
+}
+
 function mapSectionRecordToStorefrontSection(record: HomePageSectionRow, referenceTime: Date): HomepageSection | null {
   const schedule = getSectionSchedule(record);
 
@@ -703,6 +892,7 @@ function mapSectionRecordToStorefrontSection(record: HomePageSectionRow, referen
         primaryCtaHref: string;
         secondaryCta?: { label: string; href: string };
         eyebrow?: string;
+        image?: { url: string; alt: string };
       };
       return {
         ...base,
@@ -713,12 +903,20 @@ function mapSectionRecordToStorefrontSection(record: HomePageSectionRow, referen
         primaryCtaHref: content.primaryCtaHref,
         ...(content.secondaryCta ? { secondaryCta: content.secondaryCta } : {}),
         ...(content.eyebrow ? { eyebrow: content.eyebrow } : {}),
+        ...(content.image ? { image: content.image } : {}),
       };
     }
     case "featured-categories": {
       const content = parsed.data.content as {
         description?: string;
-        categories: Array<{ id: string; title: string; description: string; href: string }>;
+        categories: Array<{
+          id: string;
+          name: string;
+          description: string;
+          href: string;
+          slug?: string;
+          cardImageUrl?: string;
+        }>;
       };
       return {
         ...base,
@@ -757,6 +955,7 @@ function mapSectionRecordToStorefrontSection(record: HomePageSectionRow, referen
         compareAt: number;
         ctaLabel: string;
         ctaHref: string;
+        image?: { url: string; alt: string };
       };
       return {
         ...base,
@@ -768,6 +967,7 @@ function mapSectionRecordToStorefrontSection(record: HomePageSectionRow, referen
         compareAt: content.compareAt,
         ctaLabel: content.ctaLabel,
         ctaHref: content.ctaHref,
+        ...(content.image ? { image: content.image } : {}),
       };
     }
     case "blog-highlights": {
@@ -815,13 +1015,31 @@ function mapBannerToStorefrontSection(record: BannerRow, referenceTime: Date): A
     return null;
   }
 
+  const message = record.title.trim();
+  if (message.length === 0) {
+    logger.warn("Skipping invalid banner with empty storefront message.", {
+      bannerId: record.id,
+    });
+    return null;
+  }
+
+  const normalizedHref = (record.href ?? "").trim();
+  const hasValidHref = normalizedHref.startsWith("/") || /^https?:\/\//i.test(normalizedHref);
+
+  if (normalizedHref.length > 0 && !hasValidHref) {
+    logger.warn("Skipping invalid banner href for storefront announcement link.", {
+      bannerId: record.id,
+      href: normalizedHref,
+    });
+  }
+
   return {
     id: `banner-${record.id}`,
     kind: "announcement-bar",
     enabled: true,
     displayOrder: record.position,
-    message: record.title,
-    ...(record.href ? { href: record.href, label: "View offer" } : {}),
+    message,
+    ...(hasValidHref ? { href: normalizedHref, label: "View offer" } : {}),
   };
 }
 
@@ -831,6 +1049,7 @@ function mapCampaignToStorefrontSection(
       product: {
         slug: string;
         category: { slug: string } | null;
+        images: Array<{ url: string; alt: string | null }>;
         variants: Array<{ price: number; compareAtPrice: number | null }>;
       };
     }>;
@@ -843,12 +1062,12 @@ function mapCampaignToStorefrontSection(
   }
 
   const featuredProduct = record.products?.[0]?.product;
+  const featuredProductImage = featuredProduct?.images?.[0];
   const featuredVariant = featuredProduct?.variants?.[0];
   const price = featuredVariant?.price ?? 999;
   const compareAt = Math.max(featuredVariant?.compareAtPrice ?? price, price);
-  const ctaHref = featuredProduct?.category?.slug
-    ? routes.storefront.product(featuredProduct.category.slug, featuredProduct.slug)
-    : routes.storefront.categories;
+  const ctaHref = resolveCampaignSpotlightHref(record, featuredProduct);
+  const image = resolveCampaignSpotlightImage(record, featuredProductImage, record.name);
 
   return {
     id: `campaign-${record.id}`,
@@ -862,6 +1081,7 @@ function mapCampaignToStorefrontSection(
     compareAt,
     ctaLabel: "Shop campaign",
     ctaHref,
+    ...(image ? { image } : {}),
   };
 }
 
@@ -890,6 +1110,14 @@ export async function loadHomepageContentForStorefront(referenceTime = new Date(
                   category: {
                     select: {
                       slug: true,
+                    },
+                  },
+                  images: {
+                    take: 1,
+                    orderBy: [{ position: "asc" }, { createdAt: "asc" }],
+                    select: {
+                      url: true,
+                      alt: true,
                     },
                   },
                   variants: {
