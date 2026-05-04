@@ -142,6 +142,8 @@ export function mapAuditLogTitle(action: string) {
       return "Homepage section created";
     case "homepage.section.updated":
       return "Homepage section updated";
+    case "homepage.section.deleted":
+      return "Homepage section deleted";
     case "homepage.banner.created":
       return "Homepage banner created";
     case "homepage.banner.updated":
@@ -152,6 +154,8 @@ export function mapAuditLogTitle(action: string) {
       return "Homepage campaign created";
     case "homepage.campaign.updated":
       return "Homepage campaign updated";
+    case "homepage.campaign.deleted":
+      return "Homepage campaign deleted";
     default:
       return toLabel(action.replaceAll(".", " "));
   }

@@ -340,7 +340,9 @@ describe("homepage CMS service", () => {
 
     expect(result.source).toBe("fallback");
     expect(result.sections.some((section) => section.kind === "hero-banner")).toBe(true);
+    expect(result.sections.some((section) => section.kind === "deal-spotlight")).toBe(true);
     expect(result.sections.some((section) => section.id.startsWith("banner-"))).toBe(false);
+    expect(result.sections.some((section) => section.id.startsWith("campaign-"))).toBe(false);
   });
 
   it("hydrates homepage blog highlights from DB-backed posts", async () => {

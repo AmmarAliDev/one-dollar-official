@@ -492,6 +492,50 @@ export async function updateAdminHomepageSection({ data, actor }: { data: AdminH
   }
 }
 
+export async function deleteAdminHomepageSection({ id, actor }: { id: string; actor: AuditActorInput }) {
+  const sectionId = id.trim();
+
+  if (sectionId.length === 0) {
+    throw new AppError("Homepage section id is required.", "HOMEPAGE_CONTENT_INVALID", {
+      statusCode: 400,
+      userMessage: "The selected homepage section could not be removed because it is missing an id.",
+    });
+  }
+
+  const database = getPrismaClient();
+
+  try {
+    return await database.$transaction(async (tx) => {
+      const existing = await tx.homePageSection.findUnique({
+        where: { id: sectionId },
+      });
+
+      if (!existing) {
+        throw new AppError("Homepage section not found.", "HOMEPAGE_CONTENT_NOT_FOUND", {
+          statusCode: 404,
+          userMessage: "The selected homepage section could not be found.",
+        });
+      }
+
+      await tx.homePageSection.delete({
+        where: { id: sectionId },
+      });
+
+      await writeAuditLog(tx, actor, "homepage.section.deleted", "HomePageSection", sectionId, {
+        key: existing.key,
+        title: existing.title,
+        type: existing.type,
+        position: existing.position,
+        active: existing.active,
+      });
+
+      return { id: sectionId };
+    });
+  } catch (error) {
+    throw buildMutationError(error) ?? error;
+  }
+}
+
 export async function createAdminBanner({ data, actor }: { data: AdminBannerInput; actor: AuditActorInput }) {
   const parsed = validateAdminBannerInput(data);
   if (!parsed.success) {
@@ -685,6 +729,47 @@ export async function updateAdminDealCampaign({ data, actor }: { data: AdminDeal
       });
 
       return mapAdminDealCampaignRecord(updated);
+    });
+  } catch (error) {
+    throw buildMutationError(error) ?? error;
+  }
+}
+
+export async function deleteAdminDealCampaign({ id, actor }: { id: string; actor: AuditActorInput }) {
+  const campaignId = id.trim();
+
+  if (campaignId.length === 0) {
+    throw new AppError("Deal campaign id is required.", "HOMEPAGE_CONTENT_INVALID", {
+      statusCode: 400,
+      userMessage: "The selected campaign could not be removed because it is missing an id.",
+    });
+  }
+
+  const database = getPrismaClient();
+
+  try {
+    return await database.$transaction(async (tx) => {
+      const existing = await tx.dealCampaign.findUnique({
+        where: { id: campaignId },
+      });
+
+      if (!existing) {
+        throw new AppError("Deal campaign not found.", "HOMEPAGE_CONTENT_NOT_FOUND", {
+          statusCode: 404,
+          userMessage: "The selected deal campaign could not be found.",
+        });
+      }
+
+      await tx.dealCampaign.delete({
+        where: { id: campaignId },
+      });
+
+      await writeAuditLog(tx, actor, "homepage.campaign.deleted", "DealCampaign", campaignId, {
+        name: existing.name,
+        active: existing.active,
+      });
+
+      return { id: campaignId };
     });
   } catch (error) {
     throw buildMutationError(error) ?? error;
