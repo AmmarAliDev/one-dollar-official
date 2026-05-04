@@ -14,8 +14,19 @@ type DealSpotlightSectionProps = {
   section: DealSpotlightSection;
 };
 
+function isValidSpotlightHref(value: string) {
+  return value.startsWith("/") || /^https?:\/\//i.test(value);
+}
+
+function isExternalSpotlightHref(value: string) {
+  return /^https?:\/\//i.test(value);
+}
+
 export function DealSpotlightSectionBlock({ section }: DealSpotlightSectionProps) {
   const spotlightImageUrl = normalizeCatalogImageUrl(section.image?.url);
+  const normalizedHref = section.ctaHref.trim();
+  const hasValidHref = normalizedHref.length > 0 && isValidSpotlightHref(normalizedHref);
+  const isExternalHref = hasValidHref && isExternalSpotlightHref(normalizedHref);
 
   return (
     <PageContainer as="section" className="py-8">
@@ -38,9 +49,21 @@ export function DealSpotlightSectionBlock({ section }: DealSpotlightSectionProps
         </CardHeader>
         <CardContent className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <PriceDisplay amount={section.price} compareAt={section.compareAt} size="lg" />
-          <Link href={section.ctaHref} className={buttonVariants({ size: "lg" })}>
-            {section.ctaLabel}
-          </Link>
+          {hasValidHref ? (
+            isExternalHref ? (
+              <a href={normalizedHref} target="_blank" rel="noopener noreferrer" className={buttonVariants({ size: "lg" })}>
+                {section.ctaLabel}
+              </a>
+            ) : (
+              <Link href={normalizedHref} className={buttonVariants({ size: "lg" })}>
+                {section.ctaLabel}
+              </Link>
+            )
+          ) : (
+            <span className={buttonVariants({ size: "lg", variant: "secondary" })} aria-disabled="true">
+              {section.ctaLabel}
+            </span>
+          )}
         </CardContent>
       </Card>
     </PageContainer>

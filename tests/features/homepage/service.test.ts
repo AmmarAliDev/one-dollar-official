@@ -240,6 +240,9 @@ describe("homepage CMS service", () => {
         id: "campaign-1",
         name: "Weekend campaign",
         description: "Campaign deal block",
+        targetHref: null,
+        imageUrl: null,
+        imageAlt: null,
         active: true,
         startsAt: null,
         endsAt: null,
@@ -256,6 +259,91 @@ describe("homepage CMS service", () => {
     expect(result.sections.some((section) => section.kind === "hero-banner")).toBe(true);
     expect(result.sections.some((section) => section.kind === "featured-categories")).toBe(true);
     expect(result.sections.some((section) => section.id === "fallback-deal-spotlight")).toBe(false);
+  });
+
+  it("uses campaign targetHref and image fields when provided", async () => {
+    prismaMock.homePageSection.findMany.mockResolvedValue([]);
+    prismaMock.banner.findMany.mockResolvedValue([]);
+    prismaMock.dealCampaign.findMany.mockResolvedValue([
+      {
+        id: "campaign-targeted",
+        name: "Targeted campaign",
+        description: "Direct campaign destination",
+        targetHref: "/categories/one-dollar/flash-cleaner",
+        imageUrl: "https://store.public.blob.vercel-storage.com/admin/content/campaign-targeted.png",
+        imageAlt: "Campaign featured product collage",
+        active: true,
+        startsAt: null,
+        endsAt: null,
+        updatedAt: new Date("2026-05-05T08:00:00.000Z"),
+        products: [],
+      },
+    ]);
+
+    const result = await getHomepageContent();
+    const section = result.sections.find((entry) => entry.id === "campaign-campaign-targeted");
+
+    expect(section).toMatchObject({
+      kind: "deal-spotlight",
+      ctaHref: "/categories/one-dollar/flash-cleaner",
+      image: {
+        url: "https://store.public.blob.vercel-storage.com/admin/content/campaign-targeted.png",
+        alt: "Campaign featured product collage",
+      },
+    });
+  });
+
+  it("falls back to linked campaign product URL and image when explicit target/image are missing or invalid", async () => {
+    prismaMock.homePageSection.findMany.mockResolvedValue([]);
+    prismaMock.banner.findMany.mockResolvedValue([]);
+    prismaMock.dealCampaign.findMany.mockResolvedValue([
+      {
+        id: "campaign-product-fallback",
+        name: "Fallback campaign",
+        description: "Derived from linked product",
+        targetHref: "javascript:alert(1)",
+        imageUrl: null,
+        imageAlt: null,
+        active: true,
+        startsAt: null,
+        endsAt: null,
+        updatedAt: new Date("2026-05-05T08:00:00.000Z"),
+        products: [
+          {
+            product: {
+              slug: "flash-cleaner",
+              category: {
+                slug: "home-care",
+              },
+              images: [
+                {
+                  url: "https://store.public.blob.vercel-storage.com/admin/content/flash-cleaner.png",
+                  alt: "Flash cleaner bottle",
+                },
+              ],
+              variants: [
+                {
+                  price: 799,
+                  compareAtPrice: 999,
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const result = await getHomepageContent();
+    const section = result.sections.find((entry) => entry.id === "campaign-campaign-product-fallback");
+
+    expect(section).toMatchObject({
+      kind: "deal-spotlight",
+      ctaHref: "/categories/home-care/flash-cleaner",
+      image: {
+        url: "https://store.public.blob.vercel-storage.com/admin/content/flash-cleaner.png",
+        alt: "Flash cleaner bottle",
+      },
+    });
   });
 
   /**

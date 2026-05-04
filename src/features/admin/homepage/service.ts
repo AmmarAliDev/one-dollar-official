@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
 import { routes } from "@/config/routes";
+import { normalizeCatalogImageUrl } from "@/features/catalog/lib/product-image-url";
 import { HOMEPAGE_FALLBACK_SECTIONS } from "@/features/homepage/fallback-content";
 import type { AnnouncementBarSection, DealSpotlightSection, HomepageContent, HomepageSection, OneDollarSection } from "@/features/homepage/types";
 import { logAdminAction } from "@/lib/audit/admin-actions";
@@ -61,6 +62,9 @@ export type AdminDealCampaignRecord = {
   id: string;
   name: string;
   description: string;
+  targetHref: string;
+  imageUrl: string;
+  imageAlt: string;
   active: boolean;
   startsAt: Date | null;
   endsAt: Date | null;
@@ -175,6 +179,9 @@ function mapAdminDealCampaignRecord(record: DealCampaignRow): AdminDealCampaignR
     id: record.id,
     name: record.name,
     description: record.description ?? "",
+    targetHref: record.targetHref ?? "",
+    imageUrl: record.imageUrl ?? "",
+    imageAlt: record.imageAlt ?? "",
     active: record.active,
     startsAt: record.startsAt,
     endsAt: record.endsAt,
@@ -224,9 +231,64 @@ function buildDealCampaignWriteData(input: AdminDealCampaignInput) {
   return {
     name: input.name,
     description: input.description ?? null,
+    targetHref: input.targetHref ?? null,
+    imageUrl: input.imageUrl ?? null,
+    imageAlt: input.imageAlt ?? null,
     startsAt: input.startsAt ?? null,
     endsAt: input.endsAt ?? null,
     active: input.active,
+  };
+}
+
+function isValidStorefrontHref(value: string) {
+  return value.startsWith("/") || /^https?:\/\//i.test(value);
+}
+
+function resolveCampaignSpotlightHref(
+  record: Pick<DealCampaignRow, "id" | "targetHref">,
+  featuredProduct: { slug: string; category: { slug: string } | null } | undefined,
+) {
+  const normalizedTargetHref = (record.targetHref ?? "").trim();
+
+  if (normalizedTargetHref.length > 0) {
+    if (isValidStorefrontHref(normalizedTargetHref)) {
+      return normalizedTargetHref;
+    }
+
+    logger.warn("Ignoring invalid campaign target href; using fallback spotlight destination.", {
+      campaignId: record.id,
+      targetHref: normalizedTargetHref,
+    });
+  }
+
+  if (featuredProduct?.category?.slug) {
+    return routes.storefront.product(featuredProduct.category.slug, featuredProduct.slug);
+  }
+
+  return routes.storefront.categories;
+}
+
+function resolveCampaignSpotlightImage(
+  record: Pick<DealCampaignRow, "imageUrl" | "imageAlt">,
+  featuredProductImage: { url: string; alt: string | null } | undefined,
+  campaignName: string,
+) {
+  const campaignImageUrl = normalizeCatalogImageUrl(record.imageUrl);
+  if (campaignImageUrl) {
+    return {
+      url: campaignImageUrl,
+      alt: record.imageAlt?.trim() || `${campaignName} spotlight image`,
+    };
+  }
+
+  const productImageUrl = normalizeCatalogImageUrl(featuredProductImage?.url);
+  if (!productImageUrl) {
+    return undefined;
+  }
+
+  return {
+    url: productImageUrl,
+    alt: featuredProductImage?.alt?.trim() || `${campaignName} spotlight image`,
   };
 }
 
@@ -987,6 +1049,7 @@ function mapCampaignToStorefrontSection(
       product: {
         slug: string;
         category: { slug: string } | null;
+        images: Array<{ url: string; alt: string | null }>;
         variants: Array<{ price: number; compareAtPrice: number | null }>;
       };
     }>;
@@ -999,12 +1062,12 @@ function mapCampaignToStorefrontSection(
   }
 
   const featuredProduct = record.products?.[0]?.product;
+  const featuredProductImage = featuredProduct?.images?.[0];
   const featuredVariant = featuredProduct?.variants?.[0];
   const price = featuredVariant?.price ?? 999;
   const compareAt = Math.max(featuredVariant?.compareAtPrice ?? price, price);
-  const ctaHref = featuredProduct?.category?.slug
-    ? routes.storefront.product(featuredProduct.category.slug, featuredProduct.slug)
-    : routes.storefront.categories;
+  const ctaHref = resolveCampaignSpotlightHref(record, featuredProduct);
+  const image = resolveCampaignSpotlightImage(record, featuredProductImage, record.name);
 
   return {
     id: `campaign-${record.id}`,
@@ -1018,6 +1081,7 @@ function mapCampaignToStorefrontSection(
     compareAt,
     ctaLabel: "Shop campaign",
     ctaHref,
+    ...(image ? { image } : {}),
   };
 }
 
@@ -1046,6 +1110,14 @@ export async function loadHomepageContentForStorefront(referenceTime = new Date(
                   category: {
                     select: {
                       slug: true,
+                    },
+                  },
+                  images: {
+                    take: 1,
+                    orderBy: [{ position: "asc" }, { createdAt: "asc" }],
+                    select: {
+                      url: true,
+                      alt: true,
                     },
                   },
                   variants: {

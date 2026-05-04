@@ -67,6 +67,9 @@ describe("admin homepage content validation", () => {
     const campaign = validateAdminDealCampaignInput({
       name: "Flash deal",
       description: "Limited-time savings",
+      targetHref: "/categories/one-dollar",
+      imageUrl: "https://store.public.blob.vercel-storage.com/admin/content/campaign-deal.png",
+      imageAlt: "Campaign spotlight deal image",
       startsAt: "2026-04-20T08:00:00.000Z",
       endsAt: "2026-04-21T08:00:00.000Z",
       active: true,
@@ -74,6 +77,27 @@ describe("admin homepage content validation", () => {
 
     expect(banner.success).toBe(true);
     expect(campaign.success).toBe(true);
+  });
+
+  it("requires campaign image alt text when image URL is provided", () => {
+    const result = validateAdminDealCampaignInput({
+      name: "Flash deal",
+      imageUrl: "https://store.public.blob.vercel-storage.com/admin/content/campaign-deal.png",
+      active: true,
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects unsupported campaign image hosts", () => {
+    const result = validateAdminDealCampaignInput({
+      name: "Flash deal",
+      imageUrl: "https://images.example.com/campaign.jpg",
+      imageAlt: "Campaign image",
+      active: true,
+    });
+
+    expect(result.success).toBe(false);
   });
 
   it("accepts hero/deal spotlight image fields on configured hosts", () => {

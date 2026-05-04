@@ -452,6 +452,9 @@ export const adminDealCampaignMutationSchema = z
     id: z.string().trim().min(1, "Campaign ID is required.").optional(),
     name: z.string().trim().min(2, "Campaign name must be at least 2 characters.").max(140, "Campaign name is too long."),
     description: optionalText,
+    targetHref: optionalHref,
+    imageUrl: optionalStorefrontImageHref,
+    imageAlt: optionalShortText,
     startsAt: optionalDateTime,
     endsAt: optionalDateTime,
     active: z.preprocess(parseBooleanish, z.boolean()).default(true),
@@ -462,6 +465,22 @@ export const adminDealCampaignMutationSchema = z
         code: "custom",
         path: ["endsAt"],
         message: "Campaign end time must be later than the start time.",
+      });
+    }
+
+    if (input.imageUrl && !input.imageAlt) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["imageAlt"],
+        message: "Image alt text is required when an image URL is provided.",
+      });
+    }
+
+    if (!input.imageUrl && input.imageAlt) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["imageUrl"],
+        message: "Add an image URL before setting image alt text.",
       });
     }
   });

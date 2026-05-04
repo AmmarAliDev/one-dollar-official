@@ -133,6 +133,8 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - Admin spotlight deal sources now support explicit deletion with confirmation UX and audit-log persistence:
 - standalone `deal-spotlight` homepage sections can be removed from `/admin/homepage/sections` through `deleteAdminHomepageSectionAction` (`homepage.section.deleted`).
 - campaign-generated spotlight overlays can be removed from `/admin/homepage/campaigns` through `deleteAdminDealCampaignAction` (`homepage.campaign.deleted`).
+- Campaign-generated deal spotlights now support optional explicit `targetHref` and `imageUrl`/`imageAlt` fields in the admin campaign flow. Validation enforces safe link/image formats and requires alt text when image URL is set; storefront mapping falls back to linked campaign-product URL/image when these optional fields are absent.
+- Spotlight CTA rendering is safety-aware: relative URLs use standard internal navigation, external URLs open with `noopener noreferrer`, and malformed legacy hrefs degrade to a non-clickable CTA state.
 - Storefront banner mapping is defensive for legacy data quality: empty banner titles are skipped and invalid banner href values are omitted, preventing malformed admin records from breaking homepage rendering.
 - Resolver composition avoids duplicate deal spotlights by omitting fallback `deal-spotlight` when an active campaign overlay is present.
 - Homepage fallback preview-only artifacts should be gated by validated runtime env (`env.nodeEnv !== "production"`) so development helpers never leak into production storefront UI.

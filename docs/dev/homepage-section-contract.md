@@ -41,6 +41,14 @@ Hero and deal section media contract:
 - `url` must be a root-relative path or a configured image host URL.
 - image is optional; if omitted, storefront renders the section without media.
 
+Campaign-generated `deal-spotlight` overlays now support optional explicit media/link fields from `/admin/homepage/campaigns`:
+
+- `targetHref?`: explicit destination URL/path for spotlight CTA.
+- `imageUrl?`: spotlight image URL (root-relative or configured host).
+- `imageAlt?`: required when `imageUrl` is present.
+- If `targetHref` is missing (or invalid legacy data is encountered), storefront falls back to the first linked campaign product URL.
+- If `imageUrl` is missing, storefront falls back to the first linked campaign product image when available.
+
 Featured item media contract (for card layouts):
 
 - `FeaturedCategoryItem` now reuses the storefront catalog category card shape (`id`, `name`, `description`, `href`, optional `slug`, optional `cardImageUrl`) so homepage category cards and `/categories` cards render from one normalized contract.
@@ -98,6 +106,7 @@ Sections are classified as either **overlay** (additive, promotional) or **prima
 - If all admin-managed records are inactive or outside schedule windows, storefront falls back safely to static defaults.
 - Malformed banner rows (for example empty title/message) are skipped safely and logged; malformed links are stripped so announcement text can still render without unsafe anchors.
 - When a campaign overlay is active, fallback `deal-spotlight` is intentionally omitted to prevent duplicate deal spotlight blocks.
+- Campaign spotlight CTA links are now normalized with safe intent: internal paths render as normal links, external URLs open in a new tab with `rel="noopener noreferrer"`, and invalid legacy hrefs degrade to a non-clickable CTA state instead of unsafe navigation.
 
 ## Rendering Model
 

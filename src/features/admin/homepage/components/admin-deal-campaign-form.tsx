@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { DynamicForm, type DynamicFormFieldConfig, useAppForm, useServerActionSubmit } from "@/components/forms";
 import { Button } from "@/components/ui/button";
+import { AdminImageUploadInput } from "@/features/admin/uploads";
 
 import { adminDealCampaignMutationSchema } from "../validation";
 import { buildDateTimeField, toDateTimeLocalInputValue } from "./form-helpers";
@@ -16,6 +17,9 @@ type AdminDealCampaignFormProps = {
   initialValues?: {
     name?: string;
     description?: string;
+    targetHref?: string;
+    imageUrl?: string;
+    imageAlt?: string;
     startsAt?: Date | string | null;
     endsAt?: Date | string | null;
     active?: boolean;
@@ -25,6 +29,9 @@ type AdminDealCampaignFormProps = {
 type AdminDealCampaignFormValues = {
   name: string;
   description: string;
+  targetHref: string;
+  imageUrl: string;
+  imageAlt: string;
   startsAt: string;
   endsAt: string;
   active: boolean;
@@ -47,6 +54,48 @@ const campaignFields: DynamicFormFieldConfig<AdminDealCampaignFormValues>[] = [
     label: "Description",
     placeholder: "Short supporting copy for the storefront deal block.",
     rows: 4,
+    containerClassName: "md:col-span-2",
+  },
+  {
+    id: "campaign-target-href",
+    name: "targetHref",
+    type: "text",
+    label: "Target link",
+    placeholder: "/categories/one-dollar/flash-cleaner",
+    description: "Optional explicit destination. Falls back to the first linked campaign product.",
+    containerClassName: "md:col-span-2",
+  },
+  {
+    id: "campaign-image-url",
+    name: "imageUrl",
+    type: "custom",
+    label: "Spotlight image",
+    placeholder: "https://example.com/deal.jpg",
+    description: "Optional image shown above the spotlight details.",
+    containerClassName: "md:col-span-2",
+    render: ({ field, fieldState, inputId, describedBy, disabled }) => (
+      <AdminImageUploadInput
+        inputId={inputId}
+        value={typeof field.value === "string" ? field.value : ""}
+        onChange={(nextValue) => {
+          field.onChange(nextValue);
+        }}
+        onBlur={field.onBlur}
+        purpose="content"
+        placeholder="https://example.com/deal.jpg"
+        describedBy={describedBy}
+        disabled={disabled}
+        invalid={Boolean(fieldState.error)}
+      />
+    ),
+  },
+  {
+    id: "campaign-image-alt",
+    name: "imageAlt",
+    type: "text",
+    label: "Image alt text",
+    placeholder: "Featured products for this campaign",
+    description: "Required only when a spotlight image URL is set.",
     containerClassName: "md:col-span-2",
   },
   buildDateTimeField<AdminDealCampaignFormValues>({
@@ -82,6 +131,9 @@ function buildDealCampaignFormData(
   formData.set("returnTo", input.returnTo);
   formData.set("name", values.name);
   formData.set("description", values.description ?? "");
+  formData.set("targetHref", values.targetHref ?? "");
+  formData.set("imageUrl", values.imageUrl ?? "");
+  formData.set("imageAlt", values.imageAlt ?? "");
   formData.set("startsAt", toDateTimeLocalInputValue(values.startsAt));
   formData.set("endsAt", toDateTimeLocalInputValue(values.endsAt));
 
@@ -104,6 +156,9 @@ export function AdminDealCampaignForm({
     defaultValues: {
       name: initialValues?.name ?? "",
       description: initialValues?.description ?? "",
+      targetHref: initialValues?.targetHref ?? "",
+      imageUrl: initialValues?.imageUrl ?? "",
+      imageAlt: initialValues?.imageAlt ?? "",
       startsAt: toDateTimeLocalInputValue(initialValues?.startsAt),
       endsAt: toDateTimeLocalInputValue(initialValues?.endsAt),
       active: initialValues?.active ?? true,
