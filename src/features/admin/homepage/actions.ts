@@ -14,6 +14,7 @@ import {
   createAdminBanner,
   createAdminDealCampaign,
   createAdminHomepageSection,
+  deleteAdminBanner,
   seedAdminHomepageSections,
   updateAdminBanner,
   updateAdminDealCampaign,
@@ -225,6 +226,30 @@ export async function updateAdminBannerAction(formData: FormData) {
 
     const appError = captureServerError(error, "admin:homepage:banner:update");
     redirect(appendFlash(returnTo, "error", getHomepageContentErrorCode(appError, "updateFailed")));
+  }
+}
+
+export async function deleteAdminBannerAction(formData: FormData) {
+  const returnTo = getReturnTo(formData, routes.admin.homepageBanners);
+
+  try {
+    await assertTrustedOrigin({ action: "admin:homepage:banner:delete" });
+    const actor = await requireHomepageManageAccess();
+    const id = `${formData.get("id") ?? ""}`.trim();
+
+    if (id.length === 0) {
+      redirect(appendFlash(returnTo, "error", "missingId"));
+    }
+
+    await deleteAdminBanner({ id, actor });
+
+    revalidateHomepageContentPaths();
+    redirect(appendFlash(returnTo, "notice", "deleted"));
+  } catch (error) {
+    unstable_rethrow(error);
+
+    const appError = captureServerError(error, "admin:homepage:banner:delete");
+    redirect(appendFlash(returnTo, "error", getHomepageContentErrorCode(appError, "deleteFailed")));
   }
 }
 

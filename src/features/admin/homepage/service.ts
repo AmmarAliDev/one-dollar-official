@@ -572,6 +572,48 @@ export async function updateAdminBanner({ data, actor }: { data: AdminBannerInpu
   }
 }
 
+export async function deleteAdminBanner({ id, actor }: { id: string; actor: AuditActorInput }) {
+  const bannerId = id.trim();
+
+  if (bannerId.length === 0) {
+    throw new AppError("Banner id is required.", "HOMEPAGE_CONTENT_INVALID", {
+      statusCode: 400,
+      userMessage: "The selected banner could not be removed because it is missing an id.",
+    });
+  }
+
+  const database = getPrismaClient();
+
+  try {
+    return await database.$transaction(async (tx) => {
+      const existing = await tx.banner.findUnique({
+        where: { id: bannerId },
+      });
+
+      if (!existing) {
+        throw new AppError("Banner not found.", "HOMEPAGE_CONTENT_NOT_FOUND", {
+          statusCode: 404,
+          userMessage: "The selected banner could not be found.",
+        });
+      }
+
+      await tx.banner.delete({
+        where: { id: bannerId },
+      });
+
+      await writeAuditLog(tx, actor, "homepage.banner.deleted", "Banner", bannerId, {
+        title: existing.title,
+        position: existing.position,
+        active: existing.active,
+      });
+
+      return { id: bannerId };
+    });
+  } catch (error) {
+    throw buildMutationError(error) ?? error;
+  }
+}
+
 export async function createAdminDealCampaign({ data, actor }: { data: AdminDealCampaignInput; actor: AuditActorInput }) {
   const parsed = validateAdminDealCampaignInput(data);
   if (!parsed.success) {

@@ -129,6 +129,7 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `BLOB_READ_WRITE_TOKEN` is the only required secret for the current upload provider. When it is missing, the upload route returns a user-safe configuration message instead of a raw storage error.
 - Admin-managed homepage `hero-banner` and `deal-spotlight` section images are validated against safe storefront image URL patterns (root-relative paths or configured hosts) so optional marketing media cannot break homepage rendering.
 - Homepage promotional overlays from admin banners and active campaign-generated deal spotlights are additive: if these overlays are the only active admin homepage content, resolver composition preserves fallback primary sections to avoid storefront collapse.
+- Admin homepage banners now support explicit deletion via a CSRF/RBAC-protected server action (`deleteAdminBannerAction`) with confirmation UX in `/admin/homepage/banners`, path revalidation, and audit-log persistence (`homepage.banner.deleted`).
 - Storefront banner mapping is defensive for legacy data quality: empty banner titles are skipped and invalid banner href values are omitted, preventing malformed admin records from breaking homepage rendering.
 - Resolver composition avoids duplicate deal spotlights by omitting fallback `deal-spotlight` when an active campaign overlay is present.
 - Homepage fallback preview-only artifacts should be gated by validated runtime env (`env.nodeEnv !== "production"`) so development helpers never leak into production storefront UI.

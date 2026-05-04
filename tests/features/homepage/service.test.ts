@@ -282,6 +282,18 @@ describe("homepage CMS service", () => {
     expect(result.sections.some((section) => section.kind === "hero-banner")).toBe(true);
   });
 
+  it("keeps homepage stable when banners are removed and no admin content remains", async () => {
+    prismaMock.homePageSection.findMany.mockResolvedValue([]);
+    prismaMock.banner.findMany.mockResolvedValue([]);
+    prismaMock.dealCampaign.findMany.mockResolvedValue([]);
+
+    const result = await getHomepageContent();
+
+    expect(result.source).toBe("fallback");
+    expect(result.sections.some((section) => section.kind === "hero-banner")).toBe(true);
+    expect(result.sections.some((section) => section.id.startsWith("banner-"))).toBe(false);
+  });
+
   it("hydrates homepage blog highlights from DB-backed posts", async () => {
     prismaMock.homePageSection.findMany.mockResolvedValue([
       {

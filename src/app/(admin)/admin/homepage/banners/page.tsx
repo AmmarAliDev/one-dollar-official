@@ -8,6 +8,7 @@ import { buildMetadata } from "@/config/metadata";
 import { routes } from "@/config/routes";
 import { AdminPageHeader } from "@/features/admin/components/admin-page-patterns";
 import { AdminBannerForm } from "@/features/admin/homepage/components/admin-banner-form";
+import { DeleteAdminBannerButton } from "@/features/admin/homepage/components/delete-admin-banner-button";
 import {
   createAdminBannerAction,
   getHomepageContentErrorMessage,
@@ -113,6 +114,13 @@ export default async function AdminHomepageBannersPage({ searchParams }: AdminHo
                     endAt: banner.endAt,
                   }}
                 />
+                <div className="mt-4 flex justify-end">
+                  <DeleteAdminBannerButton
+                    bannerId={banner.id}
+                    bannerTitle={banner.title}
+                    returnTo={routes.admin.homepageBanners}
+                  />
+                </div>
               </CardContent>
             </Card>
           ))

@@ -146,6 +146,8 @@ export function mapAuditLogTitle(action: string) {
       return "Homepage banner created";
     case "homepage.banner.updated":
       return "Homepage banner updated";
+    case "homepage.banner.deleted":
+      return "Homepage banner deleted";
     case "homepage.campaign.created":
       return "Homepage campaign created";
     case "homepage.campaign.updated":
