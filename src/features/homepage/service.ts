@@ -35,6 +35,12 @@ function toBlogHighlightItem(post: BlogListingItem): BlogHighlightItem {
     title: post.title,
     excerpt: post.excerpt,
     href: routes.storefront.blogPost(post.slug),
+    image: {
+      src: post.coverImage.src,
+      alt: post.coverImage.alt,
+      width: post.coverImage.width,
+      height: post.coverImage.height,
+    },
   };
 }
 

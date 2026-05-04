@@ -127,6 +127,15 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `src/config/production-visibility.ts` is the centralized guard map for development-only preview/placeholder surfaces. Any customer-facing placeholder or incomplete shell should be wired through `shouldRenderGuardedSurface()` instead of scattered `NODE_ENV` checks.
 - Admin image uploads currently use a server-side Vercel Blob integration behind `createAdminImageStorageProvider()`. The provider can be replaced later without rewriting form integrations because forms only depend on the shared upload route and final URL contract.
 - `BLOB_READ_WRITE_TOKEN` is the only required secret for the current upload provider. When it is missing, the upload route returns a user-safe configuration message instead of a raw storage error.
+- Admin-managed homepage `hero-banner` and `deal-spotlight` section images are validated against safe storefront image URL patterns (root-relative paths or configured hosts) so optional marketing media cannot break homepage rendering.
+- Homepage resolver composition is additive by section kind: enabled CMS sections are always included, fallback fills only kinds not configured in CMS, and explicitly configured-but-disabled kinds are not reintroduced from fallback.
+- Admin homepage banners now support explicit deletion via a CSRF/RBAC-protected server action (`deleteAdminBannerAction`) with confirmation UX in `/admin/homepage/banners`, path revalidation, and audit-log persistence (`homepage.banner.deleted`).
+- Admin homepage sections now support explicit deletion for all section types in `/admin/homepage/sections` through `deleteAdminHomepageSectionAction` (`homepage.section.deleted`) with confirmation UX, path revalidation, and audit-log persistence.
+- Campaign-generated spotlight overlays can be removed from `/admin/homepage/campaigns` through `deleteAdminDealCampaignAction` (`homepage.campaign.deleted`).
+- Campaign-generated deal spotlights now support optional explicit `targetHref` and `imageUrl`/`imageAlt` fields in the admin campaign flow. Validation enforces safe link/image formats and requires alt text when image URL is set; storefront mapping falls back to linked campaign-product URL/image when these optional fields are absent.
+- Spotlight CTA rendering is safety-aware: relative URLs use standard internal navigation, external URLs open with `noopener noreferrer`, and malformed legacy hrefs degrade to a non-clickable CTA state.
+- Storefront banner mapping is defensive for legacy data quality: empty banner titles are skipped and invalid banner href values are omitted, preventing malformed admin records from breaking homepage rendering.
+- Resolver composition avoids duplicate deal spotlights by omitting fallback `deal-spotlight` when an active campaign overlay is present.
 - Homepage fallback preview-only artifacts should be gated by validated runtime env (`env.nodeEnv !== "production"`) so development helpers never leak into production storefront UI.
 - Guard behavior is intentionally conservative:
 	- `production`: guarded surfaces are hidden from customers.
@@ -187,6 +196,8 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `src/app/(storefront)/blog/page.tsx` and `src/app/(storefront)/blog/[slug]/page.tsx` continue to generate metadata and JSON-LD using the same helper contracts, but now consume async DB reads.
 - Storefront SEO markup now standardizes crawler-friendly structure across key surfaces: route-level primary headings (`h1`), list semantics (`ul`/`li`) for card grids, and single-target canonical links in blog cards to reduce duplicate-link ambiguity.
 - Homepage blog highlights now hydrate from the same DB-backed storefront blog service (`getBlogPosts`) so listing, detail, and homepage surfaces share one primary source of truth.
+- Homepage blog highlights now map blog cover-image metadata (`src`, `alt`, `width`, `height`) into homepage section articles so storefront cards can render media without introducing a second blog query path.
+- Storefront homepage blog highlight rendering (`src/features/homepage/components/blog-highlights-section.tsx`) follows the single-link-card semantic rule: each card has one canonical anchor to the blog detail route with image-first presentation and a deterministic visual fallback when image metadata is missing.
 - Admin/homepage `blog-highlights.content.articles` is now treated as non-primary legacy payload data; storefront hydration replaces it with DB results and clears it on DB read failures so hardcoded/manual article arrays are isolated from production rendering.
 - Admin blog mutations (`src/features/admin/blog/actions.ts`) revalidate `/blog`, dynamic blog detail pages, and `/admin/blog` so published/unpublished changes are reflected promptly.
 

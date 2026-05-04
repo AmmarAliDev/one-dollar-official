@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { buildMetadata } from "@/config/metadata";
 import { routes } from "@/config/routes";
 import { AdminPageHeader } from "@/features/admin/components/admin-page-patterns";
+import { DeleteAdminHomepageSectionButton } from "@/features/admin/homepage/components/delete-admin-homepage-section-button";
 import { AdminHomepageSectionForm } from "@/features/admin/homepage/components/admin-homepage-section-form";
 import { adminHomepageSectionKindValues, type AdminHomepageSectionType } from "@/features/admin/homepage/validation";
 import {
@@ -148,6 +149,13 @@ export default async function AdminHomepageSectionsPage({ searchParams }: AdminH
                     content: section.contentJson,
                   }}
                 />
+                <div className="mt-4 flex justify-end">
+                  <DeleteAdminHomepageSectionButton
+                    sectionId={section.id}
+                    sectionTitle={section.title}
+                    returnTo={routes.admin.homepageSections}
+                  />
+                </div>
               </CardContent>
             </Card>
           ))

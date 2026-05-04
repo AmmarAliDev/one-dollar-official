@@ -1,0 +1,4 @@
+ALTER TABLE "DealCampaign"
+  ADD COLUMN IF NOT EXISTS "target_href" TEXT,
+  ADD COLUMN IF NOT EXISTS "image_url" TEXT,
+  ADD COLUMN IF NOT EXISTS "image_alt" TEXT;

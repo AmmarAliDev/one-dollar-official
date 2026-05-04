@@ -2,22 +2,25 @@ import type { AppError } from "@/lib/errors/app-error";
 
 export type HomepageContentErrorCode =
   | "createFailed"
+  | "deleteFailed"
   | "updateFailed"
   | "invalidInput"
   | "missingId"
   | "notFound"
   | "alreadySeeded";
 
-export type HomepageContentNoticeCode = "created" | "updated" | "seeded";
+export type HomepageContentNoticeCode = "created" | "updated" | "deleted" | "seeded";
 
 const noticeMessages: Record<HomepageContentNoticeCode, string> = {
   created: "Homepage content saved successfully.",
   updated: "Homepage content changes saved successfully.",
+  deleted: "Homepage content removed successfully.",
   seeded: "Homepage defaults copied from the storefront fallback content.",
 };
 
 const errorMessages: Record<HomepageContentErrorCode, string> = {
   createFailed: "The homepage item could not be created. Please try again.",
+  deleteFailed: "The homepage item could not be removed. Please try again.",
   updateFailed: "The homepage item could not be updated. Please try again.",
   invalidInput: "Please review the content details and fix the highlighted information.",
   missingId: "The selected homepage item is missing or no longer available.",

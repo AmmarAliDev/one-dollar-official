@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { buildMetadata } from "@/config/metadata";
 import { routes } from "@/config/routes";
 import { AdminPageHeader } from "@/features/admin/components/admin-page-patterns";
+import { DeleteAdminDealCampaignButton } from "@/features/admin/homepage/components/delete-admin-deal-campaign-button";
 import { AdminDealCampaignForm } from "@/features/admin/homepage/components/admin-deal-campaign-form";
 import {
   createAdminDealCampaignAction,
@@ -106,11 +107,21 @@ export default async function AdminHomepageCampaignsPage({ searchParams }: Admin
                   initialValues={{
                     name: campaign.name,
                     description: campaign.description,
+                    targetHref: campaign.targetHref,
+                    imageUrl: campaign.imageUrl,
+                    imageAlt: campaign.imageAlt,
                     startsAt: campaign.startsAt,
                     endsAt: campaign.endsAt,
                     active: campaign.active,
                   }}
                 />
+                <div className="mt-4 flex justify-end">
+                  <DeleteAdminDealCampaignButton
+                    campaignId={campaign.id}
+                    campaignName={campaign.name}
+                    returnTo={routes.admin.homepageCampaigns}
+                  />
+                </div>
               </CardContent>
             </Card>
           ))

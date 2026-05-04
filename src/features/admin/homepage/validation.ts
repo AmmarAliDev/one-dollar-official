@@ -86,6 +86,27 @@ function isValidHref(value: string) {
   return value.startsWith("/") || /^https?:\/\//i.test(value);
 }
 
+function isSupportedStorefrontImageHref(value: string) {
+  if (value.startsWith("/")) {
+    return true;
+  }
+
+  try {
+    const parsed = new URL(value);
+    if (!/^https?:$/i.test(parsed.protocol)) {
+      return false;
+    }
+
+    return (
+      parsed.hostname.endsWith(".public.blob.vercel-storage.com") ||
+      parsed.hostname === "placehold.co" ||
+      parsed.hostname === "picsum.photos"
+    );
+  } catch {
+    return false;
+  }
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -113,6 +134,30 @@ const optionalHref = z
   .refine((value) => value === undefined || isValidHref(value), {
     message: "Please enter a valid relative path or URL.",
   });
+
+const optionalStorefrontImageHref = z
+  .string()
+  .trim()
+  .max(500, "Image URL must be 500 characters or fewer.")
+  .optional()
+  .transform((value) => (value && value.length > 0 ? value : undefined))
+  .refine((value) => value === undefined || isSupportedStorefrontImageHref(value), {
+    message: "Use a relative image path or a configured upload host URL.",
+  });
+
+const optionalSectionImageSchema = z
+  .object({
+    url: z
+      .string()
+      .trim()
+      .min(1, "Image URL is required.")
+      .max(500, "Image URL must be 500 characters or fewer.")
+      .refine((value) => isSupportedStorefrontImageHref(value), {
+        message: "Use a relative image path or a configured upload host URL.",
+      }),
+    alt: z.string().trim().min(2, "Image alt text is required.").max(160, "Image alt text is too long."),
+  })
+  .optional();
 
 const optionalSlug = z
   .string()
@@ -175,6 +220,7 @@ const heroBannerContentSchema = z.object({
     })
     .optional(),
   eyebrow: optionalShortText,
+  image: optionalSectionImageSchema,
 });
 
 const featuredCategorySchema = z
@@ -259,6 +305,7 @@ const dealSpotlightContentSchema = z
       .refine((value) => isValidHref(value), {
         message: "Please enter a valid relative path or URL for the deal CTA.",
       }),
+    image: optionalSectionImageSchema,
   })
   .superRefine((input, ctx) => {
     if (input.compareAt < input.price) {
@@ -405,6 +452,9 @@ export const adminDealCampaignMutationSchema = z
     id: z.string().trim().min(1, "Campaign ID is required.").optional(),
     name: z.string().trim().min(2, "Campaign name must be at least 2 characters.").max(140, "Campaign name is too long."),
     description: optionalText,
+    targetHref: optionalHref,
+    imageUrl: optionalStorefrontImageHref,
+    imageAlt: optionalShortText,
     startsAt: optionalDateTime,
     endsAt: optionalDateTime,
     active: z.preprocess(parseBooleanish, z.boolean()).default(true),
@@ -415,6 +465,22 @@ export const adminDealCampaignMutationSchema = z
         code: "custom",
         path: ["endsAt"],
         message: "Campaign end time must be later than the start time.",
+      });
+    }
+
+    if (input.imageUrl && !input.imageAlt) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["imageAlt"],
+        message: "Image alt text is required when an image URL is provided.",
+      });
+    }
+
+    if (!input.imageUrl && input.imageAlt) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["imageUrl"],
+        message: "Add an image URL before setting image alt text.",
       });
     }
   });
@@ -439,6 +505,10 @@ const homepageSectionContentTemplates: Record<AdminHomepageSectionType, Record<s
       href: "/preview",
     },
     eyebrow: "Homepage highlight",
+    image: {
+      url: "/blog/placeholder-hero.jpg",
+      alt: "Fresh grocery and home essentials displayed together",
+    },
   },
   "featured-categories": {
     description: "Highlight key shopping categories.",
@@ -461,6 +531,10 @@ const homepageSectionContentTemplates: Record<AdminHomepageSectionType, Record<s
     compareAt: 1299,
     ctaLabel: "View deal",
     ctaHref: "/categories",
+    image: {
+      url: "/blog/placeholder-deal.jpg",
+      alt: "Deal spotlight product collage",
+    },
   },
   "blog-highlights": {
     description: "Optional editorial updates.",

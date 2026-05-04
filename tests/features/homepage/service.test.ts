@@ -115,6 +115,10 @@ describe("homepage CMS service", () => {
           description: "Updated from homepage admin.",
           primaryCtaLabel: "Shop now",
           primaryCtaHref: "/categories",
+          image: {
+            url: "https://store.public.blob.vercel-storage.com/admin/banner/hero-banner.png",
+            alt: "Fresh essentials curated for weekly shopping",
+          },
         },
         meta: {
           enabled: true,
@@ -133,7 +137,300 @@ describe("homepage CMS service", () => {
       kind: "hero-banner",
       headline: "Admin managed hero",
       primaryCtaHref: "/categories",
+      image: {
+        url: "https://store.public.blob.vercel-storage.com/admin/banner/hero-banner.png",
+        alt: "Fresh essentials curated for weekly shopping",
+      },
     });
+  });
+
+  it("falls back safely when all admin homepage records are inactive", async () => {
+    prismaMock.homePageSection.findMany.mockResolvedValue([
+      {
+        id: "section-hero-disabled",
+        key: "hero-disabled",
+        title: "Hero",
+        type: "hero-banner",
+        content: {
+          headline: "Inactive hero",
+          description: "Should not render.",
+          primaryCtaLabel: "Shop now",
+          primaryCtaHref: "/categories",
+        },
+        meta: {},
+        position: 10,
+        active: false,
+        createdAt: new Date("2026-04-20T08:00:00.000Z"),
+        updatedAt: new Date("2026-04-20T08:00:00.000Z"),
+      },
+      {
+        id: "section-deal-disabled",
+        key: "deal-disabled",
+        title: "Deal spotlight",
+        type: "deal-spotlight",
+        content: {
+          description: "Should not render.",
+          dealLabel: "Inactive",
+          price: 899,
+          compareAt: 1099,
+          ctaLabel: "View",
+          ctaHref: "/categories",
+        },
+        meta: {},
+        position: 40,
+        active: false,
+        createdAt: new Date("2026-04-20T08:00:00.000Z"),
+        updatedAt: new Date("2026-04-20T08:00:00.000Z"),
+      },
+    ]);
+
+    const result = await getHomepageContent();
+
+    expect(result.source).toBe("fallback");
+    expect(result.sections.some((section) => section.id === "hero-disabled")).toBe(false);
+    expect(result.sections.some((section) => section.id === "deal-disabled")).toBe(false);
+    expect(result.sections.some((section) => section.kind === "hero-banner")).toBe(true);
+    expect(result.sections.some((section) => section.kind === "deal-spotlight")).toBe(true);
+  });
+
+  it("keeps baseline homepage sections when only admin banners are active", async () => {
+    prismaMock.homePageSection.findMany.mockResolvedValue([]);
+    prismaMock.banner.findMany.mockResolvedValue([
+      {
+        id: "banner-1",
+        title: "Weekend sale is live",
+        imageUrl: "https://store.public.blob.vercel-storage.com/admin/banner/weekend-sale.png",
+        href: "/categories",
+        position: 1,
+        active: true,
+        startAt: null,
+        endAt: null,
+        createdAt: new Date("2026-05-04T08:00:00.000Z"),
+        updatedAt: new Date("2026-05-04T08:00:00.000Z"),
+      },
+    ]);
+
+    const result = await getHomepageContent();
+
+    expect(result.source).toBe("cms");
+    expect(result.sections.some((section) => section.id === "banner-banner-1" && section.kind === "announcement-bar")).toBe(true);
+    expect(result.sections.some((section) => section.kind === "hero-banner")).toBe(true);
+    expect(result.sections.some((section) => section.kind === "featured-categories")).toBe(true);
+    expect(result.sections.some((section) => section.kind === "featured-products")).toBe(true);
+  });
+
+  it("keeps baseline homepage sections when admin content is only banners and campaign deal overlays", async () => {
+    prismaMock.homePageSection.findMany.mockResolvedValue([]);
+    prismaMock.banner.findMany.mockResolvedValue([
+      {
+        id: "banner-2",
+        title: "Limited offer this week",
+        imageUrl: "https://store.public.blob.vercel-storage.com/admin/banner/limited-offer.png",
+        href: "/categories",
+        position: 1,
+        active: true,
+        startAt: null,
+        endAt: null,
+        createdAt: new Date("2026-05-04T08:00:00.000Z"),
+        updatedAt: new Date("2026-05-04T08:00:00.000Z"),
+      },
+    ]);
+    prismaMock.dealCampaign.findMany.mockResolvedValue([
+      {
+        id: "campaign-1",
+        name: "Weekend campaign",
+        description: "Campaign deal block",
+        targetHref: null,
+        imageUrl: null,
+        imageAlt: null,
+        active: true,
+        startsAt: null,
+        endsAt: null,
+        updatedAt: new Date("2026-05-04T08:00:00.000Z"),
+        products: [],
+      },
+    ]);
+
+    const result = await getHomepageContent();
+
+    expect(result.source).toBe("cms");
+    expect(result.sections.some((section) => section.id === "banner-banner-2" && section.kind === "announcement-bar")).toBe(true);
+    expect(result.sections.some((section) => section.id === "campaign-campaign-1" && section.kind === "deal-spotlight")).toBe(true);
+    expect(result.sections.some((section) => section.kind === "hero-banner")).toBe(true);
+    expect(result.sections.some((section) => section.kind === "featured-categories")).toBe(true);
+    expect(result.sections.some((section) => section.id === "fallback-deal-spotlight")).toBe(false);
+  });
+
+  it("uses campaign targetHref and image fields when provided", async () => {
+    prismaMock.homePageSection.findMany.mockResolvedValue([]);
+    prismaMock.banner.findMany.mockResolvedValue([]);
+    prismaMock.dealCampaign.findMany.mockResolvedValue([
+      {
+        id: "campaign-targeted",
+        name: "Targeted campaign",
+        description: "Direct campaign destination",
+        targetHref: "/categories/one-dollar/flash-cleaner",
+        imageUrl: "https://store.public.blob.vercel-storage.com/admin/content/campaign-targeted.png",
+        imageAlt: "Campaign featured product collage",
+        active: true,
+        startsAt: null,
+        endsAt: null,
+        updatedAt: new Date("2026-05-05T08:00:00.000Z"),
+        products: [],
+      },
+    ]);
+
+    const result = await getHomepageContent();
+    const section = result.sections.find((entry) => entry.id === "campaign-campaign-targeted");
+
+    expect(section).toMatchObject({
+      kind: "deal-spotlight",
+      ctaHref: "/categories/one-dollar/flash-cleaner",
+      image: {
+        url: "https://store.public.blob.vercel-storage.com/admin/content/campaign-targeted.png",
+        alt: "Campaign featured product collage",
+      },
+    });
+  });
+
+  it("falls back to linked campaign product URL and image when explicit target/image are missing or invalid", async () => {
+    prismaMock.homePageSection.findMany.mockResolvedValue([]);
+    prismaMock.banner.findMany.mockResolvedValue([]);
+    prismaMock.dealCampaign.findMany.mockResolvedValue([
+      {
+        id: "campaign-product-fallback",
+        name: "Fallback campaign",
+        description: "Derived from linked product",
+        targetHref: "javascript:alert(1)",
+        imageUrl: null,
+        imageAlt: null,
+        active: true,
+        startsAt: null,
+        endsAt: null,
+        updatedAt: new Date("2026-05-05T08:00:00.000Z"),
+        products: [
+          {
+            product: {
+              slug: "flash-cleaner",
+              category: {
+                slug: "home-care",
+              },
+              images: [
+                {
+                  url: "https://store.public.blob.vercel-storage.com/admin/content/flash-cleaner.png",
+                  alt: "Flash cleaner bottle",
+                },
+              ],
+              variants: [
+                {
+                  price: 799,
+                  compareAtPrice: 999,
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const result = await getHomepageContent();
+    const section = result.sections.find((entry) => entry.id === "campaign-campaign-product-fallback");
+
+    expect(section).toMatchObject({
+      kind: "deal-spotlight",
+      ctaHref: "/categories/home-care/flash-cleaner",
+      image: {
+        url: "https://store.public.blob.vercel-storage.com/admin/content/flash-cleaner.png",
+        alt: "Flash cleaner bottle",
+      },
+    });
+  });
+
+  /**
+   * Regression test for: adding a standalone deal-spotlight section from admin
+   * caused all other homepage sections (hero, featured-categories, etc.) to
+   * disappear because the resolver treated deal-spotlight as a "primary"
+   * section and returned only CMS sections without fallback merging.
+   *
+   * Fix: deal-spotlight is now always an overlay section (like announcement-bar)
+   * and never prevents fallback section merging on its own.
+   */
+  it("keeps baseline homepage sections when only a standalone admin deal-spotlight exists", async () => {
+    prismaMock.homePageSection.findMany.mockResolvedValue([
+      {
+        id: "section-deal-1",
+        key: "deal-spotlight-weekly",
+        title: "Weekly Deal",
+        type: "deal-spotlight",
+        content: {
+          description: "Grab this week's best deal.",
+          dealLabel: "Deal of the Week",
+          price: 799,
+          compareAt: 1200,
+          ctaLabel: "Shop now",
+          ctaHref: "/categories/grocery/rice-bag",
+        },
+        meta: {},
+        position: 40,
+        active: true,
+        createdAt: new Date("2026-05-04T08:00:00.000Z"),
+        updatedAt: new Date("2026-05-04T08:00:00.000Z"),
+      },
+    ]);
+
+    const result = await getHomepageContent();
+
+    // The deal-spotlight section from admin must be present.
+    expect(result.source).toBe("cms");
+    expect(
+      result.sections.some((section) => section.id === "deal-spotlight-weekly" && section.kind === "deal-spotlight"),
+    ).toBe(true);
+
+    // All primary homepage sections must still be present via fallback merging.
+    expect(result.sections.some((section) => section.kind === "hero-banner")).toBe(true);
+    expect(result.sections.some((section) => section.kind === "featured-categories")).toBe(true);
+    expect(result.sections.some((section) => section.kind === "featured-products")).toBe(true);
+
+    // The fallback deal-spotlight must NOT duplicate the admin-managed one.
+    expect(result.sections.filter((section) => section.kind === "deal-spotlight")).toHaveLength(1);
+  });
+
+  it("skips malformed banners safely and falls back when they are the only admin content", async () => {
+    prismaMock.homePageSection.findMany.mockResolvedValue([]);
+    prismaMock.banner.findMany.mockResolvedValue([
+      {
+        id: "banner-invalid",
+        title: "   ",
+        imageUrl: "https://store.public.blob.vercel-storage.com/admin/banner/invalid.png",
+        href: "javascript:alert('xss')",
+        position: 1,
+        active: true,
+        startAt: null,
+        endAt: null,
+        createdAt: new Date("2026-05-04T08:00:00.000Z"),
+        updatedAt: new Date("2026-05-04T08:00:00.000Z"),
+      },
+    ]);
+
+    const result = await getHomepageContent();
+
+    expect(result.source).toBe("fallback");
+    expect(result.sections.some((section) => section.id === "banner-banner-invalid")).toBe(false);
+    expect(result.sections.some((section) => section.kind === "hero-banner")).toBe(true);
+  });
+
+  it("keeps homepage stable when banners are removed and no admin content remains", async () => {
+    prismaMock.homePageSection.findMany.mockResolvedValue([]);
+    prismaMock.banner.findMany.mockResolvedValue([]);
+    prismaMock.dealCampaign.findMany.mockResolvedValue([]);
+
+    const result = await getHomepageContent();
+
+    expect(result.source).toBe("fallback");
+    expect(result.sections.some((section) => section.kind === "hero-banner")).toBe(true);
+    expect(result.sections.some((section) => section.kind === "deal-spotlight")).toBe(true);
+    expect(result.sections.some((section) => section.id.startsWith("banner-"))).toBe(false);
+    expect(result.sections.some((section) => section.id.startsWith("campaign-"))).toBe(false);
   });
 
   it("hydrates homepage blog highlights from DB-backed posts", async () => {
@@ -189,6 +486,12 @@ describe("homepage CMS service", () => {
           title: "DB First Post",
           excerpt: "From db",
           href: "/blog/db-first-post",
+          image: {
+            src: "/blog/db-post-1.svg",
+            alt: "DB First Post",
+            width: 1200,
+            height: 630,
+          },
         },
       ],
     });

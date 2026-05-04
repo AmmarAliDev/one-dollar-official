@@ -10,6 +10,7 @@ describe("admin activity audit-log mapping", () => {
   it("maps known actions into non-technical titles", () => {
     expect(mapAuditLogTitle("order.status.changed")).toBe("Order status updated");
     expect(mapAuditLogTitle("homepage.banner.updated")).toBe("Homepage banner updated");
+    expect(mapAuditLogTitle("homepage.banner.deleted")).toBe("Homepage banner deleted");
   });
 
   it("builds meaningful order and moderation summaries", () => {
