@@ -258,6 +258,55 @@ describe("homepage CMS service", () => {
     expect(result.sections.some((section) => section.id === "fallback-deal-spotlight")).toBe(false);
   });
 
+  /**
+   * Regression test for: adding a standalone deal-spotlight section from admin
+   * caused all other homepage sections (hero, featured-categories, etc.) to
+   * disappear because the resolver treated deal-spotlight as a "primary"
+   * section and returned only CMS sections without fallback merging.
+   *
+   * Fix: deal-spotlight is now always an overlay section (like announcement-bar)
+   * and never prevents fallback section merging on its own.
+   */
+  it("keeps baseline homepage sections when only a standalone admin deal-spotlight exists", async () => {
+    prismaMock.homePageSection.findMany.mockResolvedValue([
+      {
+        id: "section-deal-1",
+        key: "deal-spotlight-weekly",
+        title: "Weekly Deal",
+        type: "deal-spotlight",
+        content: {
+          description: "Grab this week's best deal.",
+          dealLabel: "Deal of the Week",
+          price: 799,
+          compareAt: 1200,
+          ctaLabel: "Shop now",
+          ctaHref: "/categories/grocery/rice-bag",
+        },
+        meta: {},
+        position: 40,
+        active: true,
+        createdAt: new Date("2026-05-04T08:00:00.000Z"),
+        updatedAt: new Date("2026-05-04T08:00:00.000Z"),
+      },
+    ]);
+
+    const result = await getHomepageContent();
+
+    // The deal-spotlight section from admin must be present.
+    expect(result.source).toBe("cms");
+    expect(
+      result.sections.some((section) => section.id === "deal-spotlight-weekly" && section.kind === "deal-spotlight"),
+    ).toBe(true);
+
+    // All primary homepage sections must still be present via fallback merging.
+    expect(result.sections.some((section) => section.kind === "hero-banner")).toBe(true);
+    expect(result.sections.some((section) => section.kind === "featured-categories")).toBe(true);
+    expect(result.sections.some((section) => section.kind === "featured-products")).toBe(true);
+
+    // The fallback deal-spotlight must NOT duplicate the admin-managed one.
+    expect(result.sections.filter((section) => section.kind === "deal-spotlight")).toHaveLength(1);
+  });
+
   it("skips malformed banners safely and falls back when they are the only admin content", async () => {
     prismaMock.homePageSection.findMany.mockResolvedValue([]);
     prismaMock.banner.findMany.mockResolvedValue([

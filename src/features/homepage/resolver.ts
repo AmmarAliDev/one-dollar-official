@@ -20,37 +20,35 @@ const SECTION_ORDER_INDEX: Record<HomepageSectionKind, number> = SECTION_RENDER_
 );
 
 function composeSectionsWithFallback(enabledCmsSections: HomepageSection[]): HomepageSection[] {
-  const hasCampaignOverlay = enabledCmsSections.some(
-    (section) => section.kind === "deal-spotlight" && section.id.startsWith("campaign-"),
-  );
+  // Overlay sections are additive promotional surfaces that do not constitute a
+  // primary homepage structure on their own. Both announcement bars and deal
+  // spotlights fall into this category — whether the spotlight was created via
+  // the admin deal-campaign flow (id prefix "campaign-") or as a standalone
+  // HomePageSection record.
+  const isOverlaySection = (section: HomepageSection) =>
+    section.kind === "announcement-bar" || section.kind === "deal-spotlight";
 
-  const hasPrimaryHomepageSection = enabledCmsSections.some((section) => {
-    if (section.kind === "announcement-bar") {
-      return false;
-    }
+  const hasPrimaryHomepageSection = enabledCmsSections.some((section) => !isOverlaySection(section));
 
-    if (section.kind === "deal-spotlight" && section.id.startsWith("campaign-")) {
-      return false;
-    }
-
-    return true;
-  });
-
-  // Announcement bars are additive promotional surfaces. If they are the only
-  // CMS-provided sections, keep baseline homepage sections from fallback so the
-  // page shell remains complete.
+  // If at least one non-overlay section exists in CMS, treat the full CMS set
+  // as the homepage definition and skip fallback merging.
   if (hasPrimaryHomepageSection) {
     return enabledCmsSections;
   }
 
+  // Only overlay sections are present in CMS. Merge them with the fallback
+  // homepage structure so the page shell remains complete.
+  const hasDealSpotlightSection = enabledCmsSections.some((section) => section.kind === "deal-spotlight");
+
   const fallbackPrimarySections = HOMEPAGE_FALLBACK_SECTIONS.filter((section) => {
+    // Announcement bars from fallback would duplicate the additive CMS bars.
     if (section.kind === "announcement-bar") {
       return false;
     }
 
-    // Avoid rendering duplicate deal spotlight content when an active campaign
-    // is already contributing a deal-spotlight section.
-    if (hasCampaignOverlay && section.kind === "deal-spotlight") {
+    // Avoid rendering a duplicate deal spotlight when the CMS already provides
+    // one (either from an admin section record or an active campaign).
+    if (hasDealSpotlightSection && section.kind === "deal-spotlight") {
       return false;
     }
 

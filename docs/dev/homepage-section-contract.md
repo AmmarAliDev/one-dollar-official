@@ -63,9 +63,27 @@ Resolution logic is in `src/features/homepage/resolver.ts`.
 - If CMS payload is `null`, `undefined`, or has no sections, fallback content is used.
 - If all CMS sections are disabled (`enabled: false`), fallback content is used.
 - Otherwise, enabled CMS sections render.
-- `announcement-bar` sections are additive promotional content.
-- Campaign-generated `deal-spotlight` sections (ids prefixed with `campaign-`) are also treated as additive promotional overlays.
-- When CMS/admin content resolves only to these promotional overlays (for example active banners/campaigns with no active primary homepage sections), resolver keeps fallback primary sections so the homepage does not collapse.
+
+### Overlay vs Primary sections
+
+Sections are classified as either **overlay** (additive, promotional) or **primary** (structural homepage content):
+
+| Kind | Classification | Reason |
+|---|---|---|
+| `announcement-bar` | Overlay | Promotional bar; never the sole page structure |
+| `deal-spotlight` | Overlay | Promotional deal block; additive regardless of how it was created (admin section or deal campaign) |
+| `hero-banner` | Primary | Core homepage structure |
+| `featured-categories` | Primary | Core homepage structure |
+| `featured-products` | Primary | Core homepage structure |
+| `one-dollar` | Primary | Core homepage structure |
+| `blog-highlights` | Primary | Core homepage structure |
+
+**Rule**: when CMS content resolves only to overlay sections, the resolver merges in fallback primary sections to keep the homepage complete. Overlay-only CMS content never replaces the page shell.
+
+**Deduplication**: if CMS already provides a `deal-spotlight` (regardless of whether it was created as an admin section record or an active campaign), the fallback `deal-spotlight` is omitted to avoid duplicate deal blocks.
+
+**Historical note**: prior to 2026-05-04, `deal-spotlight` sections created directly through `/admin/homepage/sections` (not via the campaign flow) were incorrectly classified as primary, causing all other homepage sections to disappear when a standalone spotlight was the only active CMS section. This is now fixed — all `deal-spotlight` entries are overlay sections.
+
 - Sections are sorted by `displayOrder` first, then by static kind order:
   1. `announcement-bar`
   2. `hero-banner`
