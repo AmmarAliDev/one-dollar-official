@@ -89,6 +89,8 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - Header category load failures are non-fatal: errors are logged server-side, and both desktop/mobile navigation continue rendering with user-safe fallback messaging.
 - Customer account shell UI lives in `src/features/account/components/account-shell.tsx` and should be reused for future account sections.
 - Wishlist client controls live in `src/features/wishlist/components` and call the dedicated wishlist API route.
+- PDP cart interaction is state-driven in `src/features/catalog/components/product-add-to-cart.tsx`: the component subscribes to `cart:changed` and maintains local cart-summary truth for the currently viewed item, then switches UI between add CTA and `CartItemQuantityControls` based on a variant-aware cart-line match (`productSlug` + `sku`).
+- PDP cart badge/count rendering intentionally reuses the same cart-summary derived count semantics as header cart surfaces (`cart.itemCount`) to keep user-visible cart totals synchronized across page-local and global cart UI.
 
 ## Shared Table Strategy
 

@@ -79,6 +79,12 @@ Stock is validated in two places:
 ## UI surfaces
 
 - PDP add-to-cart button now calls `POST /api/cart`
+- PDP add-to-cart now conditionally switches between two states:
+	- default CTA state: `Add to Cart` (or `Out of Stock`) when the active PDP variant is not in cart
+	- in-cart state: `CartItemQuantityControls` when the active PDP variant is present in cart
+- PDP in-cart state is variant-aware and keyed by (`productSlug`, `sku`) so switching selected variant on PDP reflects the correct in-cart line item.
+- PDP in-cart state includes a cart icon + badge count using the same count source (`cart.itemCount`) pattern as header cart surfaces.
+- PDP listens to global `cart:changed` events and reverts from quantity controls back to `Add to Cart` immediately when the active variant is removed or its quantity reaches zero.
 - Cart page (`/cart`) now renders real line items and order summary
 - Header mini-cart shows count + quick preview + subtotal
 - Header mobile cart button now shows the same total cart item count via shared client state

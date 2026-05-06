@@ -87,6 +87,7 @@ export function ProductPanel({ product, initialWishlistedSkus = [] }: ProductPan
         <ProductAddToCart
           productSlug={product.slug}
           {...(effectiveOptionId ? { optionId: effectiveOptionId } : {})}
+          sku={effectiveSku}
           productName={product.name}
           isAvailable={effectiveInventory > 0}
         />
