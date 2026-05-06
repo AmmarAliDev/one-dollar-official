@@ -109,11 +109,12 @@ Session hardening note:
 The app now uses one primary sign-out convention across storefront, account, and admin UI:
 
 - Prefer the shared `SignOutButton` or a plain `<form action={signOutAction}>` submission for logout controls.
-- `signOutAction` performs the trusted-origin check and then redirects to `routes.storefront.home` after the Auth.js session cookie is cleared.
+- `SignOutButton` is client-enhanced: it first calls `prepareSignOutAction` (trusted-origin check + guest-cart token rotation), then uses `signOut()` from `next-auth/react` with `redirectTo: routes.storefront.home` so `SessionProvider` updates header auth UI immediately after logout.
+- `signOutAction` remains the progressive-enhancement fallback and preserves the same redirect target (`routes.storefront.home`) after clearing the Auth.js session cookie.
 - This pattern is used in the storefront header dropdown, the mobile drawer, the account profile page, and the admin shell menu.
 - Use client-side `signOut()` from `next-auth/react` only for an explicitly client-driven flow that genuinely cannot use a form submission.
 
-This keeps logout behavior progressively enhanced, CSRF-aware, and consistent across desktop and mobile surfaces.
+This keeps logout behavior progressively enhanced, CSRF-aware, and consistent across desktop and mobile surfaces while preventing stale signed-in header UI after sign-out.
 
 ## Auth Form UI Standard
 

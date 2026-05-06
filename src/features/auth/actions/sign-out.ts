@@ -15,7 +15,7 @@ import { routes } from "@/config/routes";
 import { getOrCreateGuestCartToken, setCartTokenCookie } from "@/features/cart";
 import { assertTrustedOrigin } from "@/lib/security/csrf";
 
-export async function signOutAction() {
+export async function prepareSignOutAction() {
   await assertTrustedOrigin({ action: "auth:sign-out" });
 
   const cookieStore = await cookies();
@@ -25,6 +25,10 @@ export async function signOutAction() {
   } catch (error) {
     console.error("Unable to prepare guest cart token during sign-out", error);
   }
+}
+
+export async function signOutAction() {
+  await prepareSignOutAction();
 
   await signOut({ redirectTo: routes.storefront.home });
 }

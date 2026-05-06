@@ -55,7 +55,7 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `(storefront)/categories/[slug]/[productSlug]` now provides PDP rendering with gallery, variant interactions, specifications, reviews, and related products
 - `(storefront)/wishlist` now renders authenticated wishlist entries and guest sign-in prompts
 - `(storefront)/account/*` now provides customer account routes for profile, addresses, order history, order detail, and reviews
-- `(storefront)` now uses the shared `SignOutButton` convention for authenticated logout controls across the header dropdown, mobile drawer, and account profile surface
+- `(storefront)` now uses the shared `SignOutButton` convention for authenticated logout controls across the header dropdown, mobile drawer, and account profile surface; the button is client-enhanced to call Auth.js client `signOut()` after server-side sign-out preparation so `useSession`-driven header controls switch to signed-out state immediately without a manual reload
 - `(admin)` now uses `AdminShell` with a responsive sidebar, topbar, breadcrumb, and user menu, plus the same form-based sign-out pattern and role-aware navigation filtering protected by the RBAC proxy/layout guards
 - Admin navigation UI is standardized through shared shadcn-style sidebar primitives in `src/components/ui/sidebar.tsx`; `AdminShell` composes these primitives while `src/features/admin/navigation.ts` remains the source of truth for permission-aware link visibility.
 - `(admin)/admin` dashboard now reads live operational metrics through `src/features/admin/dashboard/service.ts` (pending orders, delivered-order revenue summary, low-stock count, and recent audit activity preview)

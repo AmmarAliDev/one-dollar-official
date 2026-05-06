@@ -1,10 +1,14 @@
 "use client";
 
 import { LogOut } from "lucide-react";
+import { signOut as clientSignOut } from "next-auth/react";
+import { useState } from "react";
 import { useFormStatus } from "react-dom";
 
+import { routes } from "@/config/routes";
 import { Button, type ButtonProps } from "@/components/ui/button";
-import { signOutAction } from "@/features/auth/actions/sign-out";
+import { prepareSignOutAction, signOutAction } from "@/features/auth/actions/sign-out";
+import { notify } from "@/lib/notify";
 import { cn } from "@/lib/utils";
 
 type SignOutButtonProps = Omit<ButtonProps, "children" | "type"> & {
@@ -25,22 +29,24 @@ function SubmitButton({
   showIcon = true,
   fullWidth = false,
   showText = true,
+  isSubmitting = false,
   className,
   disabled,
   ...buttonProps
-}: SubmitButtonProps) {
+}: SubmitButtonProps & { isSubmitting?: boolean }) {
   const { pending } = useFormStatus();
+  const isBusy = pending || isSubmitting;
 
   return (
     <Button
       type="submit"
-      aria-busy={pending}
-      disabled={pending || disabled}
+      aria-busy={isBusy}
+      disabled={isBusy || disabled}
       className={cn(fullWidth ? "w-full" : undefined, className)}
       {...buttonProps}
     >
       {showIcon ? <LogOut className="size-4" aria-hidden="true" /> : null}
-      {showText ? (pending ? pendingLabel : label) : null}
+      {showText ? (isBusy ? pendingLabel : label) : null}
     </Button>
   );
 }
@@ -53,21 +59,47 @@ function SubmitButton({
  * enhanced navigation contexts.
  */
 export function SignOutButton({ formClassName, onBeforeSubmit, ...buttonProps }: SignOutButtonProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   return (
     <form
       action={signOutAction}
       className={formClassName}
-      onSubmit={() => {
-        if (!onBeforeSubmit) {
+      onSubmit={async (event) => {
+        event.preventDefault();
+
+        if (isSubmitting) {
           return;
         }
 
-        window.setTimeout(() => {
-          onBeforeSubmit();
-        }, 0);
+        onBeforeSubmit?.();
+        setIsSubmitting(true);
+
+        try {
+          await prepareSignOutAction();
+        } catch (error) {
+          console.error("Failed to prepare sign-out cart context.", error);
+        }
+
+        try {
+          // Using client signOut keeps SessionProvider state in sync immediately.
+          await clientSignOut({ redirectTo: routes.storefront.home });
+        } catch (error) {
+          console.error("Client sign-out failed; falling back to server action.", error);
+
+          try {
+            await signOutAction();
+            return;
+          } catch (fallbackError) {
+            console.error("Server sign-out fallback failed.", fallbackError);
+            notify.error("Sign out failed", "Please try again.");
+          }
+        }
+
+        setIsSubmitting(false);
       }}
     >
-      <SubmitButton {...buttonProps} />
+      <SubmitButton isSubmitting={isSubmitting} {...buttonProps} />
     </form>
   );
 }
