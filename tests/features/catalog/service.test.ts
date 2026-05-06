@@ -201,6 +201,31 @@ describe("catalog listing service", () => {
     ]);
   });
 
+  it("applies discount and availability filters before sorting by descending price", async () => {
+    mockGetPublishedCategoryBySlug.mockResolvedValue(makeCategoryRecord());
+    mockListPublishedProductsByCategory.mockResolvedValue([
+      makeProductRecord({ id: "p1", slug: "sale-low-price", price: 400, compareAtPrice: 600, inventoryQty: 10 }),
+      makeProductRecord({ id: "p2", slug: "sale-high-price", price: 900, compareAtPrice: 1200, inventoryQty: 2 }),
+      makeProductRecord({ id: "p3", slug: "not-on-sale", price: 700, compareAtPrice: null, inventoryQty: 9 }),
+      makeProductRecord({ id: "p4", slug: "sale-out-of-stock", price: 1200, compareAtPrice: 1500, inventoryQty: 0 }),
+    ]);
+
+    const listing = await getCatalogCategoryListing({
+      slug: "home-care",
+      searchParams: {
+        discount: "on-sale",
+        availability: "in-stock",
+        sort: "price-desc",
+      },
+    });
+
+    expect(listing?.filteredProductCount).toBe(2);
+    expect(listing?.products.map((product) => product.slug)).toEqual([
+      "sale-high-price",
+      "sale-low-price",
+    ]);
+  });
+
   it("returns empty products list when no products match filters", async () => {
     mockGetPublishedCategoryBySlug.mockResolvedValue(makeCategoryRecord());
     mockListPublishedProductsByCategory.mockResolvedValue([

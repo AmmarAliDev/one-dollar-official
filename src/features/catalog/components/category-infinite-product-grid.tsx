@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import InfiniteScroll from "react-infinite-scroll-component";
 
 import { EmptyState } from "@/components/ui/empty-state";
@@ -46,6 +46,13 @@ export function CategoryInfiniteProductGrid({ listing }: CategoryInfiniteProduct
   const [pagination, setPagination] = useState(listing.pagination);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setProducts(listing.products);
+    setPagination(listing.pagination);
+    setIsLoadingMore(false);
+    setLoadError(null);
+  }, [listing]);
 
   const hasProducts = products.length > 0;
   const hasMorePages = pagination.hasNextPage;

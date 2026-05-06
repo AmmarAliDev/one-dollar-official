@@ -96,4 +96,36 @@ describe("CategoryListingFilters mobile sheet behavior", () => {
       );
     });
   });
+
+  it("resyncs form values when listing filters change after navigation", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(<CategoryListingFilters listing={makeListing()} />);
+
+    rerender(
+      <CategoryListingFilters
+        listing={makeListing({
+          filters: {
+            minPrice: 300,
+            maxPrice: 1500,
+            availability: "out-of-stock",
+            rating: "3-up",
+            discount: "20-up",
+            sort: "rating-desc",
+            attribute: "steel",
+            page: 1,
+            pageSize: 6,
+          },
+        })}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /open filters and sorting panel/i }));
+    await user.click(screen.getAllByRole("button", { name: /apply filters/i })[0]);
+
+    await waitFor(() => {
+      expect(pushMock).toHaveBeenCalledWith(
+        "/categories/kitchen?minPrice=300&maxPrice=1500&availability=out-of-stock&rating=3-up&discount=20-up&sort=rating-desc&attribute=steel",
+      );
+    });
+  });
 });
