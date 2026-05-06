@@ -123,9 +123,9 @@
 
 html {
   scroll-behavior: smooth;
+  touch-action: pan-x pan-y; /* Allows scrolling but disables pinch-zoom */
   -webkit-text-size-adjust: 100%;
 }
-
 /*
  * Reduce accidental double-tap zoom on interactive controls while preserving
  * user pinch zoom at the page level.
@@ -150,6 +150,7 @@ html {
 
 body {
   min-height: 100vh;
+  touch-action: pan-x pan-y; /* Allows scrolling but disables pinch-zoom */
   background: radial-gradient(
       78rem 36rem at 12% -12%,
       color-mix(in srgb, var(--primary) 16%, transparent),
