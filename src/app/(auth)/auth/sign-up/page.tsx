@@ -1,8 +1,13 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
+import { auth } from "@/auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { buildMetadata } from "@/config/metadata";
 import { routes } from "@/config/routes";
+import {
+  getAuthenticatedUserAuthPageRedirect,
+} from "@/features/auth/auth-page-redirect";
 import { GoogleSignInButton } from "@/features/auth/components/google-sign-in-button";
 import { SignUpForm } from "@/features/auth/components/sign-up-form";
 
@@ -12,7 +17,14 @@ export const metadata = buildMetadata({
   description: "Create your One Dollar account to start shopping.",
 });
 
-export default function SignUpPage() {
+export default async function SignUpPage() {
+  const session = await auth();
+  const authenticatedRedirectPath = getAuthenticatedUserAuthPageRedirect(routes.auth.signUp, session?.user?.id);
+
+  if (authenticatedRedirectPath) {
+    redirect(authenticatedRedirectPath);
+  }
+
   return (
     <Card className="w-full max-w-sm">
       <CardHeader className="text-center">

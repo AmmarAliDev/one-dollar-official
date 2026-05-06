@@ -68,6 +68,7 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `(admin)/admin/inventory` now supports low-stock monitoring plus inline manual stock adjustments for authorized catalog admins
 - `(admin)/admin/settings` now provides practical store settings management (identity, support contacts, shipping basics, and operational defaults) backed by a singleton persistence record and CSRF/RBAC-protected server action writes
 - `(auth)` now uses the same shared form foundation for sign-in and sign-up while preserving the existing server-action flows
+- `(auth)` now performs server-side authenticated-user entry-page redirects for `/auth/sign-in` and `/auth/sign-up` to `/account/profile`; token/error recovery routes (`/auth/forgot-password`, `/auth/reset-password`, `/auth/verify-email`, `/auth/error`) remain intentionally accessible for valid recovery and callback scenarios
 
 ## UI Foundation Strategy
 
