@@ -123,6 +123,8 @@ describe("admin homepage shared forms", () => {
 
     await user.type(screen.getByLabelText(/Campaign name/i), "Flash deal");
     await user.type(screen.getByLabelText(/Description/i), "Short supporting copy");
+    await user.type(screen.getByLabelText(/Campaign price/i), "1499");
+    await user.type(screen.getByLabelText(/Campaign compare-at/i), "1799");
     await user.type(screen.getByLabelText(/Start time/i), "2026-04-20T08:00");
     await user.type(screen.getByLabelText(/End time/i), "2026-04-21T08:00");
 
@@ -137,6 +139,8 @@ describe("admin homepage shared forms", () => {
       returnTo: "/admin/homepage/campaigns",
       name: "Flash deal",
       description: "Short supporting copy",
+      price: "1499",
+      compareAt: "1799",
       startsAt: "2026-04-20T08:00",
       endsAt: "2026-04-21T08:00",
     });

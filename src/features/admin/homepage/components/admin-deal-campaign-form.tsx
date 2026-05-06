@@ -17,6 +17,8 @@ type AdminDealCampaignFormProps = {
   initialValues?: {
     name?: string;
     description?: string;
+    price?: number | null;
+    compareAt?: number | null;
     targetHref?: string;
     imageUrl?: string;
     imageAlt?: string;
@@ -29,6 +31,8 @@ type AdminDealCampaignFormProps = {
 type AdminDealCampaignFormValues = {
   name: string;
   description: string;
+  price: string;
+  compareAt: string;
   targetHref: string;
   imageUrl: string;
   imageAlt: string;
@@ -55,6 +59,22 @@ const campaignFields: DynamicFormFieldConfig<AdminDealCampaignFormValues>[] = [
     placeholder: "Short supporting copy for the storefront deal block.",
     rows: 4,
     containerClassName: "md:col-span-2",
+  },
+  {
+    id: "campaign-price",
+    name: "price",
+    type: "number",
+    label: "Campaign price (PKR)",
+    placeholder: "1599",
+    description: "Optional manual campaign price. When omitted, storefront derives pricing from linked campaign product data.",
+  },
+  {
+    id: "campaign-compare-at",
+    name: "compareAt",
+    type: "number",
+    label: "Campaign compare-at (PKR)",
+    placeholder: "1999",
+    description: "Optional compare-at value. Must be greater than or equal to campaign price when both are set.",
   },
   {
     id: "campaign-target-href",
@@ -131,6 +151,8 @@ function buildDealCampaignFormData(
   formData.set("returnTo", input.returnTo);
   formData.set("name", values.name);
   formData.set("description", values.description ?? "");
+  formData.set("price", values.price ?? "");
+  formData.set("compareAt", values.compareAt ?? "");
   formData.set("targetHref", values.targetHref ?? "");
   formData.set("imageUrl", values.imageUrl ?? "");
   formData.set("imageAlt", values.imageAlt ?? "");
@@ -156,6 +178,8 @@ export function AdminDealCampaignForm({
     defaultValues: {
       name: initialValues?.name ?? "",
       description: initialValues?.description ?? "",
+      price: typeof initialValues?.price === "number" ? `${initialValues.price}` : "",
+      compareAt: typeof initialValues?.compareAt === "number" ? `${initialValues.compareAt}` : "",
       targetHref: initialValues?.targetHref ?? "",
       imageUrl: initialValues?.imageUrl ?? "",
       imageAlt: initialValues?.imageAlt ?? "",

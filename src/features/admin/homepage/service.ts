@@ -31,7 +31,17 @@ type AdminDbClient = ReturnType<typeof getPrismaClient> | Prisma.TransactionClie
 
 type HomePageSectionRow = Awaited<ReturnType<ReturnType<typeof getPrismaClient>["homePageSection"]["findMany"]>>[number];
 type BannerRow = Awaited<ReturnType<ReturnType<typeof getPrismaClient>["banner"]["findMany"]>>[number];
-type DealCampaignRow = Awaited<ReturnType<ReturnType<typeof getPrismaClient>["dealCampaign"]["findMany"]>>[number];
+type DealCampaignRow = Awaited<ReturnType<ReturnType<typeof getPrismaClient>["dealCampaign"]["findMany"]>>[number] & {
+  price?: number | null;
+  compareAt?: number | null;
+};
+
+const FALLBACK_DEAL_SPOTLIGHT_SECTION = HOMEPAGE_FALLBACK_SECTIONS.find(
+  (section): section is DealSpotlightSection => section.kind === "deal-spotlight",
+);
+const FALLBACK_CAMPAIGN_SPOTLIGHT_PRICE = FALLBACK_DEAL_SPOTLIGHT_SECTION?.price ?? 0;
+const FALLBACK_CAMPAIGN_SPOTLIGHT_COMPARE_AT =
+  FALLBACK_DEAL_SPOTLIGHT_SECTION?.compareAt ?? FALLBACK_CAMPAIGN_SPOTLIGHT_PRICE;
 
 export type AdminHomepageSectionRecord = {
   id: string;
@@ -62,6 +72,8 @@ export type AdminDealCampaignRecord = {
   id: string;
   name: string;
   description: string;
+  price: number | null;
+  compareAt: number | null;
   targetHref: string;
   imageUrl: string;
   imageAlt: string;
@@ -179,6 +191,8 @@ function mapAdminDealCampaignRecord(record: DealCampaignRow): AdminDealCampaignR
     id: record.id,
     name: record.name,
     description: record.description ?? "",
+    price: record.price ?? null,
+    compareAt: record.compareAt ?? null,
     targetHref: record.targetHref ?? "",
     imageUrl: record.imageUrl ?? "",
     imageAlt: record.imageAlt ?? "",
@@ -231,6 +245,8 @@ function buildDealCampaignWriteData(input: AdminDealCampaignInput) {
   return {
     name: input.name,
     description: input.description ?? null,
+    price: input.price ?? null,
+    compareAt: input.compareAt ?? null,
     targetHref: input.targetHref ?? null,
     imageUrl: input.imageUrl ?? null,
     imageAlt: input.imageAlt ?? null,
@@ -289,6 +305,52 @@ function resolveCampaignSpotlightImage(
   return {
     url: productImageUrl,
     alt: featuredProductImage?.alt?.trim() || `${campaignName} spotlight image`,
+  };
+}
+
+function resolveCampaignSpotlightPricing(
+  record: Pick<DealCampaignRow, "id" | "price" | "compareAt">,
+  featuredVariant: { price: number; compareAtPrice: number | null } | undefined,
+) {
+  const campaignPrice = record.price;
+  const hasValidCampaignPrice = typeof campaignPrice === "number" && Number.isFinite(campaignPrice) && campaignPrice > 0;
+
+  if (hasValidCampaignPrice) {
+    const campaignCompareAt = record.compareAt;
+    const compareAt =
+      typeof campaignCompareAt === "number" && Number.isFinite(campaignCompareAt) && campaignCompareAt > campaignPrice
+        ? campaignCompareAt
+        : campaignPrice;
+
+    return {
+      price: campaignPrice,
+      compareAt,
+    };
+  }
+
+  const price = featuredVariant?.price;
+  const hasValidPrice = typeof price === "number" && Number.isFinite(price) && price > 0;
+
+  if (!hasValidPrice) {
+    logger.warn("Using fallback spotlight pricing because linked campaign product pricing is missing.", {
+      campaignId: record.id,
+    });
+
+    return {
+      price: FALLBACK_CAMPAIGN_SPOTLIGHT_PRICE,
+      compareAt: Math.max(FALLBACK_CAMPAIGN_SPOTLIGHT_COMPARE_AT, FALLBACK_CAMPAIGN_SPOTLIGHT_PRICE),
+    };
+  }
+
+  const compareAtCandidate = featuredVariant?.compareAtPrice;
+  const compareAt =
+    typeof compareAtCandidate === "number" && Number.isFinite(compareAtCandidate) && compareAtCandidate > price
+      ? compareAtCandidate
+      : price;
+
+  return {
+    price,
+    compareAt,
   };
 }
 
@@ -1064,8 +1126,7 @@ function mapCampaignToStorefrontSection(
   const featuredProduct = record.products?.[0]?.product;
   const featuredProductImage = featuredProduct?.images?.[0];
   const featuredVariant = featuredProduct?.variants?.[0];
-  const price = featuredVariant?.price ?? 999;
-  const compareAt = Math.max(featuredVariant?.compareAtPrice ?? price, price);
+  const pricing = resolveCampaignSpotlightPricing(record, featuredVariant);
   const ctaHref = resolveCampaignSpotlightHref(record, featuredProduct);
   const image = resolveCampaignSpotlightImage(record, featuredProductImage, record.name);
 
@@ -1077,8 +1138,8 @@ function mapCampaignToStorefrontSection(
     title: record.name,
     description: record.description ?? "Short-term campaign promotion managed from admin.",
     dealLabel: "Active campaign",
-    price,
-    compareAt,
+    price: pricing.price,
+    compareAt: pricing.compareAt,
     ctaLabel: "Shop campaign",
     ctaHref,
     ...(image ? { image } : {}),

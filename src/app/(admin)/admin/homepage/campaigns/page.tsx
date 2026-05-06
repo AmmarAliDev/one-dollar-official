@@ -107,6 +107,8 @@ export default async function AdminHomepageCampaignsPage({ searchParams }: Admin
                   initialValues={{
                     name: campaign.name,
                     description: campaign.description,
+                    price: campaign.price,
+                    compareAt: campaign.compareAt,
                     targetHref: campaign.targetHref,
                     imageUrl: campaign.imageUrl,
                     imageAlt: campaign.imageAlt,
