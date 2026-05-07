@@ -348,7 +348,7 @@ describe("product add-to-cart mobile toast UX", () => {
 
     await waitFor(() => {
       expect(screen.getByText("1 item in cart")).toBeInTheDocument();
-      expect(screen.getByText("In cart")).toBeInTheDocument();
+      expect(screen.getByTestId("storefront-view-cart-button")).toBeInTheDocument();
     });
 
     window.dispatchEvent(
