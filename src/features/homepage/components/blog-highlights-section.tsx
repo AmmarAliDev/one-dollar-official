@@ -39,7 +39,7 @@ export function BlogHighlightsSectionBlock({ section }: BlogHighlightsSectionPro
                       alt={article.image.alt}
                       width={article.image.width}
                       height={article.image.height}
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      sizes="(max-width: 767px) 100vw, 33vw"
                       className="bg-muted h-48 w-full object-contain transition-transform duration-200 group-hover:scale-[1.01]"
                     />
                   ) : (

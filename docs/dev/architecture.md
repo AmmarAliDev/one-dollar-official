@@ -83,6 +83,7 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `PageContainer` and `PageShell` should be reused for page spacing instead of duplicating wrapper classes.
 - Shared section intros now support explicit heading levels through `SectionHeader.titleAs`/`titleId` so route pages can declare a clear primary `h1` while nested modules continue using lower heading levels.
 - Shared frontend feedback uses `sonner` through `src/components/providers/app-toaster.tsx` and `src/lib/notify.ts`.
+- Storefront image rendering is standardized on `next/image` with a surface-based loading policy: only true above-the-fold media uses eager/high fetch priority, while cards/carousels/thumbnails remain lazy; responsive surfaces must provide explicit `sizes` so image candidates match actual card widths and reduce transfer cost.
 - Catalog listing UI lives in `src/features/catalog/components`; keep product-grid and filter scaffolds there instead of placing listing-specific markup directly in route files.
 - PDP UI also lives in `src/features/catalog/components` (gallery, product panel, variants, specs, reviews, related products, and skeleton states); route files should compose these primitives instead of duplicating product-detail markup.
 - Header category navigation is assembled in `AppHeader` using live catalog categories (`getCatalogCategories`) plus a small ordering helper (`buildStorefrontCategoryMenu`) so the navigation contract is explicit and testable.

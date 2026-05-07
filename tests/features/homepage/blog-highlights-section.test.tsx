@@ -62,6 +62,7 @@ describe("BlogHighlightsSectionBlock", () => {
 
     const image = screen.getByRole("img", { name: "Shopping basket with pantry items" });
     expect(image).toHaveAttribute("src", "https://cdn.example.com/blog/budget-shopping-checklist.jpg");
+    expect(image).toHaveAttribute("sizes", "(max-width: 767px) 100vw, 33vw");
   });
 
   it("renders a clean fallback when article image is missing", () => {

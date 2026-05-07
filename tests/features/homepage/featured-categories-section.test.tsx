@@ -106,6 +106,10 @@ describe("FeaturedCategoriesSectionBlock", () => {
       "src",
       expect.stringContaining(encodeURIComponent("https://cdn.example.com/categories/home-care.jpg")),
     );
+    expect(screen.getByAltText("Category home-care")).toHaveAttribute(
+      "sizes",
+      "(max-width: 639px) 85vw, (max-width: 767px) 50vw, (max-width: 1023px) 33vw, 25vw",
+    );
     expect(screen.queryByTestId("storefront-category-card-fallback-home-care")).not.toBeInTheDocument();
   });
 

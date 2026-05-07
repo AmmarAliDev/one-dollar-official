@@ -47,7 +47,8 @@ export function ProductImageGallery({ images, productName }: ProductImageGallery
             fill
             sizes="(max-width: 768px) 100vw, 50vw"
             className="object-contain"
-            priority={active.isPrimary}
+            loading={active.isPrimary ? "eager" : "lazy"}
+            fetchPriority={active.isPrimary ? "high" : "auto"}
           />
         </div>
       ) : (
@@ -90,6 +91,7 @@ export function ProductImageGallery({ images, productName }: ProductImageGallery
                   alt={img.label}
                   width={80}
                   height={80}
+                  sizes="80px"
                   className="h-full w-full object-contain"
                 />
               ) : null}
