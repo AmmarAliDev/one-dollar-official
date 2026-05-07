@@ -45,6 +45,20 @@ Included headers:
 - `Cross-Origin-Resource-Policy`
 - `Strict-Transport-Security` in production only
 
+### CSP analytics allowlist
+
+Google Analytics 4 loading is enforced through a narrow CSP source allowlist in `src/config/security.ts`:
+
+- `script-src` includes `https://www.googletagmanager.com` only when `NEXT_PUBLIC_GA_ID` is configured.
+- If `NEXT_PUBLIC_GA_ID` is empty or unset, the GA script source is omitted from CSP.
+- No wildcard analytics domains were added to `script-src`.
+
+Why this matters:
+
+- It resolves the GA script-blocking error without broadening script execution policy.
+- It preserves baseline CSP behavior for environments where analytics is intentionally disabled.
+- It keeps future tightening paths (for example nonce/hash-based script policies) compatible.
+
 > The CSP is intentionally a **baseline-compatible** policy for the current Next.js App Router setup. It allows the app to function cleanly today while leaving room for a stricter nonce-based CSP later.
 
 ### 2. CSRF strategy

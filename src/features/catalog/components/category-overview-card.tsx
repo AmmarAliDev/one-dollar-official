@@ -8,7 +8,12 @@ import { testIds } from "@/lib/test-selectors";
 import type { CatalogCategory } from "../types";
 import Image from "next/image";
 
-export function CategoryOverviewCard({ category }: { category: CatalogCategory }) {
+type CategoryOverviewCardProps = {
+  category: CatalogCategory;
+  eagerImage?: boolean;
+};
+
+export function CategoryOverviewCard({ category, eagerImage = false }: CategoryOverviewCardProps) {
   return (
     <Link
       href={category.href}
@@ -27,6 +32,8 @@ export function CategoryOverviewCard({ category }: { category: CatalogCategory }
                   width={365}
                   sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
                   className="h-54 w-full object-contain"
+                  loading={eagerImage ? "eager" : "lazy"}
+                  fetchPriority={eagerImage ? "high" : "auto"}
                   data-testid={`storefront-category-card-image-${category.slug}`}
                 />
               ) : (

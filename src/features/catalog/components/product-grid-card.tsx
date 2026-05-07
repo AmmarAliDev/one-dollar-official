@@ -28,7 +28,12 @@ function getReviewSummary(product: CatalogProductCard) {
   return `${product.averageRating.toFixed(1)} average rating | ${product.reviewCount} ${product.reviewCount === 1 ? "review" : "reviews"}`;
 }
 
-export function ProductGridCard({ product }: { product: CatalogProductCard }) {
+type ProductGridCardProps = {
+  product: CatalogProductCard;
+  eagerImage?: boolean;
+};
+
+export function ProductGridCard({ product, eagerImage = false }: ProductGridCardProps) {
   const stockBadge = getInventoryBadge(product.inventoryQuantity);
 
   return (
@@ -45,6 +50,7 @@ export function ProductGridCard({ product }: { product: CatalogProductCard }) {
             imageLabel={product.imageLabel}
             imageTone={product.imageTone}
             attributeSummary={product.attributeSummary}
+            eagerImage={eagerImage}
           />
 
           <CardContent className="space-y-2 p-3">

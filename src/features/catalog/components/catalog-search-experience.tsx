@@ -167,8 +167,8 @@ export function CatalogSearchExperience() {
             Found {results.length} result{results.length === 1 ? "" : "s"} for <q>{resolvedQuery}</q>.
           </p>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {results.map((product) => (
-              <ProductGridCard key={product.id} product={product} />
+            {results.map((product, index) => (
+              <ProductGridCard key={product.id} product={product} eagerImage={index === 0} />
             ))}
           </div>
         </div>

@@ -308,6 +308,13 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - Admin dashboard metric queries are wrapped with an `AppError` code (`ADMIN_DASHBOARD_METRICS_QUERY_FAILED`) so the UI can keep rendering with user-safe fallback messaging when the database is temporarily unavailable.
 - Admin image uploads follow the same user-safe error policy: route-handler validation rejects unsupported types and oversize files early, storage configuration failures resolve to a clear admin-facing message, and form fields always preserve manual URL entry as a fallback.
 
+## Analytics Strategy
+
+- Client analytics wiring is centralized in `src/features/analytics/components/analytics-provider.tsx` and mounted once in `src/app/layout.tsx`.
+- GA4 script loading uses the standard gtag loader (`https://www.googletagmanager.com/gtag/js?id=...`) and is enabled only when `NEXT_PUBLIC_GA_ID` is present.
+- CSP generation in `src/config/security.ts` keeps analytics script policy narrow by adding `https://www.googletagmanager.com` to `script-src` only when GA is configured.
+- This avoids broad script-source weakening while keeping analytics opt-in per environment.
+
 ## Admin Dashboard Metrics Strategy
 
 - Metric query orchestration lives in `src/features/admin/dashboard/service.ts` to keep route files thin and typed.
