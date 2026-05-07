@@ -40,9 +40,9 @@ export default async function CategoriesPage() {
           className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
           data-testid={testIds.storefront.categoryGrid}
         >
-          {categories.map((category) => (
+          {categories.map((category, index) => (
             <li key={category.id} className="list-none">
-              <CategoryOverviewCard category={category} />
+              <CategoryOverviewCard category={category} eagerImage={index === 0} />
             </li>
           ))}
         </ul>

@@ -86,4 +86,29 @@ describe("OneDollarSectionBlock", () => {
     expect(screen.getAllByTestId("carousel-item")).toHaveLength(HOMEPAGE_CAROUSEL_MAX_ITEMS);
   });
 
+  it("applies responsive sizes to one-dollar product images", () => {
+    render(
+      <OneDollarSectionBlock
+        section={buildSection([
+          {
+            ...buildProduct("d-image"),
+            images: [
+              {
+                url: "https://cdn.example.com/products/d-image.jpg",
+                alt: "Deal d-image",
+                isPrimary: true,
+              },
+            ],
+          },
+        ])}
+      />,
+    );
+
+    const image = screen.getByTestId("storefront-product-card-image-d-image");
+    expect(image).toHaveAttribute(
+      "sizes",
+      "(max-width: 639px) 85vw, (max-width: 767px) 50vw, (max-width: 1023px) 33vw, (max-width: 1279px) 25vw, (max-width: 1535px) 20vw, 17vw",
+    );
+  });
+
 });

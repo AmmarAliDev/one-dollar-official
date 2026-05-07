@@ -35,6 +35,17 @@ export type AdminCategoryRecord = {
   updatedAt: Date;
 };
 
+export type AdminCategoryListItem = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+  seoTitle: string | null;
+  seoDescription: string | null;
+  updatedAt: Date;
+};
+
 function isKnownStatus(value: string | undefined): value is "DRAFT" | "PUBLISHED" | "ARCHIVED" {
   return value === "DRAFT" || value === "PUBLISHED" || value === "ARCHIVED";
 }
@@ -87,7 +98,7 @@ async function writeCategoryAuditLog(input: {
   });
 }
 
-export async function listAdminCategories(filters: AdminCategoryListFilters = {}): Promise<AdminCategoryRecord[]> {
+export async function listAdminCategories(filters: AdminCategoryListFilters = {}): Promise<AdminCategoryListItem[]> {
   const db = getPrismaClient();
   const query = filters.query?.trim();
   const status = isKnownStatus(filters.status) ? filters.status : undefined;
@@ -126,17 +137,9 @@ export async function listAdminCategories(filters: AdminCategoryListFilters = {}
       name: true,
       slug: true,
       description: true,
-      cardImageUrl: true,
       status: true,
       seoTitle: true,
       seoDescription: true,
-      seoCanonicalUrl: true,
-      seoOgTitle: true,
-      seoOgDescription: true,
-      seoImageUrl: true,
-      seoNoIndex: true,
-      seoSchemaNotes: true,
-      createdAt: true,
       updatedAt: true,
     },
   });

@@ -17,6 +17,7 @@
 13. [Search Strategy](#search-strategy)
 14. [Error Handling Strategy](#error-handling-strategy)
 15. [Analytics Strategy](#analytics-strategy)
+16. [Admin Form Performance Strategy](#admin-form-performance-strategy)
 
 ---
 
@@ -82,6 +83,7 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `PageContainer` and `PageShell` should be reused for page spacing instead of duplicating wrapper classes.
 - Shared section intros now support explicit heading levels through `SectionHeader.titleAs`/`titleId` so route pages can declare a clear primary `h1` while nested modules continue using lower heading levels.
 - Shared frontend feedback uses `sonner` through `src/components/providers/app-toaster.tsx` and `src/lib/notify.ts`.
+- Storefront image rendering is standardized on `next/image` with a surface-based loading policy: only true above-the-fold media uses eager/high fetch priority, while cards/carousels/thumbnails remain lazy; responsive surfaces must provide explicit `sizes` so image candidates match actual card widths and reduce transfer cost.
 - Catalog listing UI lives in `src/features/catalog/components`; keep product-grid and filter scaffolds there instead of placing listing-specific markup directly in route files.
 - PDP UI also lives in `src/features/catalog/components` (gallery, product panel, variants, specs, reviews, related products, and skeleton states); route files should compose these primitives instead of duplicating product-detail markup.
 - Header category navigation is assembled in `AppHeader` using live catalog categories (`getCatalogCategories`) plus a small ordering helper (`buildStorefrontCategoryMenu`) so the navigation contract is explicit and testable.
@@ -232,6 +234,20 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 	- Admin list pages are still revalidated for operator freshness.
 - Dynamic rendering remains intentional for truly personalized/request-bound routes (account, cart, checkout, wishlist, order confirmation, and admin surfaces).
 
+## Admin Form Performance Strategy
+
+- Admin list routes that include forms should avoid reusing edit-level DB selectors for table/list reads. Keep list queries summary-focused and defer full records to edit routes.
+- Current optimized list-query examples:
+	- `src/features/admin/products/service.ts#listAdminProducts` selects list-only fields plus lightweight variant inventory/price data.
+	- `src/features/admin/categories/service.ts#listAdminCategories` selects table fields only.
+	- `src/features/admin/blog/service.ts#listAdminBlogPosts` excludes heavy article content JSON from list reads.
+- Form-heavy admin pages that render many editable records now prefer demand-loaded editors:
+	- `/admin/homepage/banners`
+	- `/admin/homepage/campaigns`
+	- `/admin/homepage/sections`
+- The shared pattern is: render a lightweight server list, show an explicit "Edit" control per record, and mount the client editor only when requested. This lowers initial hydration cost and keeps input responsiveness stable as record counts grow.
+- RBAC checks, action guards, server-side validation, and mutation/audit behavior remain unchanged by these optimizations.
+
 ## Search Strategy
 
 - `src/app/(storefront)/search/page.tsx` composes a dedicated search experience shell through `CatalogSearchExperience`.
@@ -291,6 +307,13 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `src/lib/logger.ts` offers a client/server-safe logger with sensitive field redaction for operational diagnostics.
 - Admin dashboard metric queries are wrapped with an `AppError` code (`ADMIN_DASHBOARD_METRICS_QUERY_FAILED`) so the UI can keep rendering with user-safe fallback messaging when the database is temporarily unavailable.
 - Admin image uploads follow the same user-safe error policy: route-handler validation rejects unsupported types and oversize files early, storage configuration failures resolve to a clear admin-facing message, and form fields always preserve manual URL entry as a fallback.
+
+## Analytics Strategy
+
+- Client analytics wiring is centralized in `src/features/analytics/components/analytics-provider.tsx` and mounted once in `src/app/layout.tsx`.
+- GA4 script loading uses the standard gtag loader (`https://www.googletagmanager.com/gtag/js?id=...`) and is enabled only when `NEXT_PUBLIC_GA_ID` is present.
+- CSP generation in `src/config/security.ts` keeps analytics script policy narrow by adding `https://www.googletagmanager.com` to `script-src` only when GA is configured.
+- This avoids broad script-source weakening while keeping analytics opt-in per environment.
 
 ## Admin Dashboard Metrics Strategy
 

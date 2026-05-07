@@ -57,4 +57,11 @@ describe("BlogPostCard semantics", () => {
     expect(time).toBeInTheDocument();
     expect(time).toHaveAttribute("datetime", "2026-04-18T10:00:00.000Z");
   });
+
+  it("applies responsive sizes for the two-column blog grid layout", () => {
+    render(<BlogPostCard post={makePost()} />);
+
+    const image = screen.getByRole("img", { name: "Pantry shelves with labels" });
+    expect(image).toHaveAttribute("sizes", "(max-width: 767px) 100vw, 50vw");
+  });
 });

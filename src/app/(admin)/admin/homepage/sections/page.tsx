@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { buildMetadata } from "@/config/metadata";
 import { routes } from "@/config/routes";
 import { AdminPageHeader } from "@/features/admin/components/admin-page-patterns";
-import { DeleteAdminHomepageSectionButton } from "@/features/admin/homepage/components/delete-admin-homepage-section-button";
+import { AdminHomepageSectionEditPanel } from "@/features/admin/homepage/components/admin-homepage-section-edit-panel";
 import { AdminHomepageSectionForm } from "@/features/admin/homepage/components/admin-homepage-section-form";
 import { adminHomepageSectionKindValues, type AdminHomepageSectionType } from "@/features/admin/homepage/validation";
 import {
@@ -133,11 +133,11 @@ export default async function AdminHomepageSectionsPage({ searchParams }: AdminH
                   {getTypeLabel(section.type)} • Last updated {section.updatedAt.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}                </CardDescription>
               </CardHeader>
               <CardContent>
-                <AdminHomepageSectionForm
+                <AdminHomepageSectionEditPanel
                   action={updateAdminHomepageSectionAction}
-                  submitLabel="Save changes"
-                  returnTo={routes.admin.homepageSections}
                   sectionId={section.id}
+                  sectionTitle={section.title}
+                  returnTo={routes.admin.homepageSections}
                   initialValues={{
                     key: section.key,
                     title: section.title,
@@ -149,13 +149,6 @@ export default async function AdminHomepageSectionsPage({ searchParams }: AdminH
                     content: section.contentJson,
                   }}
                 />
-                <div className="mt-4 flex justify-end">
-                  <DeleteAdminHomepageSectionButton
-                    sectionId={section.id}
-                    sectionTitle={section.title}
-                    returnTo={routes.admin.homepageSections}
-                  />
-                </div>
               </CardContent>
             </Card>
           ))

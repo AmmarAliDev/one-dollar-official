@@ -45,6 +45,19 @@ describe("admin blog service", () => {
         }),
       }),
     );
+
+    const listQuery = prismaMock.blogPost.findMany.mock.calls[0]?.[0];
+    expect(listQuery?.select).toMatchObject({
+      id: true,
+      title: true,
+      slug: true,
+      status: true,
+      publishedAt: true,
+      updatedAt: true,
+    });
+    expect(listQuery?.select?.content).toBeUndefined();
+    expect(listQuery?.select?.excerpt).toBeUndefined();
+    expect(listQuery?.select?.seoDescription).toBeUndefined();
   });
 
   it("creates blog post and writes audit log", async () => {

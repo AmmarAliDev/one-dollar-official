@@ -48,6 +48,21 @@ describe("admin categories service", () => {
         }),
       }),
     );
+
+    const listQuery = prismaMock.category.findMany.mock.calls[0]?.[0];
+    expect(listQuery?.select).toMatchObject({
+      id: true,
+      name: true,
+      slug: true,
+      description: true,
+      status: true,
+      seoTitle: true,
+      seoDescription: true,
+      updatedAt: true,
+    });
+    expect(listQuery?.select?.seoCanonicalUrl).toBeUndefined();
+    expect(listQuery?.select?.cardImageUrl).toBeUndefined();
+    expect(listQuery?.select?.createdAt).toBeUndefined();
   });
 
   it("creates category and writes audit log", async () => {

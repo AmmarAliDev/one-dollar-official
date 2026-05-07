@@ -22,6 +22,7 @@ type ProductCardMediaProps = {
   imageLabel: string;
   imageTone: CatalogProductImageTone;
   attributeSummary: string[];
+  eagerImage?: boolean;
 };
 
 export function ProductCardMedia({
@@ -30,6 +31,7 @@ export function ProductCardMedia({
   imageLabel,
   imageTone,
   attributeSummary,
+  eagerImage = false,
 }: ProductCardMediaProps) {
   const [imageFailed, setImageFailed] = useState(false);
   const normalizedImageUrl = normalizeCatalogImageUrl(imageUrl);
@@ -60,6 +62,8 @@ export function ProductCardMedia({
         fill
         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
         className="object-contain"
+        loading={eagerImage ? "eager" : "lazy"}
+        fetchPriority={eagerImage ? "high" : "auto"}
         onError={() => {
           setImageFailed(true);
         }}

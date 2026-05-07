@@ -20,6 +20,22 @@
 - Avoid hardcoded one-off hex values in feature components. Prefer semantic tokens so palette updates remain centralized and safe.
 - Keep overlays, menus, and dialogs on semantic surfaces (`bg-popover`, `bg-card`) and preserve readable foreground contrast.
 
+## Image Optimization Conventions (Next 16)
+
+- Use `next/image` for storefront and admin content imagery. Keep raw `<img>` for test mocks only.
+- Do not use `priority`; in this codebase's Next version it is deprecated. Prefer one of:
+	- `loading="eager"` + `fetchPriority="high"` for true above-the-fold/LCP images (for example homepage hero and blog article cover).
+	- default lazy behavior for card grids, carousels, thumbnails, and below-the-fold media.
+- Match layout mode to container behavior:
+	- Use `fill` only when the parent has stable dimensions/aspect and `position: relative`.
+	- Use explicit `width`/`height` when intrinsic media dimensions are known.
+- Always provide `sizes` for responsive images so browsers choose the right `srcset` candidate and avoid oversized downloads.
+- Keep `quality` unset unless a surface has a measured fidelity requirement. Default optimization quality is preferred for general cards and editorial imagery.
+- Alt text rules:
+	- Meaningful images: provide descriptive alt text that can replace the image meaningfully.
+	- Decorative-only images: use empty alt (`alt=""`) when appropriate.
+- Preserve layout stability by keeping fixed/aspect-constrained media containers (`aspect-*`, fixed thumbnail dimensions) and maintaining graceful placeholder fallbacks when image URLs are absent or fail.
+
 ### Storefront Add-to-Cart Toast Pattern
 
 - Add-to-cart success toasts use `buildAddToCartToastPayload` in `src/features/catalog/lib/add-to-cart-toast.ts` so message shape, duration, and CTA logic stay centralized and testable.
@@ -168,6 +184,8 @@
 - Use the shared shadcn-style sidebar primitives in `src/components/ui/sidebar.tsx` (`SidebarProvider`, `Sidebar`, `SidebarInset`, `SidebarTrigger`) for app-level admin navigation shells. This keeps desktop collapse and mobile drawer behavior consistent across future admin modules.
 - Keep role-aware rendering in feature-level nav modules (for example `getVisibleAdminNavigation`) and pass only visible links into sidebar UI components.
 - If a role resolves to zero sidebar links, render a user-friendly empty sidebar status instead of a blank panel.
+- For form-heavy admin list pages, do not mount every edit form by default. Use a lightweight per-record panel with an explicit edit toggle, and mount the full editor on demand.
+- Demand-loaded admin editors should use dynamic imports for heavy client form modules to reduce initial route hydration cost.
 
 ## Form System Conventions
 

@@ -9,10 +9,10 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { routes } from "@/config/routes";
 
-import type { AdminBlogRecord } from "../service";
+import type { AdminBlogListItem } from "../service";
 import { DeleteBlogPostButton } from "./delete-blog-post-button";
 
-const columnHelper = createDataTableColumnHelper<AdminBlogRecord>();
+const columnHelper = createDataTableColumnHelper<AdminBlogListItem>();
 
 const statusBadgeVariantMap: Record<"DRAFT" | "PUBLISHED" | "ARCHIVED", "secondary" | "info" | "warning"> = {
   DRAFT: "secondary",
@@ -26,7 +26,7 @@ const statusLabelMap: Record<"DRAFT" | "PUBLISHED" | "ARCHIVED", string> = {
   ARCHIVED: "Archived",
 };
 
-export const adminBlogTableColumns: ColumnDef<AdminBlogRecord, any>[] = [
+export const adminBlogTableColumns: ColumnDef<AdminBlogListItem, any>[] = [
   columnHelper.accessor("title", {
     id: "title",
     header: "Title",
@@ -102,7 +102,7 @@ export const adminBlogTableColumns: ColumnDef<AdminBlogRecord, any>[] = [
 ];
 
 export type AdminBlogTableProps = {
-  posts: AdminBlogRecord[];
+  posts: AdminBlogListItem[];
   returnTo?: string;
   emptyTitle?: string;
   emptyDescription?: string;
@@ -114,7 +114,7 @@ export function AdminBlogTable({
   emptyTitle = "No blog posts found",
   emptyDescription = "Create your first article or adjust the current filters.",
 }: AdminBlogTableProps) {
-  const columns: ColumnDef<AdminBlogRecord, any>[] = [
+  const columns: ColumnDef<AdminBlogListItem, any>[] = [
     ...adminBlogTableColumns,
     columnHelper.display({
       id: "actions",
@@ -135,7 +135,7 @@ export function AdminBlogTable({
   ];
 
   return (
-    <DataTable<AdminBlogRecord>
+    <DataTable<AdminBlogListItem>
       data={posts}
       columns={columns}
       getRowId={(row) => row.id}

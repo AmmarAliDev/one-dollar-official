@@ -60,6 +60,14 @@ describe("ProductGridCard media behavior", () => {
     expect(screen.queryByRole("img", { name: /daily face wash image placeholder/i })).not.toBeInTheDocument();
   });
 
+  it("uses eager loading when the card is marked as above the fold", () => {
+    render(<ProductGridCard product={makeProduct()} eagerImage />);
+
+    const image = screen.getByRole("img", { name: /daily face wash catalog image/i });
+    expect(image).toHaveAttribute("loading", "eager");
+    expect(image).toHaveAttribute("fetchpriority", "high");
+  });
+
   it("falls back to gradient placeholder when image URL is missing", () => {
     render(<ProductGridCard product={makeProduct({ imageUrl: undefined })} />);
 

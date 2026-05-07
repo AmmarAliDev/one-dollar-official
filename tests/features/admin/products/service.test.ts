@@ -84,6 +84,27 @@ describe("admin product service", () => {
         take: 20,
       }),
     );
+
+    const listQuery = prismaMock.product.findMany.mock.calls[0]?.[0];
+    expect(listQuery?.select).toMatchObject({
+      id: true,
+      name: true,
+      slug: true,
+      shortDescription: true,
+      status: true,
+      seoTitle: true,
+      updatedAt: true,
+      metadata: true,
+      category: {
+        select: {
+          name: true,
+        },
+      },
+      variants: expect.any(Object),
+    });
+    expect(listQuery?.select?.images).toBeUndefined();
+    expect(listQuery?.select?.specifications).toBeUndefined();
+    expect(listQuery?.select?.description).toBeUndefined();
   });
 
   it("creates a simple product with inventory and audit logging", async () => {

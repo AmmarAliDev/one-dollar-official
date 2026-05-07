@@ -113,4 +113,29 @@ describe("FeaturedProductsSectionBlock", () => {
 
     expect(screen.getByText("A great item")).toBeInTheDocument();
   });
+
+  it("applies responsive sizes to product card images", () => {
+    render(
+      <FeaturedProductsSectionBlock
+        section={buildSection([
+          {
+            ...buildProduct("p-image"),
+            images: [
+              {
+                url: "https://cdn.example.com/products/p-image.jpg",
+                alt: "Product p-image",
+                isPrimary: true,
+              },
+            ],
+          },
+        ])}
+      />,
+    );
+
+    const image = screen.getByTestId("storefront-product-card-image-p-image");
+    expect(image).toHaveAttribute(
+      "sizes",
+      "(max-width: 639px) 85vw, (max-width: 767px) 50vw, (max-width: 1023px) 33vw, (max-width: 1279px) 25vw, (max-width: 1535px) 20vw, 17vw",
+    );
+  });
 });

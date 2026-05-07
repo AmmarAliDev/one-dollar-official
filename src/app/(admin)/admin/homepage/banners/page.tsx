@@ -7,8 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { buildMetadata } from "@/config/metadata";
 import { routes } from "@/config/routes";
 import { AdminPageHeader } from "@/features/admin/components/admin-page-patterns";
+import { AdminBannerEditPanel } from "@/features/admin/homepage/components/admin-banner-edit-panel";
 import { AdminBannerForm } from "@/features/admin/homepage/components/admin-banner-form";
-import { DeleteAdminBannerButton } from "@/features/admin/homepage/components/delete-admin-banner-button";
 import {
   createAdminBannerAction,
   getHomepageContentErrorMessage,
@@ -99,11 +99,11 @@ export default async function AdminHomepageBannersPage({ searchParams }: AdminHo
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <AdminBannerForm
+                <AdminBannerEditPanel
                   action={updateAdminBannerAction}
-                  submitLabel="Save changes"
-                  returnTo={routes.admin.homepageBanners}
                   bannerId={banner.id}
+                  bannerTitle={banner.title}
+                  returnTo={routes.admin.homepageBanners}
                   initialValues={{
                     title: banner.title,
                     imageUrl: banner.imageUrl,
@@ -114,13 +114,6 @@ export default async function AdminHomepageBannersPage({ searchParams }: AdminHo
                     endAt: banner.endAt,
                   }}
                 />
-                <div className="mt-4 flex justify-end">
-                  <DeleteAdminBannerButton
-                    bannerId={banner.id}
-                    bannerTitle={banner.title}
-                    returnTo={routes.admin.homepageBanners}
-                  />
-                </div>
               </CardContent>
             </Card>
           ))

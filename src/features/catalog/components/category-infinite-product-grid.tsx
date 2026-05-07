@@ -123,9 +123,9 @@ export function CategoryInfiniteProductGrid({ listing }: CategoryInfiniteProduct
             className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
             data-testid={testIds.storefront.productGrid}
           >
-            {products.map((product) => (
+            {products.map((product, index) => (
               <li key={product.id} className="list-none">
-                <ProductGridCard product={product} />
+                <ProductGridCard product={product} eagerImage={index === 0} />
               </li>
             ))}
           </ul>

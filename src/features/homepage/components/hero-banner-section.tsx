@@ -50,6 +50,8 @@ export function HeroBannerSectionBlock({ section }: HeroBannerSectionProps) {
                 fill
                 sizes="(min-width: 1024px) 360px, 100vw"
                 className="object-cover"
+                loading="eager"
+                fetchPriority="high"
               />
             </div>
           ) : null}

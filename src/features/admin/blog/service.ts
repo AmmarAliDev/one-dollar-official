@@ -41,6 +41,15 @@ export type AdminBlogRecord = {
   updatedAt: Date;
 };
 
+export type AdminBlogListItem = {
+  id: string;
+  title: string;
+  slug: string;
+  status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+  publishedAt: Date | null;
+  updatedAt: Date;
+};
+
 function isKnownStatus(value: string | undefined): value is "DRAFT" | "PUBLISHED" | "ARCHIVED" {
   return value === "DRAFT" || value === "PUBLISHED" || value === "ARCHIVED";
 }
@@ -113,7 +122,7 @@ async function writeBlogAuditLog(input: {
   });
 }
 
-export async function listAdminBlogPosts(filters: AdminBlogListFilters = {}): Promise<AdminBlogRecord[]> {
+export async function listAdminBlogPosts(filters: AdminBlogListFilters = {}): Promise<AdminBlogListItem[]> {
   const db = getPrismaClient();
   const query = filters.query?.trim();
   const status = isKnownStatus(filters.status) ? filters.status : undefined;
@@ -134,26 +143,10 @@ export async function listAdminBlogPosts(filters: AdminBlogListFilters = {}): Pr
     orderBy: [{ updatedAt: "desc" }, { publishedAt: "desc" }, { title: "asc" }],
     select: {
       id: true,
-      locale: true,
       title: true,
       slug: true,
-      excerpt: true,
-      content: true,
-      coverImageUrl: true,
-      coverImageAlt: true,
-      coverImageWidth: true,
-      coverImageHeight: true,
       status: true,
       publishedAt: true,
-      seoTitle: true,
-      seoDescription: true,
-      seoCanonicalUrl: true,
-      seoOgTitle: true,
-      seoOgDescription: true,
-      seoImageUrl: true,
-      seoNoIndex: true,
-      seoSchemaNotes: true,
-      createdAt: true,
       updatedAt: true,
     },
   });

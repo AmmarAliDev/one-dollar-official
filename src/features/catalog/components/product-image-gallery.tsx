@@ -31,6 +31,7 @@ export function ProductImageGallery({ images, productName }: ProductImageGallery
   const primary = images.find((img) => img.isPrimary) ?? images[0];
   const [activeId, setActiveId] = useState<string>(primary?.id ?? "");
   const active = images.find((img) => img.id === activeId) ?? primary;
+  const isInitialAboveFoldImage = Boolean(primary && active?.id === primary.id);
 
   if (!active) {
     return null;
@@ -47,7 +48,8 @@ export function ProductImageGallery({ images, productName }: ProductImageGallery
             fill
             sizes="(max-width: 768px) 100vw, 50vw"
             className="object-contain"
-            priority={active.isPrimary}
+            loading={isInitialAboveFoldImage ? "eager" : "lazy"}
+            fetchPriority={isInitialAboveFoldImage ? "high" : "auto"}
           />
         </div>
       ) : (
@@ -90,6 +92,7 @@ export function ProductImageGallery({ images, productName }: ProductImageGallery
                   alt={img.label}
                   width={80}
                   height={80}
+                  sizes="80px"
                   className="h-full w-full object-contain"
                 />
               ) : null}

@@ -47,6 +47,21 @@ describe("CategoryOverviewCard media behavior", () => {
     expect(media).toHaveAttribute("sizes", "(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw");
   });
 
+  it("uses eager loading when the card is marked as above the fold", () => {
+    render(
+      <CategoryOverviewCard
+        category={makeCategory({
+          cardImageUrl: "https://cdn.example.com/categories/home-care.jpg",
+        })}
+        eagerImage
+      />,
+    );
+
+    const media = document.querySelector('[data-testid="storefront-category-card-image-home-care"]');
+    expect(media).toHaveAttribute("loading", "eager");
+    expect(media).toHaveAttribute("fetchpriority", "high");
+  });
+
   it("renders a fallback visual when no category image exists", () => {
     render(<CategoryOverviewCard category={makeCategory({ cardImageUrl: undefined })} />);
 
