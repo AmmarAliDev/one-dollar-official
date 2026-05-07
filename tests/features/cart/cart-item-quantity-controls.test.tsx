@@ -498,6 +498,8 @@ describe("CartItemQuantityControls", () => {
     });
 
     it("does not commit when input equals current quantity", async () => {
+      global.fetch = vi.fn() as any;
+
       const user = userEvent.setup();
       render(
         <CartItemQuantityControls
@@ -518,7 +520,6 @@ describe("CartItemQuantityControls", () => {
 
       expect(global.fetch).not.toHaveBeenCalled();
     });
-
     it("updates input display after successful mutation", async () => {
       mockFetchResponse({
         cart: {

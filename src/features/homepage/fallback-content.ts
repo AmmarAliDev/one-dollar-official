@@ -22,7 +22,7 @@ export function buildHomepageFallbackSections(runtimeEnv: RuntimeEnv = env): Hom
       primaryCtaLabel: "Browse categories",
       primaryCtaHref: routes.storefront.categories,
       ...(showPreviewArtifacts ? { secondaryCta: { label: "Preview storefront shell", href: routes.storefront.preview } } : {}),
-      eyebrow: "CMS-ready homepage foundation",
+      // eyebrow: "CMS-ready homepage foundation",
       displayOrder: 10,
     },
     {
