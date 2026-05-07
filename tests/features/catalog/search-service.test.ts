@@ -19,6 +19,8 @@ vi.mock("@/server/db/catalog-queries", () => ({
   getPublishedCategoryBySlug: vi.fn().mockResolvedValue(null),
   listPublishedProductsByCategory: vi.fn().mockResolvedValue([]),
   listPublishedProductsByIds: vi.fn().mockResolvedValue([]),
+  countPublishedOneDollarProducts: vi.fn().mockResolvedValue(0),
+  getPublishedProductContextBySlug: vi.fn().mockResolvedValue(null),
   getPublishedProductBySlug: vi.fn().mockResolvedValue(null),
   getRelatedPublishedProducts: vi.fn().mockResolvedValue([]),
   getAllPublishedProductSlugsWithCategories: vi.fn().mockResolvedValue([]),

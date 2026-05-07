@@ -8,6 +8,7 @@ import { buildMetadata } from "@/config/metadata";
 import { routes } from "@/config/routes";
 import {
   getCatalogCategory,
+  getProductMetadataBySlug,
   getProductBySlug,
   getProductSlugsWithCategory,
   getRelatedProducts,
@@ -36,7 +37,7 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
   const { slug, productSlug } = await params;
-  const product = await getProductBySlug(productSlug);
+  const product = await getProductMetadataBySlug(productSlug);
 
   if (!product || product.categorySlug !== slug) {
     return buildMetadata({ title: "Product", path: `/categories/${slug}/${productSlug}` });

@@ -28,12 +28,16 @@ const mockGetPublishedCategoryBySlug = vi.fn();
 const mockListPublishedProductsByCategory = vi.fn();
 const mockGetPublishedProductBySlug = vi.fn();
 const mockListAllPublishedProducts = vi.fn();
+const mockCountPublishedOneDollarProducts = vi.fn().mockResolvedValue(0);
+const mockGetPublishedProductContextBySlug = vi.fn().mockResolvedValue(null);
 
 vi.mock("@/server/db/catalog-queries", () => ({
   listPublishedCategories: (...args: unknown[]) => mockListPublishedCategories(...args),
   getPublishedCategoryBySlug: (...args: unknown[]) => mockGetPublishedCategoryBySlug(...args),
   listPublishedProductsByCategory: (...args: unknown[]) => mockListPublishedProductsByCategory(...args),
   listAllPublishedProducts: (...args: unknown[]) => mockListAllPublishedProducts(...args),
+  countPublishedOneDollarProducts: (...args: unknown[]) => mockCountPublishedOneDollarProducts(...args),
+  getPublishedProductContextBySlug: (...args: unknown[]) => mockGetPublishedProductContextBySlug(...args),
   listPublishedProductsByIds: vi.fn().mockResolvedValue([]),
   getPublishedProductBySlug: (...args: unknown[]) => mockGetPublishedProductBySlug(...args),
   getRelatedPublishedProducts: vi.fn().mockResolvedValue([]),
@@ -93,7 +97,7 @@ function makeProduct(overrides: Partial<{ id: string; slug: string }> = {}) {
 describe("category publish visibility", () => {
   it("returns published categories to the storefront", async () => {
     mockListPublishedCategories.mockResolvedValue([PUBLISHED_CATEGORY]);
-    mockListAllPublishedProducts.mockResolvedValue([]);
+    mockCountPublishedOneDollarProducts.mockResolvedValue(0);
 
     const categories = await getCatalogCategories();
 
@@ -104,7 +108,7 @@ describe("category publish visibility", () => {
 
   it("returns only One Dollar when no physical categories are published", async () => {
     mockListPublishedCategories.mockResolvedValue([]);
-    mockListAllPublishedProducts.mockResolvedValue([]);
+    mockCountPublishedOneDollarProducts.mockResolvedValue(0);
 
     const categories = await getCatalogCategories();
 
@@ -142,7 +146,7 @@ describe("category publish visibility", () => {
     mockListPublishedCategories.mockResolvedValue([
       { ...PUBLISHED_CATEGORY, _count: { products: 7 } },
     ]);
-    mockListAllPublishedProducts.mockResolvedValue([]);
+    mockCountPublishedOneDollarProducts.mockResolvedValue(0);
 
     const categories = await getCatalogCategories();
     const category = categories.find((entry) => entry.slug === "grocery");

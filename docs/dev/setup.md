@@ -208,6 +208,16 @@ Keep application queries behind `src/server/db` and feature-level repositories i
 	- `DATABASE_URL` points to the pooled URL
 	- `POSTGRES_URL_NON_POOLING` points to the direct (non-pooling) URL
 	- the two values are not identical in hosted environments
+	- hosted `DATABASE_URL` includes both `pgbouncer=true` and `connection_limit=1`
+
+- If deployment build is blocked by runtime DB safety checks, confirm:
+	- `DATABASE_URL` is pooled/runtime-safe (Supabase pooler host, `pgbouncer=true`, `connection_limit=1`)
+	- `POSTGRES_URL_NON_POOLING` is direct/non-pooled for migrations only
+	- `DATABASE_URL` and `POSTGRES_URL_NON_POOLING` are different values in hosted environments
+
+- If you see Prisma `P2024` (`Timed out fetching a new connection from the connection pool`), first verify:
+	- runtime URL strategy above is correct
+	- catalog/product render paths are using lightweight query helpers where available (`getPublishedProductContextBySlug`, `countPublishedOneDollarProducts`)
 
 ## Code Quality Workflow
 

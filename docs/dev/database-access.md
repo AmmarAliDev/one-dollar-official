@@ -75,6 +75,27 @@ export const createProductService = defineService(({ db }) => {
 - Use explicit `QueryResult` helpers only when the caller benefits from a non-throw contract; otherwise throw typed errors.
 - Keep Prisma imports inside `src/server` whenever possible.
 
+## P2024 connection pool timeout hardening (2026-05-08)
+
+Root cause in this codebase was not Prisma client duplication: singleton reuse in `src/server/db/client.ts` was already correct. Pool starvation came from repeated heavyweight catalog reads in hot render paths:
+
+- related-products flow used full PDP lookup (`getPublishedProductBySlug`) only to read id/category/metadata
+- category/navigation One Dollar badge computation loaded full published product records just to count eligible products
+- product-route metadata used full product detail lookup
+
+Implemented fixes:
+
+- Added lightweight cached product context query (`getPublishedProductContextBySlug`) for metadata/related-product routing paths
+- Added lightweight cached One Dollar count query (`countPublishedOneDollarProducts`) that reads only one ordered variant per product instead of full product detail payloads
+- Updated catalog service and PDP metadata flow to consume these lightweight paths
+- Added deployment/runtime safety checks for hosted URLs so pooled runtime configuration mistakes fail early with clear messages
+
+Expected impact:
+
+- fewer concurrent heavyweight Prisma operations during build and runtime
+- shorter connection hold times per request
+- lower risk of `P2024` on small hosted pools
+
 ## Prisma environment and migration workflow
 
 The repository separates local schema development from deployment-time migration execution:
@@ -102,6 +123,7 @@ The repository separates local schema development from deployment-time migration
 - To intentionally bypass the hosted-URL block for a remote development database, set `PRISMA_ALLOW_HOSTED_MIGRATE_DEV=true` for the current shell session.
 - `prisma migrate deploy` now blocks hosted pooled-only setups where `POSTGRES_URL_NON_POOLING` is missing or equals `DATABASE_URL`, unless explicitly overridden.
 - `build:deploy` is blocked outside deploy-like runtime context by default; use `pnpm build` for normal local builds.
+- `build:deploy` now also validates deployment runtime DB strategy: hosted runtime URLs must be pooled (`pgbouncer=true&connection_limit=1`) and must not be the same value as `POSTGRES_URL_NON_POOLING`.
 
 ### Troubleshooting
 
