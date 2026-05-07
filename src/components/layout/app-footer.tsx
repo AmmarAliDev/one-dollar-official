@@ -30,7 +30,7 @@ export function AppFooter() {
     <footer className="border-border/70 bg-background-header-footer border-t text-footer-text">
       <PageContainer className="grid gap-6 py-8 md:grid-cols-3">
         <section className="space-y-3" aria-labelledby="footer-brand-heading">
-          <Badge variant="outline">{siteConfig.defaultCity} launch focus</Badge>
+          {/* <Badge variant="outline">{siteConfig.defaultCity} launch focus</Badge> */}
           <div>
             <div className="flex items-center gap-2">
               <Image

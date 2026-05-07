@@ -68,6 +68,24 @@ SMTP_FROM_NAME=One Dollar
 5. Auth.js `authorize()` in `src/auth.ts` enforces the same rule server-side (`emailVerified` required) and verifies bcrypt hash.
 6. On success → JWT cookie set → redirected to home.
 
+### Auth entry-page access policy
+
+- Authenticated users are redirected away from auth entry pages:
+  - `/auth/sign-in`
+  - `/auth/sign-up`
+- Redirect destination is `routes.storefront.accountProfile` (`/account/profile`) for a consistent signed-in landing surface.
+- This redirect is enforced in the server pages so authenticated users cannot render entry-form UI for login/registration.
+- `from` query parameters are intentionally ignored for already-authenticated visits to entry pages because users are already signed in and should be routed to a stable account destination.
+
+Intentional exemptions (still accessible while logged in):
+
+- `/auth/forgot-password`
+- `/auth/reset-password`
+- `/auth/verify-email`
+- `/auth/error`
+
+Reasoning: these routes are recovery/diagnostic token flows and may still be opened from email links, old tabs, or provider callbacks. Keeping them accessible avoids breaking valid recovery and troubleshooting scenarios.
+
 Unverified user rule:
 
 - Credentials users must verify email before first sign-in.
@@ -109,11 +127,12 @@ Session hardening note:
 The app now uses one primary sign-out convention across storefront, account, and admin UI:
 
 - Prefer the shared `SignOutButton` or a plain `<form action={signOutAction}>` submission for logout controls.
-- `signOutAction` performs the trusted-origin check and then redirects to `routes.storefront.home` after the Auth.js session cookie is cleared.
+- `SignOutButton` is client-enhanced: it first calls `prepareSignOutAction` (trusted-origin check + guest-cart token rotation), then uses `signOut()` from `next-auth/react` with `redirectTo: routes.storefront.home` so `SessionProvider` updates header auth UI immediately after logout.
+- `signOutAction` remains the progressive-enhancement fallback and preserves the same redirect target (`routes.storefront.home`) after clearing the Auth.js session cookie.
 - This pattern is used in the storefront header dropdown, the mobile drawer, the account profile page, and the admin shell menu.
 - Use client-side `signOut()` from `next-auth/react` only for an explicitly client-driven flow that genuinely cannot use a form submission.
 
-This keeps logout behavior progressively enhanced, CSRF-aware, and consistent across desktop and mobile surfaces.
+This keeps logout behavior progressively enhanced, CSRF-aware, and consistent across desktop and mobile surfaces while preventing stale signed-in header UI after sign-out.
 
 ## Auth Form UI Standard
 

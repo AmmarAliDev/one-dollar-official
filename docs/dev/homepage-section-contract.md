@@ -48,6 +48,8 @@ Campaign-generated `deal-spotlight` overlays now support optional explicit media
 - `imageAlt?`: required when `imageUrl` is present.
 - If `targetHref` is missing (or invalid legacy data is encountered), storefront falls back to the first linked campaign product URL.
 - If `imageUrl` is missing, storefront falls back to the first linked campaign product image when available.
+- Spotlight pricing for campaign-generated `deal-spotlight` is sourced from the first linked campaign product variant in the database, using the storefront pricing rule (`compareAtPrice` is shown only when it is greater than `price`).
+- If linked campaign product pricing is missing or incomplete, storefront uses the canonical fallback `deal-spotlight` pricing contract so the homepage remains render-safe.
 
 Featured item media contract (for card layouts):
 
@@ -112,6 +114,7 @@ Sections are classified as either **overlay** (additive, promotional) or **prima
 - Malformed banner rows (for example empty title/message) are skipped safely and logged; malformed links are stripped so announcement text can still render without unsafe anchors.
 - When a campaign overlay is active, fallback `deal-spotlight` is intentionally omitted to prevent duplicate deal spotlight blocks.
 - Campaign spotlight CTA links are now normalized with safe intent: internal paths render as normal links, external URLs open in a new tab with `rel="noopener noreferrer"`, and invalid legacy hrefs degrade to a non-clickable CTA state instead of unsafe navigation.
+- Campaign spotlight pricing selection is defensive: missing linked product variants do not break rendering, and compare-at values lower than or equal to the base price are normalized to non-discount presentation.
 
 ## Rendering Model
 

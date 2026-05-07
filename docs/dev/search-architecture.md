@@ -49,3 +49,16 @@ Provide a fast and simple storefront product search while keeping implementation
 - Empty: shown when a valid query has zero matches.
 - Error: shown when API request fails; retry remains available.
 - Recent searches: placeholder section exists to reserve space for future persistence.
+
+## Category Listing Query-State Contract
+
+While keyword search and category listing are separate flows, both rely on stable URL-driven state.
+
+1. Category route render (`/categories/[slug]`) reads query values at request time and resolves listing results through `getCatalogCategoryListing()`.
+2. `parseCatalogSearchParams()` is the single parser for min/max price, availability, rating, discount, sort, and pagination.
+3. Filter/sort forms and infinite paging both build next URLs through `buildCategoryListingSearchParams()` / `buildCategoryListingHref()`.
+4. Client listing components explicitly resync local state when a new listing payload arrives after navigation so URL changes immediately reflect in:
+  - visible filter controls
+  - rendered products
+  - subsequent infinite-load requests
+5. SEO-safe first render is preserved: page 1 is server-rendered from URL state before client continuation fetches additional pages.

@@ -80,4 +80,28 @@ describe("catalog filter parsing", () => {
 
     expect(params.toString()).toBe("discount=on-sale&sort=price-desc&page=3");
   });
+
+  it("reads first query values from array params", () => {
+    expect(
+      parseCatalogSearchParams({
+        minPrice: ["150", "300"],
+        maxPrice: ["450"],
+        availability: ["low-stock", "in-stock"],
+        rating: ["3-up"],
+        discount: ["20-up"],
+        sort: ["rating-desc", "price-asc"],
+        page: ["2", "0"],
+      }),
+    ).toEqual({
+      minPrice: 150,
+      maxPrice: 450,
+      availability: "low-stock",
+      rating: "3-up",
+      discount: "20-up",
+      sort: "rating-desc",
+      attribute: "",
+      page: 2,
+      pageSize: 6,
+    });
+  });
 });

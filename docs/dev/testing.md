@@ -44,6 +44,7 @@ The Playwright config starts the app with `pnpm dev`, seeds stable E2E data in `
 - Prefer accessible selectors first: headings, labels, buttons, and links.
 - Use shared `data-testid` values only for business-critical surfaces that are dynamic or easy to break during UI refactors.
 - Keep selector names task-focused (`storefront-add-to-cart`, `admin-order-status-form`) instead of style-focused.
+- For icon-only controls, avoid asserting non-contract visual copy. Assert semantic hooks (`role`/accessible name) or stable IDs, and keep at least one accessibility-text assertion (for example sr-only cart-count labels).
 
 Generated E2E artifacts are written to `playwright-report/` and `test-results/`.
 

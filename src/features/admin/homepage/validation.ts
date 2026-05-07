@@ -190,6 +190,16 @@ const requiredWholeNumber = (label: string) =>
       .min(0, `${label} cannot be negative.`),
   );
 
+const optionalWholeNumber = (label: string) =>
+  z.preprocess(
+    parseNumberish,
+    z
+      .number({ error: `${label} must be a valid number.` })
+      .int(`${label} must be a whole number.`)
+      .min(0, `${label} cannot be negative.`)
+      .optional(),
+  );
+
 const announcementBarContentSchema = z.object({
   message: z.string().trim().min(2, "Announcement message is required.").max(180, "Announcement message is too long."),
   href: optionalHref,
@@ -452,6 +462,8 @@ export const adminDealCampaignMutationSchema = z
     id: z.string().trim().min(1, "Campaign ID is required.").optional(),
     name: z.string().trim().min(2, "Campaign name must be at least 2 characters.").max(140, "Campaign name is too long."),
     description: optionalText,
+    price: optionalWholeNumber("Campaign price"),
+    compareAt: optionalWholeNumber("Campaign compare-at price"),
     targetHref: optionalHref,
     imageUrl: optionalStorefrontImageHref,
     imageAlt: optionalShortText,
@@ -460,6 +472,14 @@ export const adminDealCampaignMutationSchema = z
     active: z.preprocess(parseBooleanish, z.boolean()).default(true),
   })
   .superRefine((input, ctx) => {
+    if (typeof input.compareAt === "number" && typeof input.price === "number" && input.compareAt < input.price) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["compareAt"],
+        message: "Campaign compare-at price must be greater than or equal to campaign price.",
+      });
+    }
+
     if (input.startsAt && input.endsAt && input.endsAt < input.startsAt) {
       ctx.addIssue({
         code: "custom",

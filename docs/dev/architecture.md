@@ -55,7 +55,7 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `(storefront)/categories/[slug]/[productSlug]` now provides PDP rendering with gallery, variant interactions, specifications, reviews, and related products
 - `(storefront)/wishlist` now renders authenticated wishlist entries and guest sign-in prompts
 - `(storefront)/account/*` now provides customer account routes for profile, addresses, order history, order detail, and reviews
-- `(storefront)` now uses the shared `SignOutButton` convention for authenticated logout controls across the header dropdown, mobile drawer, and account profile surface
+- `(storefront)` now uses the shared `SignOutButton` convention for authenticated logout controls across the header dropdown, mobile drawer, and account profile surface; the button is client-enhanced to call Auth.js client `signOut()` after server-side sign-out preparation so `useSession`-driven header controls switch to signed-out state immediately without a manual reload
 - `(admin)` now uses `AdminShell` with a responsive sidebar, topbar, breadcrumb, and user menu, plus the same form-based sign-out pattern and role-aware navigation filtering protected by the RBAC proxy/layout guards
 - Admin navigation UI is standardized through shared shadcn-style sidebar primitives in `src/components/ui/sidebar.tsx`; `AdminShell` composes these primitives while `src/features/admin/navigation.ts` remains the source of truth for permission-aware link visibility.
 - `(admin)/admin` dashboard now reads live operational metrics through `src/features/admin/dashboard/service.ts` (pending orders, delivered-order revenue summary, low-stock count, and recent audit activity preview)
@@ -68,6 +68,7 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `(admin)/admin/inventory` now supports low-stock monitoring plus inline manual stock adjustments for authorized catalog admins
 - `(admin)/admin/settings` now provides practical store settings management (identity, support contacts, shipping basics, and operational defaults) backed by a singleton persistence record and CSRF/RBAC-protected server action writes
 - `(auth)` now uses the same shared form foundation for sign-in and sign-up while preserving the existing server-action flows
+- `(auth)` now performs server-side authenticated-user entry-page redirects for `/auth/sign-in` and `/auth/sign-up` to `/account/profile`; token/error recovery routes (`/auth/forgot-password`, `/auth/reset-password`, `/auth/verify-email`, `/auth/error`) remain intentionally accessible for valid recovery and callback scenarios
 
 ## UI Foundation Strategy
 
@@ -88,6 +89,9 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - Header category load failures are non-fatal: errors are logged server-side, and both desktop/mobile navigation continue rendering with user-safe fallback messaging.
 - Customer account shell UI lives in `src/features/account/components/account-shell.tsx` and should be reused for future account sections.
 - Wishlist client controls live in `src/features/wishlist/components` and call the dedicated wishlist API route.
+- PDP cart interaction is state-driven in `src/features/catalog/components/product-add-to-cart.tsx`: the component subscribes to `cart:changed` and maintains local cart-summary truth for the currently viewed item, then switches UI between add CTA and `CartItemQuantityControls` based on a variant-aware cart-line match (`productSlug` + `sku`).
+- PDP cart badge/count rendering intentionally reuses the same cart-summary derived count semantics as header cart surfaces (`cart.itemCount`) to keep user-visible cart totals synchronized across page-local and global cart UI.
+- PDP in-cart "view cart" affordance is intentionally icon-first; accessible labeling comes from the sr-only cart-count text (for example `1 item in cart`) rather than a visible `In cart` caption.
 
 ## Shared Table Strategy
 
@@ -133,6 +137,7 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - Admin homepage sections now support explicit deletion for all section types in `/admin/homepage/sections` through `deleteAdminHomepageSectionAction` (`homepage.section.deleted`) with confirmation UX, path revalidation, and audit-log persistence.
 - Campaign-generated spotlight overlays can be removed from `/admin/homepage/campaigns` through `deleteAdminDealCampaignAction` (`homepage.campaign.deleted`).
 - Campaign-generated deal spotlights now support optional explicit `targetHref` and `imageUrl`/`imageAlt` fields in the admin campaign flow. Validation enforces safe link/image formats and requires alt text when image URL is set; storefront mapping falls back to linked campaign-product URL/image when these optional fields are absent.
+- Campaign-generated deal spotlight pricing is now DB-backed from the first linked campaign product variant (`price` + optional `compareAtPrice`) and no longer uses inline hardcoded mapper defaults. When linked variant pricing is missing, storefront mapping falls back to the canonical homepage fallback deal pricing so rendering remains stable.
 - Spotlight CTA rendering is safety-aware: relative URLs use standard internal navigation, external URLs open with `noopener noreferrer`, and malformed legacy hrefs degrade to a non-clickable CTA state.
 - Storefront banner mapping is defensive for legacy data quality: empty banner titles are skipped and invalid banner href values are omitted, preventing malformed admin records from breaking homepage rendering.
 - Resolver composition avoids duplicate deal spotlights by omitting fallback `deal-spotlight` when an active campaign overlay is present.
@@ -182,6 +187,7 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `filters.ts` owns query-string parsing and href rebuilding for sorting, filtering, and pagination (unchanged).
 - Category listing now uses an SSR-first + client-continuation pattern: first render includes page 1 (6 products) from `getCatalogCategoryListing`, then `CategoryInfiniteProductGrid` progressively loads next pages via `GET /api/catalog/categories/[slug]/products`.
 - Infinite loading preserves existing filter/sort semantics by reusing the same query-param contract from `filters.ts` (`buildCategoryListingSearchParams` + `parseCatalogSearchParams`) for both route rendering and API page fetches.
+- Category listing client state is URL-resync-safe: when filter/sort query params change and a new listing payload is streamed, `CategoryListingFilters` resets control state from incoming filters and `CategoryInfiniteProductGrid` resets local product/pagination state so subsequent infinite requests always use the active query context.
 - The old button-based next/previous listing controls are replaced by scroll-triggered loading states with explicit progress, retry, and end-of-list messaging so users can understand when more products exist and when the list is complete.
 - The mobile filter/sort sheet intentionally reuses the same listing filter schema and URL builder flow as desktop to keep sorting/filtering semantics and query-string state stable across viewport sizes.
 - The admin mutation layer (`src/features/admin/products/actions.ts`, `src/features/admin/categories/actions.ts`) now calls `revalidatePath('/categories')` after any create/update/delete so the storefront ISR cache is invalidated and reflects changes within the next request.

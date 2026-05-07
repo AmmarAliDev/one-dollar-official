@@ -192,6 +192,12 @@ Cart merge behavior during checkout context resolution:
 - Merge is guest-scoped and does not use authenticated cart tokens as guest cart identifiers
 - If no active guest cart exists for the token, checkout continues with the authenticated active cart without forced merge
 
+### Cart quantity pre-check UX alignment
+
+- Cart quantity controls now provide immediate on-change range feedback (`1..effectiveMax`) before users proceed to checkout.
+- Effective max in cart controls follows cart update constraints: `min(item.availableQuantity, 99)`.
+- Checkout still enforces stock server-side inside order placement transactions; cart-side validation is an early UX hint only.
+
 Invoice route: `GET /api/orders/[orderNumber]/invoice`
 
 Access rules:

@@ -67,6 +67,8 @@ describe("admin homepage content validation", () => {
     const campaign = validateAdminDealCampaignInput({
       name: "Flash deal",
       description: "Limited-time savings",
+      price: 1499,
+      compareAt: 1899,
       targetHref: "/categories/one-dollar",
       imageUrl: "https://store.public.blob.vercel-storage.com/admin/content/campaign-deal.png",
       imageAlt: "Campaign spotlight deal image",
@@ -77,6 +79,17 @@ describe("admin homepage content validation", () => {
 
     expect(banner.success).toBe(true);
     expect(campaign.success).toBe(true);
+  });
+
+  it("rejects campaign compare-at lower than campaign price", () => {
+    const campaign = validateAdminDealCampaignInput({
+      name: "Flash deal",
+      price: 2000,
+      compareAt: 1800,
+      active: true,
+    });
+
+    expect(campaign.success).toBe(false);
   });
 
   it("requires campaign image alt text when image URL is provided", () => {

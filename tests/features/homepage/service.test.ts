@@ -269,6 +269,8 @@ describe("homepage CMS service", () => {
         id: "campaign-targeted",
         name: "Targeted campaign",
         description: "Direct campaign destination",
+        price: 1399,
+        compareAt: 1699,
         targetHref: "/categories/one-dollar/flash-cleaner",
         imageUrl: "https://store.public.blob.vercel-storage.com/admin/content/campaign-targeted.png",
         imageAlt: "Campaign featured product collage",
@@ -285,6 +287,8 @@ describe("homepage CMS service", () => {
 
     expect(section).toMatchObject({
       kind: "deal-spotlight",
+      price: 1399,
+      compareAt: 1699,
       ctaHref: "/categories/one-dollar/flash-cleaner",
       image: {
         url: "https://store.public.blob.vercel-storage.com/admin/content/campaign-targeted.png",
@@ -338,11 +342,99 @@ describe("homepage CMS service", () => {
 
     expect(section).toMatchObject({
       kind: "deal-spotlight",
+      price: 799,
+      compareAt: 999,
       ctaHref: "/categories/home-care/flash-cleaner",
       image: {
         url: "https://store.public.blob.vercel-storage.com/admin/content/flash-cleaner.png",
         alt: "Flash cleaner bottle",
       },
+    });
+  });
+
+  it("falls back to default spotlight pricing when linked campaign product pricing is missing", async () => {
+    prismaMock.homePageSection.findMany.mockResolvedValue([]);
+    prismaMock.banner.findMany.mockResolvedValue([]);
+    prismaMock.dealCampaign.findMany.mockResolvedValue([
+      {
+        id: "campaign-missing-pricing",
+        name: "Missing pricing campaign",
+        description: "No variant pricing available",
+        targetHref: null,
+        imageUrl: null,
+        imageAlt: null,
+        active: true,
+        startsAt: null,
+        endsAt: null,
+        updatedAt: new Date("2026-05-05T08:00:00.000Z"),
+        products: [
+          {
+            product: {
+              slug: "flash-cleaner",
+              category: {
+                slug: "home-care",
+              },
+              images: [],
+              variants: [],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const result = await getHomepageContent();
+    const section = result.sections.find((entry) => entry.id === "campaign-campaign-missing-pricing");
+
+    expect(section).toMatchObject({
+      kind: "deal-spotlight",
+      price: 1599,
+      compareAt: 1999,
+      ctaHref: "/categories/home-care/flash-cleaner",
+    });
+  });
+
+  it("keeps compare-at equal to price when linked campaign compare-at is absent or invalid", async () => {
+    prismaMock.homePageSection.findMany.mockResolvedValue([]);
+    prismaMock.banner.findMany.mockResolvedValue([]);
+    prismaMock.dealCampaign.findMany.mockResolvedValue([
+      {
+        id: "campaign-no-discount",
+        name: "No discount campaign",
+        description: "Compare-at should not exceed real data",
+        targetHref: null,
+        imageUrl: null,
+        imageAlt: null,
+        active: true,
+        startsAt: null,
+        endsAt: null,
+        updatedAt: new Date("2026-05-05T08:00:00.000Z"),
+        products: [
+          {
+            product: {
+              slug: "flash-cleaner",
+              category: {
+                slug: "home-care",
+              },
+              images: [],
+              variants: [
+                {
+                  price: 899,
+                  compareAtPrice: 799,
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const result = await getHomepageContent();
+    const section = result.sections.find((entry) => entry.id === "campaign-campaign-no-discount");
+
+    expect(section).toMatchObject({
+      kind: "deal-spotlight",
+      price: 899,
+      compareAt: 899,
     });
   });
 

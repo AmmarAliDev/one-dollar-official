@@ -1,8 +1,13 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
+import { auth } from "@/auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { buildMetadata } from "@/config/metadata";
 import { routes } from "@/config/routes";
+import {
+  getAuthenticatedUserAuthPageRedirect,
+} from "@/features/auth/auth-page-redirect";
 import { GoogleSignInButton } from "@/features/auth/components/google-sign-in-button";
 import { SignInForm } from "@/features/auth/components/sign-in-form";
 
@@ -37,7 +42,13 @@ function isSafeRelativePath(value: string) {
 }
 
 export default async function SignInPage({ searchParams }: SignInPageProps) {
-  const resolvedSearchParams = await searchParams;
+  const [session, resolvedSearchParams] = await Promise.all([auth(), searchParams]);
+  const authenticatedRedirectPath = getAuthenticatedUserAuthPageRedirect(routes.auth.signIn, session?.user?.id);
+
+  if (authenticatedRedirectPath) {
+    redirect(authenticatedRedirectPath);
+  }
+
   const redirectTo = isSafeRelativePath(`${resolvedSearchParams?.from ?? ""}`)
     ? `${resolvedSearchParams?.from}`.trim()
     : routes.storefront.home;

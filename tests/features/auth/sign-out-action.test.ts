@@ -24,7 +24,31 @@ vi.mock("@/features/cart", () => ({
 }));
 
 import { routes } from "@/config/routes";
-import { signOutAction } from "@/features/auth/actions/sign-out";
+import { prepareSignOutAction, signOutAction } from "@/features/auth/actions/sign-out";
+
+describe("prepareSignOutAction", () => {
+  beforeEach(() => {
+    const cookieStore = {
+      set: vi.fn(),
+    };
+
+    assertTrustedOriginMock.mockReset().mockResolvedValue(undefined);
+    cookiesMock.mockReset().mockResolvedValue(cookieStore);
+    setCartTokenCookieMock.mockReset().mockReturnValue(undefined);
+    getOrCreateGuestCartTokenMock.mockReset().mockResolvedValue("guest-token-after-signout");
+  });
+
+  it("validates request origin and prepares guest cart token", async () => {
+    const cookieStore = { set: vi.fn() };
+    cookiesMock.mockResolvedValue(cookieStore);
+
+    await prepareSignOutAction();
+
+    expect(assertTrustedOriginMock).toHaveBeenCalledWith({ action: "auth:sign-out" });
+    expect(getOrCreateGuestCartTokenMock).toHaveBeenCalledTimes(1);
+    expect(setCartTokenCookieMock).toHaveBeenCalledWith(cookieStore, "guest-token-after-signout");
+  });
+});
 
 describe("signOutAction", () => {
   beforeEach(() => {

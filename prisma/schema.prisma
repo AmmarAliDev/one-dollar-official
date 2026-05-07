@@ -615,6 +615,8 @@ model DealCampaign {
   id          String                @id @default(uuid())
   name        String
   description String?
+  price       Int?
+  compareAt   Int?                  @map("compare_at")
   targetHref  String?               @map("target_href")
   imageUrl    String?               @map("image_url")
   imageAlt    String?               @map("image_alt")

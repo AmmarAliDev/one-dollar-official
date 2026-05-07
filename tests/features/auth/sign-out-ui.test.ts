@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const useStateMock = vi.hoisted(() => vi.fn());
 const signOutActionMock = vi.hoisted(() => vi.fn());
+const prepareSignOutActionMock = vi.hoisted(() => vi.fn());
 
 vi.mock("react", async () => {
   const actual = await vi.importActual<typeof ReactModule>("react");
@@ -21,6 +22,7 @@ vi.mock("next/link", () => ({
 }));
 
 vi.mock("@/features/auth/actions/sign-out", () => ({
+  prepareSignOutAction: prepareSignOutActionMock,
   signOutAction: signOutActionMock,
 }));
 
@@ -28,6 +30,7 @@ describe("sign-out surfaces", () => {
   beforeEach(() => {
     useStateMock.mockImplementation((initialValue: unknown) => [initialValue === false ? true : initialValue, vi.fn()]);
     signOutActionMock.mockReset();
+    prepareSignOutActionMock.mockReset();
   });
 
   it("shows a direct sign-out action in the mobile drawer for authenticated users", async () => {

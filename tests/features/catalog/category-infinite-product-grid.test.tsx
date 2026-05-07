@@ -189,4 +189,69 @@ describe("CategoryInfiniteProductGrid", () => {
     expect(screen.getByText("Showing 6 of 6 matching products. You have reached the end of this list.")).toBeInTheDocument();
     expect(screen.getByText("You have reached the end of this category.")).toBeInTheDocument();
   });
+
+  it("resets grid state and paging query when filter/sort listing props change", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        products: [makeProduct(27)],
+        pagination: {
+          currentPage: 2,
+          pageSize: 6,
+          totalItems: 7,
+          totalPages: 2,
+          hasNextPage: false,
+          hasPreviousPage: true,
+        },
+      }),
+    } as Response);
+
+    const { rerender } = render(<CategoryInfiniteProductGrid listing={makeListing()} />);
+
+    rerender(
+      <CategoryInfiniteProductGrid
+        listing={makeListing({
+          products: Array.from({ length: 6 }, (_, index) => makeProduct(index + 21)),
+          filteredProductCount: 7,
+          filters: {
+            minPrice: 300,
+            maxPrice: 1500,
+            availability: "in-stock",
+            rating: "all",
+            discount: "on-sale",
+            sort: "price-desc",
+            attribute: "",
+            page: 1,
+            pageSize: 6,
+          },
+          pagination: {
+            currentPage: 1,
+            pageSize: 6,
+            totalItems: 7,
+            totalPages: 2,
+            hasNextPage: true,
+            hasPreviousPage: false,
+          },
+        })}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("storefront-product-card-product-21")).toBeInTheDocument();
+      expect(screen.queryByTestId("storefront-product-card-product-1")).not.toBeInTheDocument();
+    });
+
+    await user.click(screen.getByTestId("mock-infinite-scroll-next"));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/catalog/categories/kitchen/products?minPrice=300&maxPrice=1500&availability=in-stock&discount=on-sale&sort=price-desc&page=2",
+        {
+          method: "GET",
+          cache: "no-store",
+        },
+      );
+    });
+  });
 });

@@ -197,48 +197,52 @@ export function AdminSeoSection<TFieldValues extends FieldValues>({
           </div>
 
           {seoOgTitleField ? (
-            <DynamicFormField
-              control={form.control}
-              disabled={disabled}
-              fieldConfig={{
-                id: `${entityLabel.toLowerCase().replace(/\s+/g, "-")}-seo-og-title`,
-                name: seoOgTitleField,
-                type: "text",
-                label: "OG title",
-                placeholder: "Social share title",
-                description: "Optional social-sharing headline. Leave blank to reuse the meta title.",
-              }}
-            />
+            <div className="col-span-2">
+              <DynamicFormField
+                control={form.control}
+                disabled={disabled}
+                fieldConfig={{
+                  id: `${entityLabel.toLowerCase().replace(/\s+/g, "-")}-seo-og-title`,
+                  name: seoOgTitleField,
+                  type: "text",
+                  label: "OG title",
+                  placeholder: "Social share title",
+                  description: "Optional social-sharing headline. Leave blank to reuse the meta title.",
+                }}
+              />
+            </div>
           ) : null}
 
           {seoImageUrlField ? (
-            <DynamicFormField
-              control={form.control}
-              disabled={disabled}
-              fieldConfig={{
-                id: `${entityLabel.toLowerCase().replace(/\s+/g, "-")}-seo-image`,
-                name: seoImageUrlField,
-                type: "custom",
-                label: "OG image",
-                placeholder: "https://example.com/seo-image.jpg",
-                description: "Optional image for social shares. A clear square or wide image works best.",
-                render: ({ field, fieldState, inputId, describedBy, disabled: fieldDisabled }) => (
-                  <AdminImageUploadInput
-                    inputId={inputId}
-                    value={typeof field.value === "string" ? field.value : ""}
-                    onChange={(nextValue) => {
-                      field.onChange(nextValue);
-                    }}
-                    onBlur={field.onBlur}
-                    purpose="seo"
-                    placeholder="https://example.com/seo-image.jpg"
-                    describedBy={describedBy}
-                    disabled={fieldDisabled}
-                    invalid={Boolean(fieldState.error)}
-                  />
-                ),
-              }}
-            />
+            <div className="col-span-2">
+              <DynamicFormField
+                control={form.control}
+                disabled={disabled}
+                fieldConfig={{
+                  id: `${entityLabel.toLowerCase().replace(/\s+/g, "-")}-seo-image`,
+                  name: seoImageUrlField,
+                  type: "custom",
+                  label: "OG image",
+                  placeholder: "https://example.com/seo-image.jpg",
+                  description: "Optional image for social shares. A clear square or wide image works best.",
+                  render: ({ field, fieldState, inputId, describedBy, disabled: fieldDisabled }) => (
+                    <AdminImageUploadInput
+                      inputId={inputId}
+                      value={typeof field.value === "string" ? field.value : ""}
+                      onChange={(nextValue) => {
+                        field.onChange(nextValue);
+                      }}
+                      onBlur={field.onBlur}
+                      purpose="seo"
+                      placeholder="https://example.com/seo-image.jpg"
+                      describedBy={describedBy}
+                      disabled={fieldDisabled}
+                      invalid={Boolean(fieldState.error)}
+                    />
+                  ),
+                }}
+              />
+            </div>
           ) : null}
 
           {seoOgDescriptionField ? (

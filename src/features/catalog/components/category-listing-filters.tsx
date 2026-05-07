@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SlidersHorizontal } from "lucide-react";
 import { z } from "zod";
 
@@ -69,6 +69,18 @@ const categoryListingFilterSchema = z
   });
 
 type CategoryListingFilterValues = z.infer<typeof categoryListingFilterSchema>;
+
+function toCategoryListingFilterValues(filters: CatalogCategoryListing["filters"]): CategoryListingFilterValues {
+  return {
+    sort: filters.sort,
+    minPrice: filters.minPrice,
+    maxPrice: filters.maxPrice,
+    availability: filters.availability,
+    rating: filters.rating,
+    discount: filters.discount,
+    attribute: filters.attribute,
+  };
+}
 
 type CategoryListingFilterFormProps = {
   form: ReturnType<typeof useAppForm<CategoryListingFilterValues>>;
@@ -189,32 +201,36 @@ export function CategoryListingFilters({ listing }: { listing: CatalogCategoryLi
   const { category, filters } = listing;
   const router = useRouter();
   const [isMobileSheetOpen, setMobileSheetOpen] = useState(false);
+  const initialFormValues = toCategoryListingFilterValues(filters);
 
   const desktopForm = useAppForm<CategoryListingFilterValues>({
     schema: categoryListingFilterSchema,
-    defaultValues: {
-      sort: filters.sort,
-      minPrice: filters.minPrice,
-      maxPrice: filters.maxPrice,
-      availability: filters.availability,
-      rating: filters.rating,
-      discount: filters.discount,
-      attribute: filters.attribute,
-    },
+    defaultValues: initialFormValues,
   });
 
   const mobileForm = useAppForm<CategoryListingFilterValues>({
     schema: categoryListingFilterSchema,
-    defaultValues: {
-      sort: filters.sort,
-      minPrice: filters.minPrice,
-      maxPrice: filters.maxPrice,
-      availability: filters.availability,
-      rating: filters.rating,
-      discount: filters.discount,
-      attribute: filters.attribute,
-    },
+    defaultValues: initialFormValues,
   });
+  const resetDesktopForm = desktopForm.reset;
+  const resetMobileForm = mobileForm.reset;
+
+  useEffect(() => {
+    const nextValues = toCategoryListingFilterValues(filters);
+    resetDesktopForm(nextValues);
+    resetMobileForm(nextValues);
+    setMobileSheetOpen(false);
+  }, [
+    filters.sort,
+    filters.minPrice,
+    filters.maxPrice,
+    filters.availability,
+    filters.rating,
+    filters.discount,
+    filters.attribute,
+    resetDesktopForm,
+    resetMobileForm,
+  ]);
 
   function pushFilters(values: CategoryListingFilterValues) {
     router.push(

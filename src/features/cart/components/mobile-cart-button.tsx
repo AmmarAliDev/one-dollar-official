@@ -18,7 +18,7 @@ export function MobileCartButton() {
       aria-label={`Shopping cart with ${itemCount} ${itemCount === 1 ? "item" : "items"}`}
     >
       <ShoppingCart className="size-4" aria-hidden="true" />
-      <span className="bg-primary text-primary-foreground absolute -right-1 -top-1 rounded-full px-1.5 py-0.5 text-[10px] leading-none">
+      <span className="bg-background border border-border text-primary absolute -right-2 -top-2 rounded-full px-1.5 py-0.5 text-[10px] leading-none">
         <span aria-hidden="true">{itemCount}</span>
         <span className="sr-only">{`${itemCount} ${itemCount === 1 ? "item" : "items"} in cart`}</span>
       </span>

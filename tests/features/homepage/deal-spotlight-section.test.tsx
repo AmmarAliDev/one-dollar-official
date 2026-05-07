@@ -88,4 +88,18 @@ describe("DealSpotlightSectionBlock", () => {
     expect(screen.queryByRole("link", { name: "Shop now" })).not.toBeInTheDocument();
     expect(screen.getByText("Shop now")).toHaveAttribute("aria-disabled", "true");
   });
+
+  it("renders campaign prices using the shared storefront currency formatting", () => {
+    render(
+      <DealSpotlightSectionBlock
+        section={buildSection({
+          price: 1799,
+          compareAt: 2199,
+        })}
+      />,
+    );
+
+    expect(screen.getByText("PKR 1,799")).toBeInTheDocument();
+    expect(screen.getByText("PKR 2,199")).toBeInTheDocument();
+  });
 });

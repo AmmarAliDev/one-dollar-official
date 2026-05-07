@@ -103,6 +103,8 @@ function readDealCampaignPayload(formData: FormData) {
     id: `${formData.get("id") ?? ""}`.trim() || undefined,
     name: `${formData.get("name") ?? ""}`,
     description: `${formData.get("description") ?? ""}`,
+    price: `${formData.get("price") ?? ""}`,
+    compareAt: `${formData.get("compareAt") ?? ""}`,
     targetHref: `${formData.get("targetHref") ?? ""}`,
     imageUrl: `${formData.get("imageUrl") ?? ""}`,
     imageAlt: `${formData.get("imageAlt") ?? ""}`,

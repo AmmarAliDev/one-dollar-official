@@ -68,7 +68,7 @@ export async function AppHeader() {
                 alt={`${siteConfig.name} logo`}
                 width={200}
                 height={100}
-                className="h-25 w-50 rounded-md object-contain drop-shadow-md drop-shadow-white/50"
+                className="h-15 w-30 md:h-20 md:w-40 lg:h-25 lg:w-50 rounded-md object-contain drop-shadow-md drop-shadow-white/50"
                 priority
               />
 
