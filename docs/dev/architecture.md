@@ -17,6 +17,7 @@
 13. [Search Strategy](#search-strategy)
 14. [Error Handling Strategy](#error-handling-strategy)
 15. [Analytics Strategy](#analytics-strategy)
+16. [Admin Form Performance Strategy](#admin-form-performance-strategy)
 
 ---
 
@@ -231,6 +232,20 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 	- Category and product mutations revalidate `/categories`, `/categories/[slug]`, and `/categories/[slug]/[productSlug]`, and also call `revalidateTag(CATALOG_CACHE_TAGS.categories, "max")` / `revalidateTag(CATALOG_CACHE_TAGS.products, "max")` to bust the `unstable_cache` entries immediately.
 	- Admin list pages are still revalidated for operator freshness.
 - Dynamic rendering remains intentional for truly personalized/request-bound routes (account, cart, checkout, wishlist, order confirmation, and admin surfaces).
+
+## Admin Form Performance Strategy
+
+- Admin list routes that include forms should avoid reusing edit-level DB selectors for table/list reads. Keep list queries summary-focused and defer full records to edit routes.
+- Current optimized list-query examples:
+	- `src/features/admin/products/service.ts#listAdminProducts` selects list-only fields plus lightweight variant inventory/price data.
+	- `src/features/admin/categories/service.ts#listAdminCategories` selects table fields only.
+	- `src/features/admin/blog/service.ts#listAdminBlogPosts` excludes heavy article content JSON from list reads.
+- Form-heavy admin pages that render many editable records now prefer demand-loaded editors:
+	- `/admin/homepage/banners`
+	- `/admin/homepage/campaigns`
+	- `/admin/homepage/sections`
+- The shared pattern is: render a lightweight server list, show an explicit "Edit" control per record, and mount the client editor only when requested. This lowers initial hydration cost and keeps input responsiveness stable as record counts grow.
+- RBAC checks, action guards, server-side validation, and mutation/audit behavior remain unchanged by these optimizations.
 
 ## Search Strategy
 

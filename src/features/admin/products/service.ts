@@ -162,7 +162,34 @@ const adminProductSelect = {
   },
 } satisfies Prisma.ProductSelect;
 
+const adminProductListSelect = {
+  id: true,
+  name: true,
+  slug: true,
+  shortDescription: true,
+  status: true,
+  seoTitle: true,
+  updatedAt: true,
+  metadata: true,
+  category: {
+    select: {
+      name: true,
+    },
+  },
+  variants: {
+    select: {
+      price: true,
+      inventory: {
+        select: {
+          quantity: true,
+        },
+      },
+    },
+  },
+} satisfies Prisma.ProductSelect;
+
 type SelectedAdminProduct = Prisma.ProductGetPayload<{ select: typeof adminProductSelect }>;
+type SelectedAdminProductList = Prisma.ProductGetPayload<{ select: typeof adminProductListSelect }>;
 
 function isKnownStatus(value: string | undefined): value is "DRAFT" | "PUBLISHED" | "ARCHIVED" {
   return value === "DRAFT" || value === "PUBLISHED" || value === "ARCHIVED";
@@ -647,28 +674,39 @@ export async function listAdminProducts(filters: AdminProductListFilters = {}): 
 
   const records = await db.product.findMany({
     ...(conditions.length > 0 ? { where: { AND: conditions } } : {}),
-    select: adminProductSelect,
+    select: adminProductListSelect,
     orderBy: [{ updatedAt: "desc" }, { name: "asc" }],
     skip: (page - 1) * pageSize,
     take: pageSize,
   });
 
-  return records.map((record) => {
-    const mapped = mapAdminProduct(record);
-    const itemType = mapped.variantsEnabled ? "VARIANT" : "SIMPLE";
+  return records.map((record: SelectedAdminProductList) => {
+    const metadata = parseProductMetadata(record.metadata);
+    const variants = record.variants;
+    const itemType = metadata.variantsEnabled || variants.length > 1 ? "VARIANT" : "SIMPLE";
 
     return {
-      id: mapped.id,
-      title: mapped.title,
-      slug: mapped.slug,
-      shortDescription: mapped.shortDescription || null,
-      status: mapped.status,
-      categoryName: mapped.categoryName,
-      seoTitle: mapped.seoTitle || null,
-      updatedAt: mapped.updatedAt,
-      priceLabel: summarizePriceLabel(mapped.variants),
-      inventoryTotal: mapped.variants.reduce((total, variant) => total + variant.stock, 0),
-      variantCount: mapped.variants.length,
+      id: record.id,
+      title: record.name,
+      slug: record.slug,
+      shortDescription: record.shortDescription || null,
+      status: record.status,
+      categoryName: record.category?.name ?? null,
+      seoTitle: record.seoTitle || null,
+      updatedAt: record.updatedAt,
+      priceLabel: summarizePriceLabel(
+        variants.map((variant) => ({
+          title: "",
+          sku: "",
+          price: variant.price,
+          comparePrice: null,
+          stock: variant.inventory?.quantity ?? 0,
+          options: {},
+          isDefault: false,
+        })),
+      ),
+      inventoryTotal: getInventoryTotal(variants),
+      variantCount: variants.length,
       type: itemType,
     } satisfies AdminProductListItem;
   });

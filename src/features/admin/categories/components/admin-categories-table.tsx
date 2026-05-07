@@ -8,10 +8,10 @@ import { DataTable, createDataTableColumnHelper } from "@/components/data-table"
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { routes } from "@/config/routes";
-import type { AdminCategoryRecord } from "../service";
+import type { AdminCategoryListItem } from "../service";
 import { DeleteCategoryButton } from "./delete-category-button";
 
-const columnHelper = createDataTableColumnHelper<AdminCategoryRecord>();
+const columnHelper = createDataTableColumnHelper<AdminCategoryListItem>();
 
 const statusBadgeVariantMap: Record<"DRAFT" | "PUBLISHED" | "ARCHIVED", "secondary" | "info" | "warning"> = {
   DRAFT: "secondary",
@@ -25,7 +25,7 @@ const statusLabelMap: Record<"DRAFT" | "PUBLISHED" | "ARCHIVED", string> = {
   ARCHIVED: "Archived",
 };
 
-export const adminCategoriesTableColumns: ColumnDef<AdminCategoryRecord, any>[] = [
+export const adminCategoriesTableColumns: ColumnDef<AdminCategoryListItem, any>[] = [
   columnHelper.accessor("name", {
     id: "name",
     header: "Name",
@@ -97,7 +97,7 @@ export const adminCategoriesTableColumns: ColumnDef<AdminCategoryRecord, any>[] 
 ];
 
 export interface AdminCategoriesTableProps {
-  categories: AdminCategoryRecord[];
+  categories: AdminCategoryListItem[];
   returnTo?: string;
   emptyTitle?: string;
   emptyDescription?: string;
@@ -109,7 +109,7 @@ export function AdminCategoriesTable({
   emptyTitle = "No categories found",
   emptyDescription = "Create your first category or adjust search and filters.",
 }: AdminCategoriesTableProps) {
-  const columns: ColumnDef<AdminCategoryRecord, any>[] = [
+  const columns: ColumnDef<AdminCategoryListItem, any>[] = [
     ...adminCategoriesTableColumns,
     columnHelper.display({
       id: "actions",
@@ -137,7 +137,7 @@ export function AdminCategoriesTable({
   ];
 
   return (
-    <DataTable<AdminCategoryRecord>
+    <DataTable<AdminCategoryListItem>
       data={categories}
       columns={columns}
       getRowId={(row) => row.id}

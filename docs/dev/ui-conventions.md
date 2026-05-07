@@ -168,6 +168,8 @@
 - Use the shared shadcn-style sidebar primitives in `src/components/ui/sidebar.tsx` (`SidebarProvider`, `Sidebar`, `SidebarInset`, `SidebarTrigger`) for app-level admin navigation shells. This keeps desktop collapse and mobile drawer behavior consistent across future admin modules.
 - Keep role-aware rendering in feature-level nav modules (for example `getVisibleAdminNavigation`) and pass only visible links into sidebar UI components.
 - If a role resolves to zero sidebar links, render a user-friendly empty sidebar status instead of a blank panel.
+- For form-heavy admin list pages, do not mount every edit form by default. Use a lightweight per-record panel with an explicit edit toggle, and mount the full editor on demand.
+- Demand-loaded admin editors should use dynamic imports for heavy client form modules to reduce initial route hydration cost.
 
 ## Form System Conventions
 

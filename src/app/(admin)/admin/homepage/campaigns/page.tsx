@@ -7,8 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { buildMetadata } from "@/config/metadata";
 import { routes } from "@/config/routes";
 import { AdminPageHeader } from "@/features/admin/components/admin-page-patterns";
-import { DeleteAdminDealCampaignButton } from "@/features/admin/homepage/components/delete-admin-deal-campaign-button";
 import { AdminDealCampaignForm } from "@/features/admin/homepage/components/admin-deal-campaign-form";
+import { AdminDealCampaignEditPanel } from "@/features/admin/homepage/components/admin-deal-campaign-edit-panel";
 import {
   createAdminDealCampaignAction,
   getHomepageContentErrorMessage,
@@ -99,11 +99,11 @@ export default async function AdminHomepageCampaignsPage({ searchParams }: Admin
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <AdminDealCampaignForm
+                <AdminDealCampaignEditPanel
                   action={updateAdminDealCampaignAction}
-                  submitLabel="Save changes"
-                  returnTo={routes.admin.homepageCampaigns}
                   campaignId={campaign.id}
+                  campaignName={campaign.name}
+                  returnTo={routes.admin.homepageCampaigns}
                   initialValues={{
                     name: campaign.name,
                     description: campaign.description,
@@ -117,13 +117,6 @@ export default async function AdminHomepageCampaignsPage({ searchParams }: Admin
                     active: campaign.active,
                   }}
                 />
-                <div className="mt-4 flex justify-end">
-                  <DeleteAdminDealCampaignButton
-                    campaignId={campaign.id}
-                    campaignName={campaign.name}
-                    returnTo={routes.admin.homepageCampaigns}
-                  />
-                </div>
               </CardContent>
             </Card>
           ))
