@@ -44,6 +44,7 @@ describe("CategoryOverviewCard media behavior", () => {
     const media = document.querySelector('[data-testid="storefront-category-card-image-home-care"]');
     expect(media).toBeInTheDocument();
     expect(media).toHaveAttribute("src", expect.stringContaining("cdn.example.com%2Fcategories%2Fhome-care.jpg"));
+    expect(media).toHaveAttribute("sizes", "(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw");
   });
 
   it("renders a fallback visual when no category image exists", () => {
