@@ -35,6 +35,21 @@
 - Navigation surfaces (sidebar and mobile nav) should use semantic hover/active states (`bg-muted`, `bg-accent`, `bg-primary/*`) instead of custom ad-hoc colors.
 - Confirmation and high-impact dialogs should keep backdrop contrast strong enough for readability while preserving focus and keyboard behavior.
 
+### Numeric Input Patterns
+
+- When a component accepts direct numeric input (e.g., quantity fields), use `<Input type="number">` with appropriate `min` and `max` attributes.
+- Validation should happen locally before commit:
+  - Parse input as an integer
+  - Reject non-numeric values by reverting to the previous value on blur
+  - Enforce minimum and maximum bounds by clamping to allowed range
+  - Skip mutations when input equals the current value to avoid unnecessary API calls
+- Commit input on:
+  - Blur event (when user leaves the field)
+  - Enter key (for keyboard-first workflows; blur after commit to clear focus)
+- Include descriptive `aria-label` that mentions the valid range (e.g., "Quantity for Product Name. Minimum 1, maximum 10").
+- After successful mutation, sync the display value from the server response to ensure client/server alignment.
+- On error, revert the input to the previous value and show user-friendly error messaging.
+
 ## UI State Patterns
 
 - Use `SectionHeader` for page and section intros.
