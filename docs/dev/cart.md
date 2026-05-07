@@ -90,6 +90,27 @@ Stock is validated in two places:
 - Header mobile cart button now shows the same total cart item count via shared client state
 - Cart loading/error routes are implemented with dedicated states
 
+### CartItemQuantityControls: Direct Input + Plus/Minus
+
+The quantity control component (`src/features/cart/components/cart-item-quantity-controls.tsx`) supports both direct input editing and traditional plus/minus buttons:
+
+- Quantity is displayed in an editable `<Input type="number">` field so users can type a value directly
+- Plus and minus buttons remain functional alongside the input for quick adjustments
+- Direct input validates locally on each `onChange` event for immediate feedback:
+  - Must be a whole number
+  - Must be between `1` and the effective allowed max
+  - Effective allowed max is `min(availableQuantity, 99)` to align with server mutation rules
+  - When out of range, the control shows an inline validation message: `Please enter a quantity between 1 and {max}.`
+  - Invalid values are not committed; users must correct the value before blur/Enter commit can run
+  - Input that equals the current quantity is not committed to avoid unnecessary API calls
+- Commit paths:
+  - Blur: triggers `commitDirectInput()` when user leaves the field
+  - Enter key: validates and commits, then blurs to clear focus
+  - Plus/Minus buttons: directly call `runMutation()` with the new quantity
+- Post-mutation state always syncs from the server response (cart payload) via `dispatchCartChanged()` to ensure client and server truth align
+- All mutations (input commit, plus, minus, remove) preserve existing optimistic UI, error recovery, and notification behavior
+- Server-side stock validation remains authoritative on `PATCH /api/cart`; client validation is a UX guardrail, not a security boundary
+
 ## Global cart count state
 
 - `src/features/cart/cart-count-state.ts` is the client-side global state seam for cart item count.
