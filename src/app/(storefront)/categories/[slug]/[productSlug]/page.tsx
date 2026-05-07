@@ -25,12 +25,26 @@ import { ProductReviewComposer } from "@/features/reviews/components/product-rev
 import { testIds } from "@/lib/test-selectors";
 
 export const revalidate = 900;
+export const dynamicParams = true;
+
+function isDeploymentLikeBuild() {
+  const ci = (process.env.CI ?? "").trim().toLowerCase();
+  const vercel = (process.env.VERCEL ?? "").trim().toLowerCase();
+
+  return ci === "1" || ci === "true" || vercel === "1" || vercel === "true";
+}
 
 type ProductPageProps = {
   params: Promise<{ slug: string; productSlug: string }>;
 };
 
 export async function generateStaticParams() {
+  // In CI/Vercel builds, skip exhaustive product prerender fan-out to avoid
+  // exhausting the Prisma pool during static generation.
+  if (isDeploymentLikeBuild()) {
+    return [];
+  }
+
   const slugs = await getProductSlugsWithCategory();
   return toProductStaticParams(slugs);
 }
