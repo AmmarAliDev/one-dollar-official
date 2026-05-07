@@ -6,7 +6,12 @@
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { getProductBySlug, getProductSlugsWithCategory, getRelatedProducts } from "@/features/catalog";
+import {
+  getProductBySlug,
+  getProductMetadataBySlug,
+  getProductSlugsWithCategory,
+  getRelatedProducts,
+} from "@/features/catalog";
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -118,15 +123,19 @@ function makeVariantProductRecord() {
 // ---------------------------------------------------------------------------
 
 const mockGetPublishedProductBySlug = vi.fn();
+const mockGetPublishedProductContextBySlug = vi.fn();
 const mockGetRelatedPublishedProducts = vi.fn();
 const mockGetAllPublishedProductSlugsWithCategories = vi.fn();
 const mockListPublishedProductsByIds = vi.fn().mockResolvedValue([]);
+const mockCountPublishedOneDollarProducts = vi.fn().mockResolvedValue(0);
 
 vi.mock("@/server/db/catalog-queries", () => ({
   listPublishedCategories: vi.fn().mockResolvedValue([]),
   getPublishedCategoryBySlug: vi.fn().mockResolvedValue(null),
   listPublishedProductsByCategory: vi.fn().mockResolvedValue([]),
   listPublishedProductsByIds: (...args: unknown[]) => mockListPublishedProductsByIds(...args),
+  countPublishedOneDollarProducts: (...args: unknown[]) => mockCountPublishedOneDollarProducts(...args),
+  getPublishedProductContextBySlug: (...args: unknown[]) => mockGetPublishedProductContextBySlug(...args),
   getPublishedProductBySlug: (...args: unknown[]) => mockGetPublishedProductBySlug(...args),
   getRelatedPublishedProducts: (...args: unknown[]) => mockGetRelatedPublishedProducts(...args),
   getAllPublishedProductSlugsWithCategories: (...args: unknown[]) =>
@@ -141,9 +150,12 @@ vi.mock("@/server/db/catalog-queries", () => ({
 describe("product detail service", () => {
   beforeEach(() => {
     mockGetPublishedProductBySlug.mockReset();
+    mockGetPublishedProductContextBySlug.mockReset();
     mockGetRelatedPublishedProducts.mockReset();
     mockGetAllPublishedProductSlugsWithCategories.mockReset();
     mockListPublishedProductsByIds.mockReset();
+    mockCountPublishedOneDollarProducts.mockReset();
+    mockCountPublishedOneDollarProducts.mockResolvedValue(0);
     mockListPublishedProductsByIds.mockResolvedValue([]);
   });
 
@@ -257,6 +269,14 @@ describe("product detail service", () => {
   });
 
   it("returns related products from the same category excluding self", async () => {
+    mockGetPublishedProductContextBySlug.mockResolvedValue({
+      id: "prod-face-wash",
+      slug: "hydra-care-face-wash",
+      name: "Hydra Care Face Wash",
+      shortDescription: "Gentle daily cleanser.",
+      metadata: null,
+      category: { slug: "personal-care" },
+    });
     mockGetRelatedPublishedProducts.mockResolvedValue([
       {
         id: "p2",
@@ -285,12 +305,16 @@ describe("product detail service", () => {
   });
 
   it("prioritizes curated related product ids before fallback recommendations", async () => {
-    mockGetPublishedProductBySlug.mockResolvedValue({
-      ...makeDetailRecord(),
+    mockGetPublishedProductContextBySlug.mockResolvedValue({
+      id: "prod-face-wash",
+      slug: "hydra-care-face-wash",
+      name: "Hydra Care Face Wash",
+      shortDescription: "Gentle daily cleanser.",
       metadata: {
         variantsEnabled: false,
         relatedProductIds: ["p-curated"],
       },
+      category: { slug: "personal-care" },
     });
 
     mockListPublishedProductsByIds.mockResolvedValue([
@@ -338,12 +362,16 @@ describe("product detail service", () => {
   });
 
   it("accepts legacy related metadata objects and excludes the current product by id", async () => {
-    mockGetPublishedProductBySlug.mockResolvedValue({
-      ...makeDetailRecord(),
+    mockGetPublishedProductContextBySlug.mockResolvedValue({
+      id: "prod-face-wash",
+      slug: "hydra-care-face-wash",
+      name: "Hydra Care Face Wash",
+      shortDescription: "Gentle daily cleanser.",
       metadata: {
         variantsEnabled: false,
         relatedProducts: [{ id: "prod-face-wash" }, { id: "p-curated" }],
       },
+      category: { slug: "personal-care" },
     });
 
     mockListPublishedProductsByIds.mockResolvedValue([
@@ -388,12 +416,20 @@ describe("product detail service", () => {
   });
 
   it("returns an empty array when related lookup fails", async () => {
-    mockGetPublishedProductBySlug.mockRejectedValue(new Error("query failed"));
+    mockGetPublishedProductContextBySlug.mockRejectedValue(new Error("query failed"));
 
     await expect(getRelatedProducts("personal-care", "hydra-care-face-wash")).resolves.toEqual([]);
   });
 
   it("caps related products at 4", async () => {
+    mockGetPublishedProductContextBySlug.mockResolvedValue({
+      id: "prod-face-wash",
+      slug: "hydra-care-face-wash",
+      name: "Hydra Care Face Wash",
+      shortDescription: "Gentle daily cleanser.",
+      metadata: null,
+      category: { slug: "personal-care" },
+    });
     mockListPublishedProductsByIds.mockResolvedValue([]);
     mockGetRelatedPublishedProducts.mockResolvedValue([
       {
@@ -509,6 +545,25 @@ describe("product detail service", () => {
 
     expect(slugs.length).toBe(2);
     expect(slugs.every((s) => typeof s.slug === "string" && typeof s.categorySlug === "string")).toBe(true);
+  });
+
+  it("returns lightweight metadata by slug without loading full product detail", async () => {
+    mockGetPublishedProductContextBySlug.mockResolvedValue({
+      id: "prod-face-wash",
+      slug: "hydra-care-face-wash",
+      name: "Hydra Care Face Wash",
+      shortDescription: "Gentle daily cleanser.",
+      metadata: null,
+      category: { slug: "personal-care" },
+    });
+
+    const metadata = await getProductMetadataBySlug("hydra-care-face-wash");
+
+    expect(metadata).toEqual({
+      name: "Hydra Care Face Wash",
+      shortDescription: "Gentle daily cleanser.",
+      categorySlug: "personal-care",
+    });
   });
 });
 

@@ -29,8 +29,10 @@ import type {
   StorefrontProductRecord,
 } from "@/server/db/catalog-queries";
 import {
+  countPublishedOneDollarProducts,
   getAllPublishedProductSlugsWithCategories,
   getPublishedCategoryBySlug,
+  getPublishedProductContextBySlug,
   getPublishedProductBySlug as dbGetPublishedProductBySlug,
   getRelatedPublishedProducts,
   listAllPublishedProducts,
@@ -536,9 +538,9 @@ function buildReviewData(
  * Empty array if no categories have been published yet.
  */
 export async function getCatalogCategories(): Promise<CatalogCategory[]> {
-  const [categoryRecords, productRecords] = await Promise.all([
+  const [categoryRecords, oneDollarProductCount] = await Promise.all([
     listPublishedCategories(),
-    listAllPublishedProducts(),
+    countPublishedOneDollarProducts(),
   ]);
 
   const hasReservedSlugCollision = categoryRecords.some((record) =>
@@ -550,10 +552,6 @@ export async function getCatalogCategories(): Promise<CatalogCategory[]> {
       code: "CATALOG_RESERVED_ONE_DOLLAR_SLUG_COLLISION",
     });
   }
-
-  const oneDollarProductCount = productRecords
-    .map(mapProductToCard)
-    .filter(isOneDollarEligibleProduct).length;
 
   const categories = categoryRecords
     .filter((record) => !isOneDollarCategorySlug(record.slug))
@@ -569,10 +567,7 @@ export async function getCatalogCategory(
   slug: string,
 ): Promise<CatalogCategory | null> {
   if (isOneDollarCategorySlug(slug)) {
-    const records = await listAllPublishedProducts();
-    const oneDollarProductCount = records
-      .map(mapProductToCard)
-      .filter(isOneDollarEligibleProduct).length;
+    const oneDollarProductCount = await countPublishedOneDollarProducts();
 
     return createOneDollarVirtualCategory(oneDollarProductCount);
   }
@@ -711,6 +706,28 @@ export async function getProductBySlug(
   };
 }
 
+export type CatalogProductMetadata = {
+  name: string;
+  shortDescription: string;
+  categorySlug: string;
+};
+
+export async function getProductMetadataBySlug(
+  slug: string,
+): Promise<CatalogProductMetadata | null> {
+  const record = await getPublishedProductContextBySlug(slug);
+
+  if (!record) {
+    return null;
+  }
+
+  return {
+    name: record.name,
+    shortDescription: record.shortDescription ?? "",
+    categorySlug: record.category?.slug ?? "",
+  };
+}
+
 /**
  * Returns up to 4 related published products in the same category,
  * excluding the current product.
@@ -720,7 +737,7 @@ export async function getRelatedProducts(
   excludeSlug: string,
 ): Promise<CatalogProductCard[]> {
   try {
-    const sourceProduct = await dbGetPublishedProductBySlug(excludeSlug);
+    const sourceProduct = await getPublishedProductContextBySlug(excludeSlug);
     const excludedProductId = sourceProduct?.id;
     const effectiveCategorySlug = sourceProduct?.category?.slug ?? categorySlug;
     const preferredIds = parseRelatedProductIds(sourceProduct?.metadata).filter(

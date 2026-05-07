@@ -180,3 +180,74 @@ export function getMigrateDeploySafetyCheck(rawEnv = process.env, cwd = process.
     reason: "Migration deploy safety checks passed.",
   };
 }
+
+function getUrlSearchParam(databaseUrl, key) {
+  try {
+    return new URL(databaseUrl).searchParams.get(key);
+  } catch {
+    return null;
+  }
+}
+
+export function getRuntimeDatabaseSafetyCheck(rawEnv = process.env, cwd = process.cwd()) {
+  const { env } = resolvePrismaEnv(rawEnv, cwd);
+  const databaseUrl = env.DATABASE_URL?.trim() ?? "";
+  const nonPoolingUrl = env.POSTGRES_URL_NON_POOLING?.trim() ?? "";
+  const deployLikeRuntime = isDeploymentRuntime(env);
+
+  if (!databaseUrl) {
+    return {
+      allowed: false,
+      reason: "DATABASE_URL is required for runtime database access.",
+    };
+  }
+
+  if (!deployLikeRuntime) {
+    return {
+      allowed: true,
+      reason: "Runtime safety checks skipped outside deployment-like environments.",
+    };
+  }
+
+  const normalizedUrl = databaseUrl.toLowerCase();
+  const isHostedDatabase = looksLikeHostedDatabaseUrl(databaseUrl);
+  const isSupabasePooler = normalizedUrl.includes("pooler.supabase.com");
+  const isSupabaseDirect = normalizedUrl.includes(".supabase.co") && !isSupabasePooler;
+
+  if (isSupabaseDirect) {
+    return {
+      allowed: false,
+      reason:
+        "DATABASE_URL looks like a direct Supabase host (.supabase.co). In deployment runtime, use the pooled Supabase pooler URL for DATABASE_URL and keep the direct URL in POSTGRES_URL_NON_POOLING for migrations.",
+    };
+  }
+
+  if (isHostedDatabase && !normalizedUrl.includes("pgbouncer=true")) {
+    return {
+      allowed: false,
+      reason:
+        "DATABASE_URL looks hosted but is missing pgbouncer=true. Use the pooled runtime URL for serverless/edge-like environments.",
+    };
+  }
+
+  if (isHostedDatabase && getUrlSearchParam(databaseUrl, "connection_limit") !== "1") {
+    return {
+      allowed: true,
+      reason:
+        "DATABASE_URL looks hosted and does not include connection_limit=1. Deploy is allowed, but setting connection_limit=1 is strongly recommended for Prisma + PgBouncer compatibility in deployment runtime.",
+    };
+  }
+
+  if (isHostedDatabase && nonPoolingUrl && nonPoolingUrl === databaseUrl) {
+    return {
+      allowed: false,
+      reason:
+        "DATABASE_URL and POSTGRES_URL_NON_POOLING are identical in deployment-like runtime. Keep DATABASE_URL pooled and POSTGRES_URL_NON_POOLING direct for migrations.",
+    };
+  }
+
+  return {
+    allowed: true,
+    reason: "Runtime database URL safety checks passed.",
+  };
+}

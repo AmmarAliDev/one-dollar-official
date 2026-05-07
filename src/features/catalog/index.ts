@@ -26,7 +26,7 @@ export {
   ONE_DOLLAR_CATEGORY_SLUG,
   ONE_DOLLAR_MAX_PRICE_PKR,
 } from "./one-dollar";
-export { getCatalogCategories, getCatalogCategory, getCatalogCategoryListing, getCatalogCategorySlugs, getProductBySlug, getProductSlugsWithCategory, getRelatedProducts, searchCatalogProducts } from "./service";
+export { getCatalogCategories, getCatalogCategory, getCatalogCategoryListing, getCatalogCategorySlugs, getProductBySlug, getProductMetadataBySlug, getProductSlugsWithCategory, getRelatedProducts, searchCatalogProducts } from "./service";
 export type { CatalogCategory, CatalogCategoryListing, CatalogListingFilters, CatalogProductCard, CatalogProductDetail, CatalogSearchResponse, ProductImage, ProductReview, ProductReviewSummary, ProductSpec, ProductVariantGroup, ProductVariantOption } from "./types";
 export {
   availabilityFilterOptions,

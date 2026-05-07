@@ -89,6 +89,56 @@ describe('Prisma workflow helpers', () => {
     expect(result.allowed).toBe(true);
   });
 
+  it('blocks deployment runtime when DATABASE_URL points to a direct Supabase host', async () => {
+    const { getRuntimeDatabaseSafetyCheck } = await loadWorkflowHelpers();
+    const result = getRuntimeDatabaseSafetyCheck(
+      {
+        NODE_ENV: 'production',
+        DATABASE_URL:
+          'postgresql://postgres:secret@db.abcdefgh.supabase.co:5432/postgres?sslmode=require',
+        POSTGRES_URL_NON_POOLING:
+          'postgresql://postgres:secret@db.abcdefgh.supabase.co:5432/postgres?sslmode=require',
+      },
+      isolatedCwd,
+    );
+
+    expect(result.allowed).toBe(false);
+    expect(result.reason).toMatch(/direct Supabase host|pooled/i);
+  });
+
+  it('allows deployment runtime when hosted pooled URL misses connection_limit=1, with recommendation', async () => {
+    const { getRuntimeDatabaseSafetyCheck } = await loadWorkflowHelpers();
+    const result = getRuntimeDatabaseSafetyCheck(
+      {
+        NODE_ENV: 'production',
+        DATABASE_URL:
+          'postgresql://postgres:secret@aws-1-ap-south-1.pooler.supabase.com:6543/postgres?sslmode=require&pgbouncer=true',
+        POSTGRES_URL_NON_POOLING:
+          'postgresql://postgres:secret@db.abcdefgh.supabase.co:5432/postgres?sslmode=require',
+      },
+      isolatedCwd,
+    );
+
+    expect(result.allowed).toBe(true);
+    expect(result.reason).toMatch(/connection_limit=1/i);
+  });
+
+  it('allows deployment runtime when hosted pooled URL has pgbouncer and connection_limit=1', async () => {
+    const { getRuntimeDatabaseSafetyCheck } = await loadWorkflowHelpers();
+    const result = getRuntimeDatabaseSafetyCheck(
+      {
+        NODE_ENV: 'production',
+        DATABASE_URL:
+          'postgresql://postgres:secret@aws-1-ap-south-1.pooler.supabase.com:6543/postgres?sslmode=require&pgbouncer=true&connection_limit=1',
+        POSTGRES_URL_NON_POOLING:
+          'postgresql://postgres:secret@db.abcdefgh.supabase.co:5432/postgres?sslmode=require',
+      },
+      isolatedCwd,
+    );
+
+    expect(result.allowed).toBe(true);
+  });
+
   it('detects production-like deployment runtime through VERCEL or CI env', async () => {
     const { isDeploymentRuntime } = await loadWorkflowHelpers();
 

@@ -1,7 +1,20 @@
 const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+
+let prisma;
+
+async function loadPrismaEnv() {
+  const { resolvePrismaEnv } = await import('../scripts/prisma-env.mjs');
+  const { env } = resolvePrismaEnv(process.env, process.cwd());
+
+  Object.assign(process.env, env);
+
+  return env;
+}
 
 async function main() {
+  await loadPrismaEnv();
+  prisma = new PrismaClient();
+
   console.log('Running minimal seed: roles + default category');
 
   const roles = [
@@ -61,25 +74,6 @@ async function main() {
     }
   }
 
-  try {
-    await prisma.category.upsert({
-      where: { slug: 'uncategorized' },
-      update: {
-        status: 'PUBLISHED',
-      },
-      create: {
-        name: 'Uncategorized',
-        slug: 'uncategorized',
-        description: 'Default category',
-        status: 'PUBLISHED',
-      },
-    });
-    console.log('Ensured default category: uncategorized');
-  } catch (err) {
-    console.error('Failed to ensure default category', err);
-    throw err;
-  }
-
   console.log('Minimal seed completed.');
 }
 
@@ -90,5 +84,7 @@ main()
     process.exitCode = 1;
   })
   .finally(async () => {
-    await prisma.$disconnect();
+    if (prisma) {
+      await prisma.$disconnect();
+    }
   });

@@ -90,6 +90,36 @@ Safety behavior:
 
 This script is for local/dev verification only and should not be used as a production data workflow.
 
+### Production catalog population
+
+Use the dedicated production catalog script when you need to populate a real hosted catalog with non-demo storefront data:
+
+```bash
+pnpm prisma:seed
+pnpm prisma:seed:production-catalog
+```
+
+What it does:
+
+- upserts production-ready categories with SEO titles, descriptions, OG fields, canonical URLs, and category card images
+- upserts published products with real merchandising copy, dimensions, metadata, image URLs, default variant pricing, and stock
+- replaces product-level image and specification rows so reruns stay deterministic instead of duplicating catalog content
+- preserves One Dollar virtual-category eligibility by keeping a mix of products priced at `<= 280 PKR` alongside higher-ticket catalog items
+
+Safety behavior:
+
+- `pnpm prisma:seed:production-catalog` requires `PRODUCTION_CATALOG_SEED_CONFIRM=LIVE_CATALOG_APPROVED`
+- the script expects a hosted `DATABASE_URL`; for local rehearsal only, add `PRISMA_ALLOW_LOCAL_PRODUCTION_CATALOG_SEED=true`
+- both `pnpm prisma:seed` and the production catalog script now load `.env` and `.env.local` automatically before creating Prisma connections
+
+PowerShell example for a hosted production or staging database:
+
+```powershell
+$env:PRODUCTION_CATALOG_SEED_CONFIRM='LIVE_CATALOG_APPROVED'
+pnpm prisma:seed
+pnpm prisma:seed:production-catalog
+```
+
 ## Admin Image Upload Setup
 
 The current admin image uploader uses server-side Vercel Blob uploads because it is simple for non-technical admins, inexpensive to start with, and keeps the storage backend isolated behind one feature module.
@@ -178,6 +208,16 @@ Keep application queries behind `src/server/db` and feature-level repositories i
 	- `DATABASE_URL` points to the pooled URL
 	- `POSTGRES_URL_NON_POOLING` points to the direct (non-pooling) URL
 	- the two values are not identical in hosted environments
+	- hosted `DATABASE_URL` includes `pgbouncer=true` (and preferably `connection_limit=1`)
+
+- If deployment build is blocked by runtime DB safety checks, confirm:
+	- `DATABASE_URL` is pooled/runtime-safe (Supabase pooler host, `pgbouncer=true`; `connection_limit=1` is recommended)
+	- `POSTGRES_URL_NON_POOLING` is direct/non-pooled for migrations only
+	- `DATABASE_URL` and `POSTGRES_URL_NON_POOLING` are different values in hosted environments
+
+- If you see Prisma `P2024` (`Timed out fetching a new connection from the connection pool`), first verify:
+	- runtime URL strategy above is correct
+	- catalog/product render paths are using lightweight query helpers where available (`getPublishedProductContextBySlug`, `countPublishedOneDollarProducts`)
 
 ## Code Quality Workflow
 

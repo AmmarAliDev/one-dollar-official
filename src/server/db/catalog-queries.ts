@@ -29,6 +29,7 @@ import { getPrismaClient } from "@/server/db";
 const CATALOG_CACHE_REVALIDATE_SECONDS = 900;
 const PRISMA_POOL_TIMEOUT_ERROR_CODE = "P2024";
 const PRISMA_POOL_TIMEOUT_MAX_ATTEMPTS = 2;
+const ONE_DOLLAR_MAX_PRICE_PKR = 280;
 
 function isPrismaPoolTimeoutError(error: unknown): boolean {
   if (!error || typeof error !== "object") {
@@ -313,6 +314,102 @@ export const listAllPublishedProducts = unstable_cache(
     tags: [CATALOG_CACHE_TAGS.products],
   },
 );
+
+/**
+ * Counts One Dollar eligible published products using only one selected
+ * variant per product (default variant first, then oldest variant fallback).
+ *
+ * This avoids loading full product cards just to compute the virtual
+ * category count used by global navigation and category badges.
+ */
+async function _countPublishedOneDollarProductsImpl() {
+  const db = getPrismaClient();
+  const products = await db.product.findMany({
+    where: {
+      status: "PUBLISHED",
+      category: {
+        status: "PUBLISHED",
+      },
+      variants: {
+        some: {},
+      },
+    },
+    select: {
+      variants: {
+        orderBy: [{ isDefault: "desc" as const }, { createdAt: "asc" as const }],
+        take: 1,
+        select: {
+          price: true,
+        },
+      },
+    },
+  });
+
+  return products.reduce((total, product) => {
+    const price = product.variants[0]?.price;
+
+    if (typeof price !== "number") {
+      return total;
+    }
+
+    return price <= ONE_DOLLAR_MAX_PRICE_PKR ? total + 1 : total;
+  }, 0);
+}
+
+export const countPublishedOneDollarProducts = unstable_cache(
+  _countPublishedOneDollarProductsImpl,
+  ["storefront:published-products-one-dollar-count"],
+  {
+    revalidate: CATALOG_CACHE_REVALIDATE_SECONDS,
+    tags: [CATALOG_CACHE_TAGS.products],
+  },
+);
+
+/**
+ * Lightweight published-product context used by render paths that do not need
+ * full PDP payloads (for example metadata assembly and related-product routing).
+ */
+async function _getPublishedProductContextBySlugImpl(slug: string) {
+  const db = getPrismaClient();
+  return withPrismaPoolTimeoutRetry(() =>
+    db.product.findFirst({
+      where: {
+        slug,
+        status: "PUBLISHED",
+        category: { status: "PUBLISHED" },
+      },
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        shortDescription: true,
+        metadata: true,
+        category: {
+          select: {
+            slug: true,
+          },
+        },
+      },
+    }),
+  );
+}
+
+const _getPublishedProductContextBySlugCached = unstable_cache(
+  _getPublishedProductContextBySlugImpl,
+  ["storefront:published-product-context-by-slug"],
+  {
+    revalidate: CATALOG_CACHE_REVALIDATE_SECONDS,
+    tags: [CATALOG_CACHE_TAGS.products],
+  },
+);
+
+export async function getPublishedProductContextBySlug(slug: string) {
+  return _getPublishedProductContextBySlugCached(slug);
+}
+
+export type StorefrontPublishedProductContextRecord = Awaited<
+  ReturnType<typeof getPublishedProductContextBySlug>
+>;
 
 /**
  * Returns the full detail record for a single PUBLISHED product identified by slug.
