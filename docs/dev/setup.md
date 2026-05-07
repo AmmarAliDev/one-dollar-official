@@ -90,6 +90,36 @@ Safety behavior:
 
 This script is for local/dev verification only and should not be used as a production data workflow.
 
+### Production catalog population
+
+Use the dedicated production catalog script when you need to populate a real hosted catalog with non-demo storefront data:
+
+```bash
+pnpm prisma:seed
+pnpm prisma:seed:production-catalog
+```
+
+What it does:
+
+- upserts production-ready categories with SEO titles, descriptions, OG fields, canonical URLs, and category card images
+- upserts published products with real merchandising copy, dimensions, metadata, image URLs, default variant pricing, and stock
+- replaces product-level image and specification rows so reruns stay deterministic instead of duplicating catalog content
+- preserves One Dollar virtual-category eligibility by keeping a mix of products priced at `<= 280 PKR` alongside higher-ticket catalog items
+
+Safety behavior:
+
+- `pnpm prisma:seed:production-catalog` requires `PRODUCTION_CATALOG_SEED_CONFIRM=LIVE_CATALOG_APPROVED`
+- the script expects a hosted `DATABASE_URL`; for local rehearsal only, add `PRISMA_ALLOW_LOCAL_PRODUCTION_CATALOG_SEED=true`
+- both `pnpm prisma:seed` and the production catalog script now load `.env` and `.env.local` automatically before creating Prisma connections
+
+PowerShell example for a hosted production or staging database:
+
+```powershell
+$env:PRODUCTION_CATALOG_SEED_CONFIRM='LIVE_CATALOG_APPROVED'
+pnpm prisma:seed
+pnpm prisma:seed:production-catalog
+```
+
 ## Admin Image Upload Setup
 
 The current admin image uploader uses server-side Vercel Blob uploads because it is simple for non-technical admins, inexpensive to start with, and keeps the storage backend isolated behind one feature module.
