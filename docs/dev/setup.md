@@ -208,10 +208,10 @@ Keep application queries behind `src/server/db` and feature-level repositories i
 	- `DATABASE_URL` points to the pooled URL
 	- `POSTGRES_URL_NON_POOLING` points to the direct (non-pooling) URL
 	- the two values are not identical in hosted environments
-	- hosted `DATABASE_URL` includes both `pgbouncer=true` and `connection_limit=1`
+	- hosted `DATABASE_URL` includes `pgbouncer=true` (and preferably `connection_limit=1`)
 
 - If deployment build is blocked by runtime DB safety checks, confirm:
-	- `DATABASE_URL` is pooled/runtime-safe (Supabase pooler host, `pgbouncer=true`, `connection_limit=1`)
+	- `DATABASE_URL` is pooled/runtime-safe (Supabase pooler host, `pgbouncer=true`; `connection_limit=1` is recommended)
 	- `POSTGRES_URL_NON_POOLING` is direct/non-pooled for migrations only
 	- `DATABASE_URL` and `POSTGRES_URL_NON_POOLING` are different values in hosted environments
 

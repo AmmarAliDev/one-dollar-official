@@ -106,7 +106,7 @@ describe('Prisma workflow helpers', () => {
     expect(result.reason).toMatch(/direct Supabase host|pooled/i);
   });
 
-  it('blocks deployment runtime when hosted pooled URL misses connection_limit=1', async () => {
+  it('allows deployment runtime when hosted pooled URL misses connection_limit=1, with recommendation', async () => {
     const { getRuntimeDatabaseSafetyCheck } = await loadWorkflowHelpers();
     const result = getRuntimeDatabaseSafetyCheck(
       {
@@ -119,7 +119,7 @@ describe('Prisma workflow helpers', () => {
       isolatedCwd,
     );
 
-    expect(result.allowed).toBe(false);
+    expect(result.allowed).toBe(true);
     expect(result.reason).toMatch(/connection_limit=1/i);
   });
 

@@ -232,9 +232,9 @@ export function getRuntimeDatabaseSafetyCheck(rawEnv = process.env, cwd = proces
 
   if (isHostedDatabase && getUrlSearchParam(databaseUrl, "connection_limit") !== "1") {
     return {
-      allowed: false,
+      allowed: true,
       reason:
-        "DATABASE_URL looks hosted but is missing connection_limit=1. Configure connection_limit=1 for Prisma + PgBouncer compatibility in deployment runtime.",
+        "DATABASE_URL looks hosted and does not include connection_limit=1. Deploy is allowed, but setting connection_limit=1 is strongly recommended for Prisma + PgBouncer compatibility in deployment runtime.",
     };
   }
 

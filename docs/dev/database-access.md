@@ -123,7 +123,7 @@ The repository separates local schema development from deployment-time migration
 - To intentionally bypass the hosted-URL block for a remote development database, set `PRISMA_ALLOW_HOSTED_MIGRATE_DEV=true` for the current shell session.
 - `prisma migrate deploy` now blocks hosted pooled-only setups where `POSTGRES_URL_NON_POOLING` is missing or equals `DATABASE_URL`, unless explicitly overridden.
 - `build:deploy` is blocked outside deploy-like runtime context by default; use `pnpm build` for normal local builds.
-- `build:deploy` now also validates deployment runtime DB strategy: hosted runtime URLs must be pooled (`pgbouncer=true&connection_limit=1`) and must not be the same value as `POSTGRES_URL_NON_POOLING`.
+- `build:deploy` now also validates deployment runtime DB strategy: hosted runtime URLs must be pooled (`pgbouncer=true`) and must not be the same value as `POSTGRES_URL_NON_POOLING`. `connection_limit=1` is strongly recommended and logged when missing.
 
 ### Troubleshooting
 

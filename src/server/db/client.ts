@@ -7,6 +7,7 @@ type GlobalPrismaCache = typeof globalThis & {
 
 const globalForPrisma = globalThis as GlobalPrismaCache;
 let hasValidatedRuntimeDatabaseUrl = false;
+let hasWarnedAboutRuntimeConnectionLimit = false;
 
 export type DatabaseClient = PrismaClient;
 export type DatabaseTransactionClient = Prisma.TransactionClient;
@@ -67,9 +68,12 @@ function validateRuntimeDatabaseUrl(): void {
   }
 
   if (isHostedDatabase && getUrlSearchParam(databaseUrl, 'connection_limit') !== '1') {
-    throw new Error(
-      'Invalid Prisma runtime configuration: hosted DATABASE_URL must include connection_limit=1 for Prisma + PgBouncer compatibility.',
-    );
+    if (!hasWarnedAboutRuntimeConnectionLimit) {
+      hasWarnedAboutRuntimeConnectionLimit = true;
+      console.warn(
+        '[prisma] Hosted DATABASE_URL is missing connection_limit=1. Runtime will continue, but adding connection_limit=1 is strongly recommended for Prisma + PgBouncer compatibility.',
+      );
+    }
   }
 
   if (isHostedDatabase && nonPoolingUrl && nonPoolingUrl === databaseUrl) {
