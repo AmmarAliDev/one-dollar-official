@@ -15,8 +15,8 @@ describe("homepage section rendering", () => {
     expect(result.sections.length).toBeGreaterThan(0);
     expect(result.sections.map((section) => section.kind)).toEqual([
       "hero-banner",
-      "featured-categories",
       "one-dollar",
+      "featured-categories",
       "featured-products",
       "deal-spotlight",
       "blog-highlights",
@@ -70,9 +70,9 @@ describe("homepage section rendering", () => {
     expect(result.source).toBe("cms");
     expect(result.sections.map((section) => section.id)).toEqual([
       "cms-hero",
-      "fallback-featured-categories",
-      "cms-deal",
       "fallback-one-dollar",
+      "cms-deal",
+      "fallback-featured-categories",
       "cms-blog",
     ]);
     expect(result.sections.some((section) => section.id === "fallback-featured-products")).toBe(false);
@@ -143,8 +143,8 @@ describe("homepage section rendering", () => {
     expect(result.source).toBe("cms");
     expect(result.sections.map((section) => section.id)).toEqual([
       "cms-banner",
-      "cms-categories",
       "fallback-one-dollar",
+      "cms-categories",
       "cms-products",
       "fallback-deal-spotlight",
       "fallback-blog-highlights",

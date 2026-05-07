@@ -74,25 +74,6 @@ async function main() {
     }
   }
 
-  try {
-    await prisma.category.upsert({
-      where: { slug: 'uncategorized' },
-      update: {
-        status: 'PUBLISHED',
-      },
-      create: {
-        name: 'Uncategorized',
-        slug: 'uncategorized',
-        description: 'Default category',
-        status: 'PUBLISHED',
-      },
-    });
-    console.log('Ensured default category: uncategorized');
-  } catch (err) {
-    console.error('Failed to ensure default category', err);
-    throw err;
-  }
-
   console.log('Minimal seed completed.');
 }
 
