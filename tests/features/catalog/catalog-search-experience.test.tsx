@@ -6,6 +6,7 @@ import type { ComponentPropsWithoutRef } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CatalogSearchExperience } from "@/features/catalog/components/catalog-search-experience";
+import { RECENT_SEARCHES_STORAGE_KEY } from "@/features/catalog/recent-searches";
 import type { CatalogProductCard, CatalogSearchResponse } from "@/features/catalog/types";
 
 vi.mock("next/image", () => ({
@@ -53,6 +54,7 @@ function mockSearchPayload(items: CatalogProductCard[]): CatalogSearchResponse {
 beforeEach(() => {
   fetchMock.mockReset();
   vi.stubGlobal("fetch", fetchMock);
+  window.localStorage.clear();
 });
 
 afterEach(() => {
@@ -99,5 +101,44 @@ describe("CatalogSearchExperience result card media", () => {
     expect(
       await screen.findByRole("img", { name: /daily face wash image placeholder/i }),
     ).toBeInTheDocument();
+  });
+
+  it("renders stored recent searches and applies one on click", async () => {
+    window.localStorage.setItem(
+      RECENT_SEARCHES_STORAGE_KEY,
+      JSON.stringify(["rice", "face wash"]),
+    );
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => mockSearchPayload([makeSearchCard()]),
+    });
+
+    const user = userEvent.setup();
+    render(<CatalogSearchExperience />);
+
+    const recentButton = await screen.findByRole("button", { name: "rice" });
+    await user.click(recentButton);
+
+    expect(screen.getByRole("textbox", { name: /search products/i })).toHaveValue("rice");
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it("supports removing one recent search and clearing all", async () => {
+    window.localStorage.setItem(
+      RECENT_SEARCHES_STORAGE_KEY,
+      JSON.stringify(["rice", "face wash"]),
+    );
+
+    const user = userEvent.setup();
+    render(<CatalogSearchExperience />);
+
+    await user.click(await screen.findByRole("button", { name: /remove rice from recent searches/i }));
+    expect(screen.queryByRole("button", { name: "rice" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /clear all/i }));
+    expect(screen.getByText(/no recent searches yet/i)).toBeInTheDocument();
   });
 });

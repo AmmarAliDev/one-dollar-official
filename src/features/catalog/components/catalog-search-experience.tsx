@@ -1,11 +1,19 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { AlertTriangle, Clock3, SearchX, Sparkles } from "lucide-react";
+import { AlertTriangle, Clock3, SearchX, Sparkles, X } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { SectionErrorState } from "@/components/ui/section-error-state";
+import {
+  addRecentSearch,
+  clearRecentSearches,
+  readRecentSearches,
+  removeRecentSearch,
+  writeRecentSearches,
+} from "@/features/catalog/recent-searches";
 import type { CatalogProductCard, CatalogSearchResponse } from "@/features/catalog/types";
 
 import { CatalogSearchInput } from "./catalog-search-input";
@@ -31,8 +39,6 @@ function useDebouncedValue(value: string, delayMs: number) {
   return debouncedValue;
 }
 
-const RECENT_SEARCHES_PLACEHOLDER = ["detergent", "rice", "face wash"];
-
 export function CatalogSearchExperience() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<CatalogProductCard[]>([]);
@@ -40,9 +46,40 @@ export function CatalogSearchExperience() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [resolvedQuery, setResolvedQuery] = useState("");
   const [retryNonce, setRetryNonce] = useState(0);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [recentSearchesError, setRecentSearchesError] = useState<string | null>(null);
   const activeRequest = useRef<AbortController | null>(null);
 
   const debouncedQuery = useDebouncedValue(query.trim(), DEBOUNCE_DELAY_MS);
+
+  useEffect(() => {
+    try {
+      setRecentSearches(readRecentSearches());
+    } catch {
+      setRecentSearchesError("Recent searches are unavailable in this browser session.");
+    }
+  }, []);
+
+  const persistRecentSearches = (updater: (current: string[]) => string[]) => {
+    setRecentSearches((current) => {
+      const next = updater(current);
+
+      try {
+        writeRecentSearches(next);
+        if (recentSearchesError) {
+          setRecentSearchesError(null);
+        }
+      } catch {
+        setRecentSearchesError("Recent searches are unavailable in this browser session.");
+      }
+
+      return next;
+    });
+  };
+
+  const saveRecentQuery = (nextQuery: string) => {
+    persistRecentSearches((current) => addRecentSearch(current, nextQuery));
+  };
 
   useEffect(() => {
     if (debouncedQuery.length < MIN_QUERY_LENGTH) {
@@ -77,6 +114,7 @@ export function CatalogSearchExperience() {
 
         setResults(payload.items);
         setResolvedQuery(debouncedQuery);
+        saveRecentQuery(debouncedQuery);
       } catch {
         if (controller.signal.aborted) {
           return;
@@ -105,33 +143,85 @@ export function CatalogSearchExperience() {
 
   return (
     <div className="space-y-6">
-      <CatalogSearchInput value={query} onChange={setQuery} isLoading={isFetching} />
+      <CatalogSearchInput
+        value={query}
+        onChange={setQuery}
+        isLoading={isFetching}
+        onSubmit={() => {
+          saveRecentQuery(query);
+        }}
+      />
 
       <div className="border-border/70 bg-muted/20 space-y-3 rounded-xl border p-4">
-        <div className="flex items-center gap-2 text-sm font-medium">
-          <Clock3 className="text-muted-foreground size-4" aria-hidden="true" />
-          Recent searches
-          <span className="text-muted-foreground text-xs">(coming soon)</span>
-        </div>
-        <div className="flex flex-wrap gap-2" aria-label="Recent searches placeholder">
-          {RECENT_SEARCHES_PLACEHOLDER.map((term) => (
-            <button
-              key={term}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <Clock3 className="text-muted-foreground size-4" aria-hidden="true" />
+            Recent searches
+          </div>
+
+          {recentSearches.length > 0 ? (
+            <Button
               type="button"
-              disabled
-              className="border-border text-muted-foreground rounded-full border px-3 py-1 text-xs"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setRecentSearches([]);
+
+                try {
+                  clearRecentSearches();
+                  if (recentSearchesError) {
+                    setRecentSearchesError(null);
+                  }
+                } catch {
+                  setRecentSearchesError("Recent searches are unavailable in this browser session.");
+                }
+              }}
             >
-              {term}
-            </button>
-          ))}
+              Clear all
+            </Button>
+          ) : null}
         </div>
+
+        {recentSearchesError ? <p className="text-xs text-amber-700">{recentSearchesError}</p> : null}
+
+        {recentSearches.length === 0 ? (
+          <p className="text-muted-foreground text-sm">No recent searches yet.</p>
+        ) : (
+          <ul className="flex flex-wrap gap-2" aria-label="Recent searches">
+            {recentSearches.map((term) => (
+              <li key={term} className="border-border bg-background flex items-center rounded-full border pr-1">
+                <button
+                  type="button"
+                  className="hover:bg-muted rounded-full px-3 py-1 text-xs font-medium"
+                  onClick={() => {
+                    setQuery(term);
+                  }}
+                >
+                  {term}
+                </button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-6 rounded-full"
+                  aria-label={`Remove ${term} from recent searches`}
+                  onClick={() => {
+                    persistRecentSearches((current) => removeRecentSearch(current, term));
+                  }}
+                >
+                  <X className="size-3.5" />
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       {!canSearch ? (
         <EmptyState
           icon={Sparkles}
           title="Start typing to search"
-          description="Type at least two characters to quickly find products by name, category, and keyword."
+          description="Type at least two characters to quickly find products by name or category."
         />
       ) : null}
 

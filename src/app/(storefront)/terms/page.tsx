@@ -136,11 +136,11 @@ export default function TermsPage() {
           We may update these terms periodically. Continued use of our website after changes
           constitutes acceptance of the revised terms.
         </p>
-        <p className="text-muted-foreground text-sm">
+        {/* <p className="text-muted-foreground text-sm"> */}
           {/* TODO: Review and update with legal counsel before going live */}
-          This is an interim version and should be reviewed by qualified legal counsel before
+          {/* This is an interim version and should be reviewed by qualified legal counsel before
           launch.
-        </p>
+        </p> */}
       </section>
     </PageShell>
   );

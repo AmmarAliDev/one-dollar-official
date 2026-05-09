@@ -38,7 +38,7 @@ export function AppFooter() {
                 alt={`${siteConfig.name} logo`}
                 width={32}
                 height={32}
-                className="h-8 w-8 rounded-md object-contain drop-shadow-xl drop-shadow-white/30"
+                className="h-12 w-12 rounded-md object-contain"
                 sizes="32px"
               />
               <h2 id="footer-brand-heading" className="text-background font-semibold tracking-tight">

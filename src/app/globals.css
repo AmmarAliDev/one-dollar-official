@@ -151,7 +151,7 @@ html {
 body {
   min-height: 100vh;
   touch-action: pan-x pan-y; /* Allows scrolling but disables pinch-zoom */
-  background: radial-gradient(
+  /* background: radial-gradient(
       78rem 36rem at 12% -12%,
       color-mix(in srgb, var(--primary) 16%, transparent),
       transparent 58%
@@ -161,7 +161,7 @@ body {
       color-mix(in srgb, var(--accent) 72%, transparent),
       transparent 62%
     ),
-    var(--background);
+    var(--background); */
   color: var(--foreground);
 }
 
