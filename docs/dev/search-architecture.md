@@ -15,6 +15,8 @@ Provide a fast and simple storefront product search while keeping implementation
 7. Search result shaping now aligns with catalog card media behavior: it resolves the first valid product image URL via the shared URL normalizer (accepting only root-relative and HTTP(S) URLs).
 8. When no valid image URL is available, results intentionally omit `imageUrl` so card rendering falls back to the existing gradient placeholder mode.
 9. Results carry `source: "db"` in the response so callers and tests can verify the active backend.
+10. Recent searches are persisted locally in browser storage (`localStorage`) from successful debounced queries and optional Enter-key submit, deduplicated case-insensitively, trimmed, and capped to a fixed list size.
+11. Recent searches UI supports replay (click to run), single-item removal, and clear-all while gracefully handling unavailable storage.
 
 ## Why This Is Upgrade-Ready
 
@@ -41,14 +43,19 @@ Provide a fast and simple storefront product search while keeping implementation
 
 - Add typo tolerance, synonym dictionaries, and language-aware tokenization.
 - Add facets (price, category, availability) and ranking personalization.
-- Add persisted recent searches and popular query suggestions.
+- Add popular query suggestions.
 
 ## State Contract in UI
 
 - Loading: shown for initial request without existing results.
 - Empty: shown when a valid query has zero matches.
 - Error: shown when API request fails; retry remains available.
-- Recent searches: placeholder section exists to reserve space for future persistence.
+- Recent searches:
+  - local-first persisted list for the active browser
+  - trim + whitespace normalization before storage
+  - case-insensitive deduplication with most-recent-first ordering
+  - per-item removal and clear-all controls
+  - user-safe fallback message when storage is unavailable
 
 ## Category Listing Query-State Contract
 

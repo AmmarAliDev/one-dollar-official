@@ -11,11 +11,11 @@ export const metadata = buildMetadata({
 
 export default function SearchPage() {
   return (
-    <PageShell className="gap-8">
+    <PageShell className="gap-4">
       <SectionHeader
-        eyebrow="Storefront"
-        title="Find products fast"
-        description="Search by product name, category, or common keyword. Results update quickly as you type."
+        titleAs="h1"
+        title="Search products"
+        description="Search by product name, category, and keyword."
       />
 
       <CatalogSearchExperience />

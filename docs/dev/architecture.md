@@ -251,11 +251,14 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 ## Search Strategy
 
 - `src/app/(storefront)/search/page.tsx` composes a dedicated search experience shell through `CatalogSearchExperience`.
+- Search route heading semantics keep a crawl-friendly primary page heading (`h1`) via `SectionHeader.titleAs` while interactive search behavior remains isolated to client components.
 - Debounced client requests call `GET /api/catalog/search` for fast perceived responsiveness without hammering the server on every keypress.
 - Route-handler validation happens in `src/app/api/catalog/search/route.ts` and delegates to feature-level service logic.
 - `searchCatalogProducts()` in `src/features/catalog/service.ts` is the stable entrypoint used by API/UI layers.
 - `src/features/catalog/search-adapter.ts` is the upgrade seam. The current DB-backed ILIKE search can be replaced by a dedicated search provider (Algolia, Typesense) while preserving API and UI contracts.
 - Search result cards now follow the same media contract as catalog cards: adapters should pass a normalized `imageUrl` only when it is a safe renderable URL; otherwise omit it so UI fallback placeholders remain deterministic.
+- Recent searches are implemented as a local-first client seam in `src/features/catalog/recent-searches.ts` with typed helper functions for normalization, case-insensitive deduplication, max-size limits, single-item removal, and clear-all behavior.
+- Recent-search persistence is intentionally browser-scoped (`localStorage`) and failure-tolerant: storage parse/write failures never block search results and are surfaced as user-safe non-fatal messaging.
 - See `docs/dev/search-architecture.md` for flow details and phased upgrade guidance.
 
 ## Wishlist + Account Strategy

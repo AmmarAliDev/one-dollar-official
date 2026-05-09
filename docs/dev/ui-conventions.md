@@ -76,6 +76,18 @@
 - Use `ConfirmationDialog` for destructive or high-impact actions instead of browser-native confirm prompts.
 - Use `PriceDisplay` and `Badge` instead of ad-hoc inline styling for storefront metadata.
 
+### Search Recent History Pattern
+
+- Storefront search recent history should be local-first (browser-scoped), not server-coupled.
+- Persist only meaningful text queries: trim and collapse repeated whitespace before storage.
+- Deduplicate recent items case-insensitively and keep most recent items first.
+- Keep recent-history controls lightweight and explicit:
+	- click item to reuse query
+	- remove a single item
+	- clear all items
+- Always render an explicit empty state when no recent items exist.
+- Storage failures (private mode, blocked storage, parse errors) must be non-fatal and shown as user-safe helper text; never block search result rendering.
+
 ## Accessibility Notes
 
 - Keep semantic landmarks in place: `header`, `nav`, `main`, `section`, and `footer`.

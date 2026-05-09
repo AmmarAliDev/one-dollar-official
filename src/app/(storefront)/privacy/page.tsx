@@ -104,11 +104,6 @@ export default function PrivacyPage() {
           page with an updated revision date. Continued use of our site after changes constitutes
           acceptance of the updated policy.
         </p>
-        <p className="text-muted-foreground text-sm">
-          {/* TODO: Review and update this policy with legal counsel before going live */}
-          This is an interim privacy policy and should be reviewed and tailored by qualified legal
-          counsel before launch.
-        </p>
       </section>
     </PageShell>
   );

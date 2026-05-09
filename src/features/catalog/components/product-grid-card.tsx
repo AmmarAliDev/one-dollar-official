@@ -55,7 +55,7 @@ export function ProductGridCard({ product, eagerImage = false }: ProductGridCard
 
           <CardContent className="space-y-2 p-3">
             <div className="space-y-2">
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap justify-between items-center gap-2">
                 <Badge variant={stockBadge.variant}>{stockBadge.label}</Badge>
                 {product.compareAt && product.compareAt > product.price ? (
                   <Badge variant="info">Discount available</Badge>
