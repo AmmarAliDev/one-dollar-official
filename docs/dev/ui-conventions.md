@@ -47,6 +47,7 @@
 ## Surface Consistency Rules
 
 - Forms should rely on shared input controls (`Input`, `Textarea`, `Select`) that bind to semantic classes (`bg-background`, `text-foreground`, `border-input`, `focus:ring-ring`).
+	- Placeholder color: placeholders across `Input`/`Textarea` are standardized via the `--placeholder` token in `src/app/globals.css` and should be `#ab2f586c`. Do not set placeholder colors directly in feature components; prefer the shared token so updates remain centralized.
 - Cards and table containers should keep semantic surface classes and shared elevation tokens (`--shadow-soft`, `--shadow-elevated`) for consistent depth across desktop and mobile.
 - Navigation surfaces (sidebar and mobile nav) should use semantic hover/active states (`bg-muted`, `bg-accent`, `bg-primary/*`) instead of custom ad-hoc colors.
 - Confirmation and high-impact dialogs should keep backdrop contrast strong enough for readability while preserving focus and keyboard behavior.
