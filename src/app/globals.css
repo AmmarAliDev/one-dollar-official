@@ -22,6 +22,7 @@
   --secondary-foreground: #4d0303;
   --border: #8f0808;
   --input: #ceb9d8;
+  --placeholder: #36073069;
   /* --ring: #4d0303; */
   --success: #15803d;
   --warning: #b45309;
@@ -173,4 +174,28 @@ body {
 .dark ::selection {
   background: color-mix(in srgb, var(--primary) 70%, black);
   color: var(--primary-foreground);
+}
+
+/* Global placeholder color for inputs and textareas.
+   Keeps placeholder appearance consistent across the app without
+   changing normal input text color. Uses a centralized token so
+   components can reference the same value if needed. */
+input::placeholder,
+textarea::placeholder,
+input::-webkit-input-placeholder,
+textarea::-webkit-input-placeholder,
+input::-moz-placeholder,
+textarea::-moz-placeholder,
+input:-ms-input-placeholder,
+textarea:-ms-input-placeholder {
+  color: var(--placeholder);
+  opacity: 1; /* ensure the color's alpha is respected uniformly */
+}
+
+/* Additionally, ensure placeholder color applies to elements with the
+   shared input role (for custom controls) using an attribute selector. */
+[role="textbox"]::placeholder,
+[role="search"]::placeholder {
+  color: var(--placeholder);
+  opacity: 1;
 }
