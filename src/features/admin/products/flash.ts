@@ -3,6 +3,7 @@ import type { AppError } from "@/lib/errors/app-error";
 export type ProductErrorCode =
   | "createFailed"
   | "updateFailed"
+  | "deleteFailed"
   | "invalidInput"
   | "missingId"
   | "notFound"
@@ -12,16 +13,18 @@ export type ProductErrorCode =
   | "invalidRelated"
   | "productInUse";
 
-export type ProductNoticeCode = "created" | "updated";
+export type ProductNoticeCode = "created" | "updated" | "deleted";
 
 const noticeMessages: Record<ProductNoticeCode, string> = {
   created: "Product saved successfully.",
   updated: "Product changes saved successfully.",
+  deleted: "Product deleted successfully.",
 };
 
 const errorMessages: Record<ProductErrorCode, string> = {
   createFailed: "The product could not be created. Please try again.",
   updateFailed: "The product could not be updated. Please try again.",
+  deleteFailed: "The product could not be deleted. Please try again.",
   invalidInput: "Please review the form and fix the highlighted information.",
   missingId: "The selected product is missing or no longer available.",
   notFound: "The selected product could not be found.",

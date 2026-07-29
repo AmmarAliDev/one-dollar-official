@@ -1,7 +1,8 @@
-export { createAdminProductAction, updateAdminProductAction } from "./actions";
+export { createAdminProductAction, deleteAdminProductAction, updateAdminProductAction } from "./actions";
 export { getProductErrorCode, getProductErrorMessage, getProductNoticeMessage } from "./flash";
 export {
   createAdminProduct,
+  deleteAdminProduct,
   getAdminProductById,
   listAdminProductCategories,
   listAdminProducts,

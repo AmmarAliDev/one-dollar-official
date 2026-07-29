@@ -435,7 +435,7 @@ async function normalizeRelatedProductIds(
 }
 
 async function writeProductAuditLog(tx: any, input: {
-  action: "product.created" | "product.updated";
+  action: "product.created" | "product.updated" | "product.deleted";
   actor: AuditActorInput;
   productId: string;
   changes: Record<string, unknown>;
@@ -543,6 +543,30 @@ async function upsertVariants(
   const removedVariantIds = existingVariants.filter((variant) => !variant.sku || !incomingSkus.has(variant.sku)).map((variant) => variant.id);
 
   if (removedVariantIds.length > 0) {
+    await tx.wishlistItem.deleteMany({
+      where: {
+        productVariantId: {
+          in: removedVariantIds,
+        },
+      },
+    });
+
+    await tx.cartItem.deleteMany({
+      where: {
+        productVariantId: {
+          in: removedVariantIds,
+        },
+      },
+    });
+
+    await tx.productImage.deleteMany({
+      where: {
+        productVariantId: {
+          in: removedVariantIds,
+        },
+      },
+    });
+
     await tx.inventory.deleteMany({
       where: {
         productVariantId: {
@@ -977,6 +1001,134 @@ export async function updateAdminProduct(input: {
       });
 
       return mapAdminProduct(updated);
+    });
+  } catch (error) {
+    const mutationError = buildMutationError(error);
+    if (mutationError) {
+      throw mutationError;
+    }
+
+    throw error;
+  }
+}
+
+export async function deleteAdminProduct(input: {
+  productId: string;
+  actor: AuditActorInput;
+}) {
+  const db = getPrismaClient();
+
+  const product = await db.product.findUnique({
+    where: { id: input.productId },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      status: true,
+      categoryId: true,
+    },
+  });
+
+  if (!product) {
+    throw new AppError("Product not found.", "PRODUCT_NOT_FOUND", {
+      statusCode: 404,
+      userMessage: "The selected product no longer exists.",
+    });
+  }
+
+  try {
+    await db.$transaction(async (tx) => {
+      const variants = await tx.productVariant.findMany({
+        where: { productId: product.id },
+        select: { id: true },
+      });
+      const variantIds = variants.map((variant) => variant.id);
+
+      if (variantIds.length > 0) {
+        await tx.wishlistItem.deleteMany({
+          where: {
+            productVariantId: {
+              in: variantIds,
+            },
+          },
+        });
+
+        await tx.cartItem.deleteMany({
+          where: {
+            productVariantId: {
+              in: variantIds,
+            },
+          },
+        });
+
+        await tx.productImage.deleteMany({
+          where: {
+            productVariantId: {
+              in: variantIds,
+            },
+          },
+        });
+
+        await tx.inventory.deleteMany({
+          where: {
+            productVariantId: {
+              in: variantIds,
+            },
+          },
+        });
+
+        await tx.productVariant.deleteMany({
+          where: {
+            id: {
+              in: variantIds,
+            },
+          },
+        });
+      }
+
+      await tx.productImage.deleteMany({
+        where: {
+          productId: product.id,
+        },
+      });
+
+      await tx.productSpecification.deleteMany({
+        where: {
+          productId: product.id,
+        },
+      });
+
+      await tx.review.deleteMany({
+        where: {
+          productId: product.id,
+        },
+      });
+
+      await tx.dealCampaignProduct.deleteMany({
+        where: {
+          productId: product.id,
+        },
+      });
+
+      await tx.product.delete({
+        where: {
+          id: product.id,
+        },
+      });
+
+      await writeProductAuditLog(tx, {
+        action: "product.deleted",
+        actor: input.actor,
+        productId: product.id,
+        changes: {
+          before: {
+            title: product.name,
+            slug: product.slug,
+            status: product.status,
+            categoryId: product.categoryId,
+          },
+        },
+      });
     });
   } catch (error) {
     const mutationError = buildMutationError(error);

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const prismaMock = vi.hoisted(() => ({
+  $transaction: vi.fn(async (callback: (tx: typeof prismaMock) => Promise<unknown>) => callback(prismaMock)),
   category: {
     findMany: vi.fn(),
     findUnique: vi.fn(),
@@ -9,7 +10,7 @@ const prismaMock = vi.hoisted(() => ({
     delete: vi.fn(),
   },
   product: {
-    count: vi.fn(),
+    updateMany: vi.fn(),
   },
   auditLog: {
     create: vi.fn(),
@@ -208,7 +209,7 @@ describe("admin categories service", () => {
     );
   });
 
-  it("deletes category when no products are attached", async () => {
+  it("deletes category and detaches linked products", async () => {
     prismaMock.category.findUnique.mockResolvedValue({
       id: "category-1",
       name: "Home Care",
@@ -218,7 +219,7 @@ describe("admin categories service", () => {
       seoTitle: null,
       seoDescription: null,
     });
-    prismaMock.product.count.mockResolvedValue(0);
+    prismaMock.product.updateMany.mockResolvedValue({ count: 3 });
     prismaMock.category.delete.mockResolvedValue({ id: "category-1" });
     prismaMock.auditLog.create.mockResolvedValue({ id: "audit-3" });
 
@@ -230,8 +231,9 @@ describe("admin categories service", () => {
       },
     });
 
-    expect(prismaMock.product.count).toHaveBeenCalledWith({
+    expect(prismaMock.product.updateMany).toHaveBeenCalledWith({
       where: { categoryId: "category-1" },
+      data: { categoryId: null },
     });
     expect(prismaMock.category.delete).toHaveBeenCalledWith({
       where: { id: "category-1" },

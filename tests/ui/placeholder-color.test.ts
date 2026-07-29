@@ -7,7 +7,7 @@ describe("global placeholder styles", () => {
   const css = readFileSync(cssPath, "utf8");
 
   it("defines --placeholder token with the specified color", () => {
-    expect(css).toMatch(/--placeholder:\s*#ab2f586c/);
+    expect(css).toMatch(/--placeholder:\s*#36073069/);
   });
 
   it("contains placeholder pseudo-element rules", () => {

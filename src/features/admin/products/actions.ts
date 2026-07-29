@@ -11,7 +11,7 @@ import { assertTrustedOrigin } from "@/lib/security/csrf";
 import { CATALOG_CACHE_TAGS } from "@/server/db/catalog-queries";
 
 import { getProductErrorCode, type ProductErrorCode } from "./flash";
-import { createAdminProduct, updateAdminProduct } from "./service";
+import { createAdminProduct, deleteAdminProduct, updateAdminProduct } from "./service";
 import { validateAdminProductCreateInput, validateAdminProductUpdateInput } from "./validation";
 
 function isSafeRelativePath(value: string) {
@@ -198,4 +198,33 @@ export async function updateAdminProductAction(formData: FormData) {
   revalidateStorefrontCatalogPaths();
   revalidatePath(routes.admin.products);
   redirect(appendFlash(returnTo, "notice", "updated"));
+}
+
+export async function deleteAdminProductAction(formData: FormData) {
+  const returnTo = getReturnTo(formData, routes.admin.products);
+  const productId = `${formData.get("productId") ?? ""}`.trim();
+
+  if (productId.length === 0) {
+    redirect(appendFlash(returnTo, "error", "missingId"));
+  }
+
+  try {
+    await assertTrustedOrigin({ action: "admin:product:delete" });
+    const actor = await requireProductWriteAccess();
+
+    await deleteAdminProduct({
+      productId,
+      actor,
+    });
+  } catch (error) {
+    unstable_rethrow(error);
+
+    const appError = captureServerError(error, "admin:product:delete");
+    redirect(appendFlash(returnTo, "error", getProductErrorCode(appError, "deleteFailed")));
+  }
+
+  // Revalidate storefront catalog tree so deleted products disappear on next request
+  revalidateStorefrontCatalogPaths();
+  revalidatePath(routes.admin.products);
+  redirect(appendFlash(returnTo, "notice", "deleted"));
 }
