@@ -5,22 +5,22 @@ import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 
-import { deleteAdminCategoryAction } from "../actions";
+import { deleteAdminProductAction } from "../actions";
 
-type DeleteCategoryButtonProps = {
-  categoryId: string;
-  categoryName: string;
+type DeleteProductButtonProps = {
+  productId: string;
+  productTitle: string;
   returnTo: string;
 };
 
-export function DeleteCategoryButton({ categoryId, categoryName, returnTo }: DeleteCategoryButtonProps) {
+export function DeleteProductButton({ productId, productTitle, returnTo }: DeleteProductButtonProps) {
   const [open, setOpen] = useState(false);
   const formRef = useRef<HTMLFormElement | null>(null);
 
   return (
     <>
-      <form ref={formRef} action={deleteAdminCategoryAction}>
-        <input type="hidden" name="categoryId" value={categoryId} />
+      <form ref={formRef} action={deleteAdminProductAction}>
+        <input type="hidden" name="productId" value={productId} />
         <input type="hidden" name="returnTo" value={returnTo} />
         <Button
           type="button"
@@ -36,9 +36,9 @@ export function DeleteCategoryButton({ categoryId, categoryName, returnTo }: Del
       <ConfirmationDialog
         open={open}
         onOpenChange={setOpen}
-        title={`Delete ${categoryName}?`}
-        description="This permanently removes the category and detaches it from any linked products."
-        confirmLabel="Delete category"
+        title={`Delete ${productTitle}?`}
+        description="This permanently removes the product, its variants, and dependent cart or wishlist rows."
+        confirmLabel="Delete product"
         confirmVariant="destructive"
         onConfirm={() => formRef.current?.requestSubmit()}
       />

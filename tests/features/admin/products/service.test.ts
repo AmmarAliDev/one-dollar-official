@@ -11,6 +11,7 @@ const prismaMock = vi.hoisted(() => ({
     findUnique: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
+    delete: vi.fn(),
   },
   productVariant: {
     create: vi.fn(),
@@ -31,6 +32,18 @@ const prismaMock = vi.hoisted(() => ({
     create: vi.fn(),
     upsert: vi.fn(),
   },
+  wishlistItem: {
+    deleteMany: vi.fn(),
+  },
+  cartItem: {
+    deleteMany: vi.fn(),
+  },
+  review: {
+    deleteMany: vi.fn(),
+  },
+  dealCampaignProduct: {
+    deleteMany: vi.fn(),
+  },
   auditLog: {
     create: vi.fn(),
   },
@@ -42,6 +55,7 @@ vi.mock("@/server/db", () => ({
 
 import {
   createAdminProduct,
+  deleteAdminProduct,
   listAdminProducts,
   updateAdminProduct,
 } from "@/features/admin/products";
@@ -426,6 +440,170 @@ describe("admin product service", () => {
               status: "PUBLISHED",
             }),
           }),
+        }),
+      }),
+    );
+  });
+
+  it("removes deselected variants after clearing dependent rows", async () => {
+    prismaMock.category.findUnique.mockResolvedValue({ id: "category-1", name: "Apparel" });
+    prismaMock.product.findMany.mockResolvedValue([]);
+    prismaMock.product.findUnique
+      .mockResolvedValueOnce({
+        id: "product-3",
+        name: "Bundle",
+        slug: "bundle",
+        status: "DRAFT",
+        masterSku: "BUNDLE-001",
+        metadata: { variantsEnabled: true, relatedProductIds: [] },
+      })
+      .mockResolvedValueOnce({
+        id: "product-3",
+        name: "Bundle",
+        slug: "bundle",
+        shortDescription: "x",
+        description: "y",
+        status: "PUBLISHED",
+        masterSku: "BUNDLE-001",
+        seoTitle: null,
+        seoDescription: null,
+        seoImageUrl: null,
+        metadata: { variantsEnabled: true, relatedProductIds: [] },
+        category: { id: "category-1", name: "Apparel", slug: "apparel" },
+        variants: [],
+        images: [],
+        specifications: [],
+        createdAt: new Date("2026-04-17T10:00:00.000Z"),
+        updatedAt: new Date("2026-04-17T12:00:00.000Z"),
+      });
+
+    prismaMock.product.update.mockResolvedValue({ id: "product-3" });
+    prismaMock.productVariant.findMany.mockResolvedValue([
+      { id: "variant-active", sku: "BUNDLE-A" },
+      { id: "variant-removed", sku: "BUNDLE-B" },
+    ]);
+    prismaMock.wishlistItem.deleteMany.mockResolvedValue({ count: 1 });
+    prismaMock.cartItem.deleteMany.mockResolvedValue({ count: 1 });
+    prismaMock.productImage.deleteMany.mockResolvedValue({ count: 1 });
+    prismaMock.inventory.deleteMany.mockResolvedValue({ count: 1 });
+    prismaMock.productVariant.deleteMany.mockResolvedValue({ count: 1 });
+    prismaMock.productVariant.update.mockResolvedValue({ id: "variant-active" });
+    prismaMock.inventory.upsert.mockResolvedValue({ id: "inventory-active" });
+    prismaMock.productSpecification.deleteMany.mockResolvedValue({ count: 0 });
+    prismaMock.auditLog.create.mockResolvedValue({ id: "audit-removed" });
+
+    await updateAdminProduct({
+      data: {
+        id: "product-3",
+        title: "Bundle",
+        slug: "bundle",
+        shortDescription: "x",
+        description: "y",
+        categoryId: "category-1",
+        status: "PUBLISHED",
+        sku: "BUNDLE-001",
+        price: 0,
+        comparePrice: undefined,
+        stock: 0,
+        variantsEnabled: true,
+        variants: [
+          {
+            title: "Bundle A",
+            sku: "BUNDLE-A",
+            price: 499,
+            comparePrice: undefined,
+            stock: 10,
+            options: { Pack: "A" },
+            isDefault: true,
+          },
+        ],
+        images: [],
+        specifications: [],
+        relatedProductIds: [],
+        seoTitle: undefined,
+        seoDescription: undefined,
+        seoCanonicalUrl: undefined,
+        seoOgTitle: undefined,
+        seoOgDescription: undefined,
+        seoImageUrl: undefined,
+        seoNoIndex: false,
+        seoSchemaNotes: undefined,
+      },
+      actor: {
+        actorId: "admin-3",
+        actorRole: "SUPER_ADMIN",
+      },
+    });
+
+    expect(prismaMock.wishlistItem.deleteMany).toHaveBeenCalledWith({
+      where: {
+        productVariantId: {
+          in: ["variant-removed"],
+        },
+      },
+    });
+    expect(prismaMock.cartItem.deleteMany).toHaveBeenCalledWith({
+      where: {
+        productVariantId: {
+          in: ["variant-removed"],
+        },
+      },
+    });
+    expect(prismaMock.productVariant.deleteMany).toHaveBeenCalledWith({
+      where: {
+        id: {
+          in: ["variant-removed"],
+        },
+      },
+    });
+  });
+
+  it("deletes product with variants, dependent rows, and audit log", async () => {
+    prismaMock.product.findUnique.mockResolvedValue({
+      id: "product-10",
+      name: "Legacy Product",
+      slug: "legacy-product",
+      status: "ARCHIVED",
+      categoryId: "category-1",
+    });
+    prismaMock.productVariant.findMany.mockResolvedValue([
+      { id: "variant-10" },
+      { id: "variant-11" },
+    ]);
+    prismaMock.wishlistItem.deleteMany.mockResolvedValue({ count: 2 });
+    prismaMock.cartItem.deleteMany.mockResolvedValue({ count: 2 });
+    prismaMock.productImage.deleteMany.mockResolvedValue({ count: 2 });
+    prismaMock.inventory.deleteMany.mockResolvedValue({ count: 2 });
+    prismaMock.productVariant.deleteMany.mockResolvedValue({ count: 2 });
+    prismaMock.productSpecification.deleteMany.mockResolvedValue({ count: 1 });
+    prismaMock.review.deleteMany.mockResolvedValue({ count: 0 });
+    prismaMock.dealCampaignProduct.deleteMany.mockResolvedValue({ count: 0 });
+    prismaMock.product.delete.mockResolvedValue({ id: "product-10" });
+    prismaMock.auditLog.create.mockResolvedValue({ id: "audit-delete" });
+
+    await deleteAdminProduct({
+      productId: "product-10",
+      actor: {
+        actorId: "admin-10",
+        actorRole: "SUPER_ADMIN",
+      },
+    });
+
+    expect(prismaMock.product.delete).toHaveBeenCalledWith({
+      where: {
+        id: "product-10",
+      },
+    });
+    expect(prismaMock.dealCampaignProduct.deleteMany).toHaveBeenCalledWith({
+      where: {
+        productId: "product-10",
+      },
+    });
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "product.deleted",
+          modelId: "product-10",
         }),
       }),
     );

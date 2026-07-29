@@ -373,24 +373,26 @@ export async function deleteAdminCategory(input: {
     });
   }
 
-  const productCount = await db.product.count({
-    where: {
-      categoryId: category.id,
-    },
-  });
-
-  if (productCount > 0) {
-    throw new AppError("Cannot delete category with attached products.", "CATEGORY_HAS_PRODUCTS", {
-      statusCode: 409,
-      userMessage: "Move products out of this category before deleting it.",
-    });
-  }
+  let detachedProductCount = 0;
 
   try {
-    await db.category.delete({
-      where: {
-        id: category.id,
-      },
+    detachedProductCount = await db.$transaction(async (tx) => {
+      const detached = await tx.product.updateMany({
+        where: {
+          categoryId: category.id,
+        },
+        data: {
+          categoryId: null,
+        },
+      });
+
+      await tx.category.delete({
+        where: {
+          id: category.id,
+        },
+      });
+
+      return detached.count;
     });
   } catch (error) {
     if (error instanceof PrismaClientKnownRequestError && error.code === "P2003") {
@@ -427,6 +429,7 @@ export async function deleteAdminCategory(input: {
         slug: category.slug,
         status: category.status,
       },
+      detachedProductCount,
     },
   });
 }

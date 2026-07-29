@@ -13,6 +13,7 @@ import {
 } from "@/features/admin/products";
 import { AdminPageHeader } from "@/features/admin/components/admin-page-patterns";
 import { AdminProductForm } from "@/features/admin/products/components/admin-product-form";
+import { DeleteProductButton } from "@/features/admin/products/components/delete-product-button";
 import { requireRouteAccess } from "@/lib/auth/guards";
 import { rbacPermissions } from "@/lib/auth/rbac";
 
@@ -59,6 +60,13 @@ export default async function EditAdminProductPage({ params, searchParams }: Edi
         eyebrow="Catalog"
         title={`Edit ${product.title}`}
         description="Adjust content, pricing, inventory, related items, and SEO in one place."
+        actions={
+          <DeleteProductButton
+            productId={product.id}
+            productTitle={product.title}
+            returnTo={routes.admin.productEdit(product.id)}
+          />
+        }
       />
 
       {noticeMessage ? (

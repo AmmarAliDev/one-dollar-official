@@ -63,8 +63,10 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - `(admin)/admin/activity` now reads a dedicated AuditLog-backed feed through `src/features/admin/activity/service.ts`, with non-technical event summaries and actor context when available
 - `(admin)/admin/revenue` now reads a dedicated DB-backed report through `src/features/admin/revenue/service.ts`, showing recognized revenue, recent period summaries, order totals, and explicit inclusion assumptions
 - `(admin)/admin/categories` now provides category CRUD with shared typed create/edit/filter forms and SEO field controls
+- Category deletion now detaches linked products (`Product.categoryId -> null`) before removing the category, so catalog admins can clean up obsolete categories without a manual reassignment pass.
 - Admin category create/edit now includes a dedicated category card image field wired to the shared admin upload foundation (`purpose: category`), persisting a URL into `Category.cardImageUrl`.
 - `(admin)/admin/products` now provides product CRUD with reusable RHF + Zod form composition for simple and variant-based catalog entries
+- Admin products now support destructive delete from list/edit surfaces, and variant-row removal during product updates clears dependent cart/wishlist rows before deleting removed variants to avoid relational-save failures.
 - `(admin)/admin/blog` now provides blog post CRUD with structured content JSON, publish scheduling, and SEO controls
 - `(admin)/admin/inventory` now supports low-stock monitoring plus inline manual stock adjustments for authorized catalog admins
 - `(admin)/admin/settings` now provides practical store settings management (identity, support contacts, shipping basics, and operational defaults) backed by a singleton persistence record and CSRF/RBAC-protected server action writes

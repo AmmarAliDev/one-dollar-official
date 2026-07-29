@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { routes } from "@/config/routes";
 import type { AdminProductListItem } from "../service";
+import { DeleteProductButton } from "./delete-product-button";
 
 const columnHelper = createDataTableColumnHelper<AdminProductListItem>();
 
@@ -105,39 +106,48 @@ export const adminProductsTableColumns: ColumnDef<AdminProductListItem, any>[] =
     },
   }),
 
-  columnHelper.display({
-    id: "actions",
-    header: "Actions",
-    cell: (info) => {
-      const product = info.row.original;
-      return (
-        <Link
-          href={routes.admin.productEdit(product.id)}
-          className={buttonVariants({ variant: "outline", size: "sm" })}
-        >
-          <Pencil className="size-4" />
-          Edit
-        </Link>
-      );
-    },
-  }),
 ];
 
 export interface AdminProductsTableProps {
   products: AdminProductListItem[];
+  returnTo?: string;
   emptyTitle?: string;
   emptyDescription?: string;
 }
 
 export function AdminProductsTable({
   products,
+  returnTo = routes.admin.products,
   emptyTitle = "No products found",
   emptyDescription = "Create your first product or adjust the current filters.",
 }: AdminProductsTableProps) {
+  const columns: ColumnDef<AdminProductListItem, any>[] = [
+    ...adminProductsTableColumns,
+    columnHelper.display({
+      id: "actions",
+      header: "Actions",
+      cell: (info) => {
+        const product = info.row.original;
+        return (
+          <div className="flex gap-2">
+            <Link
+              href={routes.admin.productEdit(product.id)}
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+            >
+              <Pencil className="size-4" />
+              Edit
+            </Link>
+            <DeleteProductButton productId={product.id} productTitle={product.title} returnTo={returnTo} />
+          </div>
+        );
+      },
+    }),
+  ];
+
   return (
     <DataTable<AdminProductListItem>
       data={products}
-      columns={adminProductsTableColumns}
+      columns={columns}
       getRowId={(row) => row.id}
       emptyState={{
         title: emptyTitle,
