@@ -114,6 +114,7 @@ function buildDefaultValues(categories: AdminProductCategoryOption[], product?: 
           comparePrice: variant.comparePrice ?? undefined,
           stock: variant.stock,
           options: variant.options,
+          imageUrl: variant.imageUrl ?? undefined,
           isDefault: variant.isDefault,
         }))
       : [],
@@ -170,6 +171,7 @@ function buildProductFormData(values: AdminProductFormValues, input: { returnTo:
     formData.append("variantPrice", `${variant.price}`);
     formData.append("variantComparePrice", variant.comparePrice === undefined ? "" : `${variant.comparePrice}`);
     formData.append("variantStock", `${variant.stock}`);
+    formData.append("variantImageUrl", variant.imageUrl ?? "");
   });
 
   values.images.forEach((image) => {
@@ -430,6 +432,7 @@ export function AdminProductForm({ mode, action, returnTo, submitLabel, categori
                     comparePrice: undefined,
                     stock: 0,
                     options: {},
+                    imageUrl: undefined,
                     isDefault: variants.fields.length === 0,
                   });
                   form.setValue("variantsEnabled", true, { shouldDirty: true, shouldValidate: true });
@@ -531,6 +534,35 @@ export function AdminProductForm({ mode, action, returnTo, submitLabel, categori
                             aria-invalid={Boolean(fieldState.error)}
                             disabled={disabled}
                             placeholder="Size: Small, Color: Blue"
+                          />
+                        ),
+                      }}
+                    />
+                  </div>
+
+                  <div className="md:col-span-6">
+                    <DynamicFormField
+                      control={form.control}
+                      disabled={isPending}
+                      fieldConfig={{
+                        id: `variant-image-${index}`,
+                        name: fieldPath(`variants.${index}.imageUrl`),
+                        type: "custom",
+                        label: "Variant image",
+                        description: "Optional image shown when shoppers choose this variant.",
+                        render: ({ field, fieldState, inputId, describedBy, disabled }) => (
+                          <AdminImageUploadInput
+                            inputId={inputId}
+                            value={typeof field.value === "string" ? field.value : ""}
+                            onChange={(nextValue) => {
+                              field.onChange(nextValue);
+                            }}
+                            onBlur={field.onBlur}
+                            purpose="product"
+                            placeholder="https://example.com/variant-image.jpg"
+                            describedBy={describedBy}
+                            disabled={disabled}
+                            invalid={Boolean(fieldState.error)}
                           />
                         ),
                       }}

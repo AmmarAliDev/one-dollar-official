@@ -109,6 +109,18 @@ const adminProductImageSchema = z.object({
     .transform((value) => (value && value.length > 0 ? value : undefined)),
 });
 
+const optionalImageUrl = z.preprocess(
+  (value) => {
+    if (typeof value !== "string") {
+      return undefined;
+    }
+
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  },
+  z.string({ error: "Please enter a valid image URL." }).url("Please enter a valid image URL.").optional(),
+);
+
 const adminProductSpecificationSchema = z.object({
   key: z.string().trim().min(1, "Specification label is required.").max(80, "Specification label is too long."),
   value: z.string().trim().min(1, "Specification value is required.").max(240, "Specification value is too long."),
@@ -121,6 +133,7 @@ const adminProductVariantSchema = z.object({
   comparePrice: optionalMoney("Variant compare price"),
   stock: requiredWholeNumber("Variant stock"),
   options: z.preprocess(parseVariantOptions, z.record(z.string(), z.string())),
+  imageUrl: optionalImageUrl,
   isDefault: z.preprocess(parseBooleanish, z.boolean()).optional().default(false),
 });
 

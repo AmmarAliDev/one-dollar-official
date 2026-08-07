@@ -307,6 +307,7 @@ function buildVariantGroups(
           ? { compareAt: variant.compareAtPrice }
           : {}),
         inventoryQuantity: variant.inventory?.quantity ?? 0,
+        ...(variant.images?.[0]?.url ? { imageUrl: variant.images[0].url } : {}),
       }),
     );
 

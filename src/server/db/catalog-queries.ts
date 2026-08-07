@@ -138,6 +138,15 @@ const storefrontProductSelect = {
           quantity: true,
         },
       },
+      images: {
+        orderBy: { position: "asc" as const },
+        select: {
+          id: true,
+          url: true,
+          alt: true,
+          position: true,
+        },
+      },
     },
   },
   // Include APPROVED review ratings for computing averageRating / reviewCount

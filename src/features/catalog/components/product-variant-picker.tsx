@@ -20,6 +20,7 @@ function VariantOption({
   onSelect: () => void;
 }) {
   const outOfStock = option.inventoryQuantity <= 0;
+  const hasImage = Boolean(option.imageUrl);
 
   return (
     <button
@@ -27,9 +28,9 @@ function VariantOption({
       onClick={onSelect}
       disabled={outOfStock}
       aria-pressed={isSelected}
-      aria-label={`${option.label}${outOfStock ? " - out of stock" : ""}`}
+      aria-label={hasImage ? `Select ${option.label}` : `${option.label}${outOfStock ? " - out of stock" : ""}`}
       className={cn(
-        "rounded-lg border px-4 py-2 text-sm font-medium transition-all",
+        "flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-all",
         isSelected
           ? "border-primary bg-primary text-primary-foreground shadow-sm"
           : outOfStock
@@ -37,7 +38,12 @@ function VariantOption({
             : "border-border hover:border-primary/60 hover:bg-accent",
       )}
     >
-      {option.label}
+      {hasImage ? (
+        <span className="relative flex size-10 shrink-0 overflow-hidden rounded-md border border-border/60 bg-background">
+          <img src={option.imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
+        </span>
+      ) : null}
+      <span>{option.label}</span>
     </button>
   );
 }

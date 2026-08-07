@@ -67,6 +67,7 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 - Admin category create/edit now includes a dedicated category card image field wired to the shared admin upload foundation (`purpose: category`), persisting a URL into `Category.cardImageUrl`.
 - `(admin)/admin/products` now provides product CRUD with reusable RHF + Zod form composition for simple and variant-based catalog entries
 - Admin products now support destructive delete from list/edit surfaces, and variant-row removal during product updates clears dependent cart/wishlist rows before deleting removed variants to avoid relational-save failures.
+- Variant-specific imagery is now wired end to end for product variants: admin product forms accept an optional per-variant image URL, the product service persists that image to the variant-linked `ProductImage` row, and storefront PDP variant pickers render those images so clicking the image selects the matching variant option.
 - `(admin)/admin/blog` now provides blog post CRUD with structured content JSON, publish scheduling, and SEO controls
 - `(admin)/admin/inventory` now supports low-stock monitoring plus inline manual stock adjustments for authorized catalog admins
 - `(admin)/admin/settings` now provides practical store settings management (identity, support contacts, shipping basics, and operational defaults) backed by a singleton persistence record and CSRF/RBAC-protected server action writes

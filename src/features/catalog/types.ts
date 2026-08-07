@@ -38,6 +38,7 @@ export type ProductVariantOption = {
   price?: number;
   compareAt?: number;
   inventoryQuantity: number;
+  imageUrl?: string;
 };
 
 export type ProductVariantGroup = {

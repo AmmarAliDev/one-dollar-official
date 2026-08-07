@@ -265,6 +265,7 @@ Intentional no-reset exceptions:
 - Use the full description for benefits, usage instructions, size details, or care notes.
 - For simple products, fill the standard SKU, price, and stock fields and leave the variant rows empty.
 - For variant-based products, turn on the variant toggle and enter one row per sellable option combination with its own SKU, price, and stock.
+- Variant rows may also include a dedicated image URL so admins can attach an image to a specific combination; the image is persisted to the variant-linked product image record and shown in the storefront variant picker.
 - Variant titles should be human-friendly, such as "Small / Blue" or "500ml / Lemon".
 - Specifications should use plain labels customers recognize, such as Material, Size, or Fragrance.
 - Product, banner, blog cover, and SEO image URL fields should use the shared `AdminImageUploadInput` so admins can upload directly while still retaining manual URL entry.

@@ -53,6 +53,7 @@ export type AdminProductVariantRecord = {
   comparePrice: number | null;
   stock: number;
   options: Record<string, string>;
+  imageUrl?: string | null;
   isDefault: boolean;
 };
 
@@ -260,6 +261,7 @@ function buildVariantPayload(data: AdminProductCreateInput | AdminProductUpdateI
       comparePrice: variant.comparePrice ?? null,
       stock: variant.stock,
       options: variant.options,
+      imageUrl: variant.imageUrl ?? null,
       isDefault: index === defaultIndex,
     }));
   }
@@ -272,6 +274,7 @@ function buildVariantPayload(data: AdminProductCreateInput | AdminProductUpdateI
       comparePrice: data.comparePrice ?? null,
       stock: data.stock,
       options: {},
+      imageUrl: null,
       isDefault: true,
     },
   ];
@@ -319,6 +322,7 @@ function mapAdminProduct(record: SelectedAdminProduct): AdminProductFormRecord {
       comparePrice: variant.compareAtPrice ?? null,
       stock: variant.inventory?.quantity ?? 0,
       options: mapVariantOptions(variant.options),
+      imageUrl: variant.images?.[0]?.url ?? null,
       isDefault: variant.isDefault,
     })),
     images: record.images.map((image) => ({
@@ -511,6 +515,17 @@ async function createVariantRecord(tx: any, productId: string, variant: AdminPro
       quantity: variant.stock,
     },
   });
+
+  if (variant.imageUrl) {
+    await tx.productImage.create({
+      data: {
+        productVariantId: createdVariant.id,
+        url: variant.imageUrl,
+        alt: variant.title || null,
+        position: 0,
+      },
+    });
+  }
 }
 
 async function createVariants(
@@ -617,6 +632,33 @@ async function upsertVariants(
         quantity: variant.stock,
       },
     });
+
+    if (variant.imageUrl) {
+      const existingVariantImage = await tx.productImage.findFirst({
+        where: { productVariantId: existing.id },
+        select: { id: true },
+      });
+
+      if (existingVariantImage) {
+        await tx.productImage.update({
+          where: { id: existingVariantImage.id },
+          data: { url: variant.imageUrl, alt: variant.title || null, position: 0 },
+        });
+      } else {
+        await tx.productImage.create({
+          data: {
+            productVariantId: existing.id,
+            url: variant.imageUrl,
+            alt: variant.title || null,
+            position: 0,
+          },
+        });
+      }
+    } else {
+      await tx.productImage.deleteMany({
+        where: { productVariantId: existing.id },
+      });
+    }
   }
 }
 

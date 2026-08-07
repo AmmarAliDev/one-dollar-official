@@ -60,6 +60,7 @@ function readProductPayload(formData: FormData) {
   const variantPrices = readRows(formData, "variantPrice");
   const variantComparePrices = readRows(formData, "variantComparePrice");
   const variantStocks = readRows(formData, "variantStock");
+  const variantImageUrls = readRows(formData, "variantImageUrl");
   const defaultVariantIndex = `${formData.get("variantDefaultIndex") ?? ""}`.trim();
 
   return {
@@ -82,6 +83,7 @@ function readProductPayload(formData: FormData) {
         price: variantPrices[index] ?? "",
         comparePrice: variantComparePrices[index] ?? "",
         stock: variantStocks[index] ?? "",
+        imageUrl: variantImageUrls[index] ?? "",
         isDefault: defaultVariantIndex === `${index}`,
       }))
       .filter((variant) =>
