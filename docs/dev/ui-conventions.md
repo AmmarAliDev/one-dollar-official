@@ -50,6 +50,8 @@
 	- Placeholder color: placeholders across `Input`/`Textarea` are standardized via the `--placeholder` token in `src/app/globals.css` and should be `#ab2f586c`. Do not set placeholder colors directly in feature components; prefer the shared token so updates remain centralized.
 - Cards and table containers should keep semantic surface classes and shared elevation tokens (`--shadow-soft`, `--shadow-elevated`) for consistent depth across desktop and mobile.
 - Navigation surfaces (sidebar and mobile nav) should use semantic hover/active states (`bg-muted`, `bg-accent`, `bg-primary/*`) instead of custom ad-hoc colors.
+- Admin workspace shell layout (`AdminShell`) and navigation sidebar (`Sidebar`) explicitly bind to `bg-background` to guarantee consistent theme-aware surface coloring across light and dark modes.
+- Related products grid (`ProductRelatedGrid`) renders product card image previews directly via `backgroundImage: url(${product.imageUrl})` cover style for accurate visual representations.
 - Confirmation and high-impact dialogs should keep backdrop contrast strong enough for readability while preserving focus and keyboard behavior.
 
 ### Numeric Input Patterns

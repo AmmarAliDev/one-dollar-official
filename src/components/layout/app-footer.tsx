@@ -104,7 +104,7 @@ export function AppFooter() {
               </p>
             </>
           ) : (
-            <p className="text-muted-foreground">
+            <p className="text-muted">
               Contact support for updates on newsletter availability.
             </p>
           )}
