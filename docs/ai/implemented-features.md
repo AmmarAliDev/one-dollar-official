@@ -9,7 +9,7 @@ Use this as the quick implementation map for future AI prompts. Each section des
 - Homepage with section-based rendering and admin-manageable content resolution; featured categories section uses a responsive shadcn-compatible carousel with empty-state fallback
 - Homepage featured item contracts now support optional media fields (`slug`, category `cardImageUrl`, product `images[]`) with backward-compatible fallbacks to placeholder cards when media is absent
 - Homepage featured-products section is now sales-driven: it ranks products by summed `OrderItem.quantity` across `CONFIRMED`/`PACKED`/`SHIPPED`/`DELIVERED` orders, filters through published storefront visibility rules, and fills sparse-data gaps from stored fallback picks plus recent published catalog items
-- Category listing routes and product detail routes with SEO metadata support
+- Category listing routes and product detail routes with SEO metadata support; related products grid (`ProductRelatedGrid`) renders product card images directly via `backgroundImage: url(${product.imageUrl})` cover style
 - Database-backed catalog visibility rules (published categories/products only; approved reviews only)
 - Storefront search with API transport seam and adapter-ready backend integration point
 - Wishlist add/remove and authenticated wishlist page
@@ -57,11 +57,12 @@ Use this as the quick implementation map for future AI prompts. Each section des
 
 ## Shared Foundations
 
-- Shared UI primitives and fallback states; global design tokens enforce a white/black + `#431b52` palette via semantic CSS classes across light and dark themes
+- Shared UI primitives and fallback states; global design tokens enforce a white/black + `#431b52` palette via semantic CSS classes across light and dark themes; Admin workspace shell (`AdminShell`) and sidebar (`Sidebar`) explicitly bind to `bg-background`
 - Shared carousel primitives (`src/components/ui/carousel.tsx`) used by homepage category surfaces; keyboard-accessible and touch-friendly
 - Shared form system (React Hook Form + Zod + server-action bridge)
 - Shared data-table foundation used by multiple admin pages
 - Shared server/db repository and transaction utilities
+- PNPM 10 workspace configuration (`pnpm-workspace.yaml`) with `allowBuilds` for `@prisma/client`, `@prisma/engines`, `prisma`, `sharp`, and `unrs-resolver`
 - Deployment, operations, and release documentation foundation
 
 ## Intentionally Deferred (Implemented Seams Exist)

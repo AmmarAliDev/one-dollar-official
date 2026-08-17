@@ -35,8 +35,8 @@ export function AdminShell({ children, role, user }: AdminShellProps) {
 
   return (
     <SidebarProvider>
-      <div className="bg-muted/25 min-h-screen lg:flex w-full">
-        <Sidebar aria-label="Admin navigation sidebar">
+      <div className="bg-background min-h-screen lg:flex w-full">
+        <Sidebar aria-label="Admin navigation sidebar" className="bg-background">
           <SidebarHeader className="gap-2 p-4 lg:p-6 border-b">
             <Badge variant="info">Admin workspace</Badge>
             <div>
