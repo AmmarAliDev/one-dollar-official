@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - Node.js 20+
-- `pnpm` 10+
+- `pnpm` 10+ (workspace configuration in `pnpm-workspace.yaml` enables `allowBuilds` for `@prisma/client`, `@prisma/engines`, `prisma`, `sharp`, and `unrs-resolver`)
 - PostgreSQL 14+ (local instance **or** a hosted dev database such as Supabase)
 
 ## First-time checklist
