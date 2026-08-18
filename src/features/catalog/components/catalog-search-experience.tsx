@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { AlertTriangle, Clock3, SearchX, Sparkles, X } from "lucide-react";
+import { AlertTriangle, Clock3, SearchX, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -217,13 +217,13 @@ export function CatalogSearchExperience() {
         )}
       </div>
 
-      {!canSearch ? (
+      {/* {!canSearch ? (
         <EmptyState
           icon={Sparkles}
           title="Start typing to search"
           description="Type at least two characters to quickly find products by name or category."
         />
-      ) : null}
+      ) : null} */}
 
       {showLoading ? (
         <LoadingState

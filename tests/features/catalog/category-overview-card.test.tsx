@@ -32,6 +32,13 @@ describe("CategoryOverviewCard media behavior", () => {
     expect(link.querySelector("article")).not.toBeNull();
   });
 
+  it("clamps the category description to three lines", () => {
+    render(<CategoryOverviewCard category={makeCategory()} />);
+
+    const description = screen.getByText("Cleaning and restock-friendly essentials.");
+    expect(description).toHaveClass("line-clamp-3");
+  });
+
   it("renders the category card background image when image URL exists", () => {
     render(
       <CategoryOverviewCard

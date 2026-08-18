@@ -173,6 +173,7 @@
 
 - Category discovery lives at `/categories`, while individual listing pages live at `/categories/[slug]` for clean, SEO-friendly storefront URLs.
 - `src/features/catalog/components/product-grid-card.tsx` is the reusable catalog card; keep product price, compare price, stock badge, and review summary placeholder logic there.
+- Product and category overview card descriptions are clamped to three lines with `line-clamp-3` so long copy stays uniform across grids/carousels without forcing equal-height cards.
 - Product card media is image-first: when `CatalogProductCard.imageUrl` is present and valid, render the image in the card media area using `next/image` with responsive `sizes` and fixed aspect-ratio container sizing.
 - Product card media must gracefully fall back to the existing gradient placeholder treatment (`imageLabel` + `imageTone`) when no valid image URL is available or image loading fails.
 - Keep product card media height stable (`aspect-[4/3]`) across image and fallback modes to avoid layout shift in listings and carousels.

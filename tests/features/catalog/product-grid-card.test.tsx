@@ -53,6 +53,13 @@ describe("ProductGridCard media behavior", () => {
     expect(link.querySelector("article")).not.toBeNull();
   });
 
+  it("clamps the product description to three lines", () => {
+    render(<ProductGridCard product={makeProduct()} />);
+
+    const description = screen.getByText("Gentle daily cleanser.");
+    expect(description).toHaveClass("line-clamp-3");
+  });
+
   it("renders the product image area when a valid image URL exists", () => {
     render(<ProductGridCard product={makeProduct()} />);
 

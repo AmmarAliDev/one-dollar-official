@@ -47,6 +47,7 @@ Provide a fast and simple storefront product search while keeping implementation
 
 ## State Contract in UI
 
+- Pre-search: while the query is below the minimum length (`MIN_QUERY_LENGTH = 2`), no empty-state prompt is rendered — the recent-searches panel is the default landing view until a search is submitted.
 - Loading: shown for initial request without existing results.
 - Empty: shown when a valid query has zero matches.
 - Error: shown when API request fails; retry remains available.

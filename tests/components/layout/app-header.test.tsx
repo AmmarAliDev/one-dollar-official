@@ -87,6 +87,22 @@ const categories = [
     productCount: 14,
     href: "/categories/kitchen-dining",
   },
+  {
+    id: "baby-care",
+    name: "Baby Care",
+    slug: "baby-care",
+    description: "Baby essentials",
+    productCount: 8,
+    href: "/categories/baby-care",
+  },
+  {
+    id: "pet-supplies",
+    name: "Pet Supplies",
+    slug: "pet-supplies",
+    description: "Pet essentials",
+    productCount: 6,
+    href: "/categories/pet-supplies",
+  },
 ];
 
 beforeAll(() => {
@@ -131,12 +147,14 @@ describe("AppHeader storefront navigation", () => {
 
     const nav = storefrontNav();
 
-    // Direct category links: One Dollar first, then alphabetically up to the cap.
+    // Direct category links: One Dollar first, then alphabetically up to the cap (NAVBAR_DIRECT_CATEGORY_LIMIT = 6).
     for (const [title, href] of [
       ["One Dollar", "/categories/one-dollar"],
+      ["Baby Care", "/categories/baby-care"],
       ["Cleaning Supplies", "/categories/cleaning-supplies"],
       ["Grocery", "/categories/grocery"],
       ["Home Care", "/categories/home-care"],
+      ["Kitchen & Dining", "/categories/kitchen-dining"],
     ]) {
       const link = within(nav).getByRole("link", { name: title });
       expect(link).toHaveAttribute("href", href);
@@ -159,13 +177,13 @@ describe("AppHeader storefront navigation", () => {
     await openMoreMenu();
 
     const menu = await screen.findByRole("menu");
-    expect(within(menu).getByRole("menuitem", { name: "Kitchen & Dining" })).toHaveAttribute(
-      "href",
-      "/categories/kitchen-dining",
-    );
     expect(within(menu).getByRole("menuitem", { name: "Personal Care" })).toHaveAttribute(
       "href",
       "/categories/personal-care",
+    );
+    expect(within(menu).getByRole("menuitem", { name: "Pet Supplies" })).toHaveAttribute(
+      "href",
+      "/categories/pet-supplies",
     );
   });
 

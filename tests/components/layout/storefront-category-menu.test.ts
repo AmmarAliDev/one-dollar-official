@@ -55,6 +55,8 @@ describe("buildStorefrontNavbarCategoryMenu", () => {
     { name: "Personal Care", href: "/categories/personal-care" },
     { name: "Cleaning Supplies", href: "/categories/cleaning-supplies" },
     { name: "Kitchen & Dining", href: "/categories/kitchen-dining" },
+    { name: "Baby Care", href: "/categories/baby-care" },
+    { name: "Pet Supplies", href: "/categories/pet-supplies" },
   ];
 
   it("renders a capped set of categories directly in the navbar", () => {
@@ -62,9 +64,11 @@ describe("buildStorefrontNavbarCategoryMenu", () => {
 
     expect(menu.directCategories.map((item) => item.title)).toEqual([
       "One Dollar",
+      "Baby Care",
       "Cleaning Supplies",
       "Grocery",
       "Home Care",
+      "Kitchen & Dining",
     ]);
     expect(menu.directCategories).toHaveLength(NAVBAR_DIRECT_CATEGORY_LIMIT);
     expect(menu.directCategories.some((item) => item.kind === "all-categories")).toBe(false);
@@ -74,8 +78,8 @@ describe("buildStorefrontNavbarCategoryMenu", () => {
     const menu = buildStorefrontNavbarCategoryMenu(categories);
 
     expect(menu.moreCategories.map((item) => item.title)).toEqual([
-      "Kitchen & Dining",
       "Personal Care",
+      "Pet Supplies",
     ]);
   });
 
