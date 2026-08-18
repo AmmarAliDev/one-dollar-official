@@ -116,7 +116,7 @@ export function CategoryInfiniteProductGrid({ listing }: CategoryInfiniteProduct
             />
           }
           endMessage={
-            <p className="text-muted-foreground py-4 text-center text-sm">You have reached the end of this category.</p>
+            <p className="text-muted-foreground py-4 text-center text-sm">You have reached the end of this list.</p>
           }
         >
           <ul

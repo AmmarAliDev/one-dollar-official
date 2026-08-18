@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import { isProductionRuntime, shouldRenderGuardedSurface, type ProductionGuardSurface } from "@/config/production-visibility";
 
 const allGuardedSurfaces: ProductionGuardSurface[] = [
-  "homepagePreviewCta",
   "homepageFallbackIndicator",
   "storefrontPreviewRoute",
   "footerPreviewLink",

@@ -3,12 +3,10 @@ export { hasRegisteredSectionComponent, renderHomepageSection, SECTION_COMPONENT
 export { getHomepageContent } from "./service";
 export type {
   AnnouncementBarSection,
-  BlogHighlightsSection,
   DealSpotlightSection,
   FeaturedCategoriesSection,
   FeaturedProductItem,
   FeaturedProductsSection,
-  HeroBannerSection,
   HomepageContent,
   HomepageContentResult,
   HomepageSection,

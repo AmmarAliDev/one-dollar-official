@@ -6,12 +6,10 @@ const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 export const adminHomepageSectionKindValues = [
   "announcement-bar",
-  "hero-banner",
   "featured-categories",
   "one-dollar",
   "featured-products",
   "deal-spotlight",
-  "blog-highlights",
 ] as const;
 
 export type AdminHomepageSectionType = (typeof adminHomepageSectionKindValues)[number];
@@ -206,33 +204,6 @@ const announcementBarContentSchema = z.object({
   label: optionalShortText,
 });
 
-const heroBannerContentSchema = z.object({
-  headline: z.string().trim().min(2, "Hero headline is required.").max(140, "Hero headline is too long."),
-  description: z.string().trim().min(2, "Hero description is required.").max(400, "Hero description is too long."),
-  primaryCtaLabel: z.string().trim().min(1, "Primary CTA label is required.").max(80, "Primary CTA label is too long."),
-  primaryCtaHref: z
-    .string()
-    .trim()
-    .min(1, "Primary CTA link is required.")
-    .refine((value) => isValidHref(value), {
-      message: "Please enter a valid relative path or URL for the primary CTA.",
-    }),
-  secondaryCta: z
-    .object({
-      label: z.string().trim().min(1, "Secondary CTA label is required.").max(80, "Secondary CTA label is too long."),
-      href: z
-        .string()
-        .trim()
-        .min(1, "Secondary CTA link is required.")
-        .refine((value) => isValidHref(value), {
-          message: "Please enter a valid relative path or URL for the secondary CTA.",
-        }),
-    })
-    .optional(),
-  eyebrow: optionalShortText,
-  image: optionalSectionImageSchema,
-});
-
 const featuredCategorySchema = z
   .object({
     id: z.string().trim().min(1, "Category item ID is required."),
@@ -327,25 +298,6 @@ const dealSpotlightContentSchema = z
     }
   });
 
-const blogHighlightSchema = z.object({
-  id: z.string().trim().min(1, "Article ID is required."),
-  title: z.string().trim().min(1, "Article title is required.").max(120, "Article title is too long."),
-  excerpt: z.string().trim().min(1, "Article excerpt is required.").max(300, "Article excerpt is too long."),
-  href: z
-    .string()
-    .trim()
-    .min(1, "Article link is required.")
-    .refine((value) => isValidHref(value), {
-      message: "Please enter a valid relative path or URL for the article link.",
-    }),
-});
-
-const blogHighlightsContentSchema = z.object({
-  description: optionalText,
-  placeholderMessage: z.string().trim().min(2, "Placeholder message is required.").max(240, "Placeholder message is too long."),
-  articles: z.array(blogHighlightSchema).default([]),
-});
-
 /**
  * One Dollar section — admin configures the shell (title, description, CTA
  * text and link, placeholder message). Products are never stored in CMS; they
@@ -372,12 +324,10 @@ const oneDollarContentSchema = z.object({
 
 const homepageSectionContentSchemas = {
   "announcement-bar": announcementBarContentSchema,
-  "hero-banner": heroBannerContentSchema,
   "featured-categories": featuredCategoriesContentSchema,
   "one-dollar": oneDollarContentSchema,
   "featured-products": featuredProductsContentSchema,
   "deal-spotlight": dealSpotlightContentSchema,
-  "blog-highlights": blogHighlightsContentSchema,
 } satisfies Record<AdminHomepageSectionType, z.ZodTypeAny>;
 
 export const adminHomepageSectionMutationSchema = z
@@ -515,21 +465,6 @@ const homepageSectionContentTemplates: Record<AdminHomepageSectionType, Record<s
     href: "/categories",
     label: "Browse deals",
   },
-  "hero-banner": {
-    headline: "Fresh arrivals and everyday deals",
-    description: "Keep hero content concise and action-oriented.",
-    primaryCtaLabel: "Browse categories",
-    primaryCtaHref: "/categories",
-    secondaryCta: {
-      label: "View preview",
-      href: "/preview",
-    },
-    eyebrow: "Homepage highlight",
-    image: {
-      url: "/blog/placeholder-hero.jpg",
-      alt: "Fresh grocery and home essentials displayed together",
-    },
-  },
   "featured-categories": {
     description: "Highlight key shopping categories.",
     categories: [],
@@ -555,11 +490,6 @@ const homepageSectionContentTemplates: Record<AdminHomepageSectionType, Record<s
       url: "/blog/placeholder-deal.jpg",
       alt: "Deal spotlight product collage",
     },
-  },
-  "blog-highlights": {
-    description: "Optional editorial updates.",
-    placeholderMessage: "New highlights will appear soon.",
-    articles: [],
   },
 };
 

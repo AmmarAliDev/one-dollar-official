@@ -130,9 +130,10 @@
 
 - `AppHeader` now provides required storefront actions: logo, search trigger placeholder, account, wishlist, and cart links.
 - Desktop and mobile navigation share the same `siteConfig.storefrontNav` source to avoid duplicated link logic.
-- Header category navigation now uses a dedicated `One Dollar` dropdown pattern instead of a flat `Categories` top-level link.
-- Category dropdown ordering is deterministic and must remain: `One Dollar` first, published categories in alphabetical order next, and `All Categories` last.
-- Desktop uses an accessible dropdown menu (`DropdownMenuTrigger` + keyboard navigation), while mobile keeps category links grouped inside the drawer for touch-first navigation.
+- Desktop storefront navigation renders live catalog categories directly in the navbar (capped by `NAVBAR_DIRECT_CATEGORY_LIMIT`) with `More` as the last navbar item. The `More` dropdown holds the remaining categories and always ends with `All Categories` linking to `/categories`.
+- `Home`, `About`, `Blog`, and `Contact` live inside the shared `<UserMenu />` dropdown on desktop; the mobile drawer keeps them plus the full category list for touch-first navigation.
+- Category ordering is deterministic and must remain: `One Dollar` first, published categories in alphabetical order next, and `All Categories` last (inside the `More` dropdown).
+- Desktop uses accessible dropdown menus (`DropdownMenuTrigger` + keyboard navigation), while mobile keeps category links grouped inside the drawer for touch-first navigation.
 - Mobile navigation behavior lives in `src/components/layout/storefront-mobile-nav.tsx` and must keep `aria-expanded`, `aria-controls`, and a labeled toggle button.
 - `AppFooter` now has three sections: company links, policy links, and a newsletter placeholder block.
 - Static storefront placeholders live under `src/app/(storefront)` for `/about`, `/contact`, `/privacy`, `/terms`, `/shipping-policy`, and `/return-policy`.
@@ -163,13 +164,10 @@
 - Keep card headings and key metadata inside the same wrapping link so keyboard users and crawlers get a single coherent navigation target.
 - Empty category/product payloads must render a user-safe `EmptyState` instead of a blank section or an empty carousel.
 
-## Homepage Blog Highlights Conventions
+## Homepage Blog Highlights
 
-- Homepage blog highlight cards (`src/features/homepage/components/blog-highlights-section.tsx`) use one semantic wrapping `Link` per card so the full card is keyboard and pointer clickable.
-- Do not nest additional anchors or buttons inside a linked blog card. Keep one canonical target (`/blog/[slug]`) per card.
-- Blog cards should render cover imagery when available from hydrated blog data and fall back to a clean non-interactive placeholder surface when imagery is missing.
-- Keep card heading, excerpt, and CTA text inside the same link target so assistive technology and crawlers receive one coherent article destination.
-- If no articles are available, preserve the existing `EmptyState` + blog index CTA behavior instead of rendering empty containers.
+- The homepage `blog-highlights` section was removed on 2026-08-18. The storefront no longer renders blog highlights on the homepage; `/blog` remains the single source of blog content and its own cards/lists follow the single-link-per-card rule below.
+- Storefront blog cards (listing/detail surfaces) use one semantic wrapping `Link` per card so the full card is keyboard and pointer clickable. Do not nest additional anchors or buttons inside a linked card.
 
 ## Product Listing Conventions (Prompt 3.3)
 

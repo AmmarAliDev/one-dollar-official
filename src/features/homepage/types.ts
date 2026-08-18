@@ -2,12 +2,10 @@ import type { CatalogCategory } from "@/features/catalog/types";
 
 export type HomepageSectionKind =
   | "announcement-bar"
-  | "hero-banner"
   | "featured-categories"
   | "one-dollar"
   | "featured-products"
-  | "deal-spotlight"
-  | "blog-highlights";
+  | "deal-spotlight";
 
 export type AnnouncementBarSection = {
   id: string;
@@ -17,23 +15,6 @@ export type AnnouncementBarSection = {
   message: string;
   href?: string;
   label?: string;
-};
-
-export type HeroBannerSection = {
-  id: string;
-  kind: "hero-banner";
-  enabled?: boolean;
-  displayOrder?: number;
-  headline: string;
-  description: string;
-  primaryCtaLabel: string;
-  primaryCtaHref: string;
-  secondaryCta?: { label: string; href: string };
-  eyebrow?: string;
-  image?: {
-    url: string;
-    alt: string;
-  };
 };
 
 export type FeaturedCategoryItem = Pick<CatalogCategory, "id" | "name" | "description" | "href"> & {
@@ -133,38 +114,12 @@ export type DealSpotlightSection = {
   };
 };
 
-export type BlogHighlightItem = {
-  id: string;
-  title: string;
-  excerpt: string;
-  href: string;
-  image?: {
-    src: string;
-    alt: string;
-    width: number;
-    height: number;
-  };
-};
-
-export type BlogHighlightsSection = {
-  id: string;
-  kind: "blog-highlights";
-  enabled?: boolean;
-  displayOrder?: number;
-  title: string;
-  description?: string;
-  placeholderMessage: string;
-  articles: BlogHighlightItem[];
-};
-
 export type HomepageSection =
   | AnnouncementBarSection
-  | HeroBannerSection
   | FeaturedCategoriesSection
   | OneDollarSection
   | FeaturedProductsSection
-  | DealSpotlightSection
-  | BlogHighlightsSection;
+  | DealSpotlightSection;
 
 export type HomepageContent = {
   sections: HomepageSection[];

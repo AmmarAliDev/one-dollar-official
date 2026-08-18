@@ -1,14 +1,14 @@
-import { ChevronDown, Heart, Search } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { ChevronDown, Heart, Search } from "lucide-react";
 
 import { routes } from "@/config/routes";
 import { siteConfig } from "@/config/site";
 import { CartMiniCart } from "@/features/cart/components/cart-mini-cart";
 import { MobileCartButton } from "@/features/cart/components/mobile-cart-button";
 import { getCatalogCategories } from "@/features/catalog";
-
 import { logger } from "@/lib/logger";
+
 import { buttonVariants } from "../ui/button";
 import {
   DropdownMenu,
@@ -18,7 +18,10 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { PageContainer } from "../ui/page-container";
-import { buildStorefrontCategoryMenu } from "./storefront-category-menu";
+import {
+  buildStorefrontCategoryMenu,
+  buildStorefrontNavbarCategoryMenu,
+} from "./storefront-category-menu";
 import { StorefrontHeaderAuthControls } from "./storefront-header-auth-controls";
 
 export async function AppHeader() {
@@ -36,6 +39,13 @@ export async function AppHeader() {
   }
 
   const categoryMenuItems = buildStorefrontCategoryMenu(
+    categories.map((category) => ({
+      name: category.name,
+      href: category.href,
+    })),
+  );
+
+  const navbarCategoryMenu = buildStorefrontNavbarCategoryMenu(
     categories.map((category) => ({
       name: category.name,
       href: category.href,
@@ -137,8 +147,8 @@ export async function AppHeader() {
 
         <nav aria-label="Storefront" className="hidden w-full justify-center overflow-x-auto pb-1 md:flex">
           <ul className="flex items-center gap-1">
-            {topLevelNavItems.map((item) => (
-              <li key={item.href}>
+            {navbarCategoryMenu.directCategories.map((item) => (
+              <li key={`${item.kind}-${item.href}`}>
                 <Link
                   href={item.href}
                   className="text-muted hover:bg-accent hover:text-foreground rounded-full px-3 py-2 text-sm transition-colors"
@@ -151,23 +161,23 @@ export async function AppHeader() {
               <DropdownMenu>
                 <DropdownMenuTrigger
                   className="text-muted hover:bg-accent hover:text-foreground focus-visible:ring-ring inline-flex items-center gap-1 rounded-full px-3 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2"
-                  aria-label="One Dollar category navigation"
+                  aria-label="More storefront navigation"
                 >
-                  Categories
+                  More
                   <ChevronDown className="size-4" aria-hidden="true" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="center" className="w-56" sideOffset={8}>
-                  {categoryMenuItems.map((item, index) => {
-                    const isLastItem = index === categoryMenuItems.length - 1;
-                    return (
-                      <div key={`${item.kind}-${item.href}-${item.title}`}>
-                        <DropdownMenuItem asChild>
-                          <Link href={item.href}>{item.title}</Link>
-                        </DropdownMenuItem>
-                        {isLastItem ? null : item.kind === "category" ? null : <DropdownMenuSeparator />}
-                      </div>
-                    );
-                  })}
+                  {navbarCategoryMenu.moreCategories.map((item) => (
+                    <DropdownMenuItem key={`${item.kind}-${item.href}-${item.title}`} asChild>
+                      <Link href={item.href}>{item.title}</Link>
+                    </DropdownMenuItem>
+                  ))}
+                  {navbarCategoryMenu.moreCategories.length > 0 ? <DropdownMenuSeparator /> : null}
+                  <DropdownMenuItem asChild>
+                    <Link href={navbarCategoryMenu.allCategories.href}>
+                      {navbarCategoryMenu.allCategories.title}
+                    </Link>
+                  </DropdownMenuItem>
                   {categoriesError ? (
                     <>
                       <DropdownMenuSeparator />

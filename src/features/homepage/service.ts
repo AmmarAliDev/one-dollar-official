@@ -1,19 +1,15 @@
-import { getBlogPosts, type BlogListingItem } from "@/features/blog";
-import { getCatalogCategories, getCatalogCategoryListing, type CatalogProductCard } from "@/features/catalog";
-import { ONE_DOLLAR_CATEGORY_SLUG } from "@/features/catalog/one-dollar";
-import { routes } from "@/config/routes";
 import { loadHomepageContentForStorefront } from "@/features/admin/homepage/service";
+import { type CatalogProductCard,getCatalogCategories, getCatalogCategoryListing } from "@/features/catalog";
+import { ONE_DOLLAR_CATEGORY_SLUG } from "@/features/catalog/one-dollar";
 import { createLogger } from "@/lib/logger";
 
 import { mapCatalogCategoriesToFeaturedCategoryItems } from "./featured-categories";
 import { resolveHomepageFeaturedProducts } from "./featured-products";
 import { resolveHomepageSections } from "./resolver";
 import type {
-  BlogHighlightItem,
-  BlogHighlightsSection,
   FeaturedCategoriesSection,
-  FeaturedProductsSection,
   FeaturedProductItem,
+  FeaturedProductsSection,
   HomepageContent,
   HomepageContentResult,
   HomepageSection,
@@ -21,7 +17,6 @@ import type {
 } from "./types";
 
 const logger = createLogger("homepage.service");
-const HOMEPAGE_BLOG_HIGHLIGHTS_LIMIT = 3;
 /**
  * Maximum number of One Dollar products fetched from the catalog for the
  * homepage section. Matches HOMEPAGE_CAROUSEL_MAX_ITEMS so the carousel can
@@ -29,67 +24,12 @@ const HOMEPAGE_BLOG_HIGHLIGHTS_LIMIT = 3;
  */
 const HOMEPAGE_ONE_DOLLAR_PRODUCTS_LIMIT = 8;
 
-function toBlogHighlightItem(post: BlogListingItem): BlogHighlightItem {
-  return {
-    id: post.id,
-    title: post.title,
-    excerpt: post.excerpt,
-    href: routes.storefront.blogPost(post.slug),
-    image: {
-      src: post.coverImage.src,
-      alt: post.coverImage.alt,
-      width: post.coverImage.width,
-      height: post.coverImage.height,
-    },
-  };
-}
-
-function isBlogHighlightsSection(section: HomepageSection): section is BlogHighlightsSection {
-  return section.kind === "blog-highlights";
-}
-
 function isFeaturedCategoriesSection(section: HomepageSection): section is FeaturedCategoriesSection {
   return section.kind === "featured-categories";
 }
 
 function isFeaturedProductsSection(section: HomepageSection): section is FeaturedProductsSection {
   return section.kind === "featured-products";
-}
-
-async function hydrateHomepageBlogHighlights(sections: HomepageSection[]): Promise<HomepageSection[]> {
-  const hasBlogHighlightsSection = sections.some(isBlogHighlightsSection);
-
-  if (!hasBlogHighlightsSection) {
-    return sections;
-  }
-
-  try {
-    const posts = await getBlogPosts({ locale: "en", limit: HOMEPAGE_BLOG_HIGHLIGHTS_LIMIT });
-    const articles = posts.map(toBlogHighlightItem);
-
-    return sections.map((section) => {
-      if (!isBlogHighlightsSection(section)) {
-        return section;
-      }
-
-      return {
-        ...section,
-        articles,
-      };
-    });
-  } catch (error) {
-    logger.error("Failed to hydrate homepage blog highlights from BlogPost records.", error);
-    return sections.map((section) => {
-      if (!isBlogHighlightsSection(section)) {
-        return section;
-      }
-
-      return {
-        ...section,
-        articles: [],
-      };
-    });
-  }
 }
 
 async function hydrateFeaturedCategorySections(sections: HomepageSection[]): Promise<HomepageSection[]> {
@@ -236,8 +176,7 @@ export async function fetchHomepageContentFromCms(): Promise<HomepageContent | n
 export async function getHomepageContent(): Promise<HomepageContentResult> {
   const cmsContent = await fetchHomepageContentFromCms();
   const resolved = resolveHomepageSections(cmsContent?.sections);
-  const hydratedWithBlog = await hydrateHomepageBlogHighlights(resolved.sections);
-  const hydratedWithCategories = await hydrateFeaturedCategorySections(hydratedWithBlog);
+  const hydratedWithCategories = await hydrateFeaturedCategorySections(resolved.sections);
   const hydratedWithFeaturedProducts = await hydrateFeaturedProductsSections(hydratedWithCategories);
   const hydratedSections = await hydrateOneDollarSections(hydratedWithFeaturedProducts);
 
