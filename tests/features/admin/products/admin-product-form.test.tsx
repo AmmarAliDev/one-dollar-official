@@ -54,12 +54,29 @@ function getSubmittedFormData(actionMock: ReturnType<typeof vi.fn>) {
   return firstCall[0] as FormData;
 }
 
+function isRelatedSearchUrl(input: string | URL | Request): boolean {
+  return String(input).includes("/api/admin/products/related-search");
+}
+
+function relatedSearchResponse(products: Array<{ id: string; title: string; slug: string; categoryName: string | null }>) {
+  return new Response(JSON.stringify({ products }), {
+    status: 200,
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+}
+
 describe("AdminProductForm", () => {
   it("writes uploaded image URLs into the existing imageUrl payload fields", async () => {
     const user = userEvent.setup();
     const actionMock = vi.fn().mockResolvedValue(undefined);
-    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response(
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      if (isRelatedSearchUrl(input)) {
+        return relatedSearchResponse([]);
+      }
+
+      return new Response(
         JSON.stringify({
           url: "https://store.public.blob.vercel-storage.com/admin/product/product-123.png",
           pathname: "admin/product/product-123.png",
@@ -72,8 +89,8 @@ describe("AdminProductForm", () => {
             "Content-Type": "application/json",
           },
         },
-      ),
-    );
+      );
+    });
 
     const { container } = render(
       <AdminProductForm
@@ -82,7 +99,6 @@ describe("AdminProductForm", () => {
         returnTo="/admin/products"
         submitLabel="Create product"
         categories={[{ id: "category-1", name: "Skincare", slug: "skincare", status: "PUBLISHED" }]}
-        relatedProducts={[]}
       />,
     );
 
@@ -98,7 +114,10 @@ describe("AdminProductForm", () => {
     await user.upload(productImageUploadInput, new File(["product"], "product.png", { type: "image/png" }));
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/admin/uploads/images",
+        expect.anything(),
+      );
     });
 
     await user.click(screen.getByRole("button", { name: /create product/i }));
@@ -117,7 +136,13 @@ describe("AdminProductForm", () => {
   it("keeps backward compatibility for manually pasted image URLs", async () => {
     const user = userEvent.setup();
     const actionMock = vi.fn().mockResolvedValue(undefined);
-    const fetchMock = vi.spyOn(globalThis, "fetch");
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      if (isRelatedSearchUrl(input)) {
+        return relatedSearchResponse([]);
+      }
+
+      return new Response(JSON.stringify({ error: "Not found" }), { status: 404 });
+    });
 
     render(
       <AdminProductForm
@@ -126,7 +151,6 @@ describe("AdminProductForm", () => {
         returnTo="/admin/products"
         submitLabel="Create product"
         categories={[{ id: "category-1", name: "Skincare", slug: "skincare", status: "PUBLISHED" }]}
-        relatedProducts={[]}
       />,
     );
 
@@ -142,6 +166,66 @@ describe("AdminProductForm", () => {
 
     const payload = getSubmittedFormData(actionMock);
     expect(payload.getAll("imageUrl")).toEqual(["https://cdn.example.com/catalog/face-wash.jpg"]);
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalledWith("/api/admin/uploads/images", expect.anything());
+  }, 15_000);
+
+  it("related products picker searches by query and category", async () => {
+    const user = userEvent.setup();
+    const actionMock = vi.fn().mockResolvedValue(undefined);
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      if (isRelatedSearchUrl(input)) {
+        const url = new URL(String(input), "http://localhost");
+        const products =
+          url.searchParams.get("q") === "wash"
+            ? [{ id: "product-2", title: "Face Wash Foam", slug: "face-wash-foam", categoryName: "Skincare" }]
+            : [];
+        return relatedSearchResponse(products);
+      }
+
+      return new Response(JSON.stringify({ error: "Not found" }), { status: 404 });
+    });
+
+    render(
+      <AdminProductForm
+        mode="create"
+        action={actionMock}
+        returnTo="/admin/products"
+        submitLabel="Create product"
+        categories={[{ id: "category-1", name: "Skincare", slug: "skincare", status: "PUBLISHED" }]}
+      />,
+    );
+
+    await fillRequiredProductFields(user);
+    await user.type(screen.getByLabelText(/search related products/i), "wash");
+
+    await waitFor(() => {
+      const searchCalls = fetchMock.mock.calls.filter(([input]) => isRelatedSearchUrl(input));
+      expect(
+        searchCalls.some(
+          ([input]) => new URL(String(input), "http://localhost").searchParams.get("q") === "wash",
+        ),
+      ).toBe(true);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Face Wash Foam")).toBeInTheDocument();
+    });
+
+    const searchCalls = fetchMock.mock.calls.filter(([input]) => isRelatedSearchUrl(input));
+    const searchCall = searchCalls.at(-1);
+    expect(searchCall).toBeTruthy();
+    const searchUrl = new URL(String(searchCall?.[0]), "http://localhost");
+    expect(searchUrl.searchParams.get("q")).toBe("wash");
+    expect(searchUrl.searchParams.get("categoryId")).toBe("category-1");
+
+    await user.click(screen.getByText("Face Wash Foam"));
+    await user.click(screen.getByRole("button", { name: /create product/i }));
+
+    await waitFor(() => {
+      expect(actionMock).toHaveBeenCalledTimes(1);
+    });
+
+    const payload = getSubmittedFormData(actionMock);
+    expect(payload.getAll("relatedProductIds")).toEqual(["product-2"]);
   }, 15_000);
 });

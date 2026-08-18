@@ -38,6 +38,7 @@ Use this as the quick implementation map for future AI prompts. Each section des
 - AuditLog-based activity feed with actor and model context
 - Revenue summary page with explicit inclusion assumptions
 - Category and product admin CRUD with SEO controls and ISR revalidation
+- Related products picker in the product admin form: debounced client-side search (title/slug) and category-aware filtering backed by a guarded admin API route (`GET /api/admin/products/related-search`), with currently selected items always pinned at the top so they stay visible while browsing; results render as checkboxes and submit through the existing `relatedProductIds` payload
 - Admin content image uploads via Vercel Blob: shared guarded route handler, provider abstraction (`src/features/admin/uploads/`), reusable `AdminImageUploadInput` component, and final-URL persistence into product image rows, banner, blog cover, and SEO image fields — no database migration required
 - Product admin SEO content helper (deterministic generation for title suggestions, SEO title/description, short description, highlights, FAQ ideas, schema-oriented specs, internal linking suggestions, and slug)
 - Storefront category SEO content generator (`src/features/catalog/seo/category-seo-content.ts`): deterministic, Pakistan-focused output — SEO title, meta description, introductory copy, FAQ items, internal link suggestions, blog topic ideas, and schema markup notes — for all category pages; per-slug templates for home-care, grocery, and personal-care with a generic fallback for any other slug

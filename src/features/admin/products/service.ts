@@ -101,6 +101,14 @@ export type AdminRelatedProductOption = {
   categoryName: string | null;
 };
 
+export type AdminRelatedProductsFilter = {
+  excludeProductId?: string;
+  categoryId?: string;
+  query?: string;
+  take?: number;
+  selectedIds?: string[];
+};
+
 const adminProductSelect = {
   id: true,
   name: true,
@@ -750,32 +758,89 @@ export async function listAdminProductCategories(): Promise<AdminProductCategory
   });
 }
 
-export async function listAdminRelatedProducts(excludeProductId?: string): Promise<AdminRelatedProductOption[]> {
+export async function listAdminRelatedProducts(
+  filter: AdminRelatedProductsFilter = {},
+): Promise<AdminRelatedProductOption[]> {
   const db = getPrismaClient();
 
-  const items = await db.product.findMany({
-    ...(excludeProductId
-      ? {
-          where: {
-            NOT: { id: excludeProductId },
+  const { excludeProductId, categoryId, query, take = 20, selectedIds = [] } = filter;
+  const conditions: Prisma.ProductWhereInput[] = [];
+
+  if (excludeProductId) {
+    conditions.push({ NOT: { id: excludeProductId } });
+  }
+
+  if (categoryId) {
+    conditions.push({ categoryId });
+  }
+
+  const normalizedQuery = query?.trim();
+  if (normalizedQuery) {
+    conditions.push({
+      OR: [
+        {
+          name: {
+            contains: normalizedQuery,
+            mode: "insensitive",
           },
-        }
-      : {}),
-    orderBy: [{ name: "asc" }],
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-      category: {
-        select: {
-          name: true,
+        },
+        {
+          slug: {
+            contains: normalizedQuery,
+            mode: "insensitive",
+          },
+        },
+      ],
+    });
+  }
+
+  const [searchItems, pinnedItems] = await Promise.all([
+    db.product.findMany({
+      ...(conditions.length > 0 ? { where: { AND: conditions } } : {}),
+      orderBy: [{ name: "asc" }],
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        category: {
+          select: {
+            name: true,
+          },
         },
       },
-    },
-    take: 24,
+      take,
+    }),
+    selectedIds.length > 0
+      ? db.product.findMany({
+          where: {
+            id: { in: selectedIds },
+            ...(excludeProductId ? { NOT: { id: excludeProductId } } : {}),
+          },
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            category: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        })
+      : Promise.resolve([]),
+  ]);
+
+  const seen = new Set<string>();
+  const merged = [...pinnedItems, ...searchItems].filter((item) => {
+    if (seen.has(item.id)) {
+      return false;
+    }
+
+    seen.add(item.id);
+    return true;
   });
 
-  return items.map((item) => ({
+  return merged.map((item) => ({
     id: item.id,
     title: item.name,
     slug: item.slug,
