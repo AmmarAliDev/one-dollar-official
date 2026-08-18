@@ -36,18 +36,20 @@ describe("admin homepage content validation", () => {
   it("rejects invalid schedules and malformed section payloads", () => {
     const result = validateAdminHomepageSectionInput({
       id: "section-2",
-      key: "hero-primary",
-      title: "Broken hero",
-      type: "hero-banner",
-      position: 10,
+      key: "deal-primary",
+      title: "Broken deal",
+      type: "deal-spotlight",
+      position: 40,
       active: true,
       startAt: "2026-04-25T08:00:00.000Z",
       endAt: "2026-04-20T08:00:00.000Z",
       content: {
-        headline: "",
-        description: "Missing headline should fail",
-        primaryCtaLabel: "Shop now",
-        primaryCtaHref: "/categories",
+        description: "",
+        dealLabel: "Flash deal",
+        price: 999,
+        compareAt: 1299,
+        ctaLabel: "View deal",
+        ctaHref: "/categories",
       },
     });
 
@@ -113,25 +115,7 @@ describe("admin homepage content validation", () => {
     expect(result.success).toBe(false);
   });
 
-  it("accepts hero/deal spotlight image fields on configured hosts", () => {
-    const heroResult = validateAdminHomepageSectionInput({
-      key: "hero-with-image",
-      title: "Hero with image",
-      type: "hero-banner",
-      position: 10,
-      active: true,
-      content: {
-        headline: "Admin hero",
-        description: "Homepage hero content",
-        primaryCtaLabel: "Shop now",
-        primaryCtaHref: "/categories",
-        image: {
-          url: "https://store.public.blob.vercel-storage.com/admin/banner/hero-banner.png",
-          alt: "Family shopping from a curated grocery basket",
-        },
-      },
-    });
-
+  it("accepts deal spotlight image fields on configured hosts", () => {
     const dealResult = validateAdminHomepageSectionInput({
       key: "deal-with-image",
       title: "Deal with image",
@@ -152,29 +136,30 @@ describe("admin homepage content validation", () => {
       },
     });
 
-    expect(heroResult.success).toBe(true);
     expect(dealResult.success).toBe(true);
   });
 
-  it("rejects unsupported hero/deal image hosts", () => {
-    const heroResult = validateAdminHomepageSectionInput({
-      key: "hero-invalid-image",
-      title: "Hero invalid image",
-      type: "hero-banner",
-      position: 10,
+  it("rejects unsupported deal image hosts", () => {
+    const dealResult = validateAdminHomepageSectionInput({
+      key: "deal-invalid-image",
+      title: "Deal invalid image",
+      type: "deal-spotlight",
+      position: 40,
       active: true,
       content: {
-        headline: "Admin hero",
-        description: "Homepage hero content",
-        primaryCtaLabel: "Shop now",
-        primaryCtaHref: "/categories",
+        description: "Save on best sellers this week.",
+        dealLabel: "Flash deal",
+        price: 999,
+        compareAt: 1299,
+        ctaLabel: "View deal",
+        ctaHref: "/categories",
         image: {
-          url: "https://images.example.com/hero.jpg",
-          alt: "Hero image",
+          url: "https://images.example.com/deal.jpg",
+          alt: "Deal image",
         },
       },
     });
 
-    expect(heroResult.success).toBe(false);
+    expect(dealResult.success).toBe(false);
   });
 });

@@ -49,12 +49,10 @@ const typeOptions = adminHomepageSectionKindValues.map((value) => ({
 
 const sectionContentGuidance: Record<AdminHomepageSectionType, string> = {
   "announcement-bar": "Fields: message, href?, label?",
-  "hero-banner": "Fields: headline, description, primaryCtaLabel, primaryCtaHref, secondaryCta?, eyebrow?, image? { url, alt }",
   "featured-categories": "Fields: description?, categories[]",
   "one-dollar": "Fields: description?, ctaLabel, ctaHref, placeholderMessage",
   "featured-products": "Fields: description?, products[]",
   "deal-spotlight": "Fields: description, dealLabel, price, compareAt, ctaLabel, ctaHref, image? { url, alt }",
-  "blog-highlights": "Fields: description?, placeholderMessage, articles[]",
 };
 
 const sectionFields: DynamicFormFieldConfig<AdminHomepageSectionFormValues>[] = [

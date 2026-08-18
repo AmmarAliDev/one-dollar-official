@@ -3,12 +3,10 @@ import type { HomepageContentResult, HomepageSection, HomepageSectionKind } from
 
 const SECTION_RENDER_ORDER: HomepageSectionKind[] = [
   "announcement-bar",
-  "hero-banner",
   "one-dollar",
   "featured-categories",
   "featured-products",
   "deal-spotlight",
-  "blog-highlights",
 ];
 
 const SECTION_ORDER_INDEX: Record<HomepageSectionKind, number> = SECTION_RENDER_ORDER.reduce(

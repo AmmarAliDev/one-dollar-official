@@ -2,36 +2,28 @@ import { describe, expect, it } from "vitest";
 
 import { buildHomepageFallbackSections } from "@/features/homepage/fallback-content";
 
-function getHeroSecondaryCta(nodeEnv: "development" | "test" | "production") {
-  const sections = buildHomepageFallbackSections({
-    nodeEnv,
-    appUrl: "http://localhost:3000",
-    defaultCity: "Karachi",
-    enableAdminPreview: true,
-    enableAuthPreview: true,
-    gaId: undefined,
-    metaPixelId: undefined,
-  });
-
-  const heroSection = sections.find((section) => section.kind === "hero-banner");
-
-  return heroSection && "secondaryCta" in heroSection ? heroSection.secondaryCta : undefined;
-}
-
 describe("homepage fallback content", () => {
-  it("hides preview-only hero CTA in production", () => {
-    expect(getHeroSecondaryCta("production")).toBeUndefined();
+  it("does not include a hero banner section", () => {
+    const sections = buildHomepageFallbackSections();
+
+    expect(sections.some((section) => section.kind === "hero-banner")).toBe(false);
   });
 
-  it("keeps preview-only hero CTA in non-production environments", () => {
-    expect(getHeroSecondaryCta("development")).toMatchObject({
-      label: "Preview storefront shell",
-      href: "/preview",
-    });
+  it("does not include a blog highlights section", () => {
+    const sections = buildHomepageFallbackSections();
 
-    expect(getHeroSecondaryCta("test")).toMatchObject({
-      label: "Preview storefront shell",
-      href: "/preview",
-    });
+    expect(sections.some((section) => section.kind === "blog-highlights")).toBe(false);
+  });
+
+  it("keeps the remaining baseline storefront sections", () => {
+    const sections = buildHomepageFallbackSections();
+
+    expect(sections.map((section) => section.kind)).toEqual([
+      "featured-categories",
+      "one-dollar",
+      "featured-products",
+      "deal-spotlight",
+    ]);
   });
 });
+

@@ -14,34 +14,30 @@ describe("homepage section rendering", () => {
     expect(result.source).toBe("fallback");
     expect(result.sections.length).toBeGreaterThan(0);
     expect(result.sections.map((section) => section.kind)).toEqual([
-      "hero-banner",
       "one-dollar",
       "featured-categories",
       "featured-products",
       "deal-spotlight",
-      "blog-highlights",
     ]);
+    expect(result.sections.some((section) => section.kind === "hero-banner")).toBe(false);
+    expect(result.sections.some((section) => section.kind === "blog-highlights")).toBe(false);
   });
 
   it("renders CMS sections in deterministic order, merges missing fallback kinds, and respects disabled configured kinds", () => {
     const cmsSections: HomepageSection[] = [
       {
-        id: "cms-blog",
-        kind: "blog-highlights",
-        title: "Blog updates",
-        description: "Latest reads",
-        placeholderMessage: "No highlights yet",
-        articles: [],
-        displayOrder: 90,
+        id: "cms-banner",
+        kind: "announcement-bar",
+        message: "Weekend savings",
+        href: "/categories",
+        displayOrder: 1,
       },
       {
-        id: "cms-hero",
-        kind: "hero-banner",
-        headline: "CMS hero",
-        description: "Controlled by admin",
-        primaryCtaLabel: "Shop now",
-        primaryCtaHref: "/search",
-        displayOrder: 10,
+        id: "cms-categories",
+        kind: "featured-categories",
+        title: "CMS categories",
+        categories: [],
+        displayOrder: 20,
       },
       {
         id: "cms-products-disabled",
@@ -69,11 +65,10 @@ describe("homepage section rendering", () => {
 
     expect(result.source).toBe("cms");
     expect(result.sections.map((section) => section.id)).toEqual([
-      "cms-hero",
+      "cms-banner",
       "fallback-one-dollar",
+      "cms-categories",
       "cms-deal",
-      "fallback-featured-categories",
-      "cms-blog",
     ]);
     expect(result.sections.some((section) => section.id === "fallback-featured-products")).toBe(false);
   });
@@ -96,10 +91,10 @@ describe("homepage section rendering", () => {
 
     expect(result.source).toBe("cms");
     expect(result.sections.some((section) => section.id === "cms-one-dollar" && section.kind === "one-dollar")).toBe(true);
-    expect(result.sections.some((section) => section.kind === "hero-banner")).toBe(true);
     expect(result.sections.some((section) => section.kind === "featured-categories")).toBe(true);
     expect(result.sections.some((section) => section.kind === "featured-products")).toBe(true);
-    expect(result.sections.some((section) => section.kind === "blog-highlights")).toBe(true);
+    expect(result.sections.some((section) => section.kind === "hero-banner")).toBe(false);
+    expect(result.sections.some((section) => section.kind === "blog-highlights")).toBe(false);
     expect(result.sections.filter((section) => section.kind === "one-dollar")).toHaveLength(1);
   });
 
@@ -126,16 +121,6 @@ describe("homepage section rendering", () => {
         products: [],
         displayOrder: 30,
       },
-      {
-        id: "cms-hero-disabled",
-        kind: "hero-banner",
-        headline: "Disabled hero",
-        description: "Disabled",
-        primaryCtaLabel: "Shop",
-        primaryCtaHref: "/categories",
-        enabled: false,
-        displayOrder: 10,
-      },
     ];
 
     const result = resolveHomepageSections(cmsSections);
@@ -147,7 +132,6 @@ describe("homepage section rendering", () => {
       "cms-categories",
       "cms-products",
       "fallback-deal-spotlight",
-      "fallback-blog-highlights",
     ]);
     expect(result.sections.some((section) => section.kind === "hero-banner")).toBe(false);
   });
@@ -167,9 +151,9 @@ describe("homepage section rendering", () => {
 
     expect(result.source).toBe("cms");
     expect(result.sections.some((section) => section.id === "cms-banner")).toBe(true);
-    expect(result.sections.some((section) => section.kind === "hero-banner")).toBe(true);
     expect(result.sections.some((section) => section.kind === "featured-products")).toBe(true);
-    expect(result.sections.some((section) => section.kind === "blog-highlights")).toBe(true);
+    expect(result.sections.some((section) => section.kind === "hero-banner")).toBe(false);
+    expect(result.sections.some((section) => section.kind === "blog-highlights")).toBe(false);
   });
 
   it("keeps fallback primary sections when CMS provides only campaign overlays", () => {
@@ -192,8 +176,8 @@ describe("homepage section rendering", () => {
 
     expect(result.source).toBe("cms");
     expect(result.sections.some((section) => section.id === "campaign-abc123")).toBe(true);
-    expect(result.sections.some((section) => section.kind === "hero-banner")).toBe(true);
     expect(result.sections.some((section) => section.kind === "featured-products")).toBe(true);
+    expect(result.sections.some((section) => section.kind === "hero-banner")).toBe(false);
     expect(result.sections.some((section) => section.id === "fallback-deal-spotlight")).toBe(false);
   });
 

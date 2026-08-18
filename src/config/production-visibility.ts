@@ -1,7 +1,6 @@
 import { env, type RuntimeEnv } from "@/config/env";
 
 export type ProductionGuardSurface =
-  | "homepagePreviewCta"
   | "homepageFallbackIndicator"
   | "storefrontPreviewRoute"
   | "footerPreviewLink"
@@ -11,7 +10,6 @@ export type ProductionGuardSurface =
   | "notFoundAdminPlaceholderAction";
 
 const HIDDEN_IN_PRODUCTION: ReadonlySet<ProductionGuardSurface> = new Set([
-  "homepagePreviewCta",
   "homepageFallbackIndicator",
   "storefrontPreviewRoute",
   "footerPreviewLink",

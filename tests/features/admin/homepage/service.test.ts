@@ -120,9 +120,9 @@ describe("admin homepage section deletion", () => {
   it("deletes an existing homepage section and records audit metadata", async () => {
     prismaMock.tx.homePageSection.findUnique.mockResolvedValue({
       id: "section-1",
-      key: "hero-primary",
-      title: "Primary hero",
-      type: "hero-banner",
+      key: "announcement-primary",
+      title: "Announcement",
+      type: "announcement-bar",
       position: 10,
       active: true,
       content: {},

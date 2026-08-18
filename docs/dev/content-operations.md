@@ -111,12 +111,12 @@ Each section supports:
 - optional schedule window (`startAt` / `endAt` in section meta)
 - typed JSON content validated on save and revalidated on storefront reads
 
-Hero banner and deal spotlight are managed as section types (`hero-banner`, `deal-spotlight`) under sections. Both now support optional media payload:
+Deal spotlight is managed as a section type (`deal-spotlight`) under sections. It supports an optional media payload:
 
 ```json
 {
   "image": {
-    "url": "https://store.public.blob.vercel-storage.com/admin/banner/hero.png",
+    "url": "https://store.public.blob.vercel-storage.com/admin/content/deal.png",
     "alt": "Descriptive image alt text"
   }
 }

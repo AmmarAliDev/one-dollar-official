@@ -11,12 +11,18 @@ This project now uses a section-based homepage foundation backed by admin-manage
 ## Current Section Kinds
 
 - `announcement-bar`
-- `hero-banner`
 - `featured-categories`
 - `one-dollar` *(hydrated at runtime from the live catalog)*
 - `featured-products`
 - `deal-spotlight`
-- `blog-highlights`
+
+> **Removed**: `hero-banner` and `blog-highlights` were removed from the homepage
+> on 2026-08-18. The storefront no longer renders a hero section or blog
+> highlights; `/blog` remains the single source of blog content. Both section
+> kinds were removed from the homepage type system, resolver order, fallback
+> content, section registry/components, and admin homepage section management
+> (validation, seeding, storefront mapping, section form guidance). Legacy DB
+> records of those types are skipped safely and logged during storefront mapping.
 
 ## Type Contracts
 
@@ -34,9 +40,8 @@ Each section includes:
 - `enabled?`: optional admin toggle.
 - `displayOrder?`: optional ordering hint.
 
-Hero and deal section media contract:
+Deal section media contract:
 
-- `hero-banner.image?`: `{ url: string; alt: string }`
 - `deal-spotlight.image?`: `{ url: string; alt: string }`
 - `url` must be a root-relative path or a configured image host URL.
 - image is optional; if omitted, storefront renders the section without media.
@@ -65,7 +70,7 @@ Admin management entrypoints now live under `/admin/homepage` with dedicated pag
 - deal campaigns
 - announcement-bar content via the section type or active banners
 
-Hero banner and deal spotlight content are managed through homepage sections (`/admin/homepage/sections`) using section types `hero-banner` and `deal-spotlight`.
+Deal spotlight content is managed through homepage sections (`/admin/homepage/sections`) using the `deal-spotlight` section type.
 
 ## Resolution Rules
 
@@ -83,11 +88,9 @@ Sections are classified as either **overlay** (additive, promotional) or **prima
 |---|---|---|
 | `announcement-bar` | Overlay | Promotional bar; never the sole page structure |
 | `deal-spotlight` | Overlay | Promotional deal block; additive regardless of how it was created (admin section or deal campaign) |
-| `hero-banner` | Primary | Core homepage structure |
 | `featured-categories` | Primary | Core homepage structure |
 | `featured-products` | Primary | Core homepage structure |
 | `one-dollar` | Primary | Core homepage structure |
-| `blog-highlights` | Primary | Core homepage structure |
 
 **Rule**: resolver composition is additive by section kind. Enabled CMS records are always included, and fallback sections are merged only for kinds not explicitly configured in CMS.
 
@@ -101,12 +104,10 @@ Sections are classified as either **overlay** (additive, promotional) or **prima
 
 - Sections are sorted by `displayOrder` first, then by static kind order:
   1. `announcement-bar`
-  2. `hero-banner`
+  2. `one-dollar`
   3. `featured-categories`
-  4. `one-dollar`
-  5. `featured-products`
-  6. `deal-spotlight`
-  7. `blog-highlights`
+  4. `featured-products`
+  5. `deal-spotlight`
 - Invalid content payloads are skipped safely and do not break storefront rendering.
 - Scheduled records render only when the current time is inside their active window.
 - Banner and deal-campaign records can contribute storefront-visible promotional blocks alongside directly managed homepage sections.
@@ -170,7 +171,6 @@ Some section kinds carry live data that is never stored in CMS:
 
 - **`featured-categories`** — `categories[]` is now hydrated from the live Prisma-backed catalog via `getCatalogCategories()` and then normalized into the shared homepage/category card shape before render. The virtual `one-dollar` category is intentionally excluded here because it already has a dedicated homepage section. If the catalog read fails or returns no publishable categories, the storefront keeps the section shell and falls back to the stored/manual category array instead of rendering a broken homepage.
 - **`one-dollar`** — `products[]` is always `[]` when stored. `hydrateOneDollarSections()` in `service.ts` calls `getCatalogCategoryListing({ slug: "one-dollar", ... })` and populates up to 8 product cards before the final payload is passed to the page. Hydration now also maps optional `slug` and `images[]` for image-first card rendering. If the catalog fetch fails, the section renders its empty/placeholder state without blocking the rest of the page.
-- **`blog-highlights`** — `articles[]` is similarly hydrated from `getBlogPosts()` at render time.
 
 Implementation notes:
 

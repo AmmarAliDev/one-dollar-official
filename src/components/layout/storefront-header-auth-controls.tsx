@@ -41,5 +41,5 @@ export function StorefrontHeaderAuthControls({
     );
   }
 
-  return <UserMenu isSignedIn={isSignedIn} isAdmin={isAdmin} />;
+  return <UserMenu isSignedIn={isSignedIn} isAdmin={isAdmin} navItems={topLevelNavItems} />;
 }

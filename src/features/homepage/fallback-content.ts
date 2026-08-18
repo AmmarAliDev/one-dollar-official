@@ -1,30 +1,10 @@
-import { env, type RuntimeEnv } from "@/config/env";
-import { shouldRenderGuardedSurface } from "@/config/production-visibility";
 import { routes } from "@/config/routes";
 import { ONE_DOLLAR_CATEGORY_SLUG, ONE_DOLLAR_MAX_PRICE_PKR } from "@/features/catalog/one-dollar";
 
 import type { HomepageSection } from "./types";
 
-function shouldShowHomepagePreviewArtifacts(runtimeEnv: RuntimeEnv) {
-  return shouldRenderGuardedSurface("homepagePreviewCta", runtimeEnv);
-}
-
-export function buildHomepageFallbackSections(runtimeEnv: RuntimeEnv = env): HomepageSection[] {
-  const showPreviewArtifacts = shouldShowHomepagePreviewArtifacts(runtimeEnv);
-
+export function buildHomepageFallbackSections(): HomepageSection[] {
   return [
-    {
-      id: "fallback-hero",
-      kind: "hero-banner",
-      headline: "Everyday essentials, one clear deal at a time.",
-      description:
-        "The homepage is now section-based and ready for CMS/admin-driven updates without code deployments.",
-      primaryCtaLabel: "Browse categories",
-      primaryCtaHref: routes.storefront.categories,
-      ...(showPreviewArtifacts ? { secondaryCta: { label: "Preview storefront shell", href: routes.storefront.preview } } : {}),
-      // eyebrow: "CMS-ready homepage foundation",
-      displayOrder: 10,
-    },
     {
       id: "fallback-featured-categories",
       kind: "featured-categories",
@@ -121,15 +101,6 @@ export function buildHomepageFallbackSections(runtimeEnv: RuntimeEnv = env): Hom
       ctaLabel: "View deal",
       ctaHref: routes.storefront.preview,
       displayOrder: 40,
-    },
-    {
-      id: "fallback-blog-highlights",
-      kind: "blog-highlights",
-      title: "Blog highlights",
-      description: "Latest published stories and practical buying guides.",
-      placeholderMessage: "No published blog highlights are available right now.",
-      displayOrder: 50,
-      articles: [],
     },
   ];
 }

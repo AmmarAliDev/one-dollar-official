@@ -125,7 +125,7 @@ describe("CategoryInfiniteProductGrid", () => {
     });
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(screen.getByText("You have reached the end of this category.")).toBeInTheDocument();
+    expect(screen.getByText("You have reached the end of this list.")).toBeInTheDocument();
   });
 
   it("shows error and retry behavior when loading the next page fails", async () => {
@@ -187,7 +187,7 @@ describe("CategoryInfiniteProductGrid", () => {
     );
 
     expect(screen.getByText("Showing 6 of 6 matching products. You have reached the end of this list.")).toBeInTheDocument();
-    expect(screen.getByText("You have reached the end of this category.")).toBeInTheDocument();
+    expect(screen.getByText("You have reached the end of this list.")).toBeInTheDocument();
   });
 
   it("resets grid state and paging query when filter/sort listing props change", async () => {

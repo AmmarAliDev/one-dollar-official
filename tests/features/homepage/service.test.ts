@@ -15,7 +15,6 @@ const prismaMock = vi.hoisted(() => ({
   },
 }));
 
-const mockGetBlogPosts = vi.hoisted(() => vi.fn());
 const mockGetCatalogCategories = vi.hoisted(() => vi.fn());
 const mockGetCatalogCategoryListing = vi.hoisted(() => vi.fn());
 const mockListAllPublishedProducts = vi.hoisted(() => vi.fn());
@@ -23,10 +22,6 @@ const mockListPublishedProductsByIds = vi.hoisted(() => vi.fn());
 
 vi.mock("@/server/db", () => ({
   getPrismaClient: () => prismaMock,
-}));
-
-vi.mock("@/features/blog", () => ({
-  getBlogPosts: (...args: unknown[]) => mockGetBlogPosts(...args),
 }));
 
 vi.mock("@/features/catalog", () => ({
@@ -95,7 +90,6 @@ describe("homepage CMS service", () => {
     prismaMock.orderItem.groupBy.mockResolvedValue([]);
     prismaMock.banner.findMany.mockResolvedValue([]);
     prismaMock.dealCampaign.findMany.mockResolvedValue([]);
-    mockGetBlogPosts.mockResolvedValue([]);
     mockGetCatalogCategories.mockResolvedValue([]);
     mockListAllPublishedProducts.mockResolvedValue([]);
     mockListPublishedProductsByIds.mockResolvedValue([]);
@@ -106,19 +100,14 @@ describe("homepage CMS service", () => {
   it("reflects valid admin homepage content on the storefront contract", async () => {
     prismaMock.homePageSection.findMany.mockResolvedValue([
       {
-        id: "section-hero",
-        key: "hero-primary",
-        title: "Hero",
-        type: "hero-banner",
+        id: "section-announcement",
+        key: "announcement-primary",
+        title: "Announcement",
+        type: "announcement-bar",
         content: {
-          headline: "Admin managed hero",
-          description: "Updated from homepage admin.",
-          primaryCtaLabel: "Shop now",
-          primaryCtaHref: "/categories",
-          image: {
-            url: "https://store.public.blob.vercel-storage.com/admin/banner/hero-banner.png",
-            alt: "Fresh essentials curated for weekly shopping",
-          },
+          message: "Admin managed announcement",
+          href: "/categories",
+          label: "Shop now",
         },
         meta: {
           enabled: true,
@@ -134,28 +123,23 @@ describe("homepage CMS service", () => {
 
     expect(result.source).toBe("cms");
     expect(result.sections[0]).toMatchObject({
-      kind: "hero-banner",
-      headline: "Admin managed hero",
-      primaryCtaHref: "/categories",
-      image: {
-        url: "https://store.public.blob.vercel-storage.com/admin/banner/hero-banner.png",
-        alt: "Fresh essentials curated for weekly shopping",
-      },
+      kind: "announcement-bar",
+      message: "Admin managed announcement",
+      href: "/categories",
+      label: "Shop now",
     });
   });
 
   it("falls back safely when all admin homepage records are inactive", async () => {
     prismaMock.homePageSection.findMany.mockResolvedValue([
       {
-        id: "section-hero-disabled",
-        key: "hero-disabled",
-        title: "Hero",
-        type: "hero-banner",
+        id: "section-categories-disabled",
+        key: "categories-disabled",
+        title: "Featured categories",
+        type: "featured-categories",
         content: {
-          headline: "Inactive hero",
           description: "Should not render.",
-          primaryCtaLabel: "Shop now",
-          primaryCtaHref: "/categories",
+          categories: [],
         },
         meta: {},
         position: 10,
@@ -187,9 +171,9 @@ describe("homepage CMS service", () => {
     const result = await getHomepageContent();
 
     expect(result.source).toBe("fallback");
-    expect(result.sections.some((section) => section.id === "hero-disabled")).toBe(false);
+    expect(result.sections.some((section) => section.id === "categories-disabled")).toBe(false);
     expect(result.sections.some((section) => section.id === "deal-disabled")).toBe(false);
-    expect(result.sections.some((section) => section.kind === "hero-banner")).toBe(true);
+    expect(result.sections.some((section) => section.kind === "hero-banner")).toBe(false);
     expect(result.sections.some((section) => section.kind === "deal-spotlight")).toBe(true);
   });
 
@@ -214,7 +198,7 @@ describe("homepage CMS service", () => {
 
     expect(result.source).toBe("cms");
     expect(result.sections.some((section) => section.id === "banner-banner-1" && section.kind === "announcement-bar")).toBe(true);
-    expect(result.sections.some((section) => section.kind === "hero-banner")).toBe(true);
+    expect(result.sections.some((section) => section.kind === "hero-banner")).toBe(false);
     expect(result.sections.some((section) => section.kind === "featured-categories")).toBe(true);
     expect(result.sections.some((section) => section.kind === "featured-products")).toBe(true);
   });
@@ -256,7 +240,7 @@ describe("homepage CMS service", () => {
     expect(result.source).toBe("cms");
     expect(result.sections.some((section) => section.id === "banner-banner-2" && section.kind === "announcement-bar")).toBe(true);
     expect(result.sections.some((section) => section.id === "campaign-campaign-1" && section.kind === "deal-spotlight")).toBe(true);
-    expect(result.sections.some((section) => section.kind === "hero-banner")).toBe(true);
+    expect(result.sections.some((section) => section.kind === "hero-banner")).toBe(false);
     expect(result.sections.some((section) => section.kind === "featured-categories")).toBe(true);
     expect(result.sections.some((section) => section.id === "fallback-deal-spotlight")).toBe(false);
   });
@@ -440,7 +424,7 @@ describe("homepage CMS service", () => {
 
   /**
    * Regression test for: adding a standalone deal-spotlight section from admin
-   * caused all other homepage sections (hero, featured-categories, etc.) to
+   * caused all other homepage sections (featured-categories, etc.) to
    * disappear because the resolver treated deal-spotlight as a "primary"
    * section and returned only CMS sections without fallback merging.
    *
@@ -479,7 +463,7 @@ describe("homepage CMS service", () => {
     ).toBe(true);
 
     // All primary homepage sections must still be present via fallback merging.
-    expect(result.sections.some((section) => section.kind === "hero-banner")).toBe(true);
+    expect(result.sections.some((section) => section.kind === "hero-banner")).toBe(false);
     expect(result.sections.some((section) => section.kind === "featured-categories")).toBe(true);
     expect(result.sections.some((section) => section.kind === "featured-products")).toBe(true);
 
@@ -508,7 +492,7 @@ describe("homepage CMS service", () => {
 
     expect(result.source).toBe("fallback");
     expect(result.sections.some((section) => section.id === "banner-banner-invalid")).toBe(false);
-    expect(result.sections.some((section) => section.kind === "hero-banner")).toBe(true);
+    expect(result.sections.some((section) => section.kind === "hero-banner")).toBe(false);
   });
 
   it("keeps homepage stable when banners are removed and no admin content remains", async () => {
@@ -519,74 +503,10 @@ describe("homepage CMS service", () => {
     const result = await getHomepageContent();
 
     expect(result.source).toBe("fallback");
-    expect(result.sections.some((section) => section.kind === "hero-banner")).toBe(true);
+    expect(result.sections.some((section) => section.kind === "hero-banner")).toBe(false);
     expect(result.sections.some((section) => section.kind === "deal-spotlight")).toBe(true);
     expect(result.sections.some((section) => section.id.startsWith("banner-"))).toBe(false);
     expect(result.sections.some((section) => section.id.startsWith("campaign-"))).toBe(false);
-  });
-
-  it("hydrates homepage blog highlights from DB-backed posts", async () => {
-    prismaMock.homePageSection.findMany.mockResolvedValue([
-      {
-        id: "section-blog",
-        key: "blog-home",
-        title: "Blog highlights",
-        type: "blog-highlights",
-        content: {
-          description: "Latest posts",
-          placeholderMessage: "No posts yet",
-          articles: [{ id: "legacy", title: "Legacy", excerpt: "Legacy", href: "/blog/legacy" }],
-        },
-        meta: {
-          enabled: true,
-        },
-        position: 50,
-        active: true,
-        createdAt: new Date("2026-04-20T08:00:00.000Z"),
-        updatedAt: new Date("2026-04-20T08:00:00.000Z"),
-      },
-    ]);
-
-    mockGetBlogPosts.mockResolvedValue([
-      {
-        id: "db-post-1",
-        locale: "en",
-        title: "DB First Post",
-        slug: "db-first-post",
-        excerpt: "From db",
-        content: [],
-        coverImage: {
-          src: "/blog/db-post-1.svg",
-          alt: "DB First Post",
-          width: 1200,
-          height: 630,
-        },
-        status: "published",
-        publishedAt: "2026-04-25T08:00:00.000Z",
-        seo: {},
-      },
-    ]);
-
-    const result = await getHomepageContent();
-    const blogSection = result.sections.find((section) => section.kind === "blog-highlights");
-
-    expect(blogSection).toMatchObject({
-      kind: "blog-highlights",
-      articles: [
-        {
-          id: "db-post-1",
-          title: "DB First Post",
-          excerpt: "From db",
-          href: "/blog/db-first-post",
-          image: {
-            src: "/blog/db-post-1.svg",
-            alt: "DB First Post",
-            width: 1200,
-            height: 630,
-          },
-        },
-      ],
-    });
   });
 
   it("hydrates featured categories from DB-backed catalog categories", async () => {
@@ -750,39 +670,6 @@ describe("homepage CMS service", () => {
     });
 
     expect(categorySection?.categories[0]).not.toHaveProperty("imageUrl");
-  });
-
-  it("isolates manual fallback articles when homepage blog DB read fails", async () => {
-    prismaMock.homePageSection.findMany.mockResolvedValue([
-      {
-        id: "section-blog",
-        key: "blog-home",
-        title: "Blog highlights",
-        type: "blog-highlights",
-        content: {
-          description: "Latest posts",
-          placeholderMessage: "No posts yet",
-          articles: [{ id: "legacy", title: "Legacy", excerpt: "Legacy", href: "/blog/legacy" }],
-        },
-        meta: {
-          enabled: true,
-        },
-        position: 50,
-        active: true,
-        createdAt: new Date("2026-04-20T08:00:00.000Z"),
-        updatedAt: new Date("2026-04-20T08:00:00.000Z"),
-      },
-    ]);
-
-    mockGetBlogPosts.mockRejectedValue(new Error("DB unavailable"));
-
-    const result = await getHomepageContent();
-    const blogSection = result.sections.find((section) => section.kind === "blog-highlights");
-
-    expect(blogSection).toMatchObject({
-      kind: "blog-highlights",
-      articles: [],
-    });
   });
 
   it("hydrates One Dollar section with live catalog products", async () => {

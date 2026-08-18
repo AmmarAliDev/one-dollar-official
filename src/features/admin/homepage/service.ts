@@ -449,15 +449,6 @@ export async function seedAdminHomepageSections({ actor }: { actor: AuditActorIn
     for (const section of HOMEPAGE_FALLBACK_SECTIONS) {
       const content = (() => {
         switch (section.kind) {
-          case "hero-banner":
-            return {
-              headline: section.headline,
-              description: section.description,
-              primaryCtaLabel: section.primaryCtaLabel,
-              primaryCtaHref: section.primaryCtaHref,
-              secondaryCta: section.secondaryCta,
-              eyebrow: section.eyebrow,
-            };
           case "featured-categories":
             return {
               description: section.description,
@@ -476,12 +467,6 @@ export async function seedAdminHomepageSections({ actor }: { actor: AuditActorIn
               compareAt: section.compareAt,
               ctaLabel: section.ctaLabel,
               ctaHref: section.ctaHref,
-            };
-          case "blog-highlights":
-            return {
-              description: section.description,
-              placeholderMessage: section.placeholderMessage,
-              articles: section.articles,
             };
           case "announcement-bar":
             return {
@@ -502,12 +487,7 @@ export async function seedAdminHomepageSections({ actor }: { actor: AuditActorIn
         }
       })();
 
-      const title =
-        section.kind === "hero-banner"
-          ? section.headline
-          : section.kind === "announcement-bar"
-            ? section.message
-            : section.title;
+      const title = section.kind === "announcement-bar" ? section.message : section.title;
 
       await tx.homePageSection.create({
         data: {
@@ -946,28 +926,6 @@ function mapSectionRecordToStorefrontSection(record: HomePageSectionRow, referen
         ...(content.label ? { label: content.label } : {}),
       };
     }
-    case "hero-banner": {
-      const content = parsed.data.content as {
-        headline: string;
-        description: string;
-        primaryCtaLabel: string;
-        primaryCtaHref: string;
-        secondaryCta?: { label: string; href: string };
-        eyebrow?: string;
-        image?: { url: string; alt: string };
-      };
-      return {
-        ...base,
-        kind: "hero-banner",
-        headline: content.headline,
-        description: content.description,
-        primaryCtaLabel: content.primaryCtaLabel,
-        primaryCtaHref: content.primaryCtaHref,
-        ...(content.secondaryCta ? { secondaryCta: content.secondaryCta } : {}),
-        ...(content.eyebrow ? { eyebrow: content.eyebrow } : {}),
-        ...(content.image ? { image: content.image } : {}),
-      };
-    }
     case "featured-categories": {
       const content = parsed.data.content as {
         description?: string;
@@ -1030,21 +988,6 @@ function mapSectionRecordToStorefrontSection(record: HomePageSectionRow, referen
         ctaLabel: content.ctaLabel,
         ctaHref: content.ctaHref,
         ...(content.image ? { image: content.image } : {}),
-      };
-    }
-    case "blog-highlights": {
-      const content = parsed.data.content as {
-        description?: string;
-        placeholderMessage: string;
-        articles: Array<{ id: string; title: string; excerpt: string; href: string }>;
-      };
-      return {
-        ...base,
-        kind: "blog-highlights",
-        title: parsed.data.title,
-        ...(content.description ? { description: content.description } : {}),
-        placeholderMessage: content.placeholderMessage,
-        articles: content.articles,
       };
     }
     case "one-dollar": {
