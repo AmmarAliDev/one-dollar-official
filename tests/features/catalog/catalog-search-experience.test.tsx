@@ -63,6 +63,13 @@ afterEach(() => {
 });
 
 describe("CatalogSearchExperience result card media", () => {
+  it("does not render a start-typing empty state before a search is entered", () => {
+    render(<CatalogSearchExperience />);
+
+    expect(screen.queryByText(/start typing to search/i)).not.toBeInTheDocument();
+    expect(screen.getByText("No recent searches yet.")).toBeInTheDocument();
+  });
+
   it("renders product image when search result includes imageUrl", async () => {
     fetchMock.mockResolvedValue({
       ok: true,

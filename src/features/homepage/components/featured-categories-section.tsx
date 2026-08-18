@@ -69,7 +69,7 @@ export function FeaturedCategoriesSectionBlock({ section }: FeaturedCategoriesSe
                               height={214}
                               width={365}
                               sizes="(max-width: 639px) 85vw, (max-width: 767px) 50vw, (max-width: 1023px) 33vw, 25vw"
-                              className="h-54 w-full object-contain"
+                              className="h-54 w-full object-cover"
                               data-testid={`storefront-category-card-image-${category.slug ?? category.id}`}
                             />
                           ) : (

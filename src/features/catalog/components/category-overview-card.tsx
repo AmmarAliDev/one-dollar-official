@@ -31,7 +31,7 @@ export function CategoryOverviewCard({ category, eagerImage = false }: CategoryO
                   height={214}
                   width={365}
                   sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
-                  className="h-54 w-full object-contain"
+                  className="h-54 w-full object-cover"
                   loading={eagerImage ? "eager" : "lazy"}
                   fetchPriority={eagerImage ? "high" : "auto"}
                   data-testid={`storefront-category-card-image-${category.slug}`}
@@ -57,7 +57,7 @@ export function CategoryOverviewCard({ category, eagerImage = false }: CategoryO
 
             <div className="space-y-2">
               <h2 className="text-xl font-semibold tracking-tight">{category.name}</h2>
-              <p className="text-muted-foreground text-sm">{category.description}</p>
+              <p className="text-muted-foreground text-sm line-clamp-3">{category.description}</p>
             </div>
 
             <div className="mt-auto flex items-center justify-between gap-3 text-sm">
