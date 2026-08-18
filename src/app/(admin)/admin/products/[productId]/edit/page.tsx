@@ -3,15 +3,14 @@ import { notFound } from "next/navigation";
 import { PageShell } from "@/components/layout/page-shell";
 import { buildMetadata } from "@/config/metadata";
 import { routes } from "@/config/routes";
+import { AdminPageHeader } from "@/features/admin/components/admin-page-patterns";
 import {
   getAdminProductById,
   getProductErrorMessage,
   getProductNoticeMessage,
   listAdminProductCategories,
-  listAdminRelatedProducts,
   updateAdminProductAction,
 } from "@/features/admin/products";
-import { AdminPageHeader } from "@/features/admin/components/admin-page-patterns";
 import { AdminProductForm } from "@/features/admin/products/components/admin-product-form";
 import { DeleteProductButton } from "@/features/admin/products/components/delete-product-button";
 import { requireRouteAccess } from "@/lib/auth/guards";
@@ -41,10 +40,9 @@ export default async function EditAdminProductPage({ params, searchParams }: Edi
   const { productId } = await params;
   const query = (await searchParams) ?? {};
 
-  const [product, categories, relatedProducts] = await Promise.all([
+  const [product, categories] = await Promise.all([
     getAdminProductById(productId),
     listAdminProductCategories(),
-    listAdminRelatedProducts(productId),
   ]);
 
   if (!product) {
@@ -87,7 +85,6 @@ export default async function EditAdminProductPage({ params, searchParams }: Edi
         returnTo={routes.admin.productEdit(product.id)}
         submitLabel="Save changes"
         categories={categories}
-        relatedProducts={relatedProducts}
         product={product}
       />
     </PageShell>

@@ -1,5 +1,22 @@
 export { createAdminProductAction, deleteAdminProductAction, updateAdminProductAction } from "./actions";
 export { getProductErrorCode, getProductErrorMessage, getProductNoticeMessage } from "./flash";
+export type {
+  ProductFaqIdea,
+  ProductInternalLinkSuggestion,
+  ProductSeoContentInput,
+  ProductSeoContentResult,
+  ProductStructuredSpecificationSuggestion,
+} from "./seo-content-generator";
+export { generateProductSeoContent } from "./seo-content-generator";
+export type {
+  AdminProductCategoryOption,
+  AdminProductFormRecord,
+  AdminProductListFilters,
+  AdminProductListItem,
+  AdminProductVariantRecord,
+  AdminRelatedProductOption,
+  AdminRelatedProductsFilter,
+} from "./service";
 export {
   createAdminProduct,
   deleteAdminProduct,
@@ -9,6 +26,13 @@ export {
   listAdminRelatedProducts,
   updateAdminProduct,
 } from "./service";
+export type {
+  AdminProductCreateInput,
+  AdminProductImageInput,
+  AdminProductSpecificationInput,
+  AdminProductUpdateInput,
+  AdminProductVariantInput,
+} from "./validation";
 export {
   adminProductCreateSchema,
   adminProductMutationSchema,
@@ -17,18 +41,3 @@ export {
   validateAdminProductCreateInput,
   validateAdminProductUpdateInput,
 } from "./validation";
-export { generateProductSeoContent } from "./seo-content-generator";
-export type {
-  AdminProductCreateInput,
-  AdminProductImageInput,
-  AdminProductSpecificationInput,
-  AdminProductUpdateInput,
-  AdminProductVariantInput,
-} from "./validation";
-export type {
-  ProductFaqIdea,
-  ProductInternalLinkSuggestion,
-  ProductSeoContentInput,
-  ProductSeoContentResult,
-  ProductStructuredSpecificationSuggestion,
-} from "./seo-content-generator";

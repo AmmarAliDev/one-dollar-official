@@ -8,8 +8,6 @@ import { DynamicFormField, useAppForm, useServerActionSubmit } from "@/component
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Field, FieldContent, FieldError } from "@/components/ui/field";
 import { FormErrorSummary } from "@/components/ui/form-error-summary";
 import { Input } from "@/components/ui/input";
 import { routes } from "@/config/routes";
@@ -17,9 +15,10 @@ import { AdminSeoSection } from "@/features/admin/components/admin-seo-section";
 import { AdminImageUploadInput } from "@/features/admin/uploads";
 import { formatPrice } from "@/lib/currency";
 
-import type { AdminProductCategoryOption, AdminProductFormRecord, AdminRelatedProductOption } from "../service";
+import type { AdminProductCategoryOption, AdminProductFormRecord } from "../service";
 import { type AdminProductCreateInput, adminProductMutationSchema } from "../validation";
 import { AdminProductSeoGenerator } from "./admin-product-seo-generator";
+import { RelatedProductPicker } from "./related-product-picker";
 
 type AdminProductFormProps = {
   mode: "create" | "edit";
@@ -27,7 +26,6 @@ type AdminProductFormProps = {
   returnTo: string;
   submitLabel: string;
   categories: AdminProductCategoryOption[];
-  relatedProducts: AdminRelatedProductOption[];
   product?: AdminProductFormRecord | null;
 };
 
@@ -201,7 +199,7 @@ function buildProductFormData(values: AdminProductFormValues, input: { returnTo:
   return formData;
 }
 
-export function AdminProductForm({ mode, action, returnTo, submitLabel, categories, relatedProducts, product }: AdminProductFormProps) {
+export function AdminProductForm({ mode, action, returnTo, submitLabel, categories, product }: AdminProductFormProps) {
   const form = useAppForm<AdminProductFormValues>({
     schema: adminProductMutationSchema,
     defaultValues: buildDefaultValues(categories, product),
@@ -704,47 +702,19 @@ export function AdminProductForm({ mode, action, returnTo, submitLabel, categori
             <CardDescription>Select helpful cross-sell items when available.</CardDescription>
           </CardHeader>
           <CardContent>
-            {relatedProducts.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No other products are available yet for related suggestions.</p>
-            ) : (
-              <Controller
-                control={form.control}
-                name="relatedProductIds"
-                render={({ field, fieldState }) => {
-                  const selectedIds = field.value ?? [];
-
-                  return (
-                    <Field data-invalid={Boolean(fieldState.error)}>
-                      <FieldContent className="grid gap-3 md:grid-cols-2">
-                        {relatedProducts.map((item) => {
-                          const checked = selectedIds.includes(item.id);
-
-                          return (
-                            <label key={item.id} className="flex gap-3 rounded-xl border p-3 text-sm">
-                              <Checkbox
-                                checked={checked}
-                                disabled={isPending}
-                                onCheckedChange={(value) => {
-                                  const nextValues = value
-                                    ? [...selectedIds, item.id]
-                                    : selectedIds.filter((selectedId) => selectedId !== item.id);
-                                  field.onChange(nextValues);
-                                }}
-                              />
-                              <span>
-                                <span className="block font-medium">{item.title}</span>
-                                <span className="text-muted-foreground block text-xs">/{item.slug}{item.categoryName ? ` • ${item.categoryName}` : ""}</span>
-                              </span>
-                            </label>
-                          );
-                        })}
-                        <FieldError {...(fieldState.error?.message ? { errors: [{ message: fieldState.error.message }] } : {})} />
-                      </FieldContent>
-                    </Field>
-                  );
-                }}
-              />
-            )}
+            <Controller
+              control={form.control}
+              name="relatedProductIds"
+              render={({ field, fieldState }) => (
+                <RelatedProductPicker
+                  selectedIds={field.value ?? []}
+                  onChangeIds={field.onChange}
+                  categoryId={watchedValues.categoryId ?? ""}
+                  disabled={isPending}
+                  {...(fieldState.error?.message ? { errorMessage: fieldState.error.message } : {})}
+                />
+              )}
+            />
           </CardContent>
         </Card>
 

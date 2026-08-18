@@ -5,14 +5,13 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { buildMetadata } from "@/config/metadata";
 import { routes } from "@/config/routes";
+import { AdminPageHeader } from "@/features/admin/components/admin-page-patterns";
 import {
   createAdminProductAction,
   getProductErrorMessage,
   getProductNoticeMessage,
   listAdminProductCategories,
-  listAdminRelatedProducts,
 } from "@/features/admin/products";
-import { AdminPageHeader } from "@/features/admin/components/admin-page-patterns";
 import { AdminProductForm } from "@/features/admin/products/components/admin-product-form";
 import { requireRouteAccess } from "@/lib/auth/guards";
 import { rbacPermissions } from "@/lib/auth/rbac";
@@ -35,7 +34,6 @@ export default async function NewAdminProductPage({ searchParams }: NewAdminProd
 
   const query = (await searchParams) ?? {};
   const categories = await listAdminProductCategories();
-  const relatedProducts = await listAdminRelatedProducts();
   const noticeMessage = getProductNoticeMessage(query.notice);
   const errorMessage = getProductErrorMessage(query.error, "The product could not be created. Please try again.");
 
@@ -76,7 +74,6 @@ export default async function NewAdminProductPage({ searchParams }: NewAdminProd
           returnTo={routes.admin.productCreate}
           submitLabel="Save product"
           categories={categories}
-          relatedProducts={relatedProducts}
         />
       )}
     </PageShell>

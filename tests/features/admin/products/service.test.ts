@@ -57,6 +57,7 @@ import {
   createAdminProduct,
   deleteAdminProduct,
   listAdminProducts,
+  listAdminRelatedProducts,
   updateAdminProduct,
 } from "@/features/admin/products";
 
@@ -119,6 +120,83 @@ describe("admin product service", () => {
     expect(listQuery?.select?.images).toBeUndefined();
     expect(listQuery?.select?.specifications).toBeUndefined();
     expect(listQuery?.select?.description).toBeUndefined();
+  });
+
+  it("lists related products with category, query, and pinned selected items", async () => {
+    prismaMock.product.findMany.mockResolvedValueOnce([
+      { id: "product-5", name: "Face Wash Foam", slug: "face-wash-foam", category: { name: "Skincare" } },
+    ]);
+    prismaMock.product.findMany.mockResolvedValueOnce([
+      { id: "product-2", name: "Old Pick", slug: "old-pick", category: { name: "Skincare" } },
+    ]);
+
+    const items = await listAdminRelatedProducts({
+      categoryId: "category-1",
+      query: "wash",
+      excludeProductId: "product-1",
+      take: 20,
+      selectedIds: ["product-2", "product-5"],
+    });
+
+    expect(prismaMock.product.findMany).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        where: {
+          AND: expect.arrayContaining([
+            { NOT: { id: "product-1" } },
+            { categoryId: "category-1" },
+            expect.objectContaining({
+              OR: expect.arrayContaining([
+                { name: { contains: "wash", mode: "insensitive" } },
+                { slug: { contains: "wash", mode: "insensitive" } },
+              ]),
+            }),
+          ]),
+        },
+        take: 20,
+      }),
+    );
+
+    expect(prismaMock.product.findMany).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        where: {
+          id: { in: ["product-2", "product-5"] },
+          NOT: { id: "product-1" },
+        },
+      }),
+    );
+
+    expect(items).toEqual([
+      { id: "product-2", title: "Old Pick", slug: "old-pick", categoryName: "Skincare" },
+      { id: "product-5", title: "Face Wash Foam", slug: "face-wash-foam", categoryName: "Skincare" },
+    ]);
+  });
+
+  it("lists related products without filters and dedupes overlapping items", async () => {
+    prismaMock.product.findMany.mockResolvedValueOnce([
+      { id: "product-1", name: "Face Wash", slug: "face-wash", category: { name: "Skincare" } },
+    ]);
+    prismaMock.product.findMany.mockResolvedValueOnce([
+      { id: "product-1", name: "Face Wash", slug: "face-wash", category: { name: "Skincare" } },
+    ]);
+
+    const items = await listAdminRelatedProducts({
+      take: 10,
+      selectedIds: ["product-1"],
+    });
+
+    expect(prismaMock.product.findMany).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        take: 10,
+      }),
+    );
+    const relatedQuery = prismaMock.product.findMany.mock.calls[0]?.[0];
+    expect(relatedQuery?.where).toBeUndefined();
+    expect(items).toEqual([
+      { id: "product-1", title: "Face Wash", slug: "face-wash", categoryName: "Skincare" },
+    ]);
   });
 
   it("creates a simple product with inventory and audit logging", async () => {
