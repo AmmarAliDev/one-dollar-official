@@ -64,7 +64,7 @@ export function ProductGridCard({ product, eagerImage = false }: ProductGridCard
               <h3 className="group-hover:text-primary text-lg font-semibold tracking-tight transition-colors">
                 {product.name}
               </h3>
-              <p className="text-muted-foreground text-sm line-clamp-3">{product.description}</p>
+              <p className="text-muted-foreground text-sm line-clamp-2">{product.description}</p>
             </div>
 
             <PriceDisplay

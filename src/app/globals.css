@@ -4,37 +4,48 @@
 
 :root {
   --background: #ffffff;
-  --background-header-footer:#4d0303;
-  --foreground: #4d0303;
+  --background-header-footer: #111111;
+  --foreground: #171717;
+
   --card: #ffffff;
-  --card-foreground: #8f0808;
-  --banner: #4d0303;
+  --card-foreground: #171717;
+
+  --banner: #111111;
+
   --popover: #ffffff;
-  --popover-foreground: #4d0303;
-  --muted: #f6f1f8;
-  --muted-foreground: #ab2f59;
-  --footer-text:#efc0d0;
-  --accent: #f1e8f5;
-  --accent-foreground: #8f0808;
-  --primary: #8f0808;
+  --popover-foreground: #171717;
+
+  --muted: #f5f5f3;
+  --muted-foreground: #66645f;
+
+  --footer-text: #d6b56a;
+
+  --accent: #f8f1df;
+  --accent-foreground: #9a741f;
+
+  --primary: #b88a24;
   --primary-foreground: #ffffff;
-  --secondary: #eee3f2;
-  --secondary-foreground: #4d0303;
-  --border: #8f0808;
-  --input: #ceb9d8;
-  --placeholder: #36073069;
-  /* --ring: #4d0303; */
+
+  --secondary: #eee9dd;
+  --secondary-foreground: #171717;
+
+  --border: #dfd7c5;
+  --input: #d8d2c5;
+  --placeholder: #17171769;
+
   --success: #15803d;
   --warning: #b45309;
   --destructive: #dc2626;
   --info: #2563eb;
-  --radius: 0.95rem;
-  --radius-card: 1.25rem;
+
+  --radius: 0.75rem;
+  --radius-card: 1rem;
+
+  --shadow-soft: 0 14px 34px -22px rgb(17 17 17 / 0.22);
+  --shadow-elevated: 0 26px 62px -34px rgb(17 17 17 / 0.35);
   --space-page: clamp(1rem, 0.85rem + 0.8vw, 1.5rem);
   --space-section: clamp(2.5rem, 1.6rem + 2.8vw, 4.5rem);
   --space-stack: clamp(1rem, 0.8rem + 1vw, 1.5rem);
-  --shadow-soft: 0 14px 34px -22px rgb(38 12 51 / 0.28);
-  --shadow-elevated: 0 26px 62px -34px rgb(28 8 37 / 0.42);
 }
 
 .dark {
@@ -124,9 +135,11 @@
 
 html {
   scroll-behavior: smooth;
-  touch-action: pan-x pan-y; /* Allows scrolling but disables pinch-zoom */
+  touch-action: pan-x pan-y;
+  /* Allows scrolling but disables pinch-zoom */
   -webkit-text-size-adjust: 100%;
 }
+
 /*
  * Reduce accidental double-tap zoom on interactive controls while preserving
  * user pinch zoom at the page level.
@@ -141,6 +154,7 @@ html {
  */
 @supports (-webkit-touch-callout: none) {
   @media (hover: none) and (pointer: coarse) {
+
     input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
     select,
     textarea {
@@ -151,7 +165,8 @@ html {
 
 body {
   min-height: 100vh;
-  touch-action: pan-x pan-y; /* Allows scrolling but disables pinch-zoom */
+  touch-action: pan-x pan-y;
+  /* Allows scrolling but disables pinch-zoom */
   /* background: radial-gradient(
       78rem 36rem at 12% -12%,
       color-mix(in srgb, var(--primary) 16%, transparent),
@@ -189,7 +204,8 @@ textarea::-moz-placeholder,
 input:-ms-input-placeholder,
 textarea:-ms-input-placeholder {
   color: var(--placeholder);
-  opacity: 1; /* ensure the color's alpha is respected uniformly */
+  opacity: 1;
+  /* ensure the color's alpha is respected uniformly */
 }
 
 /* Additionally, ensure placeholder color applies to elements with the

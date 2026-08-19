@@ -18,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { PageContainer } from "../ui/page-container";
+import { HeaderScrollHide } from "./header-scroll-hide";
 import {
   buildStorefrontCategoryMenu,
   buildStorefrontNavbarCategoryMenu,
@@ -57,7 +58,7 @@ export async function AppHeader() {
   );
 
   return (
-    <header className="border-border/70 bg-background-header-footer/95 sticky top-0 z-40 border-b backdrop-blur">
+    <HeaderScrollHide>
       <a
         href="#main-content"
         className="bg-background focus-visible:ring-ring sr-only absolute left-4 top-4 rounded-md px-3 py-2 focus:not-sr-only focus-visible:outline-none focus-visible:ring-2"
@@ -200,6 +201,6 @@ export async function AppHeader() {
           </ul>
         </nav>
       </PageContainer>
-    </header>
+    </HeaderScrollHide>
   );
 }

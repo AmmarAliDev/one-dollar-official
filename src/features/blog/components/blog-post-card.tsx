@@ -24,7 +24,7 @@ export function BlogPostCard({ post }: BlogPostCardProps) {
             width={post.coverImage.width}
             height={post.coverImage.height}
             sizes="(max-width: 767px) 100vw, 50vw"
-            className="bg-muted h-48 w-full object-contain group-hover:brightness-95"
+            className="bg-muted h-48 w-full object-cover group-hover:brightness-95"
           />
 
           <CardHeader>

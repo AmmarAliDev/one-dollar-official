@@ -36,7 +36,7 @@ describe("CategoryOverviewCard media behavior", () => {
     render(<CategoryOverviewCard category={makeCategory()} />);
 
     const description = screen.getByText("Cleaning and restock-friendly essentials.");
-    expect(description).toHaveClass("line-clamp-3");
+    expect(description).toHaveClass("line-clamp-2");
   });
 
   it("renders the category card background image when image URL exists", () => {

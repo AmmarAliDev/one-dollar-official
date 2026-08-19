@@ -61,7 +61,7 @@ export function ProductCardMedia({
         alt={`${productName} catalog image`}
         fill
         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-        className="object-contain"
+        className="object-cover"
         loading={eagerImage ? "eager" : "lazy"}
         fetchPriority={eagerImage ? "high" : "auto"}
         onError={() => {
