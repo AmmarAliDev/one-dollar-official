@@ -57,7 +57,7 @@ describe("ProductGridCard media behavior", () => {
     render(<ProductGridCard product={makeProduct()} />);
 
     const description = screen.getByText("Gentle daily cleanser.");
-    expect(description).toHaveClass("line-clamp-3");
+    expect(description).toHaveClass("line-clamp-2");
   });
 
   it("renders the product image area when a valid image URL exists", () => {

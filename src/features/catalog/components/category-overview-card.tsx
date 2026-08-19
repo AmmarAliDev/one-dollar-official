@@ -57,7 +57,7 @@ export function CategoryOverviewCard({ category, eagerImage = false }: CategoryO
 
             <div className="space-y-2">
               <h2 className="text-xl font-semibold tracking-tight">{category.name}</h2>
-              <p className="text-muted-foreground text-sm line-clamp-3">{category.description}</p>
+              <p className="text-muted-foreground text-sm line-clamp-2">{category.description}</p>
             </div>
 
             <div className="mt-auto flex items-center justify-between gap-3 text-sm">

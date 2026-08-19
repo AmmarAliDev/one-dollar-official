@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { LayoutDashboard, User } from "lucide-react";
+import { BookOpenText, BookUser, House, Info, LayoutDashboard, User } from "lucide-react";
 
 import { routes } from "@/config/routes";
 import { SignOutButton } from "@/features/auth/components/sign-out-button";
@@ -15,6 +15,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
+
+const menuIcons: Record<string, React.ReactNode> = {
+  "Admin Panel": <LayoutDashboard className="size-4" aria-hidden="true" />,
+  "Account": <User className="size-4" aria-hidden="true" />,
+  "Sign in": <User className="size-4" aria-hidden="true" />,
+  "Home": <House className="size-4" aria-hidden="true" />,
+  "About": <Info className="size-4" aria-hidden="true" />,
+  "Blog": <BookOpenText className="size-4" aria-hidden="true" />,
+  "Contact": <BookUser className="size-4" aria-hidden="true" />,
+}
 
 const UserMenu = ({
   isSignedIn,
@@ -41,8 +51,9 @@ const UserMenu = ({
           <DropdownMenuItem key={item.href} asChild>
             <Link
               href={item.href}
-              className={buttonVariants({ variant: "ghost", size: "sm", className: "cursor-pointer" })}
+              className={buttonVariants({ variant: "ghost", size: "sm", className: "cursor-pointer justify-start pl-8" })}
             >
+              {menuIcons[item.title] || <User className="size-4" aria-hidden="true" />}
               {item.title}
             </Link>
           </DropdownMenuItem>
@@ -52,7 +63,7 @@ const UserMenu = ({
           <DropdownMenuItem asChild>
             <Link
               href={routes.admin.dashboard}
-              className={buttonVariants({ variant: "ghost", size: "sm", className: "cursor-pointer" })}
+              className={buttonVariants({ variant: "ghost", size: "sm", className: "cursor-pointer justify-start pl-8" })}
             >
               <LayoutDashboard className="size-4" aria-hidden="true" />
               Admin Panel
@@ -62,7 +73,7 @@ const UserMenu = ({
         <DropdownMenuItem asChild>
           <Link
             href={routes.storefront.account}
-            className={buttonVariants({ variant: "ghost", size: "sm", className: "cursor-pointer" })}
+            className={buttonVariants({ variant: "ghost", size: "sm", className: "cursor-pointer justify-start pl-8" })}
           >
             <User className="size-4" aria-hidden="true" />
             {isSignedIn ? "Account" : "Sign in"}
@@ -73,7 +84,7 @@ const UserMenu = ({
             <SignOutButton
               fullWidth={true}
               variant="ghost"
-              className={buttonVariants({ variant: "ghost", size: "sm", className: "cursor-pointer rounded-sm" })}
+              className={buttonVariants({ variant: "ghost", size: "sm", className: "cursor-pointer rounded-sm justify-start pl-8" })}
             />
           </div>
         )}

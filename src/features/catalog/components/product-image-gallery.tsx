@@ -93,7 +93,7 @@ export function ProductImageGallery({ images, productName }: ProductImageGallery
                   width={80}
                   height={80}
                   sizes="80px"
-                  className="h-full w-full object-contain"
+                  className="h-full w-full object-cover"
                 />
               ) : null}
             </button>
