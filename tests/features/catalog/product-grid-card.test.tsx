@@ -94,4 +94,17 @@ describe("ProductGridCard media behavior", () => {
       expect(screen.getByRole("img", { name: /daily face wash image placeholder/i })).toBeInTheDocument();
     });
   });
+
+  it("renders an add to cart button while keeping the card as a single link", () => {
+    render(<ProductGridCard product={makeProduct()} />);
+
+    expect(screen.getByRole("button", { name: /add to cart/i })).toBeInTheDocument();
+    expect(screen.getAllByRole("link")).toHaveLength(1);
+  });
+
+  it("disables the add to cart button when the product is out of stock", () => {
+    render(<ProductGridCard product={makeProduct({ inventoryQuantity: 0 })} />);
+
+    expect(screen.getByRole("button", { name: /out of stock/i })).toBeDisabled();
+  });
 });

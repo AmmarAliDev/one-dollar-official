@@ -290,6 +290,14 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 	- fallback to API refresh when an event omits cart detail
 - The mobile cart button (`src/features/cart/components/mobile-cart-button.tsx`) consumes this shared state so cart count remains consistent across mobile and desktop entry points without changing cart business logic.
 
+## Cart Drawer Strategy
+
+- The cart drawer is a shadcn `Drawer` (vaul-based, right side) mounted once in the storefront layout (`src/app/(storefront)/layout.tsx`) so it is available from every storefront page.
+- A tiny global store (`src/features/cart/cart-drawer-state.ts`) exposes `openCartDrawer()` / `closeCartDrawer()` / `useCartDrawerState()`, mirroring the `cart-count-state` seam so any component (header trigger, mobile cart button, product card buttons) can open the drawer without prop drilling.
+- `src/features/cart/components/cart-drawer.tsx` renders the panel: header (title + close), scrollable line items with `CartItemQuantityControls` (adjust/remove), and a footer with subtotal, `View full cart`, and `Checkout`. It loads from `GET /api/cart`, stays in sync via `cart:changed`, and disables checkout when any line exceeds available stock.
+- Product cards (`ProductGridCard`, `ProductRelatedGrid`) render `ProductCardAddToCart` as an absolutely positioned sibling (`z-10`) of the card's wrapping `Link`, so the card remains a single link while the button is independently clickable; clicking it posts to `POST /api/cart` (quantity 1, product slug) and opens the drawer.
+- The old `CartMiniCart` header dropdown was removed; the desktop `CartDrawerTrigger` and the mobile `MobileCartButton` both open the drawer.
+
 ## Review Workflow Strategy
 
 - `src/features/reviews/service.ts` is the customer review service layer for submission eligibility, account listing, and safe status mapping.

@@ -340,7 +340,7 @@ export function CheckoutPageClient({
                 name: "notes",
                 type: "textarea",
                 label: "Order notes",
-                description: "Optional delivery instructions.",
+                description: "Delivery instructions.",
                 placeholder: "Any delivery instructions",
                 rows: 3,
               }}

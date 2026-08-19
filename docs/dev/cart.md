@@ -86,7 +86,9 @@ Stock is validated in two places:
 - PDP in-cart state includes a cart icon + badge count using the same count source (`cart.itemCount`) pattern as header cart surfaces.
 - PDP listens to global `cart:changed` events and reverts from quantity controls back to `Add to Cart` immediately when the active variant is removed or its quantity reaches zero.
 - Cart page (`/cart`) now renders real line items and order summary
-- Header mini-cart shows count + quick preview + subtotal
+- Header cart trigger (desktop) and mobile cart button both open the shared right-side cart drawer (shadcn `Drawer`) instead of the old mini-cart dropdown; the drawer contains line items with `CartItemQuantityControls` (adjust/remove) and a footer with subtotal, `View full cart`, and `Checkout`
+- Product card `Add to Cart` buttons (category grid, search results, related products) call `POST /api/cart` with `productSlug` + quantity 1, then open the cart drawer; the PDP keeps its existing in-cart quantity-controls + toast UX
+- The cart drawer refreshes from `GET /api/cart` when opened with no local cart data, and otherwise stays in sync via `cart:changed` events
 - Header mobile cart button now shows the same total cart item count via shared client state
 - Cart loading/error routes are implemented with dedicated states
 

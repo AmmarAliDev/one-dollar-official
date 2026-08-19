@@ -17,6 +17,7 @@ export const testIds = {
     categoryCard: (slug: string) => `storefront-category-card-${toStableSegment(slug)}`,
     productGrid: "storefront-product-grid",
     productCard: (slug: string) => `storefront-product-card-${toStableSegment(slug)}`,
+    cardAddToCart: (slug: string) => `storefront-card-add-to-cart-${toStableSegment(slug)}`,
     productOverview: "storefront-product-overview",
     addToCart: "storefront-add-to-cart",
     cartContent: "storefront-cart-content",
