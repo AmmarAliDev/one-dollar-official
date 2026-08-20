@@ -210,7 +210,7 @@ export function ProductAddToCart({
 
       {isAvailable ? (
         <p className="text-muted-foreground text-center text-xs">
-          Free delivery on orders over PKR 1,500 in Karachi.
+          Free delivery on orders over Rs. 1,500 in Karachi.
         </p>
       ) : (
         <p className="text-muted-foreground text-center text-xs">

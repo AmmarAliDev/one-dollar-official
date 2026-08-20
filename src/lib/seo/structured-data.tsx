@@ -34,7 +34,7 @@ export function generateProductJsonLd({
   description,
   image,
   price,
-  currency = "PKR",
+  currency = "Rs.",
   url,
   sku,
 }: {

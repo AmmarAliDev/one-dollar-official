@@ -80,6 +80,12 @@
 - Use `ConfirmationDialog` for destructive or high-impact actions instead of browser-native confirm prompts.
 - Use `PriceDisplay` and `Badge` instead of ad-hoc inline styling for storefront metadata.
 
+### Currency display convention
+
+- Always display prices with the `Rs.` symbol (see `formatPrice` in `src/lib/currency.ts`).
+- Keep the ISO code `PKR` only for data values: the Prisma `Currency` enum, DB seed rows, analytics/GA4 + Meta Pixel event payloads, and schema.org `priceCurrency` fields.
+- Never use `PKR` in user-facing labels, copy, or price strings.
+
 ### Search Recent History Pattern
 
 - Storefront search recent history should be local-first (browser-scoped), not server-coupled.

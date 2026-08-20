@@ -98,7 +98,7 @@ export function buildInvoicePdf(order: OrderDetails) {
   });
   const itemLines = order.items.flatMap((item) => [
     `${item.productName}${item.variantTitle ? ` (${item.variantTitle})` : ""}`,
-    `SKU: ${item.sku ?? "N/A"} | Qty: ${item.quantity} | Unit: PKR ${item.unitPrice.toLocaleString("en-PK")} | Line: PKR ${item.subtotal.toLocaleString("en-PK")}`,
+    `SKU: ${item.sku ?? "N/A"} | Qty: ${item.quantity} | Unit: Rs. ${item.unitPrice.toLocaleString("en-PK")} | Line: Rs. ${item.subtotal.toLocaleString("en-PK")}`,
   ]);
 
   const address = [
@@ -123,9 +123,9 @@ export function buildInvoicePdf(order: OrderDetails) {
     "Items",
     ...itemLines,
     "",
-    `Subtotal: PKR ${order.subtotal.toLocaleString("en-PK")}`,
-    `Shipping: PKR ${order.shipping.toLocaleString("en-PK")}`,
-    `Total: PKR ${order.total.toLocaleString("en-PK")}`,
+    `Subtotal: Rs. ${order.subtotal.toLocaleString("en-PK")}`,
+    `Shipping: Rs. ${order.shipping.toLocaleString("en-PK")}`,
+    `Total: Rs. ${order.total.toLocaleString("en-PK")}`,
     `Payment: ${order.paymentMethodLabel}`,
   ];
 

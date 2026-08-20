@@ -245,7 +245,7 @@ describe("catalog listing service", () => {
     expect(listing?.products).toHaveLength(0);
   });
 
-  it("builds One Dollar listing from derived <= 280 PKR membership", async () => {
+  it("builds One Dollar listing from derived <= 280 Rs. membership", async () => {
     mockListAllPublishedProducts.mockResolvedValue([
       makeProductRecord({ id: "p1", slug: "eligible-100", price: 100 }),
       makeProductRecord({ id: "p2", slug: "eligible-280", price: 280 }),

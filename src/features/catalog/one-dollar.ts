@@ -21,11 +21,11 @@ export function createOneDollarVirtualCategory(productCount: number): CatalogCat
     id: ONE_DOLLAR_CATEGORY_ID,
     name: ONE_DOLLAR_CATEGORY_LABEL,
     slug: ONE_DOLLAR_CATEGORY_SLUG,
-    description: `All published products priced at PKR ${ONE_DOLLAR_MAX_PRICE_PKR} or less.`,
+    description: `All published products priced at Rs. ${ONE_DOLLAR_MAX_PRICE_PKR} or less.`,
     cardImageUrl: ONE_DOLLAR_CATEGORY_IMAGE_URL,
     seoTitle: "One Dollar Deals in Pakistan",
     seoDescription:
-      "Shop One Dollar picks across all categories. This special storefront collection automatically includes published products priced at PKR 280 or less.",
+      "Shop One Dollar picks across all categories. This special storefront collection automatically includes published products priced at Rs. 280 or less.",
     productCount,
     href: routes.storefront.category(ONE_DOLLAR_CATEGORY_SLUG),
   };

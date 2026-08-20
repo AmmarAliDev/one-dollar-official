@@ -71,7 +71,7 @@ describe("admin revenue service", () => {
       refundedDeliveredOrdersExcluded: 1,
     });
 
-    expect(report.currency).toBe("PKR");
+    expect(report.currency).toBe("Rs.");
     expect(report.recognizedRevenue).toMatchObject({
       total: 12000,
       orderCount: 3,

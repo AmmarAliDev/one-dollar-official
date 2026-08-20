@@ -55,7 +55,7 @@ export type AdminRevenueOrderTotalsSummary = {
 };
 
 export type AdminRevenueReport = {
-  currency: "PKR";
+  currency: "Rs.";
   recognizedRevenue: RevenueSnapshot;
   periods: AdminRevenuePeriodSummary[];
   refundedDeliveredOrdersExcluded: number;
@@ -112,7 +112,7 @@ export function buildAdminRevenueReport(input: {
   };
 
   return {
-    currency: "PKR",
+    currency: "Rs.",
     recognizedRevenue: buildRevenueSnapshot(input.allTimeAggregate),
     periods,
     refundedDeliveredOrdersExcluded: input.refundedDeliveredOrdersExcluded,

@@ -72,7 +72,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
         }
       />
 
-      <div className="grid gap-8 lg:grid-cols-[18rem_minmax(0,1fr)]">
+      <div className="grid gap-8 lg:grid-cols-[15rem_minmax(0,1fr)]">
         <aside className="lg:sticky lg:top-28 lg:self-start">
           <CategoryListingFilters listing={listing} />
         </aside>

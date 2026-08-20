@@ -42,7 +42,7 @@ export function buildHomepageFallbackSections(): HomepageSection[] {
       id: "fallback-one-dollar",
       kind: "one-dollar",
       title: "One Dollar deals",
-      description: `Products priced at PKR ${ONE_DOLLAR_MAX_PRICE_PKR} or less — the best value picks across all categories.`,
+      description: `Products priced at Rs. ${ONE_DOLLAR_MAX_PRICE_PKR} or less — the best value picks across all categories.`,
       displayOrder: 20,
       products: [],
       ctaLabel: "View all One Dollar deals",

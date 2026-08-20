@@ -14,7 +14,7 @@
  * keyed by the category slug.
  *
  * Deferred: Dynamic personalisation based on live product data
- * (e.g. "over 40 products starting at PKR X") is deferred until the
+ * (e.g. "over 40 products starting at Rs. X") is deferred until the
  * storefront fully reads from the database. See docs/ai/open-tasks.md.
  */
 
@@ -159,7 +159,7 @@ const CATEGORY_TEMPLATES: Record<string, CategoryTemplate> = {
       {
         question: "Are prices listed in Pakistani Rupees?",
         answer:
-          "Yes. All prices are shown in PKR (Pakistani Rupees) and include applicable taxes. No hidden charges are added at checkout beyond standard delivery fees.",
+          "Yes. All prices are shown in Rs. (Pakistani Rupees) and include applicable taxes. No hidden charges are added at checkout beyond standard delivery fees.",
       },
       {
         question: "Do you carry local Pakistani brands?",
@@ -261,9 +261,9 @@ function buildGenericTemplate(category: CatalogCategory): CategoryTemplate {
           "Unused, sealed items can be returned within 7 days of delivery. Contact our support team if your order arrives damaged or incorrect.",
       },
       {
-        question: "Are prices in PKR?",
+        question: "Are prices in Rs.?",
         answer:
-          "Yes. All prices are shown in Pakistani Rupees (PKR) and include applicable taxes. No hidden fees are added at checkout beyond standard delivery charges.",
+          "Yes. All prices are shown in Pakistani Rupees (Rs.) and include applicable taxes. No hidden fees are added at checkout beyond standard delivery charges.",
       },
     ],
     blogTopics: [

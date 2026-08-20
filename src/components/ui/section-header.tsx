@@ -30,17 +30,19 @@ export function SectionHeader({
       <div className="space-y-3">
         {eyebrow ? <Badge variant="secondary">{eyebrow}</Badge> : null}
         <div className="space-y-2">
-          <TitleTag
-            id={titleId}
-            className="text-2xl text-foreground font-semibold tracking-tight text-balance sm:text-3xl"
-          >
-            {title}
-          </TitleTag>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <TitleTag
+              id={titleId}
+              className="text-2xl text-foreground font-semibold tracking-tight text-balance sm:text-3xl"
+            >
+              {title}
+            </TitleTag>
+            {actions ? <div className="flex shrink-0 flex-wrap gap-2 justify-end">{actions}</div> : null}
+          </div>
           {description ? <p className="text-primary text-sm sm:text-base">{description}</p> : null}
         </div>
       </div>
 
-      {actions ? <div className="flex shrink-0 flex-wrap gap-2 justify-end">{actions}</div> : null}
     </div>
   );
 }

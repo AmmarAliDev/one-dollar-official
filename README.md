@@ -1,6 +1,6 @@
 # One Dollar
 
-Production-ready **single-vendor e-commerce application** built with **Next.js 16 App Router**, **TypeScript**, **Tailwind CSS 4**, and **shadcn/ui-compatible patterns**. Targets the Pakistani market (PKR, Karachi-first).
+Production-ready **single-vendor e-commerce application** built with **Next.js 16 App Router**, **TypeScript**, **Tailwind CSS 4**, and **shadcn/ui-compatible patterns**. Targets the Pakistani market (Rs., Karachi-first).
 
 ---
 

@@ -354,7 +354,7 @@ export function AdminProductForm({ mode, action, returnTo, submitLabel, categori
                 id: "product-price",
                 name: "price",
                 type: "number",
-                label: "Price (PKR)",
+                label: "Price (Rs.)",
                 min: 0,
                 step: 1,
                 required: true,
@@ -368,7 +368,7 @@ export function AdminProductForm({ mode, action, returnTo, submitLabel, categori
                 id: "product-compare-price",
                 name: "comparePrice",
                 type: "number",
-                label: "Compare price (PKR)",
+                label: "Compare price (Rs.)",
                 min: 0,
                 step: 1,
               }}
