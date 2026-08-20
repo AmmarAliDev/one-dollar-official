@@ -4,7 +4,6 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const pushMock = vi.fn();
 const notifySuccessMock = vi.fn();
 const notifyErrorMock = vi.fn();
 const dispatchCartChangedMock = vi.fn();
@@ -76,12 +75,6 @@ function mockCartFetchFlow({
   );
 }
 
-vi.mock("next/navigation", () => ({
-  useRouter: () => ({
-    push: pushMock,
-  }),
-}));
-
 vi.mock("@/lib/notify", () => ({
   notify: {
     success: notifySuccessMock,
@@ -101,9 +94,8 @@ vi.mock("@/features/cart/client-events", async (importOriginal) => {
   };
 });
 
-describe("product add-to-cart mobile toast UX", () => {
+describe("product add-to-cart", () => {
   beforeEach(() => {
-    pushMock.mockReset();
     notifySuccessMock.mockReset();
     notifyErrorMock.mockReset();
     dispatchCartChangedMock.mockReset();
@@ -116,23 +108,8 @@ describe("product add-to-cart mobile toast UX", () => {
     vi.unstubAllGlobals();
   });
 
-  it("shows mobile checkout CTA action and routes to checkout from toast action", async () => {
+  it("does not show a toast when adding to cart", async () => {
     const user = userEvent.setup();
-
-    vi.stubGlobal(
-      "matchMedia",
-      vi.fn().mockImplementation(() => ({
-        matches: true,
-        media: "(max-width: 767px)",
-        onchange: null,
-        addEventListener: vi.fn(),
-        removeEventListener: vi.fn(),
-        addListener: vi.fn(),
-        removeListener: vi.fn(),
-        dispatchEvent: vi.fn(),
-      })),
-    );
-
     const { ProductAddToCart } = await import("@/features/catalog/components/product-add-to-cart");
 
     render(
@@ -149,57 +126,10 @@ describe("product add-to-cart mobile toast UX", () => {
 
     await waitFor(() => {
       expect(dispatchCartChangedMock).toHaveBeenCalledTimes(1);
-      expect(notifySuccessMock).toHaveBeenCalledTimes(1);
     });
 
-    const toastOptions = notifySuccessMock.mock.calls[0]?.[2];
-
-    expect(toastOptions?.duration).toBe(5000);
-    expect(toastOptions?.action?.label).toBe("Proceed to Checkout");
-
-    toastOptions?.action?.onClick?.({} as never);
-    expect(pushMock).toHaveBeenCalledWith("/checkout");
-  });
-
-  it("keeps desktop add-to-cart toast without checkout CTA", async () => {
-    const user = userEvent.setup();
-
-    vi.stubGlobal(
-      "matchMedia",
-      vi.fn().mockImplementation(() => ({
-        matches: false,
-        media: "(max-width: 767px)",
-        onchange: null,
-        addEventListener: vi.fn(),
-        removeEventListener: vi.fn(),
-        addListener: vi.fn(),
-        removeListener: vi.fn(),
-        dispatchEvent: vi.fn(),
-      })),
-    );
-
-    const { ProductAddToCart } = await import("@/features/catalog/components/product-add-to-cart");
-
-    render(
-      <ProductAddToCart
-        productSlug="surface-cleaner"
-        optionId={undefined}
-        sku="surface-cleaner-default"
-        productName="Surface Cleaner"
-        isAvailable={true}
-      />,
-    );
-
-    await user.click(screen.getByRole("button", { name: /add to cart/i }));
-
-    await waitFor(() => {
-      expect(notifySuccessMock).toHaveBeenCalledTimes(1);
-    });
-
-    const toastOptions = notifySuccessMock.mock.calls[0]?.[2];
-
-    expect(toastOptions?.duration).toBe(5000);
-    expect(toastOptions?.action).toBeUndefined();
+    expect(notifySuccessMock).not.toHaveBeenCalled();
+    expect(notifyErrorMock).not.toHaveBeenCalled();
   });
 
   it("switches from add-to-cart button to quantity controls after add", async () => {

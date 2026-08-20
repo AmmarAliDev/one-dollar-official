@@ -43,7 +43,7 @@ export function ProductRelatedGrid({ products }: ProductRelatedGridProps) {
                         backgroundPosition: "center",
                       }}
                     />
-                    <div className="p-4 space-y-2 pb-20">
+                    <div className="p-4 space-y-2 pb-4">
                       <p className="text-sm font-semibold line-clamp-2 group-hover:text-primary transition-colors">
                         {product.name}
                       </p>
@@ -60,7 +60,7 @@ export function ProductRelatedGrid({ products }: ProductRelatedGridProps) {
                   productSlug={product.slug}
                   productName={product.name}
                   isAvailable={product.inventoryQuantity > 0}
-                  className="absolute inset-x-3 bottom-3 z-10"
+                  className="absolute right-3 bottom-3 z-10"
                 />
               </div>
             </li>

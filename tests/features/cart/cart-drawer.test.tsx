@@ -85,6 +85,11 @@ describe("cart drawer", () => {
     expect(await screen.findByRole("heading", { name: "Shopping Cart" })).toBeInTheDocument();
     expect(await screen.findByText("Snow Spray Large")).toBeInTheDocument();
 
+    // Line item thumbnail (placeholder shown when cart item has no image)
+    expect(
+      screen.getByRole("img", { name: "Snow Spray Large image placeholder" }),
+    ).toBeInTheDocument();
+
     expect(screen.getByRole("link", { name: "View full cart" })).toHaveAttribute("href", "/cart");
     expect(screen.getByRole("link", { name: "Checkout" })).toHaveAttribute("href", "/checkout");
 

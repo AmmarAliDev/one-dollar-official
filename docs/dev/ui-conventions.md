@@ -39,6 +39,7 @@
 ### Storefront Add-to-Cart Toast Pattern
 
 - Add-to-cart success toasts use `buildAddToCartToastPayload` in `src/features/catalog/lib/add-to-cart-toast.ts` so message shape, duration, and CTA logic stay centralized and testable.
+- The PDP `ProductAddToCart` intentionally does NOT show a success toast on add (silent add-to-cart); the payload builder remains available and tested for surfaces that opt in to a toast.
 - The add-to-cart success toast duration is standardized to `5000ms` (an extra 1 second over Sonner defaults) to give users enough time to act.
 - Mobile viewports (`max-width: 767px`) add a toast action labeled `Proceed to Checkout` that routes to `/checkout`.
 - Desktop keeps the same success title/description and duration, but no action CTA, preserving current desktop interaction density.
@@ -47,7 +48,7 @@
 ## Surface Consistency Rules
 
 - Forms should rely on shared input controls (`Input`, `Textarea`, `Select`) that bind to semantic classes (`bg-background`, `text-foreground`, `border-input`, `focus:ring-ring`).
-	- Placeholder color: placeholders across `Input`/`Textarea` are standardized via the `--placeholder` token in `src/app/globals.css` and should be `#ab2f586c`. Do not set placeholder colors directly in feature components; prefer the shared token so updates remain centralized.
+	- Placeholder color: placeholders across `Input`/`Textarea` are standardized via the `--placeholder` token in `src/app/globals.css` and should be `#17171769`. Do not set placeholder colors directly in feature components; prefer the shared token so updates remain centralized.
 - Cards and table containers should keep semantic surface classes and shared elevation tokens (`--shadow-soft`, `--shadow-elevated`) for consistent depth across desktop and mobile.
 - Navigation surfaces (sidebar and mobile nav) should use semantic hover/active states (`bg-muted`, `bg-accent`, `bg-primary/*`) instead of custom ad-hoc colors.
 - Admin workspace shell layout (`AdminShell`) and navigation sidebar (`Sidebar`) explicitly bind to `bg-background` to guarantee consistent theme-aware surface coloring across light and dark modes.
@@ -162,7 +163,7 @@
   - Falls back to the relevant route (e.g. `routes.storefront.categories`) when no explicit href is supplied by the section payload.
 - Storefront-facing category and product cards must be fully clickable with one semantic wrapping `Link` per card. Do not place additional nested anchors or buttons inside those linked cards.
 - Keep card headings and key metadata inside the same wrapping link so keyboard users and crawlers get a single coherent navigation target.
-- Product cards render a compact `Add to Cart` button (`ProductCardAddToCart`) as a sibling of the wrapping link, positioned with `absolute` + `z-10` so the full card stays a single link while the button remains independently clickable. Never nest the button inside the link. Out-of-stock cards render a disabled `Out of Stock` button.
+- Product cards render a compact, icon-only `Add to Cart` button (`ProductCardAddToCart`, `size="icon"` with a `ShoppingCart` icon) as a sibling of the wrapping link, positioned with `absolute` + `z-10` so the full card stays a single link while the button remains independently clickable. Never nest the button inside the link. The accessible label is `Add to cart: {name}` when available and `Out of stock: {name}` (disabled button) when not.
 - Empty category/product payloads must render a user-safe `EmptyState` instead of a blank section or an empty carousel.
 
 ## Homepage Blog Highlights
@@ -178,7 +179,7 @@
 - Product card media is image-first: when `CatalogProductCard.imageUrl` is present and valid, render the image in the card media area using `next/image` with responsive `sizes` and fixed aspect-ratio container sizing.
 - Product card media must gracefully fall back to the existing gradient placeholder treatment (`imageLabel` + `imageTone`) when no valid image URL is available or image loading fails.
 - Keep product card media height stable (`aspect-[4/3]`) across image and fallback modes to avoid layout shift in listings and carousels.
-- The card `Add to Cart` button lives in reserved bottom padding (`pb-20`) of the card body so it never overlaps review/price text; the card wrapper uses `relative h-full` and the button uses `absolute inset-x-3 bottom-3 z-10`.
+- The card `Add to Cart` button is positioned at the bottom-right of the card body (`absolute right-3 bottom-3 z-10`) so it never overlaps price text; the card wrapper uses `relative h-full`.
 - Listing filter UI should remain query-string-based, but it should now use the shared form layer for consistent labels, validation, and reset/apply actions.
 - On mobile category pages, filter/sort controls should be exposed through a `Sheet` panel triggered by a clear `Filter and sort` button; desktop should keep the persistent sidebar card.
 - Mobile and desktop filter surfaces must share the same filter contract and URL behavior (`buildCategoryListingHref`), including resetting pagination to page 1 on apply.

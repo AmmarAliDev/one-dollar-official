@@ -29,14 +29,14 @@ function getEffectiveAllowedMax(availableQuantity: number) {
   return Math.max(1, Math.min(MAX_CART_ITEM_QUANTITY, Math.trunc(availableQuantity)));
 }
 
-function getQuantityRangeMessage(max: number) {
-  return `Please enter a quantity between 1 and ${max}.`;
-}
-
+/**
+ * Parses an integer (optionally negative) quantity. Returns null for floats,
+ * empty strings, and any other non-integer input.
+ */
 function parseWholeQuantity(value: string) {
   const trimmed = value.trim();
 
-  if (!/^\d+$/.test(trimmed)) {
+  if (!/^-?\d+$/.test(trimmed)) {
     return null;
   }
 
@@ -98,12 +98,10 @@ export function CartItemQuantityControls({
   const [pending, setPending] = useState(false);
   const [displayQuantity, setDisplayQuantity] = useState(quantity);
   const [inputValue, setInputValue] = useState(String(quantity));
-  const [validationMessage, setValidationMessage] = useState<string | null>(null);
 
   useEffect(() => {
     setDisplayQuantity(quantity);
     setInputValue(String(quantity));
-    setValidationMessage(null);
   }, [quantity]);
 
   const canDecrease = displayQuantity > 1;
@@ -140,56 +138,41 @@ export function CartItemQuantityControls({
   }
 
   /**
-   * Validate and commit a direct quantity input.
-   * Validates whole number, min 1, max effectiveAllowedMax.
-   * Does not trigger mutation if invalid or unchanged.
+   * Normalize and commit a direct quantity input.
+   * - Floats and other non-integer values keep the previous quantity and are
+   *   not committed.
+   * - Integers are clamped into [1, effectiveAllowedMax] before committing
+   *   (negative/zero → 1, above max → max).
+   * Does not trigger mutation if the resulting value is unchanged.
    */
   async function commitDirectInput() {
     const parsed = parseWholeQuantity(inputValue);
+
+    // Float or any other non-integer value: keep the previous value, don't update.
     if (parsed === null) {
-      setValidationMessage(getQuantityRangeMessage(effectiveAllowedMax));
+      setInputValue(String(displayQuantity));
       return;
     }
 
-    if (parsed < 1 || parsed > effectiveAllowedMax) {
-      setValidationMessage(getQuantityRangeMessage(effectiveAllowedMax));
-      return;
-    }
+    const committedQuantity = Math.min(Math.max(parsed, 1), effectiveAllowedMax);
 
     // Revert to current display if no change
-    if (parsed === displayQuantity) {
+    if (committedQuantity === displayQuantity) {
       setInputValue(String(displayQuantity));
-      setValidationMessage(null);
       return;
     }
-
-    setValidationMessage(null);
 
     // Commit the change via mutation
     await runMutation(
-      () => updateQuantity(cartItemId, parsed),
+      () => updateQuantity(cartItemId, committedQuantity),
       `${productName} quantity updated`,
-      parsed,
+      committedQuantity,
     );
   }
 
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const nextValue = e.target.value;
-    setInputValue(nextValue);
-
-    const parsed = parseWholeQuantity(nextValue);
-
-    if (nextValue.trim().length === 0) {
-      setValidationMessage(null);
-      return;
-    }
-
-    if (parsed === null || parsed < 1 || parsed > effectiveAllowedMax) {
-      setValidationMessage(getQuantityRangeMessage(effectiveAllowedMax));
-      return;
-    }
-
-    setValidationMessage(null);
+    // Raw input is kept as typed; normalization happens on commit (blur/Enter).
+    setInputValue(e.target.value);
   }
 
   function handleInputBlur() {
@@ -205,14 +188,13 @@ export function CartItemQuantityControls({
     }
   }
 
-  const validationMessageId = `${cartItemId}-quantity-validation`;
-
   return (
-    <div className="flex items-start gap-2">
+    <div className="flex items-center gap-1 md:gap-2">
       <Button
         type="button"
         variant="outline"
         size="icon"
+        className="max-w-7 max-h-7 shrink-0"
         onClick={() =>
           runMutation(
             () => updateQuantity(cartItemId, displayQuantity - 1),
@@ -236,23 +218,16 @@ export function CartItemQuantityControls({
           onBlur={handleInputBlur}
           onKeyDown={handleInputKeyDown}
           disabled={pending}
-          aria-invalid={Boolean(validationMessage)}
-          aria-describedby={validationMessage ? validationMessageId : undefined}
           aria-label={`Quantity for ${productName}. Minimum 1, maximum ${effectiveAllowedMax}`}
-          className="min-w-10 text-center text-sm font-medium"
+          className="max-w-14 max-h-7 p-2 text-center text-sm font-medium [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
         />
-
-        {validationMessage ? (
-          <p id={validationMessageId} className="text-destructive max-w-56 text-xs" role="alert">
-            {validationMessage}
-          </p>
-        ) : null}
       </div>
 
       <Button
         type="button"
         variant="outline"
         size="icon"
+        className="max-w-7 max-h-7 shrink-0"
         onClick={() =>
           runMutation(
             () => updateQuantity(cartItemId, displayQuantity + 1),
@@ -269,13 +244,12 @@ export function CartItemQuantityControls({
       <Button
         type="button"
         variant="ghost"
-        size="sm"
+        size="icon"
         onClick={() => runMutation(() => removeItem(cartItemId), `${productName} removed`, 0)}
         disabled={pending}
         aria-label={`Remove ${productName} from cart`}
       >
-        <Trash2 className="size-4" aria-hidden="true" />
-        Remove
+        <Trash2 className="size-5" aria-hidden="true" />
       </Button>
     </div>
   );

@@ -67,6 +67,34 @@ describe("FeaturedProductsSectionBlock", () => {
     expect(link).toContainElement(screen.getByText("Product p1"));
   });
 
+  it("renders an add-to-cart button for available products with a slug", () => {
+    render(
+      <FeaturedProductsSectionBlock
+        section={buildSection([{ ...buildProduct("p1"), slug: "p1", inventoryQuantity: 5 }])}
+      />,
+    );
+
+    const button = screen.getByRole("button", { name: "Add to cart: Product p1" });
+    expect(button).toBeInTheDocument();
+    expect(button).not.toBeDisabled();
+  });
+
+  it("renders a disabled out-of-stock add-to-cart button when inventory is zero", () => {
+    render(
+      <FeaturedProductsSectionBlock
+        section={buildSection([{ ...buildProduct("p1"), slug: "p1", inventoryQuantity: 0 }])}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Out of stock: Product p1" })).toBeDisabled();
+  });
+
+  it("omits the add-to-cart button when a product has no slug", () => {
+    render(<FeaturedProductsSectionBlock section={buildSection([buildProduct("p1")])} />);
+
+    expect(screen.queryByRole("button", { name: /add to cart/i })).not.toBeInTheDocument();
+  });
+
   it("renders a friendly empty state when products are missing", () => {
     render(<FeaturedProductsSectionBlock section={buildSection([])} />);
 

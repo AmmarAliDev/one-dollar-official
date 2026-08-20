@@ -39,14 +39,14 @@ export function ProductGridCard({ product, eagerImage = false }: ProductGridCard
   const isAvailable = product.inventoryQuantity > 0;
 
   return (
-    <div className="group relative h-full">
+    <div className="group relative h-full border-2 !bg-card border-border/70 shadow-[var(--shadow-soft)] transition-shadow hover:shadow-md rounded-(--radius-card)">
       <Link
         href={product.href}
         className="focus-visible:ring-primary block rounded-[var(--radius-card)] focus-visible:ring-2 focus-visible:outline-none"
         data-testid={testIds.storefront.productCard(product.slug)}
       >
         <article>
-          <Card className="border-border/70 overflow-hidden shadow-[var(--shadow-soft)] transition-shadow group-hover:shadow-md">
+          <Card className="border-none bg-transparent overflow-hidden shadow-none ">
             <ProductCardMedia
               productName={product.name}
               {...(product.imageUrl ? { imageUrl: product.imageUrl } : {})}
@@ -56,7 +56,7 @@ export function ProductGridCard({ product, eagerImage = false }: ProductGridCard
               eagerImage={eagerImage}
             />
 
-            <CardContent className="space-y-2 p-3 pb-20">
+            <CardContent className="space-y-2 p-3 pb-6">
               <div className="space-y-2">
                 <div className="flex flex-wrap justify-between items-center gap-2">
                   <Badge variant={stockBadge.variant}>{stockBadge.label}</Badge>
@@ -76,9 +76,9 @@ export function ProductGridCard({ product, eagerImage = false }: ProductGridCard
                 size="sm"
               />
 
-              <div className="text-muted-foreground flex items-center justify-between gap-3 text-xs sm:text-sm">
+              {/* <div className="text-muted-foreground flex items-center justify-between gap-3 text-xs sm:text-sm">
                 <span>{getReviewSummary(product)}</span>
-              </div>
+              </div> */}
             </CardContent>
           </Card>
         </article>
@@ -88,7 +88,7 @@ export function ProductGridCard({ product, eagerImage = false }: ProductGridCard
         productSlug={product.slug}
         productName={product.name}
         isAvailable={isAvailable}
-        className="absolute inset-x-3 bottom-3 z-10"
+        className="absolute right-3 bottom-3 z-10"
       />
     </div>
   );

@@ -62,6 +62,24 @@ describe("OneDollarSectionBlock", () => {
     expect(link).toContainElement(screen.getByText("Deal d1"));
   });
 
+  it("renders an add-to-cart button for available products with a slug", () => {
+    render(
+      <OneDollarSectionBlock
+        section={buildSection([{ ...buildProduct("d1"), slug: "d1", inventoryQuantity: 3 }])}
+      />,
+    );
+
+    const button = screen.getByRole("button", { name: "Add to cart: Deal d1" });
+    expect(button).toBeInTheDocument();
+    expect(button).not.toBeDisabled();
+  });
+
+  it("omits the add-to-cart button when a product has no slug", () => {
+    render(<OneDollarSectionBlock section={buildSection([buildProduct("d1")])} />);
+
+    expect(screen.queryByRole("button", { name: /add to cart/i })).not.toBeInTheDocument();
+  });
+
   it("always shows the View All CTA when products are present", () => {
     render(<OneDollarSectionBlock section={buildSection([buildProduct("d1")])} />);
 

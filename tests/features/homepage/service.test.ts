@@ -966,4 +966,78 @@ describe("homepage CMS service", () => {
 
     expect(featuredProductsSection?.products).toHaveLength(4);
   });
+
+  it("prefers recent published catalog products over stored fallback content when sales are sparse", async () => {
+    prismaMock.homePageSection.findMany.mockResolvedValue([
+      {
+        id: "section-featured-products",
+        key: "featured-products-home",
+        title: "Featured products",
+        type: "featured-products",
+        content: {
+          description: "Top sellers",
+          products: [
+            {
+              id: "fallback-1",
+              name: "Fallback One",
+              href: "/categories/home-care/fallback-one",
+              price: 1100,
+            },
+            {
+              id: "fallback-2",
+              name: "Fallback Two",
+              href: "/categories/home-care/fallback-two",
+              price: 1200,
+            },
+            {
+              id: "fallback-3",
+              name: "Fallback Three",
+              href: "/categories/home-care/fallback-three",
+              price: 1300,
+            },
+            {
+              id: "fallback-4",
+              name: "Fallback Four",
+              href: "/categories/home-care/fallback-four",
+              price: 1400,
+            },
+          ],
+        },
+        meta: { enabled: true },
+        position: 30,
+        active: true,
+        createdAt: new Date("2026-05-04T08:00:00.000Z"),
+        updatedAt: new Date("2026-05-04T08:00:00.000Z"),
+      },
+    ]);
+
+    prismaMock.orderItem.groupBy.mockResolvedValue([
+      { productId: "product-9", _sum: { quantity: 8 }, _count: { _all: 1 } },
+    ]);
+
+    mockListPublishedProductsByIds.mockResolvedValue([buildStorefrontProductRecord("product-9")]);
+    // Recent published catalog products exist, so they must fill the remaining
+    // slots BEFORE the stored fallback content (fallback items carry no slug and
+    // therefore no add-to-cart affordance).
+    mockListAllPublishedProducts.mockResolvedValue([
+      buildStorefrontProductRecord("product-10"),
+      buildStorefrontProductRecord("product-11"),
+      buildStorefrontProductRecord("product-12"),
+    ]);
+
+    const result = await getHomepageContent();
+    const featuredProductsSection = result.sections.find((section) => section.kind === "featured-products");
+
+    expect(featuredProductsSection).toMatchObject({
+      kind: "featured-products",
+      products: [
+        { id: "product-9", badge: "Best seller" },
+        { id: "product-10", slug: "product-product-10" },
+        { id: "product-11", slug: "product-product-11" },
+        { id: "product-12", slug: "product-product-12" },
+      ],
+    });
+
+    expect(featuredProductsSection?.products).toHaveLength(4);
+  });
 });

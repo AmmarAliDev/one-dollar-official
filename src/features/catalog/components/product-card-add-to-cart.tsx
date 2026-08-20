@@ -86,7 +86,7 @@ export function ProductCardAddToCart({
   return (
     <Button
       type="button"
-      size="sm"
+      size="icon"
       className={cn(className)}
       disabled={!isAvailable || pending}
       onClick={handleAddToCart}
@@ -95,7 +95,6 @@ export function ProductCardAddToCart({
       data-testid={testIds.storefront.cardAddToCart(productSlug)}
     >
       <ShoppingCart className="size-4" aria-hidden="true" />
-      {pending ? "Adding..." : isAvailable ? "Add to Cart" : "Out of Stock"}
     </Button>
   );
 }

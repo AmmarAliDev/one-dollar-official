@@ -51,9 +51,17 @@ type CartIncludePayload = Prisma.CartGetPayload<{
         productVariant: {
           include: {
             inventory: true;
+            images: {
+              orderBy: { position: "asc" };
+              select: { url: true; alt: true };
+            };
             product: {
               include: {
                 category: true;
+                images: {
+                  orderBy: { position: "asc" };
+                  select: { url: true; alt: true };
+                };
               };
             };
           };
@@ -536,9 +544,17 @@ async function getCartWithItemsById(cartId: string, db: DatabaseExecutor) {
           productVariant: {
             include: {
               inventory: true,
+              images: {
+                orderBy: { position: "asc" },
+                select: { url: true, alt: true },
+              },
               product: {
                 include: {
                   category: true,
+                  images: {
+                    orderBy: { position: "asc" },
+                    select: { url: true, alt: true },
+                  },
                 },
               },
             },
@@ -554,6 +570,8 @@ function mapCartItem(item: CartIncludePayload["items"][number]): CartItemSummary
   const normalizedAvailableQuantity = Number.isFinite(availableQuantity) ? availableQuantity : MAX_CART_ITEM_QUANTITY;
   const productSlug = item.productVariant.product.slug;
   const categorySlug = item.productVariant.product.category?.slug ?? "categories";
+  const primaryImage =
+    item.productVariant.images[0] ?? item.productVariant.product.images[0] ?? null;
 
   return {
     id: item.id,
@@ -568,6 +586,8 @@ function mapCartItem(item: CartIncludePayload["items"][number]): CartItemSummary
     lineSubtotal: item.unitPrice * item.quantity,
     availableQuantity: normalizedAvailableQuantity,
     href: routes.storefront.product(categorySlug, productSlug),
+    imageUrl: primaryImage?.url ?? null,
+    imageAlt: primaryImage?.alt ?? null,
   };
 }
 

@@ -190,6 +190,7 @@ describe("cart context resolution", () => {
               quantity: 2,
               unitPrice: 499,
               productVariant: {
+                images: [],
                 inventory: {
                   quantity: 8,
                   reserved: 0,
@@ -395,6 +396,7 @@ describe("cart context resolution", () => {
                 sku: "CFC-900ML-001",
                 title: null,
                 compareAtPrice: null,
+                images: [],
                 inventory: {
                   quantity: 20,
                   reserved: 0,
@@ -403,6 +405,7 @@ describe("cart context resolution", () => {
                 product: {
                   name: "Citrus Floor Cleaner",
                   slug: "citrus-floor-cleaner-900ml",
+                  images: [],
                   category: {
                     slug: "home-care",
                   },
@@ -516,6 +519,7 @@ describe("cart context resolution", () => {
                 sku: "FP-001",
                 title: "Default",
                 compareAtPrice: null,
+                images: [],
                 inventory: {
                   quantity: 15,
                   reserved: 0,
@@ -524,6 +528,7 @@ describe("cart context resolution", () => {
                 product: {
                   name: "Fresh Product",
                   slug: "fresh-product",
+                  images: [],
                   category: {
                     slug: "fresh-category",
                   },

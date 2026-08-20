@@ -86,8 +86,12 @@ Stock is validated in two places:
 - PDP in-cart state includes a cart icon + badge count using the same count source (`cart.itemCount`) pattern as header cart surfaces.
 - PDP listens to global `cart:changed` events and reverts from quantity controls back to `Add to Cart` immediately when the active variant is removed or its quantity reaches zero.
 - Cart page (`/cart`) now renders real line items and order summary
+- Cart line items (drawer + cart page) show a product thumbnail on the left via `CartItemThumbnail` (`src/features/cart/components/cart-item-thumbnail.tsx`); it renders `next/image` when a safe URL exists, otherwise a placeholder, and links to the product page
+- `CartItemSummary` carries `imageUrl`/`imageAlt` populated by the cart service (variant image first, then product image, both ordered by `position`; `null` when none exist)
 - Header cart trigger (desktop) and mobile cart button both open the shared right-side cart drawer (shadcn `Drawer`) instead of the old mini-cart dropdown; the drawer contains line items with `CartItemQuantityControls` (adjust/remove) and a footer with subtotal, `View full cart`, and `Checkout`
-- Product card `Add to Cart` buttons (category grid, search results, related products) call `POST /api/cart` with `productSlug` + quantity 1, then open the cart drawer; the PDP keeps its existing in-cart quantity-controls + toast UX
+- The homepage (`src/app/page.tsx`) lives OUTSIDE the `(storefront)` route group and duplicates the storefront shell (AppHeader/main/AppFooter), so it ALSO mounts `<CartDrawer />` — without it the drawer state opens but no panel renders until navigating to a `(storefront)` page
+- Product card `Add to Cart` buttons (category grid, search results, related products, homepage featured-products/one-dollar carousels) call `POST /api/cart` with `productSlug` + quantity 1, then open the cart drawer; the PDP keeps its existing in-cart quantity-controls UX (no success toast on add)
+- Homepage featured products prefer real catalog products (with slugs, so add-to-cart works) over placeholder fallback content — `resolveHomepageFeaturedProducts` backfills from recent published products BEFORE the CMS/fallback items
 - The cart drawer refreshes from `GET /api/cart` when opened with no local cart data, and otherwise stays in sync via `cart:changed` events
 - Header mobile cart button now shows the same total cart item count via shared client state
 - Cart loading/error routes are implemented with dedicated states
@@ -98,12 +102,10 @@ The quantity control component (`src/features/cart/components/cart-item-quantity
 
 - Quantity is displayed in an editable `<Input type="number">` field so users can type a value directly
 - Plus and minus buttons remain functional alongside the input for quick adjustments
-- Direct input validates locally on each `onChange` event for immediate feedback:
-  - Must be a whole number
-  - Must be between `1` and the effective allowed max
-  - Effective allowed max is `min(availableQuantity, 99)` to align with server mutation rules
-  - When out of range, the control shows an inline validation message: `Please enter a quantity between 1 and {max}.`
-  - Invalid values are not committed; users must correct the value before blur/Enter commit can run
+- Direct input normalizes on commit (blur/Enter); no inline validation errors are shown:
+  - Must be a whole number; floats and any other non-integer values keep the previous quantity and are not committed
+  - Negative integers (and `0`) are clamped up to `1` and committed
+  - Effective allowed max is `min(availableQuantity, 99)` to align with server mutation rules; values above it are clamped down and committed
   - Input that equals the current quantity is not committed to avoid unnecessary API calls
 - Commit paths:
   - Blur: triggers `commitDirectInput()` when user leaves the field

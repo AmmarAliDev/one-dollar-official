@@ -8,7 +8,7 @@ Use this as the quick implementation map for future AI prompts. Each section des
 
 - Homepage with section-based rendering and admin-manageable content resolution; featured categories section uses a responsive shadcn-compatible carousel with empty-state fallback
 - Homepage featured item contracts now support optional media fields (`slug`, category `cardImageUrl`, product `images[]`) with backward-compatible fallbacks to placeholder cards when media is absent
-- Homepage featured-products section is now sales-driven: it ranks products by summed `OrderItem.quantity` across `CONFIRMED`/`PACKED`/`SHIPPED`/`DELIVERED` orders, filters through published storefront visibility rules, and fills sparse-data gaps from stored fallback picks plus recent published catalog items
+- Homepage featured-products section is now sales-driven: it ranks products by summed `OrderItem.quantity` across `CONFIRMED`/`PACKED`/`SHIPPED`/`DELIVERED` orders, filters through published storefront visibility rules, and fills sparse-data gaps from recent published catalog products first (so cards keep add-to-cart), then stored fallback picks
 - Category listing routes and product detail routes with SEO metadata support; related products grid (`ProductRelatedGrid`) renders product card images directly via `backgroundImage: url(${product.imageUrl})` cover style
 - Database-backed catalog visibility rules (published categories/products only; approved reviews only)
 - Storefront search with API transport seam and adapter-ready backend integration point
@@ -18,6 +18,8 @@ Use this as the quick implementation map for future AI prompts. Each section des
 
 - Guest cart token persistence with guest-to-auth merge
 - Live cart operations and stock validation endpoints
+- Right-side cart drawer (shadcn `Drawer`/vaul) opened by header trigger, mobile cart button, and product-card add-to-cart buttons; line items show thumbnails (`CartItemThumbnail`) and quantity controls; mounted in the `(storefront)` layout and on the root homepage
+- Product-card `Add to Cart` buttons on catalog grids, related products, and homepage featured-products/one-dollar carousels post to `POST /api/cart` and open the drawer; the PDP adds silently (no success toast)
 - Checkout flow with Karachi-only shipping validation and fixed shipping fee calculations
 - COD payment provider active through pluggable checkout payment contract
 - Transactional order placement with stock revalidation, snapshots, and audit logging

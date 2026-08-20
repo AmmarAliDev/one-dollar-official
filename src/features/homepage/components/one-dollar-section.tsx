@@ -14,6 +14,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { PageContainer } from "@/components/ui/page-container";
 import { PriceDisplay } from "@/components/ui/price-display";
 import { SectionHeader } from "@/components/ui/section-header";
+import { ProductCardAddToCart } from "@/features/catalog/components/product-card-add-to-cart";
 
 import Image from "next/image";
 import type { OneDollarSection } from "../types";
@@ -56,54 +57,65 @@ export function OneDollarSectionBlock({ section }: OneDollarSectionProps) {
                 const productKey = product.slug ?? product.id;
                 return (
                   <CarouselItem key={product.id} className={HOMEPAGE_CAROUSEL_ITEM_CLASS}>
-                    <Link
-                      href={product.href}
-                      className="group focus-visible:ring-ring block h-full rounded-lg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
-                      aria-label={`View ${product.name}`}
-                    >
-                      <Card className="h-full transition-transform duration-200 group-hover:-translate-y-0.5">
-                        <CardHeader className="space-y-1 p-0">
-                          <div className="relative overflow-hidden rounded-lg mb-4" aria-hidden="true">
-                            {primary ? (
-                              <Image
-                                src={primary.url}
-                                alt={primary.alt ?? product.name}
-                                height={214}
-                                width={365}
-                                sizes="(max-width: 639px) 85vw, (max-width: 767px) 50vw, (max-width: 1023px) 33vw, (max-width: 1279px) 25vw, (max-width: 1535px) 20vw, 17vw"
-                                className="h-54 w-full object-cover"
-                                data-testid={`storefront-product-card-image-${productKey}`}
+                    <div className="group relative h-full">
+                      <Link
+                        href={product.href}
+                        className="focus-visible:ring-ring block h-full rounded-lg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                        aria-label={`View ${product.name}`}
+                      >
+                        <Card className="h-full transition-transform duration-200 group-hover:-translate-y-0.5">
+                          <CardHeader className="space-y-1 p-0">
+                            <div className="relative overflow-hidden rounded-lg mb-4" aria-hidden="true">
+                              {primary ? (
+                                <Image
+                                  src={primary.url}
+                                  alt={primary.alt ?? product.name}
+                                  height={214}
+                                  width={365}
+                                  sizes="(max-width: 639px) 85vw, (max-width: 767px) 50vw, (max-width: 1023px) 33vw, (max-width: 1279px) 25vw, (max-width: 1535px) 20vw, 17vw"
+                                  className="h-54 w-full object-cover"
+                                  data-testid={`storefront-product-card-image-${productKey}`}
+                                />
+                              ) : (
+                                <div
+                                  className="flex h-54 rounded-lg w-full items-center justify-center bg-linear-to-br from-slate-100 via-slate-200 to-slate-100 text-xs font-medium uppercase tracking-[0.16em] text-slate-600"
+                                  data-testid={`storefront-product-card-fallback-${productKey}`}
+                                >
+                                  Product preview
+                                </div>
+                              )}
+                            </div>
+                          </CardHeader>
+                          <CardContent className="space-y-2 p-3 pt-1 pb-4">
+                            <div className="flex items-center justify-between gap-4">
+                              <CardTitle className="text-base">{product.name}</CardTitle>
+                              <ArrowRight
+                                className="text-muted-foreground size-4 transition-transform group-hover:translate-x-1"
+                                aria-hidden="true"
                               />
-                            ) : (
-                              <div
-                                className="flex h-54 rounded-lg w-full items-center justify-center bg-linear-to-br from-slate-100 via-slate-200 to-slate-100 text-xs font-medium uppercase tracking-[0.16em] text-slate-600"
-                                data-testid={`storefront-product-card-fallback-${productKey}`}
-                              >
-                                Product preview
-                              </div>
-                            )}
-                          </div>
-                        </CardHeader>
-                        <CardContent className="space-y-2 p-3 pt-1">
-                          <div className="flex items-center justify-between gap-4">
-                            <CardTitle className="text-base">{product.name}</CardTitle>
-                            <ArrowRight
-                              className="text-muted-foreground size-4 transition-transform group-hover:translate-x-1"
-                              aria-hidden="true"
-                            />
-                          </div>
+                            </div>
 
-                          {product.description ? (
-                            <CardDescription>{product.description}</CardDescription>
-                          ) : null}
-                          <PriceDisplay
-                            amount={product.price}
-                            size="sm"
-                            {...(typeof product.compareAt === "number" ? { compareAt: product.compareAt } : undefined)}
-                          />
-                        </CardContent>
-                      </Card>
-                    </Link>
+                            {product.description ? (
+                              <CardDescription>{product.description}</CardDescription>
+                            ) : null}
+                            <PriceDisplay
+                              amount={product.price}
+                              size="sm"
+                              {...(typeof product.compareAt === "number" ? { compareAt: product.compareAt } : undefined)}
+                            />
+                          </CardContent>
+                        </Card>
+                      </Link>
+
+                      {product.slug ? (
+                        <ProductCardAddToCart
+                          productSlug={product.slug}
+                          productName={product.name}
+                          isAvailable={(product.inventoryQuantity ?? 1) > 0}
+                          className="absolute right-3 bottom-3 z-10"
+                        />
+                      ) : null}
+                    </div>
                   </CarouselItem>
                 )
               })}

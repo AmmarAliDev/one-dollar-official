@@ -26,6 +26,7 @@ import { AppError } from "@/lib/errors/app-error";
 import { toUserMessage } from "@/lib/errors/error-messages";
 
 import { CartItemQuantityControls } from "./cart-item-quantity-controls";
+import { CartItemThumbnail } from "./cart-item-thumbnail";
 
 type CartApiPayload = {
   ok: boolean;
@@ -106,7 +107,7 @@ export function CartDrawer() {
       direction="right"
       shouldScaleBackground={false}
     >
-      <DrawerContent className="w-full sm:max-w-md">
+      <DrawerContent className="w-full min-w-85 sm:max-w-md">
         <DrawerHeader className="border-border/70 pr-12 border-b">
           <DrawerTitle>Shopping Cart</DrawerTitle>
           <DrawerDescription>
@@ -162,38 +163,44 @@ export function CartDrawer() {
                 const hasStockIssue = item.quantity > item.availableQuantity;
 
                 return (
-                  <li key={item.id} className="border-border/70 space-y-2 rounded-lg border p-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0 space-y-0.5">
-                        <Link
-                          href={item.href}
-                          onClick={closeCartDrawer}
-                          className="hover:text-primary line-clamp-2 text-sm font-medium"
-                        >
-                          {item.productName}
-                        </Link>
-                        <p className="text-muted-foreground text-xs">
-                          {item.optionLabel ? `${item.optionLabel} · ` : ""}SKU: {item.sku}
-                        </p>
-                      </div>
-                      <PriceDisplay amount={item.unitPrice} size="sm" className="shrink-0" />
-                    </div>
-
-                    {hasStockIssue ? (
-                      <p className="text-destructive inline-flex items-center gap-1 text-xs">
-                        <AlertTriangle className="size-3.5" aria-hidden="true" />
-                        Requested quantity exceeds available stock ({item.availableQuantity}).
-                      </p>
-                    ) : null}
-
-                    <div className="flex items-center justify-between gap-3">
-                      <CartItemQuantityControls
-                        cartItemId={item.id}
+                  <li key={item.id} className="border-border/70 rounded-lg border p-3">
+                    <div className="flex items-start gap-3">
+                      <CartItemThumbnail
                         productName={item.productName}
-                        quantity={item.quantity}
-                        availableQuantity={item.availableQuantity}
+                        imageUrl={item.imageUrl}
+                        imageAlt={item.imageAlt}
+                        href={item.href}
+                        onClick={closeCartDrawer}
                       />
-                      <PriceDisplay amount={item.lineSubtotal} size="sm" />
+
+                      <div className="min-w-0 flex-1 space-y-2">
+                        <div className="space-y-0.5">
+                          <Link
+                            href={item.href}
+                            onClick={closeCartDrawer}
+                            className="hover:text-primary line-clamp-2 text-sm font-medium"
+                          >
+                            {item.productName}
+                          </Link>
+                          <PriceDisplay amount={item.unitPrice} size="sm" className="shrink-0" />
+                        </div>
+
+                        {hasStockIssue ? (
+                          <p className="text-destructive inline-flex items-center gap-1 text-xs">
+                            <AlertTriangle className="size-3.5" aria-hidden="true" />
+                            Requested quantity exceeds available stock ({item.availableQuantity}).
+                          </p>
+                        ) : null}
+
+                        <div className="flex items-center justify-between gap-3">
+                          <CartItemQuantityControls
+                            cartItemId={item.id}
+                            productName={item.productName}
+                            quantity={item.quantity}
+                            availableQuantity={item.availableQuantity}
+                          />
+                        </div>
+                      </div>
                     </div>
                   </li>
                 );

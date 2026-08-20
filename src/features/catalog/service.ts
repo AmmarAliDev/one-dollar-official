@@ -685,10 +685,13 @@ export async function getProductBySlug(
   const variantGroups = buildVariantGroups(record.variants, variantsEnabled);
   const { reviews, summary } = buildReviewData(record.reviews);
 
-  // Use the master SKU if present, otherwise fall back to the default variant SKU
+  // Use the default variant SKU if present, otherwise fall back to the master SKU.
+  // Cart and wishlist line items are keyed by variant SKU, so keeping the detail
+  // SKU aligned with the default variant ensures PDP state (in-cart quantity
+  // controls, wishlist toggle) matches the stored line items.
   const defaultVariant =
     record.variants.find((v) => v.isDefault) ?? record.variants[0] ?? null;
-  const sku = record.masterSku ?? defaultVariant?.sku ?? "";
+  const sku = defaultVariant?.sku ?? record.masterSku ?? "";
 
   return {
     ...card,

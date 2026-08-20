@@ -59,6 +59,8 @@ describe("cart service helpers", () => {
           lineSubtotal: 700,
           availableQuantity: 9,
           href: "/categories/personal-care/hydra-care-face-wash",
+          imageUrl: null,
+          imageAlt: null,
         },
         {
           id: "item-issue",
@@ -73,6 +75,8 @@ describe("cart service helpers", () => {
           lineSubtotal: 1500,
           availableQuantity: 2,
           href: "/categories/home-care/ultra-wash-detergent-1kg",
+          imageUrl: null,
+          imageAlt: null,
         },
       ],
     };
