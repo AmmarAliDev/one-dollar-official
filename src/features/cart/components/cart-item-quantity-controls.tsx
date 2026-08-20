@@ -107,11 +107,7 @@ export function CartItemQuantityControls({
   const canDecrease = displayQuantity > 1;
   const canIncrease = displayQuantity < effectiveAllowedMax;
 
-  async function runMutation(
-    action: () => Promise<CartSummary | null>,
-    successMessage: string,
-    optimisticQuantity: number,
-  ) {
+  async function runMutation(action: () => Promise<CartSummary | null>, optimisticQuantity: number) {
     if (pending) {
       return;
     }
@@ -127,7 +123,6 @@ export function CartItemQuantityControls({
       dispatchCartChanged(cart);
       setDisplayQuantity(nextQuantity);
       setInputValue(String(nextQuantity));
-      notify.success(successMessage, "Cart updated.");
     } catch (error) {
       setDisplayQuantity(previousQuantity);
       setInputValue(String(previousQuantity));
@@ -163,11 +158,7 @@ export function CartItemQuantityControls({
     }
 
     // Commit the change via mutation
-    await runMutation(
-      () => updateQuantity(cartItemId, committedQuantity),
-      `${productName} quantity updated`,
-      committedQuantity,
-    );
+    await runMutation(() => updateQuantity(cartItemId, committedQuantity), committedQuantity);
   }
 
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -195,13 +186,7 @@ export function CartItemQuantityControls({
         variant="outline"
         size="icon"
         className="max-w-7 max-h-7 shrink-0"
-        onClick={() =>
-          runMutation(
-            () => updateQuantity(cartItemId, displayQuantity - 1),
-            `${productName} quantity updated`,
-            displayQuantity - 1,
-          )
-        }
+        onClick={() => runMutation(() => updateQuantity(cartItemId, displayQuantity - 1), displayQuantity - 1)}
         disabled={pending || !canDecrease}
         aria-label={`Decrease quantity for ${productName}`}
       >
@@ -228,13 +213,7 @@ export function CartItemQuantityControls({
         variant="outline"
         size="icon"
         className="max-w-7 max-h-7 shrink-0"
-        onClick={() =>
-          runMutation(
-            () => updateQuantity(cartItemId, displayQuantity + 1),
-            `${productName} quantity updated`,
-            displayQuantity + 1,
-          )
-        }
+        onClick={() => runMutation(() => updateQuantity(cartItemId, displayQuantity + 1), displayQuantity + 1)}
         disabled={pending || !canIncrease}
         aria-label={`Increase quantity for ${productName}`}
       >
@@ -245,7 +224,7 @@ export function CartItemQuantityControls({
         type="button"
         variant="ghost"
         size="icon"
-        onClick={() => runMutation(() => removeItem(cartItemId), `${productName} removed`, 0)}
+        onClick={() => runMutation(() => removeItem(cartItemId), 0)}
         disabled={pending}
         aria-label={`Remove ${productName} from cart`}
       >

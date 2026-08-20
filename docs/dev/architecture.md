@@ -51,7 +51,7 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 
 ## Route Groups
 
-- `(storefront)` now uses a polished shared shell via `AppHeader` + `AppFooter`
+- `(storefront)` now uses a polished shared shell via `AppHeader` + `AppFooter` + `MobileBottomNav` (mobile-only fixed bottom bar with Collections / Search / Cart / Home / Profile)
 - `(storefront)/categories` provides category discovery and listing routes through clean slugs (`/categories/[slug]`)
 - `(storefront)/categories/[slug]/[productSlug]` now provides PDP rendering with gallery, variant interactions, specifications, reviews, and related products
 - `(storefront)/wishlist` now renders authenticated wishlist entries and guest sign-in prompts
@@ -294,12 +294,13 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 
 ## Cart Drawer Strategy
 
-- The cart drawer is a shadcn `Drawer` (vaul-based, right side) mounted once in the storefront layout (`src/app/(storefront)/layout.tsx`) so it is available from every storefront page; the homepage (`src/app/page.tsx`) lives outside the `(storefront)` route group and duplicates the storefront shell, so it ALSO mounts `<CartDrawer />` (otherwise the drawer opens on `/` only after navigating to a `(storefront)` page).
+- The cart drawer is a shadcn `Drawer` (vaul-based, right side) mounted once in the storefront layout (`src/app/(storefront)/layout.tsx`) so it is available from every storefront page; the homepage (`src/app/page.tsx`) lives outside the `(storefront)` route group and duplicates the storefront shell, so it ALSO mounts `<CartDrawer />` and `<MobileBottomNav />` (otherwise the drawer and the mobile bottom nav are missing on `/`).
 - A tiny global store (`src/features/cart/cart-drawer-state.ts`) exposes `openCartDrawer()` / `closeCartDrawer()` / `useCartDrawerState()`, mirroring the `cart-count-state` seam so any component (header trigger, mobile cart button, product card buttons) can open the drawer without prop drilling.
 - `src/features/cart/components/cart-drawer.tsx` renders the panel: header (title + close), scrollable line items with `CartItemThumbnail` + `CartItemQuantityControls` (adjust/remove), and a footer with subtotal, `View full cart`, and `Checkout`. It loads from `GET /api/cart`, stays in sync via `cart:changed`, and disables checkout when any line exceeds available stock.
 - Cart line items (drawer + cart page) show a product thumbnail on the left via `CartItemThumbnail` (`src/features/cart/components/cart-item-thumbnail.tsx`); `CartItemSummary` carries `imageUrl`/`imageAlt` populated by the cart service (variant image first, then product image, both ordered by `position`; `null` when none exist).
 - Product cards (`ProductGridCard`, `ProductRelatedGrid`, homepage `featured-products`/`one-dollar` carousels) render `ProductCardAddToCart` as an absolutely positioned sibling (`z-10`) of the card's wrapping `Link`, so the card remains a single link while the button is independently clickable; clicking it posts to `POST /api/cart` (quantity 1, product slug) and opens the drawer. Homepage cards render the button only when the product has a slug (fallback/placeholder items have none).
-- The old `CartMiniCart` header dropdown was removed; the desktop `CartDrawerTrigger` and the mobile `MobileCartButton` both open the drawer.
+- The old `CartMiniCart` header dropdown was removed; the desktop `CartDrawerTrigger`, the mobile `MobileCartButton`, and the mobile bottom nav Cart action all open the drawer.
+- Cart success mutations are silent app-wide (no success toast on add, quantity update, or remove); only failed mutations show a user-friendly error toast. Visual feedback comes from the count badge, line-item state, and the drawer opening.
 - The PDP `ProductAddToCart` does not show a success toast on add (silent add-to-cart); `getProductBySlug` resolves the detail `sku` from the default variant first (then master SKU) so the PDP's `effectiveSku` matches cart/wishlist line items keyed by variant SKU.
 
 ## Review Workflow Strategy

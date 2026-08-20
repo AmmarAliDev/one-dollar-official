@@ -88,9 +88,9 @@ Stock is validated in two places:
 - Cart page (`/cart`) now renders real line items and order summary
 - Cart line items (drawer + cart page) show a product thumbnail on the left via `CartItemThumbnail` (`src/features/cart/components/cart-item-thumbnail.tsx`); it renders `next/image` when a safe URL exists, otherwise a placeholder, and links to the product page
 - `CartItemSummary` carries `imageUrl`/`imageAlt` populated by the cart service (variant image first, then product image, both ordered by `position`; `null` when none exist)
-- Header cart trigger (desktop) and mobile cart button both open the shared right-side cart drawer (shadcn `Drawer`) instead of the old mini-cart dropdown; the drawer contains line items with `CartItemQuantityControls` (adjust/remove) and a footer with subtotal, `View full cart`, and `Checkout`
-- The homepage (`src/app/page.tsx`) lives OUTSIDE the `(storefront)` route group and duplicates the storefront shell (AppHeader/main/AppFooter), so it ALSO mounts `<CartDrawer />` — without it the drawer state opens but no panel renders until navigating to a `(storefront)` page
-- Product card `Add to Cart` buttons (category grid, search results, related products, homepage featured-products/one-dollar carousels) call `POST /api/cart` with `productSlug` + quantity 1, then open the cart drawer; the PDP keeps its existing in-cart quantity-controls UX (no success toast on add)
+- Header cart trigger (desktop) and mobile cart button both open the shared right-side cart drawer (shadcn `Drawer`) instead of the old mini-cart dropdown; the drawer contains line items with `CartItemQuantityControls` (adjust/remove) and a footer with subtotal, `View full cart`, and `Checkout`. The mobile-only bottom navigation bar (`src/components/layout/mobile-bottom-nav.tsx`) also opens the same drawer from its Cart action (with a live item-count badge).
+- The homepage (`src/app/page.tsx`) lives OUTSIDE the `(storefront)` route group and duplicates the storefront shell (AppHeader/main/AppFooter), so it ALSO mounts `<CartDrawer />` and `<MobileBottomNav />` — without them the drawer state opens but no panel renders, and the mobile bottom nav is missing, until navigating to a `(storefront)` page
+- Product card `Add to Cart` buttons (category grid, search results, related products, homepage featured-products/one-dollar carousels) call `POST /api/cart` with `productSlug` + quantity 1, then open the cart drawer; the PDP keeps its existing in-cart quantity-controls UX. No success toast is shown on add anywhere (silent add-to-cart).
 - Homepage featured products prefer real catalog products (with slugs, so add-to-cart works) over placeholder fallback content — `resolveHomepageFeaturedProducts` backfills from recent published products BEFORE the CMS/fallback items
 - The cart drawer refreshes from `GET /api/cart` when opened with no local cart data, and otherwise stays in sync via `cart:changed` events
 - Header mobile cart button now shows the same total cart item count via shared client state
@@ -112,7 +112,7 @@ The quantity control component (`src/features/cart/components/cart-item-quantity
   - Enter key: validates and commits, then blurs to clear focus
   - Plus/Minus buttons: directly call `runMutation()` with the new quantity
 - Post-mutation state always syncs from the server response (cart payload) via `dispatchCartChanged()` to ensure client and server truth align
-- All mutations (input commit, plus, minus, remove) preserve existing optimistic UI, error recovery, and notification behavior
+- All mutations (input commit, plus, minus, remove) preserve existing optimistic UI and error recovery. Success mutations are **silent** (no success toast); failed mutations still show a user-friendly error toast.
 - Server-side stock validation remains authoritative on `PATCH /api/cart`; client validation is a UX guardrail, not a security boundary
 
 ## Global cart count state

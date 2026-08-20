@@ -246,9 +246,9 @@ export function CatalogSearchCommandDialog() {
         }
       }}
       title="Search products"
-      description="Search products by name, category, and keyword."
+      description="Search products and collections"
       shouldFilter={false}
-      className="max-w-xl"
+      className="max-w-xl top-[27%] md:top-[50%]"
     >
       <CommandInput
         autoFocus
