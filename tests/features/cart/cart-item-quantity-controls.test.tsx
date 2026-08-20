@@ -170,9 +170,8 @@ describe("CartItemQuantityControls", () => {
         });
       });
 
-      await waitFor(() => {
-        expect(notify.success).toHaveBeenCalled();
-      });
+      // Success mutations are silent — no success toast.
+      expect(notify.success).not.toHaveBeenCalled();
     });
 
     it("does not increment beyond available quantity", () => {
@@ -226,9 +225,8 @@ describe("CartItemQuantityControls", () => {
         });
       });
 
-      await waitFor(() => {
-        expect(notify.success).toHaveBeenCalled();
-      });
+      // Success mutations are silent — no success toast.
+      expect(notify.success).not.toHaveBeenCalled();
     });
 
     it("does not decrement below 1", () => {
@@ -291,9 +289,8 @@ describe("CartItemQuantityControls", () => {
         });
       });
 
-      await waitFor(() => {
-        expect(notify.success).toHaveBeenCalled();
-      });
+      // Success mutations are silent — no success toast.
+      expect(notify.success).not.toHaveBeenCalled();
     });
 
     it("does not flag input that exceeds allowed max while typing", async () => {
@@ -410,9 +407,8 @@ describe("CartItemQuantityControls", () => {
         });
       });
 
-      await waitFor(() => {
-        expect(notify.success).toHaveBeenCalled();
-      });
+      // Success mutations are silent — no success toast.
+      expect(notify.success).not.toHaveBeenCalled();
     });
 
     it("clamps zero to minimum quantity and commits on blur", async () => {
@@ -454,9 +450,8 @@ describe("CartItemQuantityControls", () => {
         });
       });
 
-      await waitFor(() => {
-        expect(notify.success).toHaveBeenCalled();
-      });
+      // Success mutations are silent — no success toast.
+      expect(notify.success).not.toHaveBeenCalled();
     });
 
     it("clamps too-high input to available max and commits on blur", async () => {
@@ -500,9 +495,8 @@ describe("CartItemQuantityControls", () => {
         });
       });
 
-      await waitFor(() => {
-        expect(notify.success).toHaveBeenCalled();
-      });
+      // Success mutations are silent — no success toast.
+      expect(notify.success).not.toHaveBeenCalled();
 
       expect(
         screen.queryByText("Please enter a quantity between 1 and 10."),
@@ -548,9 +542,8 @@ describe("CartItemQuantityControls", () => {
         });
       });
 
-      await waitFor(() => {
-        expect(notify.success).toHaveBeenCalled();
-      });
+      // Success mutations are silent — no success toast.
+      expect(notify.success).not.toHaveBeenCalled();
     });
 
     it("clamps too-high input to cart hard cap of 99 on commit", async () => {
@@ -596,9 +589,8 @@ describe("CartItemQuantityControls", () => {
         });
       });
 
-      await waitFor(() => {
-        expect(notify.success).toHaveBeenCalled();
-      });
+      // Success mutations are silent — no success toast.
+      expect(notify.success).not.toHaveBeenCalled();
 
       expect(
         screen.queryByText("Please enter a quantity between 1 and 99."),
@@ -755,9 +747,8 @@ describe("CartItemQuantityControls", () => {
         });
       });
 
-      await waitFor(() => {
-        expect(notify.success).toHaveBeenCalled();
-      });
+      // Success mutations are silent — no success toast on remove.
+      expect(notify.success).not.toHaveBeenCalled();
     });
   });
 

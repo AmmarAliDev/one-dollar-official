@@ -36,13 +36,13 @@
 	- Decorative-only images: use empty alt (`alt=""`) when appropriate.
 - Preserve layout stability by keeping fixed/aspect-constrained media containers (`aspect-*`, fixed thumbnail dimensions) and maintaining graceful placeholder fallbacks when image URLs are absent or fail.
 
-### Storefront Add-to-Cart Toast Pattern
+### Storefront Cart Feedback Conventions
 
-- Add-to-cart success toasts use `buildAddToCartToastPayload` in `src/features/catalog/lib/add-to-cart-toast.ts` so message shape, duration, and CTA logic stay centralized and testable.
-- The PDP `ProductAddToCart` intentionally does NOT show a success toast on add (silent add-to-cart); the payload builder remains available and tested for surfaces that opt in to a toast.
-- The add-to-cart success toast duration is standardized to `5000ms` (an extra 1 second over Sonner defaults) to give users enough time to act.
-- Mobile viewports (`max-width: 767px`) add a toast action labeled `Proceed to Checkout` that routes to `/checkout`.
-- Desktop keeps the same success title/description and duration, but no action CTA, preserving current desktop interaction density.
+- Cart mutations are **silent by default**: add, update (quantity), and remove actions do NOT show success toasts anywhere in the app. Visual feedback comes from the cart count badge, the updated line-item state, and the cart drawer opening.
+- The PDP `ProductAddToCart` and storefront `ProductCardAddToCart` never show a success toast on add; the cart drawer opens instead.
+- `CartItemQuantityControls` (drawer + cart page) never shows a success toast on quantity updates or removal.
+- Error toasts are still shown on failed cart mutations (user-friendly messages via `toUserMessage`).
+- The `buildAddToCartToastPayload` helper in `src/features/catalog/lib/add-to-cart-toast.ts` remains available (and tested) for any future surface that intentionally opts back into a success toast, but no current app surface uses it.
 - Sonner CTA buttons must inherit shared app button variants through `AppToaster` (`actionButton`/`cancelButton` classNames) instead of relying on Sonner defaults, so toast actions stay theme-aware across light and dark modes.
 
 ## Surface Consistency Rules
@@ -147,6 +147,11 @@
 - Desktop uses accessible dropdown menus (`DropdownMenuTrigger` + keyboard navigation), while mobile keeps category links grouped inside the drawer for touch-first navigation.
 - Mobile navigation behavior lives in `src/components/layout/storefront-mobile-nav.tsx` and must keep `aria-expanded`, `aria-controls`, and a labeled toggle button.
 - `AppFooter` now has three sections: company links, policy links, and a newsletter placeholder block.
+- A mobile-only fixed bottom navigation bar (`src/components/layout/mobile-bottom-nav.tsx`) provides the five primary storefront actions on touch devices: **Collections** (`/categories`), **Search** (opens the shared search command dialog), **Cart** (opens the shared cart drawer, with a live item-count badge), **Home** (`/`), and **Profile** (`/account/profile`).
+  - It renders on mobile viewports only (`md:hidden`) and is mounted wherever the storefront shell lives: `src/app/(storefront)/layout.tsx` and the root homepage `src/app/page.tsx`.
+  - Layout is icon-on-top, label-under-icon across five equal columns; active link routes get `aria-current="page"` highlighting.
+  - The desktop `AppFooter` adds mobile bottom padding (`pb-24 md:pb-0`) so its content clears the fixed bar.
+  - Keep z-index below the cart drawer / search dialog (`z-40` vs `z-50`) so overlays always appear above the bar.
 - Static storefront placeholders live under `src/app/(storefront)` for `/about`, `/contact`, `/privacy`, `/terms`, `/shipping-policy`, and `/return-policy`.
 
 ### Production Placeholder Visibility Rule

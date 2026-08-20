@@ -88,12 +88,14 @@ describe("OneDollarSectionBlock", () => {
     expect(link).toHaveAttribute("href", "/categories/one-dollar");
   });
 
-  it("renders the empty state with CTA when no products are available", () => {
-    render(<OneDollarSectionBlock section={buildSection([])} />);
+  it("hides the section entirely when no active deals are available", () => {
+    const { container } = render(<OneDollarSectionBlock section={buildSection([])} />);
 
-    expect(screen.getByText("No One Dollar deals right now")).toBeInTheDocument();
-    expect(screen.getByText("No deals available right now.")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "View all deals" })).toBeInTheDocument();
+    // The section must not render at all (no empty state, no CTA, no carousel)
+    // when there are no active deals.
+    expect(container).toBeEmptyDOMElement();
+    expect(screen.queryByText("No One Dollar deals right now")).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "View all deals" })).not.toBeInTheDocument();
     expect(screen.queryByTestId("carousel")).not.toBeInTheDocument();
   });
 

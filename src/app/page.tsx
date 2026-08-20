@@ -1,5 +1,6 @@
 import { AppFooter } from "@/components/layout/app-footer";
 import { AppHeader } from "@/components/layout/app-header";
+import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { buildMetadata } from "@/config/metadata";
 import { CartDrawer } from "@/features/cart/components/cart-drawer";
 import { CatalogSearchCommandDialog } from "@/features/catalog/components/catalog-search-command-dialog";
@@ -25,6 +26,7 @@ export default async function HomePage() {
       </main>
 
       <AppFooter />
+      <MobileBottomNav />
       <CartDrawer />
       <CatalogSearchCommandDialog />
     </div>
