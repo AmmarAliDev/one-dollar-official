@@ -11,7 +11,6 @@ describe("storefront shell navigation", () => {
     );
     expect(routes.storefront.categories).toBe("/categories");
     expect(routes.storefront.category("home-care")).toBe("/categories/home-care");
-    expect(routes.storefront.search).toBe("/search");
     expect(routes.storefront.account).toBe("/account");
     expect(routes.storefront.accountProfile).toBe("/account/profile");
     expect(routes.storefront.accountAddresses).toBe("/account/addresses");

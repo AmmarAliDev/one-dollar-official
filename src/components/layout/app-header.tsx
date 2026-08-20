@@ -1,12 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronDown, Heart, Search } from "lucide-react";
+import { ChevronDown, Heart } from "lucide-react";
 
 import { routes } from "@/config/routes";
 import { siteConfig } from "@/config/site";
 import { CartDrawerTrigger } from "@/features/cart/components/cart-drawer-trigger";
 import { MobileCartButton } from "@/features/cart/components/mobile-cart-button";
 import { getCatalogCategories } from "@/features/catalog";
+import { SearchDialogTrigger } from "@/features/catalog/components/search-dialog-trigger";
 import { logger } from "@/lib/logger";
 
 import { buttonVariants } from "../ui/button";
@@ -93,13 +94,7 @@ export async function AppHeader() {
           </Link>
 
           <div className="flex items-center gap-2 md:hidden">
-            <Link
-              href={routes.storefront.search}
-              className={buttonVariants({ variant: "outline", size: "icon" })}
-              aria-label="Search"
-            >
-              <Search className="size-4" aria-hidden="true" />
-            </Link>
+            <SearchDialogTrigger mode="mobile" />
             <MobileCartButton />
             <StorefrontHeaderAuthControls
               topLevelNavItems={topLevelNavItems}
@@ -114,14 +109,7 @@ export async function AppHeader() {
           </div>
 
           <div className="hidden items-center gap-2 md:flex">
-            <Link
-              href={routes.storefront.search}
-              className={buttonVariants({ variant: "outline", size: "sm" })}
-              aria-label="Open search"
-            >
-              <Search className="size-4" aria-hidden="true" />
-              Search
-            </Link>
+            <SearchDialogTrigger mode="desktop" />
             <Link
               href={routes.storefront.wishlist}
               className={buttonVariants({ variant: "outline", size: "sm" })}

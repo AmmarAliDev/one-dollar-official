@@ -12,7 +12,7 @@ Production-ready **single-vendor e-commerce application** built with **Next.js 1
 | Auth (credentials + Google OAuth) | ✅ Live | `src/app/(auth)/`, `src/features/auth/` |
 | Email verification + password reset | ✅ Live | `src/features/auth/` |
 | Catalog (categories, products, PDP) | ✅ Live | `src/app/(storefront)/categories/` |
-| Product search | ✅ Live | `src/app/(storefront)/search/` |
+| Product search | ✅ Live | `src/features/catalog/components/catalog-search-command-dialog.tsx` |
 | Product reviews | ✅ Live | PDP + `/account/reviews` |
 | Cart (guest + authenticated) | ✅ Live | `src/app/(storefront)/cart/` |
 | Wishlist | ✅ Live | `src/app/(storefront)/wishlist/` |

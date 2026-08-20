@@ -86,10 +86,14 @@
 - Keep the ISO code `PKR` only for data values: the Prisma `Currency` enum, DB seed rows, analytics/GA4 + Meta Pixel event payloads, and schema.org `priceCurrency` fields.
 - Never use `PKR` in user-facing labels, copy, or price strings.
 
-### Search Recent History Pattern
+### Search Command Dialog Pattern
 
+- Storefront search is a shadcn `CommandDialog` (no separate page). It is mounted once in the storefront layout + root homepage and opened from the header via the shared `search-dialog-state` store.
+- Use `shouldFilter={false}` on `CommandDialog` for server-backed live search so cmdk does not client-filter results.
+- Result rows: product image on the left, product name with the price underneath on the right; image-less rows fall back to a deterministic gradient placeholder.
+- Landing view (empty query) shows "Recent searches" + "Popular searches" groups; popular searches are desktop-only via CSS (`hidden md:block`). The landing groups hide as soon as a valid query is typed.
 - Storefront search recent history should be local-first (browser-scoped), not server-coupled.
-- Persist only meaningful text queries: trim and collapse repeated whitespace before storage.
+- Persist only meaningful text queries: trim and collapse repeated whitespace before storage. Record a query on Enter submit or result selection, not on every keystroke.
 - Deduplicate recent items case-insensitively and keep most recent items first.
 - Keep recent-history controls lightweight and explicit:
 	- click item to reuse query
@@ -135,7 +139,7 @@
 
 ## Storefront Navigation (Prompt 3.1)
 
-- `AppHeader` now provides required storefront actions: logo, search trigger placeholder, account, wishlist, and cart links.
+- `AppHeader` now provides required storefront actions: logo, search trigger (opens the shared search command dialog), account, wishlist, and cart links.
 - Desktop and mobile navigation share the same `siteConfig.storefrontNav` source to avoid duplicated link logic.
 - Desktop storefront navigation renders live catalog categories directly in the navbar (capped by `NAVBAR_DIRECT_CATEGORY_LIMIT`) with `More` as the last navbar item. The `More` dropdown holds the remaining categories and always ends with `All Categories` linking to `/categories`.
 - `Home`, `About`, `Blog`, and `Contact` live inside the shared `<UserMenu />` dropdown on desktop; the mobile drawer keeps them plus the full category list for touch-first navigation.

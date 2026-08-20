@@ -4,19 +4,24 @@
 
 Provide a fast and simple storefront product search while keeping implementation easy to upgrade to dedicated search infrastructure.
 
-## Current Flow (Live DB-Backed Search)
+## Current Flow (Command Dialog + Live DB-Backed Search)
 
-1. Client UI lives in `src/features/catalog/components/catalog-search-experience.tsx`.
-2. Input updates are debounced (280ms) through a lightweight local hook before network requests.
-3. Debounced queries call `GET /api/catalog/search`.
-4. API handler validates inputs with Zod and calls `searchCatalogProducts()`.
-5. `searchCatalogProducts()` delegates to a search adapter seam via `getCatalogSearchAdapter()`.
-6. The default `dbCatalogSearchAdapter` queries published products from PostgreSQL using a case-insensitive `ILIKE` match over `name`, `shortDescription`, and `description`.
-7. Search result shaping now aligns with catalog card media behavior: it resolves the first valid product image URL via the shared URL normalizer (accepting only root-relative and HTTP(S) URLs).
-8. When no valid image URL is available, results intentionally omit `imageUrl` so card rendering falls back to the existing gradient placeholder mode.
-9. Results carry `source: "db"` in the response so callers and tests can verify the active backend.
-10. Recent searches are persisted locally in browser storage (`localStorage`) from successful debounced queries and optional Enter-key submit, deduplicated case-insensitively, trimmed, and capped to a fixed list size.
-11. Recent searches UI supports replay (click to run), single-item removal, and clear-all while gracefully handling unavailable storage.
+Search no longer lives on a separate page. It is a shadcn command dialog (`CommandDialog`) mounted once and opened from the header on both desktop and mobile:
+
+1. Client UI lives in `src/features/catalog/components/catalog-search-command-dialog.tsx` and is mounted in `src/app/(storefront)/layout.tsx` and `src/app/page.tsx` (the root homepage renders the header outside the `(storefront)` route group).
+2. The dialog is opened from anywhere via the shared `search-dialog-state` store (`openSearchDialog` / `closeSearchDialog` / `useSearchDialogState` in `src/features/catalog/search-dialog-state.ts`), mirroring the cart-drawer state pattern. The header trigger lives in `src/features/catalog/components/search-dialog-trigger.tsx` (desktop labeled button + mobile icon-only button).
+3. The previous `/search` page and `routes.storefront.search` route were removed; robots disallow rules for search-result URLs remain harmless.
+4. The dialog uses `CommandDialog` with `shouldFilter={false}` because result ordering/relevance comes from the server — cmdk must not client-filter the live results.
+5. Input updates are debounced (280ms) through a lightweight local hook before network requests.
+6. Debounced queries call `GET /api/catalog/search` with `limit=8`.
+7. API handler validates inputs with Zod and calls `searchCatalogProducts()`.
+8. `searchCatalogProducts()` delegates to a search adapter seam via `getCatalogSearchAdapter()`.
+9. The default `dbCatalogSearchAdapter` queries published products from PostgreSQL using a case-insensitive `ILIKE` match over `name`, `shortDescription`, and `description`.
+10. Search result shaping aligns with catalog card media behavior: it resolves the first valid product image URL via the shared URL normalizer (accepting only root-relative and HTTP(S) URLs). When no valid image URL is available, results intentionally omit `imageUrl` so result rows fall back to a deterministic gradient placeholder.
+11. Results carry `source: "db"` in the response so callers and tests can verify the active backend.
+12. Recent searches are persisted locally in browser storage (`localStorage`), deduplicated case-insensitively, trimmed, and capped to a fixed list size. They are recorded on Enter submit and when a result is selected (not on every keystroke).
+13. Recent searches UI supports replay (click to run), single-item removal, and clear-all while gracefully handling unavailable storage.
+14. Popular searches are a curated static list in `src/features/catalog/popular-searches.ts`, shown as a quick-entry group on desktop only (CSS `hidden md:block`).
 
 ## Why This Is Upgrade-Ready
 
@@ -43,20 +48,23 @@ Provide a fast and simple storefront product search while keeping implementation
 
 - Add typo tolerance, synonym dictionaries, and language-aware tokenization.
 - Add facets (price, category, availability) and ranking personalization.
-- Add popular query suggestions.
+- Replace the curated `POPULAR_SEARCHES` list with analytics-driven popular query suggestions.
 
-## State Contract in UI
+## State Contract in UI (Dialog)
 
-- Pre-search: while the query is below the minimum length (`MIN_QUERY_LENGTH = 2`), no empty-state prompt is rendered — the recent-searches panel is the default landing view until a search is submitted.
-- Loading: shown for initial request without existing results.
-- Empty: shown when a valid query has zero matches.
-- Error: shown when API request fails; retry remains available.
+- Landing (query below `MIN_QUERY_LENGTH = 2`): the dialog shows the "Recent searches" group and the "Popular searches" group (desktop only). If no recent items exist, a "No recent searches yet." empty prompt is shown instead.
+- Searching (query at or above the minimum): the landing groups hide and the dialog shows loading / results / empty / error states.
+- Loading: shown for the initial request without existing results.
+- Empty: shown when a valid query has zero matches (friendly copy, no raw errors).
+- Error: shown when the API request fails; a retry button is available.
+- Result row layout: product image on the left; product name with the price underneath on the right (image-less rows fall back to a gradient placeholder).
 - Recent searches:
   - local-first persisted list for the active browser
   - trim + whitespace normalization before storage
   - case-insensitive deduplication with most-recent-first ordering
   - per-item removal and clear-all controls
   - user-safe fallback message when storage is unavailable
+  - recorded on Enter submit and on result selection
 
 ## Category Listing Query-State Contract
 

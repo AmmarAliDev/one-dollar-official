@@ -7,7 +7,6 @@ export const routes = {
     category: (slug: string) => `/categories/${slug}`,
     preview: "/preview",
     product: (categorySlug: string, productSlug: string) => `/categories/${categorySlug}/${productSlug}`,
-    search: "/search",
     account: "/account",
     accountProfile: "/account/profile",
     accountAddresses: "/account/addresses",

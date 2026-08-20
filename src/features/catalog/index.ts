@@ -1,8 +1,8 @@
 export { generateCategorySeoContent } from "./seo/category-seo-content";
 export type { CategoryFaqItem, CategoryInternalLink, CategorySeoContent, CategorySeoContentOptions } from "./seo/category-seo-content";
 export { CatalogPagination } from "./components/catalog-pagination";
-export { CatalogSearchExperience } from "./components/catalog-search-experience";
-export { CatalogSearchInput } from "./components/catalog-search-input";
+export { CatalogSearchCommandDialog } from "./components/catalog-search-command-dialog";
+export { SearchDialogTrigger } from "./components/search-dialog-trigger";
 export { CategoryInfiniteProductGrid } from "./components/category-infinite-product-grid";
 export { CategoryListingFilters } from "./components/category-listing-filters";
 export { CategoryListingSkeleton } from "./components/category-listing-skeleton";
@@ -26,6 +26,12 @@ export {
   ONE_DOLLAR_CATEGORY_SLUG,
   ONE_DOLLAR_MAX_PRICE_PKR,
 } from "./one-dollar";
+export { POPULAR_SEARCHES, POPULAR_SEARCHES_MAX_ITEMS } from "./popular-searches";
+export {
+  closeSearchDialog,
+  openSearchDialog,
+  useSearchDialogState,
+} from "./search-dialog-state";
 export { getCatalogCategories, getCatalogCategory, getCatalogCategoryListing, getCatalogCategorySlugs, getProductBySlug, getProductMetadataBySlug, getProductSlugsWithCategory, getRelatedProducts, searchCatalogProducts } from "./service";
 export type { CatalogCategory, CatalogCategoryListing, CatalogListingFilters, CatalogProductCard, CatalogProductDetail, CatalogSearchResponse, ProductImage, ProductReview, ProductReviewSummary, ProductSpec, ProductVariantGroup, ProductVariantOption } from "./types";
 export {
