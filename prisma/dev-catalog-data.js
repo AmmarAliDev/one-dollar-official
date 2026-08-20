@@ -114,7 +114,7 @@ function createProductRecord(input) {
     description: `${productName} is seeded for local and dev environments to validate product cards, category listings, and admin catalog workflows with realistic copy.`,
     status: 'PUBLISHED',
     seoTitle: `${productName} | ${input.category.name} | One Dollar`,
-    seoDescription: `Demo product in ${input.category.name}. Price: PKR ${price}. Useful for validating storefront rendering and SEO behavior.`,
+    seoDescription: `Demo product in ${input.category.name}. Price: Rs. ${price}. Useful for validating storefront rendering and SEO behavior.`,
     seoCanonicalUrl: `/categories/${input.category.slug}/${productSlug}`,
     seoOgTitle: `${productName} - Demo Listing`,
     seoOgDescription: `Local/dev demo catalog item under ${input.category.name} with deterministic product data.`,

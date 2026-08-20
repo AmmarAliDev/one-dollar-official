@@ -33,8 +33,8 @@ describe("ui foundation", () => {
     expect(site.adminNav.length).toBeGreaterThan(0);
   });
 
-  it("formats PKR values for reusable price display components", () => {
-    expect(formatPrice(1299)).toBe("PKR 1,299");
+  it("formats Rs. values for reusable price display components", () => {
+    expect(formatPrice(1299)).toBe("Rs. 1,299");
   });
 
   it("returns a detectable placeholder for invalid amounts", () => {

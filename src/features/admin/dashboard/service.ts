@@ -21,7 +21,7 @@ export type AdminDashboardRevenueSummary = {
   recognizedTotal: number;
   deliveredOrderCount: number;
   refundedOrderCountExcluded: number;
-  currency: "PKR";
+  currency: "Rs.";
   assumptions: readonly string[];
 };
 
@@ -155,7 +155,7 @@ export function buildDashboardRevenueSummary(input: {
     recognizedTotal: input.recognizedTotal ?? 0,
     deliveredOrderCount: input.deliveredOrderCount,
     refundedOrderCountExcluded: input.refundedOrderCountExcluded,
-    currency: "PKR",
+    currency: "Rs.",
     assumptions: [
       "Recognized revenue counts delivered orders only.",
       "Orders with completed refunds are excluded.",

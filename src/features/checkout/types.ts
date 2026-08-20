@@ -184,7 +184,7 @@ export type PaymentTransactionRecord = {
   provider: string;
   /** Payment amount in PKR (integer, smallest currency unit). */
   amount: number;
-  currency: "PKR";
+  currency: "Rs.";
   /** Current lifecycle status — covers both init and post-webhook terminal states. */
   status: PaymentTransactionStatus;
   /** Gateway-issued transaction / authorization reference. Null for COD. */

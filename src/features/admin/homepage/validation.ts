@@ -461,7 +461,7 @@ export type AdminDealCampaignInput = z.infer<typeof adminDealCampaignMutationSch
 
 const homepageSectionContentTemplates: Record<AdminHomepageSectionType, Record<string, unknown>> = {
   "announcement-bar": {
-    message: "Free delivery on orders over PKR 2,000",
+    message: "Free delivery on orders over Rs. 2,000",
     href: "/categories",
     label: "Browse deals",
   },
@@ -470,7 +470,7 @@ const homepageSectionContentTemplates: Record<AdminHomepageSectionType, Record<s
     categories: [],
   },
   "one-dollar": {
-    description: "Products priced at PKR 280 or less. Products are auto-loaded from the catalog.",
+    description: "Products priced at Rs. 280 or less. Products are auto-loaded from the catalog.",
     ctaLabel: "View all One Dollar deals",
     ctaHref: "/categories/one-dollar",
     placeholderMessage: "No One Dollar products are available right now. Check back soon.",

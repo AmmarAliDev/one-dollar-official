@@ -56,7 +56,7 @@ PostgreSQL (Supabase / Vercel Postgres)
 
 - **No background workers** in the current release. All operations are request-driven.
 - **COD only** — no payment gateway integration in this release.
-- **Single region** deployment recommended at first launch (PKR-focused, Karachi).
+- **Single region** deployment recommended at first launch (Rs.-focused, Karachi).
 
 ---
 

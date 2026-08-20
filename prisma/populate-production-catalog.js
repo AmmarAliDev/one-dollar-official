@@ -260,7 +260,7 @@ async function main() {
   console.log('Production catalog population completed successfully.');
   console.log(`Categories upserted: ${createdOrUpdatedCategories}`);
   console.log(`Products upserted: ${createdOrUpdatedProducts}`);
-  console.log(`One Dollar eligible products (<= 280 PKR): ${dataset.totals.oneDollarEligibleProducts}`);
+  console.log(`One Dollar eligible products (<= Rs. 280): ${dataset.totals.oneDollarEligibleProducts}`);
 }
 
 main()

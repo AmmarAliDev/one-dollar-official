@@ -99,7 +99,7 @@ describe("DealSpotlightSectionBlock", () => {
       />,
     );
 
-    expect(screen.getByText("PKR 1,799")).toBeInTheDocument();
-    expect(screen.getByText("PKR 2,199")).toBeInTheDocument();
+    expect(screen.getByText("Rs. 1,799")).toBeInTheDocument();
+    expect(screen.getByText("Rs. 2,199")).toBeInTheDocument();
   });
 });

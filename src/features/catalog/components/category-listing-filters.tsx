@@ -92,7 +92,7 @@ type CategoryListingFilterFormProps = {
 
 function CategoryListingFilterForm({ form, onSubmit, slug, filters, fieldIdPrefix }: CategoryListingFilterFormProps) {
   return (
-    <form className="space-y-5" noValidate onSubmit={form.handleSubmit(onSubmit)}>
+    <form className="space-y-4" noValidate onSubmit={form.handleSubmit(onSubmit)}>
       <FormErrorSummary errors={form.formState.errors} title="Please review the selected filters" />
 
       <DynamicFormField
@@ -106,7 +106,7 @@ function CategoryListingFilterForm({ form, onSubmit, slug, filters, fieldIdPrefi
         }}
       />
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-2 sm:grid-cols-2">
         <DynamicFormField
           control={form.control}
           fieldConfig={{
@@ -172,7 +172,7 @@ function CategoryListingFilterForm({ form, onSubmit, slug, filters, fieldIdPrefi
           name: "attribute",
           type: "text",
           label: "Variant-aware attributes",
-          description: "This remains a lightweight scaffold until structured attribute filters are introduced.",
+          description: "",
           placeholder: "Color / size / scent placeholder",
         }}
       />
@@ -255,19 +255,19 @@ export function CategoryListingFilters({ listing }: { listing: CatalogCategoryLi
           <SheetTrigger asChild>
             <Button variant="outline" size="sm" className="justify-start gap-2" aria-label="Open filters and sorting panel">
               <SlidersHorizontal className="size-4" />
-              {/* Filter and sort */}
+              Filters
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-full sm:max-w-md">
-            <SheetHeader className="px-6 pb-0">
+            <SheetHeader className="px-4 pb-0">
               <SheetTitle className="flex items-center gap-2 text-base">
                 <SlidersHorizontal className="size-4" aria-hidden="true" />
                 Filters and sorting
               </SheetTitle>
-              <SheetDescription>Narrow results by price or sort to find the best deals.</SheetDescription>
+              {/* <SheetDescription>Narrow results by price or sort to find the best deals.</SheetDescription> */}
             </SheetHeader>
 
-            <div className="overflow-y-auto px-6 pb-6">
+            <div className="overflow-y-auto px-4 pb-6">
               <CategoryListingFilterForm
                 form={mobileForm}
                 onSubmit={(values) => {
@@ -292,21 +292,18 @@ export function CategoryListingFilters({ listing }: { listing: CatalogCategoryLi
       </div>
 
       <Card className="hidden border-border/70 shadow-(--shadow-soft) lg:block" data-testid="catalog-desktop-filter-panel">
-        <CardHeader className="space-y-3">
+        <CardHeader className="space-y-3 p-4">
           <div className="flex items-center gap-3">
             <div className="bg-primary/10 text-primary rounded-2xl p-2" aria-hidden="true">
               <SlidersHorizontal className="size-4" />
             </div>
             <div>
-              <CardTitle className="text-base">Filters and sorting</CardTitle>
-              <p className="text-muted-foreground text-sm">
-                Narrow results by price or sort to find the best deals.
-              </p>
+              <CardTitle className="text-base ">Filters and sorting</CardTitle>
             </div>
           </div>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="p-4">
           <CategoryListingFilterForm
             form={desktopForm}
             onSubmit={pushFilters}

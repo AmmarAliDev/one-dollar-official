@@ -108,7 +108,7 @@ export function CheckoutPageClient({
       const confirmationUrl = order.confirmationUrl;
 
       setRetryPayload(null);
-      setSuccessMessage(`${paymentMessage} Total payable: PKR ${total.toLocaleString("en-PK")}.`);
+      setSuccessMessage(`${paymentMessage} Total payable: Rs. ${total.toLocaleString("en-PK")}.`);
       notify.success("Order placed", paymentMessage);
       setSubmitted(true);
       window.dispatchEvent(new Event("cart:changed"));
@@ -399,7 +399,7 @@ export function CheckoutPageClient({
             <PriceDisplay amount={totals.total} size="sm" />
           </div>
           <p className="text-muted-foreground text-xs">
-            Shipping is fixed at PKR 150 for Karachi deliveries.
+            Shipping is fixed at Rs. 150 for Karachi deliveries.
           </p>
         </CardContent>
       </Card>

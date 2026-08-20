@@ -7,7 +7,7 @@ type FormatPriceOptions = {
 export function formatPrice(
   value: number | string,
   {
-    currency = "PKR",
+    currency = "Rs.",
     minimumFractionDigits = 0,
     maximumFractionDigits = 0,
   }: FormatPriceOptions = {},

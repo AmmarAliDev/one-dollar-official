@@ -1,13 +1,13 @@
 # Checkout And Orders (Prompts 4.2 and 4.3)
 
-This document describes the one-page checkout flow and the transactional order lifecycle implemented in Phase 4.
+This document describes the Checkout flow and the transactional order lifecycle implemented in Phase 4.
 
 ## Scope implemented
 
-- one-page checkout UI at `/checkout`
+- Checkout UI at `/checkout`
 - guest and authenticated checkout supported
 - Karachi-only shipping validation (client and server)
-- fixed shipping fee of PKR 250
+- fixed shipping fee of Rs. 250
 - payment method abstraction with COD implementation
 - checkout API validation and retry-safe UX handling
 - transactional order placement from checkout

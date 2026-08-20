@@ -22,7 +22,7 @@ import { CheckoutPageClient } from "@/features/checkout/components/checkout-page
 export const metadata = buildMetadata({
   title: "Checkout",
   path: "/checkout",
-  description: "Complete your one-page checkout with Karachi delivery and Cash on Delivery.",
+  description: "Complete your checkout with Karachi delivery and Cash on Delivery.",
 });
 
 export default async function CheckoutPage() {
@@ -62,8 +62,8 @@ export default async function CheckoutPage() {
     <PageShell>
       <SectionHeader
         eyebrow="Checkout"
-        title="One-page checkout"
-        description="Delivery is currently Karachi-only with Cash on Delivery."
+        title="Checkout"
+        description=""
         actions={
           <Link href={routes.storefront.cart} className={buttonVariants({ variant: "outline" })}>
             Back to cart

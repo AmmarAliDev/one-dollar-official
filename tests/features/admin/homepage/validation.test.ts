@@ -18,7 +18,7 @@ describe("admin homepage content validation", () => {
       startAt: "2026-04-20T08:00:00.000Z",
       endAt: "2026-04-22T18:00:00.000Z",
       content: {
-        message: "Free delivery on orders over PKR 2,000",
+        message: "Free delivery on orders over Rs. 2,000",
         href: "/categories",
         label: "Browse deals",
       },

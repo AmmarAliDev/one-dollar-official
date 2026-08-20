@@ -156,7 +156,7 @@ export const walletLedgerEntryInputSchema = z.object({
   userId: z.string().trim().uuid(),
   direction: z.enum(["credit", "debit"]),
   amountMinor: z.number().int().positive(),
-  currency: z.literal("PKR"),
+  currency: z.literal("Rs."),
   source: z.string().trim().min(3).max(80),
   reference: z.string().trim().min(3).max(120),
   note: z.string().trim().max(280).optional(),
@@ -171,7 +171,7 @@ export type WalletLedgerEntry = {
   userId: string;
   direction: "credit" | "debit";
   amountMinor: number;
-  currency: "PKR";
+  currency: "Rs.";
   source: string;
   reference: string;
   note?: string;
@@ -181,7 +181,7 @@ export type WalletLedgerEntry = {
 export type WalletBalance = {
   walletId: string;
   userId: string;
-  currency: "PKR";
+  currency: "Rs.";
   availableMinor: number;
   holdMinor: number;
   updatedAt: Date;
