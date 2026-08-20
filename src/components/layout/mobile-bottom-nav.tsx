@@ -97,7 +97,7 @@ export function MobileBottomNav() {
       className="bg-background/95 fixed inset-x-0 bottom-0 z-40 border-t backdrop-blur supports-backdrop-filter:bg-background/85 md:hidden"
     >
       <ul className="mx-auto grid w-full max-w-(--container-width) grid-cols-5">
-        <li>
+        <li className="flex items-center justify-center">
           <BottomNavLink
             href={routes.storefront.categories}
             label="Collections"
@@ -105,14 +105,14 @@ export function MobileBottomNav() {
             active={isCollectionsActive}
           />
         </li>
-        <li>
+        <li className="flex items-center justify-center">
           <BottomNavAction
             label="Search"
             onClick={openSearchDialog}
             icon={<Search className="size-5" aria-hidden="true" />}
           />
         </li>
-        <li>
+        <li className="flex items-center justify-center">
           <BottomNavLink
             href={routes.storefront.home}
             label="Home"
@@ -120,7 +120,7 @@ export function MobileBottomNav() {
             active={isHomeActive}
           />
         </li>
-        <li>
+        <li className="flex items-center justify-center">
           <BottomNavAction
             label={`Cart`}
             onClick={openCartDrawer}          
@@ -135,7 +135,7 @@ export function MobileBottomNav() {
             }
           />
         </li>
-        <li>
+        <li className="flex items-center justify-center">
           <BottomNavLink
             href={routes.storefront.accountProfile}
             label="Profile"
