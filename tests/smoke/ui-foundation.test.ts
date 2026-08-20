@@ -44,7 +44,8 @@ describe("ui foundation", () => {
   it("uses the current light/dark palette tokens in globals", () => {
     expect(globalsCss).toContain("--background: #ffffff;");
     expect(globalsCss).toContain("--background: #090305;");
-    expect(globalsCss).toContain("--primary: #8f0808;");
+    expect(globalsCss).toContain("--primary: #b88a24;");
+    expect(globalsCss).toContain("--primary: #e11d48;");
   });
 
   it("keeps shared form and table primitives bound to semantic design tokens", () => {
