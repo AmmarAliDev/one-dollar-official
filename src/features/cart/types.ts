@@ -11,6 +11,10 @@ export type CartItemSummary = {
   lineSubtotal: number;
   availableQuantity: number;
   href: string;
+  /** Primary product image URL (variant first, then product), or null. */
+  imageUrl: string | null;
+  /** Alt text for the primary image, or null. */
+  imageAlt: string | null;
 };
 
 export type CartSummary = {

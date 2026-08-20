@@ -4,7 +4,7 @@ import { ChevronDown, Heart, Search } from "lucide-react";
 
 import { routes } from "@/config/routes";
 import { siteConfig } from "@/config/site";
-import { CartMiniCart } from "@/features/cart/components/cart-mini-cart";
+import { CartDrawerTrigger } from "@/features/cart/components/cart-drawer-trigger";
 import { MobileCartButton } from "@/features/cart/components/mobile-cart-button";
 import { getCatalogCategories } from "@/features/catalog";
 import { logger } from "@/lib/logger";
@@ -130,7 +130,7 @@ export async function AppHeader() {
               <Heart className="size-4" aria-hidden="true" />
               Wishlist
             </Link>
-            <CartMiniCart />
+            <CartDrawerTrigger />
             {/* Temporarily disabled */}
             {/* <ThemeToggle /> */}
             <StorefrontHeaderAuthControls

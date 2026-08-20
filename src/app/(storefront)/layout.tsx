@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import { AppFooter } from "@/components/layout/app-footer";
 import { AppHeader } from "@/components/layout/app-header";
+import { CartDrawer } from "@/features/cart/components/cart-drawer";
 
 export default function StorefrontLayout({ children }: { children: ReactNode }) {
   return (
@@ -11,6 +12,7 @@ export default function StorefrontLayout({ children }: { children: ReactNode }) 
         {children}
       </main>
       <AppFooter />
+      <CartDrawer />
     </div>
   );
 }

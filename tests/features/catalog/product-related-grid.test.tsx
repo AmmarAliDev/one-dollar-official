@@ -73,4 +73,16 @@ describe("ProductRelatedGrid component", () => {
       backgroundPosition: "center",
     });
   });
+
+  it("renders an add to cart button for each related product card", () => {
+    const products = [
+      makeProduct({ id: "prod-1", name: "Snow Spray Large" }),
+      makeProduct({ id: "prod-2", name: "Party Popper", href: "/categories/decorations/party-popper" }),
+    ];
+
+    render(<ProductRelatedGrid products={products} />);
+
+    const addButtons = screen.getAllByRole("button", { name: /add to cart/i });
+    expect(addButtons).toHaveLength(2);
+  });
 });

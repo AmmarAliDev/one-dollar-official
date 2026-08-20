@@ -296,7 +296,7 @@ describe("CartItemQuantityControls", () => {
       });
     });
 
-    it("shows immediate validation feedback when input exceeds allowed max", async () => {
+    it("does not flag input that exceeds allowed max while typing", async () => {
       global.fetch = vi.fn() as any;
 
       const user = userEvent.setup();
@@ -316,15 +316,16 @@ describe("CartItemQuantityControls", () => {
       await user.clear(input);
       await user.type(input, "50");
 
-      expect(screen.getByText("Please enter a quantity between 1 and 10.")).toBeInTheDocument();
-      expect(input).toHaveAttribute("aria-invalid", "true");
+      expect(
+        screen.queryByText("Please enter a quantity between 1 and 10."),
+      ).not.toBeInTheDocument();
+      expect(input).not.toHaveAttribute("aria-invalid");
       expect(global.fetch).not.toHaveBeenCalled();
     });
 
-    it("clears validation message when user corrects input", async () => {
+    it("keeps previous value and does not update for float input on blur", async () => {
       global.fetch = vi.fn() as any;
 
-      const user = userEvent.setup();
       render(
         <CartItemQuantityControls
           cartItemId="item-1"
@@ -338,15 +339,34 @@ describe("CartItemQuantityControls", () => {
         name: /Quantity for Test Product/i,
       }) as HTMLInputElement;
 
-      await user.clear(input);
-      await user.type(input, "50");
-      expect(screen.getByText("Please enter a quantity between 1 and 10.")).toBeInTheDocument();
+      fireEvent.change(input, { target: { value: "3.5" } });
+      fireEvent.blur(input);
 
-      await user.clear(input);
-      await user.type(input, "8");
+      expect(input.value).toBe("3");
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
 
-      expect(screen.queryByText("Please enter a quantity between 1 and 10.")).not.toBeInTheDocument();
-      expect(input).toHaveAttribute("aria-invalid", "false");
+    it("keeps previous value and does not update for non-integer input on blur", async () => {
+      global.fetch = vi.fn() as any;
+
+      render(
+        <CartItemQuantityControls
+          cartItemId="item-1"
+          productName="Test Product"
+          quantity={3}
+          availableQuantity={10}
+        />,
+      );
+
+      const input = screen.getByRole("spinbutton", {
+        name: /Quantity for Test Product/i,
+      }) as HTMLInputElement;
+
+      fireEvent.change(input, { target: { value: "abc" } });
+      fireEvent.blur(input);
+
+      expect(input.value).toBe("3");
+      expect(global.fetch).not.toHaveBeenCalled();
     });
 
     it("commits valid input on Enter key", async () => {
@@ -395,10 +415,21 @@ describe("CartItemQuantityControls", () => {
       });
     });
 
-    it("keeps typed value and blocks commit for invalid input on blur", async () => {
-      global.fetch = vi.fn() as any;
+    it("clamps zero to minimum quantity and commits on blur", async () => {
+      mockFetchResponse({
+        cart: {
+          itemCount: 1,
+          items: [
+            {
+              id: "item-1",
+              productName: "Test Product",
+              quantity: 1,
+              availableQuantity: 10,
+            },
+          ],
+        },
+      });
 
-      const user = userEvent.setup();
       render(
         <CartItemQuantityControls
           cartItemId="item-1"
@@ -412,17 +443,36 @@ describe("CartItemQuantityControls", () => {
         name: /Quantity for Test Product/i,
       }) as HTMLInputElement;
 
-      await user.clear(input);
-      await user.type(input, "0");
+      fireEvent.change(input, { target: { value: "0" } });
       fireEvent.blur(input);
 
-      expect(input.value).toBe("0");
-      expect(screen.getByText("Please enter a quantity between 1 and 10.")).toBeInTheDocument();
-      expect(global.fetch).not.toHaveBeenCalled();
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith("/api/cart", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ cartItemId: "item-1", quantity: 1 }),
+        });
+      });
+
+      await waitFor(() => {
+        expect(notify.success).toHaveBeenCalled();
+      });
     });
 
-    it("does not commit too-high input and shows range guidance", async () => {
-      global.fetch = vi.fn() as any;
+    it("clamps too-high input to available max and commits on blur", async () => {
+      mockFetchResponse({
+        cart: {
+          itemCount: 10,
+          items: [
+            {
+              id: "item-1",
+              productName: "Test Product",
+              quantity: 10,
+              availableQuantity: 10,
+            },
+          ],
+        },
+      });
 
       const user = userEvent.setup();
       render(
@@ -442,14 +492,38 @@ describe("CartItemQuantityControls", () => {
       await user.type(input, "50");
       fireEvent.blur(input);
 
-      expect(screen.getByText("Please enter a quantity between 1 and 10.")).toBeInTheDocument();
-      expect(global.fetch).not.toHaveBeenCalled();
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith("/api/cart", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ cartItemId: "item-1", quantity: 10 }),
+        });
+      });
+
+      await waitFor(() => {
+        expect(notify.success).toHaveBeenCalled();
+      });
+
+      expect(
+        screen.queryByText("Please enter a quantity between 1 and 10."),
+      ).not.toBeInTheDocument();
     });
 
-    it("does not commit too-low input and shows range guidance", async () => {
-      global.fetch = vi.fn() as any;
+    it("clamps negative integer to minimum quantity and commits on blur", async () => {
+      mockFetchResponse({
+        cart: {
+          itemCount: 1,
+          items: [
+            {
+              id: "item-1",
+              productName: "Test Product",
+              quantity: 1,
+              availableQuantity: 10,
+            },
+          ],
+        },
+      });
 
-      const user = userEvent.setup();
       render(
         <CartItemQuantityControls
           cartItemId="item-1"
@@ -463,16 +537,36 @@ describe("CartItemQuantityControls", () => {
         name: /Quantity for Test Product/i,
       }) as HTMLInputElement;
 
-      await user.clear(input);
-      await user.type(input, "0");
+      fireEvent.change(input, { target: { value: "-5" } });
       fireEvent.blur(input);
 
-      expect(screen.getByText("Please enter a quantity between 1 and 10.")).toBeInTheDocument();
-      expect(global.fetch).not.toHaveBeenCalled();
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith("/api/cart", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ cartItemId: "item-1", quantity: 1 }),
+        });
+      });
+
+      await waitFor(() => {
+        expect(notify.success).toHaveBeenCalled();
+      });
     });
 
-    it("uses effective max rule with cart hard cap for validation", async () => {
-      global.fetch = vi.fn() as any;
+    it("clamps too-high input to cart hard cap of 99 on commit", async () => {
+      mockFetchResponse({
+        cart: {
+          itemCount: 99,
+          items: [
+            {
+              id: "item-1",
+              productName: "Test Product",
+              quantity: 99,
+              availableQuantity: 150,
+            },
+          ],
+        },
+      });
 
       const user = userEvent.setup();
       render(
@@ -492,9 +586,23 @@ describe("CartItemQuantityControls", () => {
 
       await user.clear(input);
       await user.type(input, "120");
+      fireEvent.blur(input);
 
-      expect(screen.getByText("Please enter a quantity between 1 and 99.")).toBeInTheDocument();
-      expect(global.fetch).not.toHaveBeenCalled();
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith("/api/cart", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ cartItemId: "item-1", quantity: 99 }),
+        });
+      });
+
+      await waitFor(() => {
+        expect(notify.success).toHaveBeenCalled();
+      });
+
+      expect(
+        screen.queryByText("Please enter a quantity between 1 and 99."),
+      ).not.toBeInTheDocument();
     });
 
     it("does not commit when input equals current quantity", async () => {

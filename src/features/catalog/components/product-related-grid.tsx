@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { PriceDisplay } from "@/components/ui/price-display";
 
 import type { CatalogProductCard } from "../types";
+import { ProductCardAddToCart } from "./product-card-add-to-cart";
 
 type ProductRelatedGridProps = {
   products: CatalogProductCard[];
@@ -27,32 +28,41 @@ export function ProductRelatedGrid({ products }: ProductRelatedGridProps) {
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {products.map((product) => (
             <li key={product.id} className="list-none">
-              <Link
-                href={product.href}
-                className="group rounded-(--radius-card) overflow-hidden shadow-(--shadow-soft) hover:shadow-md transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-              >
-                <article>
-                  <div
-                    aria-hidden
-                    className="flex aspect-4/3 items-end p-4"
-                    style={{
-                      backgroundImage: `url(${product.imageUrl})`,
-                      backgroundSize: "cover",
-                      backgroundPosition: "center",
-                    }}
-                  />
-                  <div className="p-4 space-y-2">
-                    <p className="text-sm font-semibold line-clamp-2 group-hover:text-primary transition-colors">
-                      {product.name}
-                    </p>
-                    <PriceDisplay
-                      amount={product.price}
-                      {...(typeof product.compareAt === "number" ? { compareAt: product.compareAt } : {})}
-                      size="sm"
+              <div className="group relative h-full">
+                <Link
+                  href={product.href}
+                  className="block rounded-(--radius-card) overflow-hidden shadow-(--shadow-soft) hover:shadow-md transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                >
+                  <article>
+                    <div
+                      aria-hidden
+                      className="flex aspect-4/3 items-end p-4"
+                      style={{
+                        backgroundImage: `url(${product.imageUrl})`,
+                        backgroundSize: "cover",
+                        backgroundPosition: "center",
+                      }}
                     />
-                  </div>
-                </article>
-              </Link>
+                    <div className="p-4 space-y-2 pb-4">
+                      <p className="text-sm font-semibold line-clamp-2 group-hover:text-primary transition-colors">
+                        {product.name}
+                      </p>
+                      <PriceDisplay
+                        amount={product.price}
+                        {...(typeof product.compareAt === "number" ? { compareAt: product.compareAt } : {})}
+                        size="sm"
+                      />
+                    </div>
+                  </article>
+                </Link>
+
+                <ProductCardAddToCart
+                  productSlug={product.slug}
+                  productName={product.name}
+                  isAvailable={product.inventoryQuantity > 0}
+                  className="absolute right-3 bottom-3 z-10"
+                />
+              </div>
             </li>
           ))}
         </ul>

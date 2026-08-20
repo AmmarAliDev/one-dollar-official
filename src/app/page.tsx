@@ -1,6 +1,7 @@
 import { AppFooter } from "@/components/layout/app-footer";
 import { AppHeader } from "@/components/layout/app-header";
 import { buildMetadata } from "@/config/metadata";
+import { CartDrawer } from "@/features/cart/components/cart-drawer";
 import { getHomepageContent, renderHomepageSection } from "@/features/homepage";
 import { HomepageContentSourceIndicator } from "@/features/homepage/components/homepage-content-source-indicator";
 
@@ -23,6 +24,7 @@ export default async function HomePage() {
       </main>
 
       <AppFooter />
+      <CartDrawer />
     </div>
   );
 }

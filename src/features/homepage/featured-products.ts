@@ -42,6 +42,10 @@ function toFeaturedProductItem(product: StorefrontProductRecord): FeaturedProduc
   const pricing = extractPricing(product);
   const categorySlug = product.category?.slug;
   const description = product.shortDescription ?? product.description;
+  const inventoryQuantity = product.variants.reduce(
+    (total, variant) => total + (variant.inventory?.quantity ?? 0),
+    0,
+  );
 
   return {
     id: product.id,
@@ -52,6 +56,7 @@ function toFeaturedProductItem(product: StorefrontProductRecord): FeaturedProduc
     price: pricing.price,
     ...(typeof pricing.compareAt === "number" ? { compareAt: pricing.compareAt } : {}),
     badge: "Best seller",
+    inventoryQuantity,
     ...(product.images.length > 0
       ? {
           images: product.images.map((image, index) => ({
@@ -163,16 +168,22 @@ export async function resolveHomepageFeaturedProducts(
     logger.error("Failed to rank homepage featured products from order sales data.", error);
   }
 
-  featuredProducts = appendUniqueProducts(featuredProducts, fallbackProducts);
-
-  if (featuredProducts.length >= HOMEPAGE_FEATURED_PRODUCTS_LIMIT) {
-    return featuredProducts;
+  // Prefer real catalog products over placeholder fallback content so cards
+  // keep their add-to-cart affordance (fallback items carry no product slug).
+  if (featuredProducts.length < HOMEPAGE_FEATURED_PRODUCTS_LIMIT) {
+    try {
+      featuredProducts = appendUniqueProducts(
+        featuredProducts,
+        await getRecentPublishedProducts(),
+      );
+    } catch (error) {
+      logger.error("Failed to backfill homepage featured products from the published catalog.", error);
+    }
   }
 
-  try {
-    return appendUniqueProducts(featuredProducts, await getRecentPublishedProducts());
-  } catch (error) {
-    logger.error("Failed to backfill homepage featured products from the published catalog.", error);
-    return featuredProducts;
+  if (featuredProducts.length < HOMEPAGE_FEATURED_PRODUCTS_LIMIT) {
+    featuredProducts = appendUniqueProducts(featuredProducts, fallbackProducts);
   }
+
+  return featuredProducts;
 }

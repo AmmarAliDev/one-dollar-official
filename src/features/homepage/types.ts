@@ -52,6 +52,8 @@ export type FeaturedProductItem = {
   compareAt?: number;
   badge?: string;
   images?: FeaturedProductImage[];
+  /** Total available inventory across variants; absent for fallback/placeholder items. */
+  inventoryQuantity?: number;
 };
 
 export type FeaturedProductsSection = {

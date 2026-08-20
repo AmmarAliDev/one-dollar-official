@@ -194,9 +194,9 @@ Cart merge behavior during checkout context resolution:
 
 ### Cart quantity pre-check UX alignment
 
-- Cart quantity controls now provide immediate on-change range feedback (`1..effectiveMax`) before users proceed to checkout.
+- Cart quantity controls normalize direct input on commit (blur/Enter): non-integer values are ignored (previous quantity kept), and out-of-range integers are clamped into `[1, effectiveMax]` before being committed; no inline validation errors are shown.
 - Effective max in cart controls follows cart update constraints: `min(item.availableQuantity, 99)`.
-- Checkout still enforces stock server-side inside order placement transactions; cart-side validation is an early UX hint only.
+- Checkout still enforces stock server-side inside order placement transactions; cart-side clamping is an early UX convenience only, not a security boundary.
 
 Invoice route: `GET /api/orders/[orderNumber]/invoice`
 

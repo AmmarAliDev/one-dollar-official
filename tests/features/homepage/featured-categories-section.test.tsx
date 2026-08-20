@@ -73,6 +73,18 @@ describe("FeaturedCategoriesSectionBlock", () => {
     expect(screen.getByText("Grocery").closest("a")).toHaveAttribute("href", "/categories/grocery");
   });
 
+  it("does not render add-to-cart buttons on category cards", () => {
+    render(
+      <FeaturedCategoriesSectionBlock
+        section={buildSection([
+          { id: "cat-1", name: "Home care", description: "Cleaning and essentials", href: "/categories/home-care" },
+        ])}
+      />,
+    );
+
+    expect(screen.queryByRole("button", { name: /add to cart/i })).not.toBeInTheDocument();
+  });
+
   it("renders a friendly empty state when categories are missing", () => {
     render(<FeaturedCategoriesSectionBlock section={buildSection([])} />);
 

@@ -24,8 +24,8 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-vi.mock("@/features/cart/components/cart-mini-cart", () => ({
-  CartMiniCart: () => <div data-testid="cart-mini-cart" />,
+vi.mock("@/features/cart/components/cart-drawer-trigger", () => ({
+  CartDrawerTrigger: () => <div data-testid="cart-drawer-trigger" />,
 }));
 
 vi.mock("@/features/cart/components/mobile-cart-button", () => ({

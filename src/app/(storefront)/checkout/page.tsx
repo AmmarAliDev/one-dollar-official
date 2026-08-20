@@ -63,7 +63,7 @@ export default async function CheckoutPage() {
       <SectionHeader
         eyebrow="Checkout"
         title="One-page checkout"
-        description="Guest checkout is enabled. Delivery is currently Karachi-only with Cash on Delivery."
+        description="Delivery is currently Karachi-only with Cash on Delivery."
         actions={
           <Link href={routes.storefront.cart} className={buttonVariants({ variant: "outline" })}>
             Back to cart

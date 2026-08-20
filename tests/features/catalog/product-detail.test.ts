@@ -197,6 +197,27 @@ describe("product detail service", () => {
     expect(product?.variantGroups[0]?.options.length).toBe(3);
   });
 
+  it("resolves the detail sku from the default variant before the master SKU", async () => {
+    mockGetPublishedProductBySlug.mockResolvedValue(makeVariantProductRecord());
+
+    const product = await getProductBySlug("ultra-wash-detergent-1kg");
+
+    // Cart/wishlist line items are keyed by variant SKU, so the PDP detail sku
+    // must match the default variant's sku (UWD-1KG) rather than the master SKU
+    // (UWD-MASTER) so PDP in-cart/wishlist state stays aligned.
+    expect(product?.sku).toBe("UWD-1KG");
+  });
+
+  it("falls back to the master SKU when the product has no variant sku", async () => {
+    const record = makeVariantProductRecord();
+    record.variants = record.variants.map((variant) => ({ ...variant, sku: null }));
+    mockGetPublishedProductBySlug.mockResolvedValue(record);
+
+    const product = await getProductBySlug("ultra-wash-detergent-1kg");
+
+    expect(product?.sku).toBe("UWD-MASTER");
+  });
+
   it("has empty variant groups for simple products", async () => {
     mockGetPublishedProductBySlug.mockResolvedValue(makeDetailRecord({ variantsEnabled: false }));
 

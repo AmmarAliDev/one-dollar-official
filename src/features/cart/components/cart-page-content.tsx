@@ -16,6 +16,7 @@ import { validateCartStock } from "@/features/cart/validation";
 
 import { addCartChangedListener } from "../client-events";
 import { CartItemQuantityControls } from "./cart-item-quantity-controls";
+import { CartItemThumbnail } from "./cart-item-thumbnail";
 
 type CartPageContentProps = {
   initialCart: CartSummary;
@@ -81,49 +82,56 @@ export function CartPageContent({ initialCart }: CartPageContentProps) {
 
             return (
               <Card key={item.id}>
-                <CardContent className="flex flex-col gap-4 p-5">
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="space-y-1">
-                      <Link
-                        href={item.href}
-                        className="hover:text-primary text-base font-semibold tracking-tight"
-                      >
-                        {item.productName}
-                      </Link>
-                      <p className="text-muted-foreground text-sm">
-                        SKU: {item.sku}
-                        {item.optionLabel ? ` | ${item.optionLabel}` : ""}
-                      </p>
-                      <p className="text-muted-foreground text-xs">
-                        In stock: {item.availableQuantity}
-                      </p>
+                <CardContent className="flex gap-2 sm:gap-4 p-5">
+                  <CartItemThumbnail
+                    productName={item.productName}
+                    imageUrl={item.imageUrl}
+                    imageAlt={item.imageAlt}
+                    href={item.href}
+                    className="size-24 sm:size-32"
+                  />
+
+                  <div className="min-w-0 flex-1 space-y-3">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="space-y-1">
+                        <Link
+                          href={item.href}
+                          className="hover:text-primary text-base font-semibold tracking-tight"
+                        >
+                          {item.productName}
+                        </Link>
+                        <p className="text-muted-foreground text-sm">SKU: {item.sku}</p>
+                        <p className="text-muted-foreground text-xs">
+                          In stock: {item.availableQuantity}
+                        </p>
+                      </div>
+
+                      <PriceDisplay
+                        amount={item.unitPrice}
+                        {...(typeof item.compareAtPrice === "number"
+                          ? { compareAt: item.compareAtPrice }
+                          : {})}
+                        size="sm"
+                      />
                     </div>
 
-                    <PriceDisplay
-                      amount={item.unitPrice}
-                      {...(typeof item.compareAtPrice === "number"
-                        ? { compareAt: item.compareAtPrice }
-                        : {})}
-                      size="sm"
-                    />
-                  </div>
+                    {hasStockIssue ? (
+                      <p className="text-destructive inline-flex items-center gap-1 text-xs">
+                        <AlertTriangle className="size-3.5" aria-hidden="true" />
+                        Requested quantity exceeds available stock.
+                      </p>
+                    ) : null}
 
-                  {hasStockIssue ? (
-                    <p className="text-destructive inline-flex items-center gap-1 text-xs">
-                      <AlertTriangle className="size-3.5" aria-hidden="true" />
-                      Requested quantity exceeds available stock.
-                    </p>
-                  ) : null}
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <CartItemQuantityControls
+                        cartItemId={item.id}
+                        productName={item.productName}
+                        quantity={item.quantity}
+                        availableQuantity={item.availableQuantity}
+                      />
 
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <CartItemQuantityControls
-                      cartItemId={item.id}
-                      productName={item.productName}
-                      quantity={item.quantity}
-                      availableQuantity={item.availableQuantity}
-                    />
-
-                    <PriceDisplay amount={item.lineSubtotal} size="sm" />
+                      <span className="flex gap-1">Total:{" "} <PriceDisplay amount={item.lineSubtotal} size="sm" /></span>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

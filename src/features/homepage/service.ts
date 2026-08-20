@@ -103,6 +103,7 @@ function toOneDollarProductItem(card: CatalogProductCard): FeaturedProductItem {
     price: card.price,
     ...(typeof card.compareAt === "number" ? { compareAt: card.compareAt } : {}),
     badge: "One Dollar",
+    inventoryQuantity: card.inventoryQuantity,
     ...(card.imageUrl
       ? {
           images: [
