@@ -125,7 +125,7 @@ describe("CategoryInfiniteProductGrid", () => {
     });
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(screen.getByText("You have reached the end of this list.")).toBeInTheDocument();
+    expect(screen.getByText('You have reached the end of this list.')).toBeInTheDocument();
   });
 
   it("shows error and retry behavior when loading the next page fails", async () => {
