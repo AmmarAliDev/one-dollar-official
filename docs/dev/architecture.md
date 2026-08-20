@@ -251,14 +251,16 @@ Create a scalable foundation for a single-vendor e-commerce app using one shared
 
 ## Search Strategy
 
-- `src/app/(storefront)/search/page.tsx` composes a dedicated search experience shell through `CatalogSearchExperience`.
-- Search route heading semantics keep a crawl-friendly primary page heading (`h1`) via `SectionHeader.titleAs` while interactive search behavior remains isolated to client components.
+- Search is a shadcn command dialog, not a separate page: `CatalogSearchCommandDialog` (`src/features/catalog/components/catalog-search-command-dialog.tsx`) is mounted once in the storefront layout and the root homepage, and opened from the header on desktop and mobile through the shared `search-dialog-state` store (`openSearchDialog` / `closeSearchDialog` / `useSearchDialogState`). The old `/search` page and `routes.storefront.search` route were removed.
+- The dialog uses `CommandDialog` with `shouldFilter={false}` because live results come from the server; cmdk must not client-filter them.
+- Landing view (empty query) shows "Recent searches" and "Popular searches" quick-entry groups; popular searches are desktop-only (CSS `hidden md:block`). Once the user types a valid query, the landing groups hide and live results render.
 - Debounced client requests call `GET /api/catalog/search` for fast perceived responsiveness without hammering the server on every keypress.
 - Route-handler validation happens in `src/app/api/catalog/search/route.ts` and delegates to feature-level service logic.
 - `searchCatalogProducts()` in `src/features/catalog/service.ts` is the stable entrypoint used by API/UI layers.
 - `src/features/catalog/search-adapter.ts` is the upgrade seam. The current DB-backed ILIKE search can be replaced by a dedicated search provider (Algolia, Typesense) while preserving API and UI contracts.
-- Search result cards now follow the same media contract as catalog cards: adapters should pass a normalized `imageUrl` only when it is a safe renderable URL; otherwise omit it so UI fallback placeholders remain deterministic.
-- Recent searches are implemented as a local-first client seam in `src/features/catalog/recent-searches.ts` with typed helper functions for normalization, case-insensitive deduplication, max-size limits, single-item removal, and clear-all behavior.
+- Search result rows follow the same media contract as catalog cards: adapters pass a normalized `imageUrl` only when it is a safe renderable URL; otherwise it is omitted so the row falls back to a deterministic placeholder.
+- Recent searches are implemented as a local-first client seam in `src/features/catalog/recent-searches.ts` with typed helper functions for normalization, case-insensitive deduplication, max-size limits, single-item removal, and clear-all behavior. Queries are recorded on Enter submit and on result selection.
+- Popular searches are a curated static list in `src/features/catalog/popular-searches.ts` (single seam; can later be replaced by analytics-driven suggestions).
 - Recent-search persistence is intentionally browser-scoped (`localStorage`) and failure-tolerant: storage parse/write failures never block search results and are surfaced as user-safe non-fatal messaging.
 - See `docs/dev/search-architecture.md` for flow details and phased upgrade guidance.
 
