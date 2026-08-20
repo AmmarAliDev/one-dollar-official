@@ -53,7 +53,7 @@ describe("admin dashboard service", () => {
       recognizedTotal: 4200,
       deliveredOrderCount: 3,
       refundedOrderCountExcluded: 1,
-      currency: "PKR",
+      currency: "Rs.",
     });
     expect(summary.assumptions).toEqual(
       expect.arrayContaining([

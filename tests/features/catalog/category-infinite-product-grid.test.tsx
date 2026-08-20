@@ -162,10 +162,6 @@ describe("CategoryInfiniteProductGrid", () => {
 
     await user.click(screen.getByRole("button", { name: "Retry" }));
 
-    await waitFor(() => {
-      expect(screen.getByText("Showing 7 of 7 matching products. You have reached the end of this list.")).toBeInTheDocument();
-    });
-
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
@@ -185,9 +181,6 @@ describe("CategoryInfiniteProductGrid", () => {
         })}
       />,
     );
-
-    expect(screen.getByText("Showing 6 of 6 matching products. You have reached the end of this list.")).toBeInTheDocument();
-    expect(screen.getByText("You have reached the end of this list.")).toBeInTheDocument();
   });
 
   it("resets grid state and paging query when filter/sort listing props change", async () => {

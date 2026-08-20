@@ -144,7 +144,7 @@ export function AdminSettingsForm({ action, returnTo, initialValues }: AdminSett
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="shippingFlatRate">Flat shipping fee (PKR)</Label>
+            <Label htmlFor="shippingFlatRate">Flat shipping fee (Rs.)</Label>
             <Input
               id="shippingFlatRate"
               name="shippingFlatRate"
@@ -157,7 +157,7 @@ export function AdminSettingsForm({ action, returnTo, initialValues }: AdminSett
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="shippingFreeThreshold">Free-shipping threshold (PKR, optional)</Label>
+            <Label htmlFor="shippingFreeThreshold">Free-shipping threshold (Rs., optional)</Label>
             <Input
               id="shippingFreeThreshold"
               name="shippingFreeThreshold"

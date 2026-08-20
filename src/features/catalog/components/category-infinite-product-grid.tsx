@@ -54,7 +54,6 @@ export function CategoryInfiniteProductGrid({ listing }: CategoryInfiniteProduct
     setLoadError(null);
   }, [listing]);
 
-  const hasProducts = products.length > 0;
   const hasMorePages = pagination.hasNextPage;
 
   const loadMoreProducts = async () => {
@@ -88,12 +87,6 @@ export function CategoryInfiniteProductGrid({ listing }: CategoryInfiniteProduct
 
   return (
     <div className="space-y-6">
-      {hasProducts ? (
-        <div className="text-muted-foreground rounded-xl border border-dashed px-4 py-3 text-sm" aria-live="polite">
-          Showing {products.length} of {listing.filteredProductCount} matching products.
-          {hasMorePages ? " Scroll down to load more." : " You have reached the end of this list."}
-        </div>
-      ) : null}
 
       {products.length === 0 ? (
         <EmptyState
@@ -120,7 +113,7 @@ export function CategoryInfiniteProductGrid({ listing }: CategoryInfiniteProduct
           }
         >
           <ul
-            className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
+            className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
             data-testid={testIds.storefront.productGrid}
           >
             {products.map((product, index) => (

@@ -6,8 +6,8 @@ import type {
   NotificationRecipients,
 } from "./contracts";
 
-function formatPkr(value: number) {
-  return `PKR ${value.toLocaleString("en-PK")}`;
+function formatRs(value: number) {
+  return `Rs. ${value.toLocaleString("en-PK")}`;
 }
 
 function formatOrderDate(placedAt: Date) {
@@ -35,9 +35,9 @@ function buildOrderNewAdminMessage(
       `Phone: ${payload.customerPhone ?? "n/a"}`,
       `Items: ${payload.itemCount}`,
       `Payment: ${payload.paymentMethodLabel}`,
-      `Subtotal: ${formatPkr(payload.subtotal)}`,
-      `Shipping: ${formatPkr(payload.shipping)}`,
-      `Total: ${formatPkr(payload.total)}`,
+      `Subtotal: ${formatRs(payload.subtotal)}`,
+      `Shipping: ${formatRs(payload.shipping)}`,
+      `Total: ${formatRs(payload.total)}`,
       `Confirmation: ${payload.confirmationUrl}`,
     ].join("\n"),
   };
@@ -54,7 +54,7 @@ function buildOrderNewCustomerMessage(
       `Hi ${payload.customerName},`,
       "",
       `Thanks for your order. We have received ${payload.orderNumber}.`,
-      `Total: ${formatPkr(payload.total)}`,
+      `Total: ${formatRs(payload.total)}`,
       `Payment: ${payload.paymentMethodLabel}`,
       `Track confirmation: ${payload.confirmationUrl}`,
       `Invoice link: ${payload.invoiceUrl}`,
@@ -75,7 +75,7 @@ function buildOrderConfirmedAdminMessage(
       `Order ${payload.orderNumber} is now confirmed.`,
       `Customer: ${payload.customerName}`,
       `Email: ${payload.customerEmail ?? "n/a"}`,
-      `Total: ${formatPkr(payload.total)}`,
+      `Total: ${formatRs(payload.total)}`,
       `Confirmation: ${payload.confirmationUrl}`,
     ].join("\n"),
   };
@@ -92,7 +92,7 @@ function buildOrderConfirmedCustomerMessage(
       `Hi ${payload.customerName},`,
       "",
       `Your order ${payload.orderNumber} has been confirmed.`,
-      `Total: ${formatPkr(payload.total)}`,
+      `Total: ${formatRs(payload.total)}`,
       `Confirmation page: ${payload.confirmationUrl}`,
       `Invoice link: ${payload.invoiceUrl}`,
       "",
