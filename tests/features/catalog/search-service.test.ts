@@ -32,20 +32,37 @@ vi.mock("@/server/db/catalog-queries", () => ({
 // ---------------------------------------------------------------------------
 
 function makeSearchProductRecord(
-  overrides: Partial<{ id: string; slug: string; name: string; images: Array<{ id: string; url: string | null; alt: string | null; position: number }> }> = {},
+  overrides: Partial<{
+    id: string;
+    slug: string;
+    name: string;
+    shortDescription: string;
+    description: string | null;
+    category: { id: string; name: string; slug: string };
+    createdAt: Date;
+    images: Array<{ id: string; url: string | null; alt: string | null; position: number }>;
+  }> = {},
 ) {
-  const { id = "p1", slug = "ultra-wash-detergent-1kg", name = "Ultra Wash Detergent 1kg" } = overrides;
+  const {
+    id = "p1",
+    slug = "ultra-wash-detergent-1kg",
+    name = "Ultra Wash Detergent 1kg",
+    shortDescription = "Strong stain removal.",
+    description = null,
+    category = { id: "cat-hc", name: "Home Care", slug: "home-care" },
+    createdAt = new Date(),
+  } = overrides;
   return {
     id,
     name,
     slug,
-    shortDescription: "Strong stain removal.",
-    description: null,
+    shortDescription,
+    description,
     masterSku: null,
     metadata: null,
-    createdAt: new Date(),
+    createdAt,
     updatedAt: new Date(),
-    category: { id: "cat-hc", name: "Home Care", slug: "home-care" },
+    category,
     images: overrides.images ?? [],
     specifications: [{ id: "s1", key: "Weight", value: "1kg" }],
     variants: [
@@ -120,6 +137,75 @@ describe("catalog search service", () => {
 
     expect(result.total).toBe(0);
     expect(result.items).toHaveLength(0);
+  });
+
+  it("matches products by category name (searching a category surfaces its products)", async () => {
+    mockSearchPublishedProducts.mockResolvedValue([
+      makeSearchProductRecord({
+        slug: "vanilla-amber-jar",
+        name: "Vanilla Amber Jar",
+        category: { id: "cat-candles", name: "Candles", slug: "candles" },
+      }),
+    ]);
+
+    const result = await searchCatalogProducts("candles");
+
+    expect(result.items[0]?.slug).toBe("vanilla-amber-jar");
+  });
+
+  it("matches plural queries against singular product names", async () => {
+    mockSearchPublishedProducts.mockResolvedValue([
+      makeSearchProductRecord({
+        slug: "gold-chain-necklace",
+        name: "Gold Chain Necklace",
+      }),
+    ]);
+
+    const result = await searchCatalogProducts("chains");
+
+    expect(result.items[0]?.slug).toBe("gold-chain-necklace");
+  });
+
+  it("matches any word of a multi-word query", async () => {
+    mockSearchPublishedProducts.mockResolvedValue([
+      makeSearchProductRecord({
+        slug: "lavender-candle",
+        name: "Lavender Candle",
+      }),
+    ]);
+
+    const result = await searchCatalogProducts("scented candle");
+
+    expect(result.items[0]?.slug).toBe("lavender-candle");
+  });
+
+  it("ranks name/category matches above description-only matches", async () => {
+    const older = new Date("2024-01-01T00:00:00Z");
+    const newer = new Date("2025-01-01T00:00:00Z");
+
+    mockSearchPublishedProducts.mockResolvedValue([
+      // Balloons only match deep inside the description, yet are newest.
+      makeSearchProductRecord({
+        id: "p-balloons",
+        slug: "birthday-balloons",
+        name: "Birthday Balloons",
+        description: "Perfect for parties with candles and confetti.",
+        createdAt: newer,
+      }),
+      // Candles match by name even though they are older.
+      makeSearchProductRecord({
+        id: "p-candle-trio",
+        slug: "candle-trio",
+        name: "Candle Trio",
+        description: "Soy wax candles.",
+        createdAt: older,
+      }),
+    ]);
+
+    const result = await searchCatalogProducts("candles");
+
+    expect(result.items[0]?.slug).toBe("candle-trio");
+    expect(result.items[1]?.slug).toBe("birthday-balloons");
   });
 
   it("respects the result limit", async () => {

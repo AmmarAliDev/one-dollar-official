@@ -38,12 +38,12 @@ export function AppFooter() {
                 alt={`${siteConfig.name} logo`}
                 width={32}
                 height={32}
-                className="h-12 w-12 rounded-md object-contain"
+                className="h-12 w-24 rounded-md object-contain"
                 sizes="32px"
               />
-              <h2 id="footer-brand-heading" className="text-background font-semibold tracking-tight">
+              {/* <h2 id="footer-brand-heading" className="text-background font-semibold tracking-tight">
                 {siteConfig.name}
-              </h2>
+              </h2> */}
             </div>
             <p className="text-muted max-w-xl text-sm">
               Karachi-first storefront shell for a single-vendor commerce experience in Pakistan.

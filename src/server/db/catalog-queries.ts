@@ -26,12 +26,21 @@ import type { Prisma } from "@prisma/client";
 
 import { createLogger } from "@/lib/logger";
 import { getPrismaClient } from "@/server/db";
+import { expandSearchQuery } from "@/features/catalog/lib/search-text";
 
 const CATALOG_CACHE_REVALIDATE_SECONDS = 900;
 const PRISMA_POOL_TIMEOUT_ERROR_CODE = "P2024";
 const PRISMA_POOL_TIMEOUT_MAX_ATTEMPTS = 2;
 const ONE_DOLLAR_MAX_PRICE_PKR = 280;
 const catalogQueriesLogger = createLogger("catalog-queries");
+
+// Search candidate pooling: the DB query intentionally fetches a larger
+// candidate pool than the final result limit so the search adapter can rank by
+// relevance (name/category matches above description matches) before slicing
+// down to the requested limit.
+const SEARCH_CANDIDATE_POOL_MULTIPLIER = 4;
+const SEARCH_CANDIDATE_POOL_MIN = 24;
+const SEARCH_CANDIDATE_POOL_CAP = 60;
 
 function isPrismaPoolTimeoutError(error: unknown): boolean {
   if (!error || typeof error !== "object") {
@@ -586,25 +595,55 @@ export async function getAllPublishedProductSlugsWithCategories() {
 // ---------------------------------------------------------------------------
 
 /**
- * Searches PUBLISHED products by keyword using a case-insensitive `ILIKE`
- * across name, shortDescription, and description fields (PostgreSQL).
+ * Searches PUBLISHED products by keyword using case-insensitive substring
+ * matching (PostgreSQL ILIKE).
  *
- * Results are ordered by createdAt descending for recency; caller handles
- * score sorting if needed.
+ * Matching strategy (see `src/features/catalog/lib/search-text.ts`):
+ *  - The query is tokenized so multi-word input matches on ANY word.
+ *  - Each token is expanded with plural/singular variants so "chains" matches
+ *    "chain" and "candles" matches "candle".
+ *  - Matches run across `name`, `shortDescription`, `description`, AND the
+ *    product's `category.name`, so searching a category name surfaces the
+ *    products living under that category even when the word is not in their
+ *    own text.
+ *
+ * The query fetches a candidate pool larger than `limit` (up to
+ * `SEARCH_CANDIDATE_POOL_CAP`) so the caller can rank by relevance before
+ * applying the final limit. Raw rows are ordered by `createdAt` descending;
+ * relevance ranking is the caller's responsibility.
  */
 export async function searchPublishedProducts(query: string, limit: number = 12) {
   const db = getPrismaClient();
+  const variants = expandSearchQuery(query);
+
+  if (variants.length === 0) {
+    return [];
+  }
+
+  const orConditions: Prisma.ProductWhereInput[] = variants.flatMap((variant) => [
+    { name: { contains: variant, mode: "insensitive" } },
+    { shortDescription: { contains: variant, mode: "insensitive" } },
+    { description: { contains: variant, mode: "insensitive" } },
+    {
+      category: {
+        // `category.status: "PUBLISHED"` is merged from the top-level filter.
+        name: { contains: variant, mode: "insensitive" },
+      },
+    },
+  ]);
+
+  const poolSize = Math.min(
+    Math.max(limit * SEARCH_CANDIDATE_POOL_MULTIPLIER, SEARCH_CANDIDATE_POOL_MIN),
+    SEARCH_CANDIDATE_POOL_CAP,
+  );
+
   return db.product.findMany({
     where: {
       status: "PUBLISHED",
       category: { status: "PUBLISHED" },
-      OR: [
-        { name: { contains: query, mode: "insensitive" } },
-        { shortDescription: { contains: query, mode: "insensitive" } },
-        { description: { contains: query, mode: "insensitive" } },
-      ],
+      OR: orConditions,
     },
-    take: limit,
+    take: poolSize,
     orderBy: { createdAt: "desc" },
     select: storefrontProductSelect,
   });

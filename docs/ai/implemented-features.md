@@ -13,7 +13,7 @@ Use this as the quick implementation map for future AI prompts. Each section des
 - Homepage featured-products section is now sales-driven: it ranks products by summed `OrderItem.quantity` across `CONFIRMED`/`PACKED`/`SHIPPED`/`DELIVERED` orders, filters through published storefront visibility rules, and fills sparse-data gaps from recent published catalog products first (so cards keep add-to-cart), then stored fallback picks
 - Category listing routes and product detail routes with SEO metadata support; related products grid (`ProductRelatedGrid`) renders product card images directly via `backgroundImage: url(${product.imageUrl})` cover style
 - Database-backed catalog visibility rules (published categories/products only; approved reviews only)
-- Storefront search as a shadcn command dialog opened from the header (desktop + mobile) with live debounced results, local-first recent searches, desktop-only curated popular searches, and an API transport seam with adapter-ready backend integration point
+- Storefront search as a shadcn command dialog opened from the header (desktop + mobile) with live debounced results, local-first recent searches, desktop-only curated popular searches, and an API transport seam with adapter-ready backend integration point; matching is tokenized with plural widening and category-name support, and results are ranked by relevance (name/category matches first) rather than raw creation date
 - Wishlist add/remove and authenticated wishlist page
 
 ## Cart, Checkout, and Orders

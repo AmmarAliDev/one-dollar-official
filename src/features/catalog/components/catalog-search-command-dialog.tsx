@@ -248,13 +248,13 @@ export function CatalogSearchCommandDialog() {
       title="Search products"
       description="Search products and collections"
       shouldFilter={false}
-      className="max-w-xl top-[27%] md:top-[50%]"
+      className="max-w-xl top-[40%] md:top-[50%]"
     >
       <CommandInput
         autoFocus
         value={query}
         onValueChange={setQuery}
-        placeholder="Search products by name or category"
+        placeholder="Search products and collections"
         aria-label="Search products"
         onKeyDown={(event) => {
           if (event.key === "Enter" && canSearch) {
