@@ -58,3 +58,79 @@ describe('catalog queries one-dollar count', () => {
     expect(total).toBe(3);
   });
 });
+
+describe('catalog searchPublishedProducts query widening', () => {
+  beforeEach(() => {
+    vi.resetModules();
+    mockQueryRaw.mockReset();
+    mockProductFindMany.mockReset();
+    mockProductFindMany.mockResolvedValue([]);
+  });
+
+  it('matches category names in the where clause (searching a category surfaces its products)', async () => {
+    const { searchPublishedProducts } = await import('@/server/db/catalog-queries');
+    await searchPublishedProducts('candles', 8);
+
+    const [args] = mockProductFindMany.mock.calls[0];
+    expect(args.where.OR).toEqual(
+      expect.arrayContaining([
+        { category: { name: { contains: 'candle', mode: 'insensitive' } } },
+      ]),
+    );
+  });
+
+  it('widens plural tokens into singular variants', async () => {
+    const { searchPublishedProducts } = await import('@/server/db/catalog-queries');
+    await searchPublishedProducts('chains', 8);
+
+    const [args] = mockProductFindMany.mock.calls[0];
+    expect(args.where.OR).toEqual(
+      expect.arrayContaining([
+        { name: { contains: 'chain', mode: 'insensitive' } },
+      ]),
+    );
+  });
+
+  it('splits multi-word queries into per-token OR conditions', async () => {
+    const { searchPublishedProducts } = await import('@/server/db/catalog-queries');
+    await searchPublishedProducts('scented candle', 8);
+
+    const [args] = mockProductFindMany.mock.calls[0];
+    expect(args.where.OR).toEqual(
+      expect.arrayContaining([
+        { name: { contains: 'scented', mode: 'insensitive' } },
+        { name: { contains: 'candle', mode: 'insensitive' } },
+      ]),
+    );
+  });
+
+  it('keeps publish-state visibility filters in the search where clause', async () => {
+    const { searchPublishedProducts } = await import('@/server/db/catalog-queries');
+    await searchPublishedProducts('candle', 8);
+
+    const [args] = mockProductFindMany.mock.calls[0];
+    expect(args.where.status).toBe('PUBLISHED');
+    expect(args.where.category).toEqual(expect.objectContaining({ status: 'PUBLISHED' }));
+  });
+
+  it('fetches a candidate pool larger than the requested limit', async () => {
+    const { searchPublishedProducts } = await import('@/server/db/catalog-queries');
+
+    await searchPublishedProducts('candle', 8);
+    expect(mockProductFindMany.mock.calls[0][0].take).toBe(32);
+
+    await searchPublishedProducts('candle', 1);
+    expect(mockProductFindMany.mock.calls[1][0].take).toBe(24);
+
+    await searchPublishedProducts('candle', 100);
+    expect(mockProductFindMany.mock.calls[2][0].take).toBe(60);
+  });
+
+  it('returns empty for queries with no usable tokens without hitting the DB', async () => {
+    const { searchPublishedProducts } = await import('@/server/db/catalog-queries');
+    const result = await searchPublishedProducts('a', 8);
+
+    expect(result).toEqual([]);
+    expect(mockProductFindMany).not.toHaveBeenCalled();
+  });
+});

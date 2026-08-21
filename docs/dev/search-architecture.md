@@ -16,12 +16,22 @@ Search no longer lives on a separate page. It is a shadcn command dialog (`Comma
 6. Debounced queries call `GET /api/catalog/search` with `limit=8`.
 7. API handler validates inputs with Zod and calls `searchCatalogProducts()`.
 8. `searchCatalogProducts()` delegates to a search adapter seam via `getCatalogSearchAdapter()`.
-9. The default `dbCatalogSearchAdapter` queries published products from PostgreSQL using a case-insensitive `ILIKE` match over `name`, `shortDescription`, and `description`.
+9. The default `dbCatalogSearchAdapter` queries published products from PostgreSQL using case-insensitive substring (`ILIKE`) matching over `name`, `shortDescription`, `description`, **and** `category.name`.
 10. Search result shaping aligns with catalog card media behavior: it resolves the first valid product image URL via the shared URL normalizer (accepting only root-relative and HTTP(S) URLs). When no valid image URL is available, results intentionally omit `imageUrl` so result rows fall back to a deterministic gradient placeholder.
 11. Results carry `source: "db"` in the response so callers and tests can verify the active backend.
 12. Recent searches are persisted locally in browser storage (`localStorage`), deduplicated case-insensitively, trimmed, and capped to a fixed list size. They are recorded on Enter submit and when a result is selected (not on every keystroke).
 13. Recent searches UI supports replay (click to run), single-item removal, and clear-all while gracefully handling unavailable storage.
 14. Popular searches are a curated static list in `src/features/catalog/popular-searches.ts`, shown as a quick-entry group on desktop only (CSS `hidden md:block`).
+
+## Matching & Relevance
+
+The DB-backed search is intentionally forgiving without pulling in a full text-search engine. All widening/scoring helpers live in `src/features/catalog/lib/search-text.ts`:
+
+- **Tokenization** — the query is split into lowercase word tokens so multi-word input matches on **ANY** word (`"scented candle"` also matches a product named `Candle Lavender`). The DB query builds a per-token `OR` over all searchable fields.
+- **Plural/singular widening** — each token is expanded with simple variants (`chains → chain`, `candles → candle`, `boxes → box`, `candies → candy`), so `"chains"` matches a `Gold Chain` product and `"candles"` matches a `Candle Trio`. A superset of variants can only add harmless false positives for the OR search — it never hides a real match.
+- **Category matching** — `category.name` participates in the `OR`, so typing a category name surfaces every product living under that category even when the word is not in the product's own text.
+- **Candidate pool + relevance ranking** — `searchPublishedProducts()` fetches a candidate pool larger than the final `limit` (up to `SEARCH_CANDIDATE_POOL_CAP`, default `limit × 4` with a 24–60 clamp). The adapter then scores each candidate (name `100`, category `70`, shortDescription `40`, description `20` per matching token) and returns the top `limit` ordered by score, then newest-first. This keeps literal name/category matches above incidental description hits — searching `"candles"` shows candle products instead of, say, balloons whose description merely mentions candles.
+- **Empty/short queries** — queries with no usable tokens (e.g. a single letter) short-circuit to an empty result without touching the DB.
 
 ## Why This Is Upgrade-Ready
 

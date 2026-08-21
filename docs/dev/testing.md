@@ -125,7 +125,8 @@ Lightweight import-level checks that verify public API contracts without mocking
 
 `filters.test.ts` — `parseCatalogSearchParams`, `buildCategoryListingHref`.  
 `service.test.ts` — `getCatalogCategoryListing` with filters and sort.  
-`search-service.test.ts` — `searchCatalogProducts`.  
+`search-service.test.ts` — `searchCatalogProducts` (category matching, plural widening, relevance ranking).  
+`search-text.test.ts` — `tokenizeSearchQuery`, `expandSearchToken`, `tokenMatchesText`.  
 `product-detail.test.ts` — `getProductBySlug`, `getRelatedProducts`.  
 `product-service.test.ts` — `getProductBySlug` (variants, reviews, href), `getProductSlugsWithCategory`.
 

@@ -57,3 +57,9 @@ Record stable design choices so future prompts can extend the system without bre
 - Decision: Major non-trivial flows (payments, advanced inventory/revenue, email automation) are deferred with documented seams.
 - Why: Prevents risky half-implementations while preserving future extension paths.
 - Consequence: Deferred features must be documented in `docs/ai/open-tasks.md` and relevant dev docs.
+
+## Decision 10: Forgiving tokenized catalog search with relevance ranking
+
+- Decision: Storefront keyword search widens the query before hitting the DB (tokenize into words, expand each token with plural/singular variants, match across `name`, `shortDescription`, `description`, and `category.name`) and ranks a candidate pool by relevance (name > category > shortDescription > description) before applying the final limit.
+- Why: The previous whole-phrase `ILIKE` over three fields missed category searches, plural forms (`"chains"` vs `"chain"`), and multi-word queries, and `createdAt` ordering let incidental description matches crowd out literal name/category matches (e.g. `"candles"` returning balloons that merely mention candles).
+- Consequence: Query widening + scoring helpers live in `src/features/catalog/lib/search-text.ts` (shared by the DB query layer and the search adapter); the DB query returns a candidate pool and the adapter owns relevance ordering. Swapping in a dedicated search engine still only requires replacing the adapter internals — the widened matching contract is preserved by the seam.

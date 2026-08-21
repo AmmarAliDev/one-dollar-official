@@ -82,10 +82,10 @@ export const adminNav: NavItem[] = [
 
 export function loadSiteConfig(runtimeEnv: RuntimeEnv = env) {
   return {
-    name: "One Dollar Mart",
-    shortName: "One Dollar Mart",
+    name: "CHEERLY",
+    shortName: "CHEERLY",
     logoPath: "/app-logo.svg",
-    appIcon: "/app-icon.svg",
+    appIcon: "/app-logo.svg",
     description:
       "Production-ready Karachi-first e-commerce foundation built with Next.js App Router, TypeScript, Tailwind CSS, and shadcn/ui patterns.",
     locale: "en-PK",
